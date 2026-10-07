@@ -7,6 +7,7 @@ Last updated: 2026-10-07 · Master prompt: v3.0 (7 Oct 2026)
 Do not start Phase 2 until the Product Owner replies "APPROVED".
 
 ## Where things live
+(In the claude.ai "Fitness App" Project, every repo file below is stored under the `claude/` prefix, e.g. `claude/rules/rule_registry_v0.1.json`.)
 - Phase 1 report (reviewable, commentable): Claude Doc "Personal Fitness Coach — Phase 1: Fitness Research & Evidence Engine"
   https://claude.ai/code/artifact/277679ce-731c-4ce0-8870-9cb5347a5d51
 - Markdown copy of the report: `docs/phase1/phase1_report.md` (also saved in the "Fitness App" Project)
