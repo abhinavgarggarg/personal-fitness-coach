@@ -1,5 +1,5 @@
 {
-  "registry_version": "1.0.0",
+  "registry_version": "1.0.1",
   "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07",
   "generated": "2026-10-07",
   "confidence_scale": [
@@ -16,9 +16,9 @@
   },
   "sources": {
     "ACSM2026": {
-      "citation": "Phillips SM (chair), Currier BS, D'Souza AC, Fiatarone Singh MA, et al. American College of Sports Medicine Position Stand. Resistance training prescription for muscle function, hypertrophy, and physical performance in healthy adults: an overview of reviews. Med Sci Sports Exerc. April 2026.",
+      "citation": "Currier BS, et al. (writing group chaired by Phillips SM). American College of Sports Medicine Position Stand. Resistance training prescription for muscle function, hypertrophy, and physical performance in healthy adults: an overview of reviews. Med Sci Sports Exerc. 2026;58(4):851-872. doi:10.1249/MSS.0000000000003897",
       "verification": "checked",
-      "url": "https://acsm.org/science-spotlight-acsm-releases-new-position-stand-on-resistance-training/"
+      "url": "https://doi.org/10.1249/MSS.0000000000003897"
     },
     "Currier2023": {
       "citation": "Currier BS, McLeod JC, Banfield L, et al. Resistance training prescription for muscle strength and hypertrophy in healthy adults: a systematic review and Bayesian network meta-analysis. Br J Sports Med. 2023;57(18):1211-1220. doi:10.1136/bjsports-2023-106807",
@@ -769,7 +769,7 @@
     },
     {
       "rule_id": "FREQ-001",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "frequency",
       "title": "Training days per week",
       "statement": "Train 2-6 days/week with at least one full rest day; default 3 when unknown (ASSUMPTION).",
@@ -794,12 +794,12 @@
         "TC-FREQ-001a",
         "TC-FREQ-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
       "rule_id": "FREQ-002",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "frequency",
       "title": "Per-muscle exposures",
       "statement": "Each major muscle gets >=2 exposures/week; an exposure is >=2 fractional hard sets in one session.",
@@ -825,12 +825,12 @@
         "TC-FREQ-002a",
         "TC-FREQ-002b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
       "rule_id": "FREQ-003",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "frequency",
       "title": "Resistance training days",
       "statement": "Resistance training on >=2 days every week.",
@@ -852,7 +852,7 @@
         "TC-FREQ-003a",
         "TC-FREQ-003b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -977,7 +977,7 @@
     },
     {
       "rule_id": "VOL-003",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "volume",
       "title": "Volume landmarks (fractional sets/muscle/week)",
       "statement": "Blocks start at 'start'; usual working range; the engine never plans above 'cap'. Landmark names are coaching vocabulary.",
@@ -1030,7 +1030,7 @@
         "TC-VOL-003a",
         "TC-VOL-003b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -1261,7 +1261,7 @@
     },
     {
       "rule_id": "INT-002",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "intensity",
       "title": "RIR targets",
       "statement": "Targets by level and exercise class; week 1 of a block +1 RIR, last loading week -1 (not below floor).",
@@ -1311,12 +1311,12 @@
         "TC-INT-002a",
         "TC-INT-002b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
       "rule_id": "INT-003",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "intensity",
       "title": "Failure policy",
       "statement": "RIR 0 only on the last set of FailureSafe exercises (machine, cable, isolation dumbbell, safe bodyweight), <=2 exercises/session, FULL tier, not in deload, not beginners' first 8 weeks, never on failure-unsafe lifts.",
@@ -1352,7 +1352,7 @@
         "TC-INT-003a",
         "TC-INT-003b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -1482,7 +1482,7 @@
     },
     {
       "rule_id": "REP-001",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "reps",
       "title": "Strength range",
       "statement": "3-6 reps at ~80-88% 1RM; 1-3 only for advanced at RPE <=8.",
@@ -1517,7 +1517,7 @@
         "TC-REP-001a",
         "TC-REP-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -1594,7 +1594,7 @@
     },
     {
       "rule_id": "REP-004",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "reps",
       "title": "Power",
       "statement": "3-5 reps at 30-70% 1RM with maximal intent; reps x sets < 24; stop when speed visibly drops.",
@@ -1625,7 +1625,7 @@
         "TC-REP-004a",
         "TC-REP-004b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -1722,7 +1722,7 @@
     },
     {
       "rule_id": "REST-002",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "rest",
       "title": "Moderate compounds",
       "statement": "6-12 reps: 90-150 s, default 120 s.",
@@ -1733,9 +1733,10 @@
       },
       "confidence": "Moderate Evidence",
       "evidence": [
-        "Singer2024"
+        "Singer2024",
+        "ACSM2026"
       ],
-      "uncertainty": "",
+      "uncertainty": "ACSM 2026: inter-set rest did not consistently change outcomes, so defaults are practical and may be compressed under time pressure.",
       "date_introduced": "2026-10-07",
       "date_reviewed": "2026-10-07",
       "affected_algorithms": [
@@ -1746,12 +1747,12 @@
         "TC-REST-002a",
         "TC-REST-002b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: evidence added (ACSM 2026 on rest intervals); no parameter changes",
       "status": "approved"
     },
     {
       "rule_id": "REST-003",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "rest",
       "title": "Isolation / accessories",
       "statement": "60-90 s, default 75 s.",
@@ -1762,9 +1763,10 @@
       },
       "confidence": "Moderate Evidence",
       "evidence": [
-        "Singer2024"
+        "Singer2024",
+        "ACSM2026"
       ],
-      "uncertainty": "",
+      "uncertainty": "ACSM 2026: inter-set rest did not consistently change outcomes, so defaults are practical and may be compressed under time pressure.",
       "date_introduced": "2026-10-07",
       "date_reviewed": "2026-10-07",
       "affected_algorithms": [
@@ -1775,7 +1777,7 @@
         "TC-REST-003a",
         "TC-REST-003b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: evidence added (ACSM 2026 on rest intervals); no parameter changes",
       "status": "approved"
     },
     {
@@ -1861,7 +1863,7 @@
     },
     {
       "rule_id": "REST-007",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "rest",
       "title": "Autoregulated rest and compression",
       "statement": "User may start next set anywhere in range; timer alerts at default; under time pressure rests shrink toward minimum, accessories first, heavy compounds last and never below minimum.",
@@ -1876,9 +1878,10 @@
       "confidence": "Expert Practice",
       "evidence": [
         "Singer2024",
-        "Grgic2018rest"
+        "Grgic2018rest",
+        "ACSM2026"
       ],
-      "uncertainty": "",
+      "uncertainty": "ACSM 2026: inter-set rest did not consistently change outcomes, so defaults are practical and may be compressed under time pressure.",
       "date_introduced": "2026-10-07",
       "date_reviewed": "2026-10-07",
       "affected_algorithms": [
@@ -1889,12 +1892,12 @@
         "TC-REST-007a",
         "TC-REST-007b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: evidence added (ACSM 2026 on rest intervals); no parameter changes",
       "status": "approved"
     },
     {
       "rule_id": "ORD-001",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "order",
       "title": "Session sequence",
       "statement": "Warm-up -> power/skill -> primary compound -> secondary compound -> accessories -> core -> conditioning -> cool-down.",
@@ -1925,7 +1928,7 @@
         "TC-ORD-001a",
         "TC-ORD-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -3823,7 +3826,7 @@
     },
     {
       "rule_id": "PER-001",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "periodization",
       "title": "Autoregulated hybrid architecture",
       "statement": "Blocks set emphasis; within-week DUP for main patterns; session autoregulation by readiness and RIR; beginners session-to-session progression.",
@@ -3844,7 +3847,7 @@
         "TC-PER-001a",
         "TC-PER-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -3993,7 +3996,7 @@
     },
     {
       "rule_id": "PROG-001",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "progression",
       "title": "Load progression",
       "statement": "All sets at top of range, mean RPE <= target+0.5, form solid, recovery ok -> smallest available step of 2.5-5%.",
@@ -4016,7 +4019,7 @@
         "TC-PROG-001a",
         "TC-PROG-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -4678,7 +4681,7 @@
     },
     {
       "rule_id": "SCH-001",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "scheduling",
       "title": "Weekly templates",
       "statement": "2: FB A/B; 3: FB A/B/C (DUP); 4: Upper/Lower x2; 5: U/L/Cond/U/L; 6: U/L/Cond/U/L/easy aerobic.",
@@ -4729,7 +4732,7 @@
         "TC-SCH-001a",
         "TC-SCH-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -4914,7 +4917,7 @@
     },
     {
       "rule_id": "EQ-001",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "equipment",
       "title": "Equipment matrix",
       "statement": "No universal superiority; equipment chosen by role (barbell main lifts once technique is reliable, dumbbells for accessories and crowded gyms, machines for planned RIR 0, etc.).",
@@ -4934,7 +4937,7 @@
         "TC-EQ-001a",
         "TC-EQ-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {

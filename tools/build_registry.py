@@ -18,7 +18,7 @@ APPROVED_ON = "2026-10-07"  # Product Owner Phase 1 sign-off
 # "located" = title, year and venue confirmed on 2026-10-07; author list, volume/pages and findings from prior knowledge;
 # "unverified" = not located this session.
 SOURCES = {
- "ACSM2026": ("Phillips SM (chair), Currier BS, D'Souza AC, Fiatarone Singh MA, et al. American College of Sports Medicine Position Stand. Resistance training prescription for muscle function, hypertrophy, and physical performance in healthy adults: an overview of reviews. Med Sci Sports Exerc. April 2026.", "checked", "https://acsm.org/science-spotlight-acsm-releases-new-position-stand-on-resistance-training/"),
+ "ACSM2026": ("Currier BS, et al. (writing group chaired by Phillips SM). American College of Sports Medicine Position Stand. Resistance training prescription for muscle function, hypertrophy, and physical performance in healthy adults: an overview of reviews. Med Sci Sports Exerc. 2026;58(4):851-872. doi:10.1249/MSS.0000000000003897", "checked", "https://doi.org/10.1249/MSS.0000000000003897"),
  "Currier2023": ("Currier BS, McLeod JC, Banfield L, et al. Resistance training prescription for muscle strength and hypertrophy in healthy adults: a systematic review and Bayesian network meta-analysis. Br J Sports Med. 2023;57(18):1211-1220. doi:10.1136/bjsports-2023-106807", "checked", "https://research-information.bris.ac.uk/en/publications/resistance-training-prescription-for-muscle-strength-and-hypertro/"),
  "Pelland2024": ("Pelland JC, Remmert JF, Robinson ZP, Hinson SR, Zourdos MC. The resistance training dose-response: meta-regressions exploring the effects of weekly volume and frequency on muscle hypertrophy and strength gain. SportRxiv preprint (version 2), 2024. NOT PEER REVIEWED.", "checked", "https://sportrxiv.org/index.php/server/preprint/view/460"),
  "Schoenfeld2017vol": ("Schoenfeld BJ, Ogborn D, Krieger JW. Dose-response relationship between weekly resistance training volume and increases in muscle mass: a systematic review and meta-analysis. J Sports Sci. 2017;35(11):1073-1082.", "located", "https://paulogentil.com/pdf/Dose-response%20relationship%20between%20weekly%20resistance%20training%20volume%20and%20increases%20in%20muscle%20mass%20-%20A%20systematic%20review%20and%20metaanalysis.pdf"),
@@ -484,13 +484,26 @@ for r in R:
         "change_reason": "Initial version; approved at Phase 1 sign-off", "status": "approved",
     })
 
+# ---- PATCH 1.0.1 (2026-10-07): ACSM 2026 full text checked; citation corrected; rest-interval nuance added.
+PATCH_101 = {"note": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes"}
+for r in registry["rules"]:
+    if "ACSM2026" in r["evidence"]:
+        r["version"] = "1.0.1"; r["date_reviewed"] = "2026-10-07"; r["change_reason"] = PATCH_101["note"]
+for r in registry["rules"]:
+    if r["rule_id"] in ("REST-002", "REST-003", "REST-007"):
+        if "ACSM2026" not in r["evidence"]:
+            r["evidence"].append("ACSM2026")
+        r["version"] = "1.0.1"; r["date_reviewed"] = "2026-10-07"
+        r["uncertainty"] = (r["uncertainty"] + " " if r["uncertainty"] else "") + "ACSM 2026: inter-set rest did not consistently change outcomes, so defaults are practical and may be compressed under time pressure."
+        r["change_reason"] = "PATCH: evidence added (ACSM 2026 on rest intervals); no parameter changes"
+registry["registry_version"] = "1.0.1"
 PRODUCT_RULES = ['SAF-006', 'SAF-008', 'SAF-009', 'COACH-001', 'MOD-001', 'GEN-001', 'SUB-001', 'SUB-003', 'PROG-003', 'RDY-007', 'SCH-003', 'EQ-002', 'DATA-001', 'PER-006', 'TIME-004']
 for r in registry["rules"]:
     if r["rule_id"] in PRODUCT_RULES:
         r["confidence"] = PR
 ids = [r["rule_id"] for r in registry["rules"]]
 assert len(ids) == len(set(ids)), "duplicate rule IDs"
-out = Path(__file__).resolve().parent.parent / "rules" / f"rule_registry_v{VERSION[:3]}.json"
+out = Path(__file__).resolve().parent.parent / "rules" / "rule_registry_v1.0.json"  # 1.x line; registry_version field carries the patch level
 out.write_text(json.dumps(registry, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 print(f"wrote {out} — {len(ids)} rules, {len(SOURCES)} sources")
 from collections import Counter
