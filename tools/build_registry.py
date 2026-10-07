@@ -1,15 +1,17 @@
 """Builds rules/rule_registry_v0.1.json — the single source of truth for every
 fitness rule and numeric parameter in the Personal Fitness Coach engine.
 
-Phase 1 deliverable 38. Status of every rule: "proposed" until the Product
-Owner approves Phase 1; on approval each rule moves to version 1.0.0.
+Phase 1 deliverable 38. v0.1.0 (proposed) was approved by the Product Owner on
+2026-10-07; every rule is now version 1.0.0, status "approved". Later changes follow
+B6/F7 change control (semantic versioning per rule).
 Run:  python3 -I tools/build_registry.py
 """
 import json
 from pathlib import Path
 
 TODAY = "2026-10-07"
-VERSION = "0.1.0"
+VERSION = "1.0.0"
+APPROVED_ON = "2026-10-07"  # Product Owner Phase 1 sign-off
 
 # ---------------------------------------------------------------- sources
 # verification: "checked" = abstract/publisher summary read on 2026-10-07;
@@ -461,7 +463,7 @@ def tests_for(rid):
 
 registry = {
     "registry_version": VERSION,
-    "status": "PROPOSED — awaiting Phase 1 sign-off; on approval all rules move to 1.0.0",
+    "status": "APPROVED — Product Owner Phase 1 sign-off on " + APPROVED_ON,
     "generated": TODAY,
     "confidence_scale": [HIGH, MOD, LIM, EP, PR],
     "versioning": {"MAJOR": "changes training direction, a safety boundary, or removes a rule",
@@ -479,7 +481,7 @@ for r in R:
         "confidence": r["confidence"], "evidence": r["evidence"], "uncertainty": r["uncertainty"],
         "date_introduced": TODAY, "date_reviewed": TODAY,
         "affected_algorithms": r["affected_algorithms"], "tests": tests_for(r["rule_id"]),
-        "change_reason": "Initial version (Phase 1 draft)", "status": "proposed",
+        "change_reason": "Initial version; approved at Phase 1 sign-off", "status": "approved",
     })
 
 PRODUCT_RULES = ['SAF-006', 'SAF-008', 'SAF-009', 'COACH-001', 'MOD-001', 'GEN-001', 'SUB-001', 'SUB-003', 'PROG-003', 'RDY-007', 'SCH-003', 'EQ-002', 'DATA-001', 'PER-006', 'TIME-004']
@@ -488,7 +490,7 @@ for r in registry["rules"]:
         r["confidence"] = PR
 ids = [r["rule_id"] for r in registry["rules"]]
 assert len(ids) == len(set(ids)), "duplicate rule IDs"
-out = Path(__file__).resolve().parent.parent / "rules" / "rule_registry_v0.1.json"
+out = Path(__file__).resolve().parent.parent / "rules" / f"rule_registry_v{VERSION[:3]}.json"
 out.write_text(json.dumps(registry, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 print(f"wrote {out} — {len(ids)} rules, {len(SOURCES)} sources")
 from collections import Counter

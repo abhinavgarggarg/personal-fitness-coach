@@ -3,15 +3,17 @@
 Last updated: 2026-10-07 · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
-**Phase 1 — Fitness Research & Evidence Engine: COMPLETE (draft), AWAITING PRODUCT OWNER SIGN-OFF.**
-Do not start Phase 2 until the Product Owner replies "APPROVED".
+**Phase 2 — Product Requirements, UX & Technical Architecture: IN PROGRESS** (started 2026-10-07).
+Phase 1 APPROVED by the Product Owner on 2026-10-07 → Rule Registry v1.0.0 (`rules/rule_registry_v1.0.json`, all rules "approved"). v0.1 file kept for history.
+Phase 2 doc: https://claude.ai/code/artifact/ddd84b34-8a3a-4466-b655-2c98bc041319
+Do not start Phase 3 (no app code) until the Product Owner approves Phase 2.
 
 ## Where things live
 (In the claude.ai "Fitness App" Project, every repo file below is stored under the `claude/` prefix, e.g. `claude/rules/rule_registry_v0.1.json`.)
 - Phase 1 report (reviewable, commentable): Claude Doc "Personal Fitness Coach — Phase 1: Fitness Research & Evidence Engine"
   https://claude.ai/code/artifact/277679ce-731c-4ce0-8870-9cb5347a5d51
 - Markdown copy of the report: `docs/phase1/phase1_report.md` (also saved in the "Fitness App" Project)
-- Rule Registry v0.1 (140 rules, 64 sources, all status "proposed", version 0.1.0): `rules/rule_registry_v0.1.json`
+- Rule Registry v1.0 (140 rules, 64 sources, all "approved", version 1.0.0): `rules/rule_registry_v1.0.json` (v0.1 draft kept for history)
 - Registry generator: `tools/build_registry.py` (single source of truth for rule parameters)
 - Checks (registry integrity, doc/registry agreement, worked-example arithmetic): `tools/check_phase1.py` — 44 checks, 0 failures on 2026-10-07
 
@@ -36,7 +38,7 @@ Do not start Phase 2 until the Product Owner replies "APPROVED".
 2. Part 0 profile is blank; defaults used: adult, beginner rules until classified, 3 days × 60 min, typical commercial gym incl. rower/SkiErg/elliptical, no injuries, kg. Collected in onboarding.
 3. Before Phase 3: Product Owner needs a free GitHub account (cloud builds).
 
-## Next actions
+## Next actions (superseded by Phase 2 work — see Phase 2 doc)
 1. Wait for Phase 1 sign-off ("APPROVED") or feedback; on feedback revise doc + registry, re-run checks, re-present gate.
 2. On approval: bump all rules to 1.0.0/approved (rebuild registry), log in DECISIONS.md and CHANGELOG.md.
 3. Phase 2 prep: read ACSM 2026 position stand full text; re-check Pelland 2024 publication status; licence check on PAR-Q+ wording.

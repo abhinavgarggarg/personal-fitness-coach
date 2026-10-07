@@ -3,7 +3,7 @@ Run: python3 -I tools/check_phase1.py"""
 import json, math, re, statistics
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
-reg = json.loads((ROOT/"rules/rule_registry_v0.1.json").read_text())
+reg = json.loads((ROOT/"rules/rule_registry_v1.0.json").read_text())
 md = (ROOT/"docs/phase1/phase1_report.md").read_text()
 R = {r["rule_id"]: r for r in reg["rules"]}
 P = lambda rid: R[rid]["parameters"]
@@ -16,7 +16,7 @@ def check(name, cond):
 check("140 unique rule ids", len(R) == 140 == len(reg["rules"]))
 check("all evidence keys resolve", all(e in reg["sources"] for r in reg["rules"] for e in r["evidence"]))
 check("every rule has >=2 tests", all(len(r["tests"]) >= 2 for r in reg["rules"]))
-check("all rules proposed 0.1.0", all(r["version"] == "0.1.0" and r["status"] == "proposed" for r in reg["rules"]))
+check("all rules approved 1.0.0", all(r["version"] == "1.0.0" and r["status"] == "approved" for r in reg["rules"]))
 check("SUB-002 weights sum to 1", abs(sum(P("SUB-002")["weights"].values()) - 1) < 1e-9)
 check("MOD-002 weights sum to 1", abs(sum(P("MOD-002")["weights"].values()) - 1) < 1e-9)
 check("RDY-001 weights sum to 1", abs(sum(P("RDY-001")["weights"].values()) - 1) < 1e-9)

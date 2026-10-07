@@ -20,3 +20,5 @@ Format: decision · alternatives considered · reason · date. Phase 1 decisions
 | D-014 | Pain gate threshold 3/10 for continuing unsupervised | 5/10 (rehab pain-monitoring model) | Silbernagel 2007 used 5/10 under clinical supervision; app is unsupervised | 2026-10-07 |
 | D-015 | Screening questions written originally (ACSM 2015 logic, PAR-Q+ domains) | Use PAR-Q+ verbatim | Licence not yet checked (D7) | 2026-10-07 |
 | D-016 | Engineering/product rules labelled "Product Rule (not an evidence claim)" in the registry, separate from the four evidence levels | Force into the four-level scale | Honesty: these are not scientific claims (A5) | 2026-10-07 |
+| D-017 | Phase 1 approved by the Product Owner; Rule Registry promoted to v1.0.0 (all 140 rules "approved") | — | Explicit sign-off: "Phase 1 is approved" | 2026-10-07 |
+| D-018 | Air/fan bikes and treadmill walking remain excluded | Allow them | No reply to the doc comment; approval given with the default in place (A11) | 2026-10-07 |
