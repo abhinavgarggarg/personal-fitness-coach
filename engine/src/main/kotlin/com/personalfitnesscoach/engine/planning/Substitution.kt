@@ -44,6 +44,9 @@ data class Candidate(val exercise: Exercise, val score: Double, val fits: Fits)
 /** Ranked swap options; `autoPick` is null when no candidate may be chosen automatically. */
 data class SwapOptions(val ranked: List<Candidate>, val autoPick: Candidate?)
 
+/** EQ-002: what the "Occupied" button offers. */
+data class OccupiedOptions(val swaps: SwapOptions, val canDoLater: Boolean)
+
 /**
  * Exercise substitution. Component fits are defined in Phase 3 (decision D-033) because
  * Phase 1 fixed only the weights; the Phase 1 worked-example totals (0.955 / 0.760) are
@@ -117,6 +120,18 @@ object Substitution {
         return EngineResult(SwapOptions(ranked, auto), listOf(Decision(DecisionKind.SUBSTITUTION,
             listOf(RuleIds.SUB_001, RuleIds.SUB_002), reason, inputs = mapOf("original" to original.id),
             outputs = mapOf("ranked" to ranked.map { "${it.exercise.id}:${it.score}" }, "auto" to auto?.exercise?.id))))
+    }
+
+    /**
+     * EQ-002 "Occupied": the ranked swaps plus, when other exercises are still to come,
+     * the option to do this one later instead (Phase 1 section 30 pseudocode, C9).
+     */
+    fun occupied(original: Exercise, library: List<Exercise>, ctx: SubContext, exercisesStillToCome: Int): EngineResult<OccupiedOptions> {
+        val swaps = options(original, library, ctx)
+        val later = exercisesStillToCome > 0
+        return EngineResult(OccupiedOptions(swaps.value, later), swaps.decisions + Decision(DecisionKind.SUBSTITUTION,
+            listOf(RuleIds.EQ_002), if (later) ReasonKey.SWAP_OR_LATER else ReasonKey.SWAP_OFFERED_ONLY,
+            inputs = mapOf("original" to original.id, "stillToCome" to exercisesStillToCome)))
     }
 
     /** SUB-003: accept/reject moves the preference by ±0.05 within 0–1. */

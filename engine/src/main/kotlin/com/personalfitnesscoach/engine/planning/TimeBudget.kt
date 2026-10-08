@@ -5,6 +5,8 @@ import com.personalfitnesscoach.engine.core.DecisionKind
 import com.personalfitnesscoach.engine.core.EngineResult
 import com.personalfitnesscoach.engine.core.Num
 import com.personalfitnesscoach.engine.core.ReasonKey
+import com.personalfitnesscoach.engine.dose.Order
+import com.personalfitnesscoach.engine.dose.PairClass
 import com.personalfitnesscoach.engine.model.Muscle
 import com.personalfitnesscoach.engine.progression.Warmup
 import com.personalfitnesscoach.engine.registry.P
@@ -28,9 +30,11 @@ data class PlanItem(
     val station: String = "",
     val primaryMuscles: Set<Muscle> = emptySet(),
     val conditioning: Conditioning? = null,
-    /** Allowed to be paired into a non-competing superset (P3–P5 only). */
+    /** Allowed to be paired into a non-competing superset (P3–P5 only; ORD-003 forbids heavy main lifts at RIR ≤ 2). */
     val supersetEligible: Boolean = true,
     val pairedWith: String? = null,
+    /** ORD-003 pairing class; ANY keeps the muscle-overlap check only. */
+    val pairClass: PairClass = PairClass.ANY,
 ) {
     val isConditioning get() = conditioning != null
 }
@@ -107,7 +111,7 @@ object TimeModel {
  * drops below 2 working sets, and rests never go below their REST minimum.
  */
 object TimeBudget {
-    fun fit(plan: SessionPlan, minutes: Double, age: Int? = null, personalFactor: Double = 1.0): EngineResult<FitResult> {
+    fun fit(plan: SessionPlan, minutes: Double, age: Int? = null, personalFactor: Double = 1.0, crowded: Boolean = false): EngineResult<FitResult> {
         val express = minutes < P.TIME_002.express_below_minutes
         // P0 is never below its floor: cool-down ≥ 2 min (TIME-001), warm-up ≥ 5 min (+ age extra, WU-003/004).
         var cur = plan.copy(
@@ -137,7 +141,7 @@ object TimeBudget {
         steps += "rest_P4_P5_to_min"; if (fits()) return done()
 
         // 2) Pair eligible P3–P5 items into non-competing supersets.
-        cur = cur.copy(items = pairSupersets(cur.items))
+        cur = cur.copy(items = pairSupersets(cur.items, crowded))
         steps += "supersets"; if (fits()) return done()
 
         // 3) P5 to 1 set, then drop P5 items (last first).
@@ -257,13 +261,20 @@ object TimeBudget {
         return copy(items = remaining) to victim.id
     }
 
-    /** Greedy non-competing pairing: no shared primary muscle; only P3–P5 strength items. */
-    fun pairSupersets(items: List<PlanItem>): List<PlanItem> {
+    /**
+     * Greedy non-competing pairing of P3–P5 strength items (ORD-003, EQ-002): no shared primary
+     * muscle, an allowed pair (push+pull, upper+lower, compound+core) and, in a crowded gym,
+     * one station or a portable partner. The pair runs at the fixed station of the two.
+     */
+    fun pairSupersets(items: List<PlanItem>, crowded: Boolean = false): List<PlanItem> {
         val eligible = items.filter { it.priority >= Priority.P3 && !it.isConditioning && it.supersetEligible && it.pairedWith == null }
         val pairs = HashMap<String, String>()
         for (a in eligible) {
             if (a.id in pairs) continue
-            val b = eligible.firstOrNull { it.id != a.id && it.id !in pairs && (it.primaryMuscles intersect a.primaryMuscles).isEmpty() } ?: continue
+            val b = eligible.firstOrNull {
+                it.id != a.id && it.id !in pairs && (it.primaryMuscles intersect a.primaryMuscles).isEmpty() &&
+                    Order.classesCompatible(a.pairClass, it.pairClass) && Order.stationsCompatible(a.station, it.station, crowded)
+            } ?: continue
             pairs[a.id] = b.id; pairs[b.id] = a.id
         }
         if (pairs.isEmpty()) return items
@@ -274,10 +285,13 @@ object TimeBudget {
         for (item in items) {
             if (item.id in placed) continue
             val partnerId = pairs[item.id]
-            out += if (partnerId != null) item.copy(pairedWith = partnerId) else item
+            if (partnerId == null) { out += item; placed += item.id; continue }
+            val partner = byId.getValue(partnerId)
+            val station = if (Order.portable(item.station)) partner.station else item.station
+            out += item.copy(pairedWith = partnerId, station = station)
             placed += item.id
-            if (partnerId != null && partnerId !in placed) {
-                out += byId.getValue(partnerId).copy(pairedWith = item.id, station = item.station)
+            if (partnerId !in placed) {
+                out += partner.copy(pairedWith = item.id, station = station)
                 placed += partnerId
             }
         }
