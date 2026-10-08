@@ -97,6 +97,19 @@ class ProgressionTest {
         assertEquals(ReasonKey.LOAD_CAPPED_WEEKLY, capped.decisions.single().reason)
     }
 
+    @Test fun `TC-PROG-007c an equipment step bigger than the cap is allowed once the e1RM supports it, one step a week`() {
+        // Dumbbells in 2.5 kg steps: 20 → 22.5 kg is +12.5 %, above the 5 % cap (D-055).
+        assertEquals(20.0, ProgressionCaps.maxLoadThisWeek(20.0, Level.INTERMEDIATE, DB), 1e-9)
+        assertEquals(20.0, ProgressionCaps.maxLoadThisWeek(20.0, Level.INTERMEDIATE, DB, supported = 21.0), 1e-9)
+        assertEquals(22.5, ProgressionCaps.maxLoadThisWeek(20.0, Level.INTERMEDIATE, DB, supported = 22.5), 1e-9)
+        val c = ProgressionCaps.capLoad(25.0, 20.0, Level.INTERMEDIATE, DB)
+        assertEquals(22.5, c.value, 1e-9)
+        assertTrue(c.decisions.any { it.reason == ReasonKey.LOAD_DISCRETE_STEP })
+        assertTrue(c.decisions.any { it.reason == ReasonKey.LOAD_CAPPED_WEEKLY })
+        // Fine plate steps keep the plain percentage cap.
+        assertEquals(105.0, ProgressionCaps.capLoad(110.0, 100.0, Level.ADVANCED, BAR).value, 1e-9)
+    }
+
     @Test fun `TC-PROG-007b set, aerobic and HIIT caps`() {
         assertEquals(12, ProgressionCaps.maxSetsNextWeek(10))
         assertEquals(115.0, ProgressionCaps.maxAerobicMinutesNextWeek(100.0), 1e-9)

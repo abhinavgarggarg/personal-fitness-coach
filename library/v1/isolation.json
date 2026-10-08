@@ -76,7 +76,7 @@
     "pattern": "ISOLATION", "class": "DUMBBELL", "primary": ["TRICEPS"], "secondary": [],
     "equipment": ["dumbbells", "incline_bench"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 1, "joints": {"ELBOW": 2, "SHOULDER": 1}, "fatigue": 1,
-    "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 15, "station": "incline_bench",
+    "reps": [10, 15], "max_reps": 20, "setup": 15, "station": "incline_bench",
     "tags": ["overhead"],
     "text": {
       "setup": "Sit on an upright bench holding one dumbbell overhead with both hands cupping the top end.",
@@ -258,7 +258,7 @@
     "pattern": "ISOLATION", "class": "CABLE", "primary": ["LATS"], "secondary": ["CORE"],
     "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 2, "joints": {"SHOULDER": 1}, "fatigue": 1,
-    "reps": [12, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "cable",
+    "reps": [12, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "cable", "tags": ["overhead"],
     "text": {
       "setup": "Attach a rope or bar to the high pulley. Step back, hinge slightly and hold it with straight arms at eye level.",
       "cues": ["Sweep the handle down to your thighs keeping elbows almost straight.", "Let it rise slowly."],

@@ -48,7 +48,7 @@ BAR_FOR = {"trap_bar": "trap_bar", "ez_bar": "ez_bar", "landmine": "landmine", "
 EX_KEYS = {"id", "name", "aliases", "pattern", "pattern2", "class", "primary", "secondary", "equipment", "load", "cost",
            "difficulty", "skill", "joints", "fatigue", "impact", "objectives", "reps", "max_reps", "failure_safe", "e1rm",
            "unilateral", "tempo", "setup", "station", "tags", "family", "rung", "progression", "regression", "unit",
-           "power", "assisted", "bar", "one_sided", "user_add_only", "text"}
+           "power", "assisted", "bar", "one_sided", "user_add_only", "shallow", "not_overhead", "text"}
 REQUIRED = ["id", "name", "pattern", "class", "primary", "equipment", "load", "cost", "text"]
 TEXT_KEYS = {"setup", "cues", "mistakes", "safety"}
 
@@ -244,6 +244,18 @@ def main():
                 err(f"{owner}: {k} points to itself")
         if (ex.get("family") is None) != (ex.get("rung") is None):
             err(f"{owner}: family and rung go together")
+        # Safety tags that must not go missing (review finding 5): blocked tags and joint limits rely on them.
+        if ex["pattern"] in ("SQUAT", "LUNGE") and "deep_knee_flexion" not in ex["tags"] and not ex.get("shallow"):
+            err(f"{owner}: squat/lunge pattern needs the deep_knee_flexion tag (or \"shallow\": true)")
+        if ex["pattern"] in ("VERTICAL_PUSH", "VERTICAL_PULL") and "overhead" not in ex["tags"] and not ex.get("not_overhead"):
+            err(f"{owner}: vertical push/pull needs the overhead tag (or \"not_overhead\": true)")
+        if ex["load"] == "BARBELL" and ex.get("bar") == "barbell" and ex["pattern"] in ("SQUAT", "LUNGE", "VERTICAL_PUSH") \
+                and "spinal_loading" not in ex["tags"] and not ex.get("not_overhead"):
+            err(f"{owner}: standing barbell squat/lunge/press needs the spinal_loading tag")
+        if ex["pattern"] == "LOADED_CARRY" and any(ex["joints"].get(j, 0) < 1 for j in ("KNEE", "HIP", "ANKLE")):
+            err(f"{owner}: carries load the knee, hip and ankle (joint stress ≥ 1 each)")
+        if ex.get("failure_safe") and "overhead" in ex["tags"] and ex["load"] in ("DUMBBELL", "KETTLEBELL", "BARBELL"):
+            err(f"{owner}: a free weight held overhead is never failure-safe (INT-003)")
         validate_text(owner, ex["text"])
 
     by_id = {ex["id"]: ex for ex in exercises}
@@ -305,6 +317,11 @@ def main():
         for p in d.get("prepares", []):
             if p not in PATTERNS:
                 err(f"{owner}: unknown pattern {p}")
+        for j, v in d.get("joints", {}).items():
+            if j not in JOINTS or not isinstance(v, int) or not 0 <= v <= 4:
+                err(f"{owner}: bad joint stress {j}={v}")
+        if "joints" not in d:
+            err(f"{owner}: drills need a joints map (0-4 per loaded joint; {{}} for none) so pain limits apply")
         if d.get("unit") not in ("REPS", "SECONDS"):
             err(f"{owner}: unit must be REPS or SECONDS")
         for e in d.get("equipment", []):
@@ -404,9 +421,10 @@ def write_or_check(meta, exercises, drills, modalities):
         lib.append("    )\n")
     lib.append("    val drills: List<Drill> = listOf(")
     for d in drills:
+        joints = ", ".join(f"Joint.{j} to {v}" for j, v in d.get("joints", {}).items())
         lib.append(f"        Drill({kstr(d['id'])}, {kstr(d['name'])}, DrillKind.{d['kind']}, {kset('Region', d.get('regions', []))}, "
                    f"{kset('Pattern', d.get('prepares', []))}, DoseUnit.{d['unit']}, {d['amount']}, {str(bool(d.get('per_side'))).lower()}, "
-                   f"{kstrset(d.get('equipment', []))}),")
+                   f"{kstrset(d.get('equipment', []))}, {'mapOf(' + joints + ')' if joints else 'emptyMap()'}),")
     lib.append("    )\n")
     lib.append("    val modalities: List<ModalityInfo> = listOf(")
     for m in modalities:

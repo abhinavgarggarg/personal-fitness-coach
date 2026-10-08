@@ -184,7 +184,9 @@ object TimeBudget {
                     val minRounds = Math.ceil(o.rounds * (1 - P.TIME_002.p2_max_cut_pct / 100.0) - 1e-9).toInt()
                     if (c.rounds > minRounds) { changed = true; item.copy(conditioning = c.copy(rounds = c.rounds - 1)) } else item
                 } else {
-                    val minWork = Math.ceil(o.workSec * (1 - P.TIME_002.p2_max_cut_pct / 100.0) - 1e-9).toInt()
+                    // ≤ 40% shorter (TIME-002), and a steady block of ≥ 10 min keeps 10 min so it still counts (FREQ-005).
+                    val freqFloor = if (o.workSec >= P.FREQ_005.min_block_minutes * 60) P.FREQ_005.min_block_minutes * 60 else 0
+                    val minWork = maxOf(freqFloor, Math.ceil(o.workSec * (1 - P.TIME_002.p2_max_cut_pct / 100.0) - 1e-9).toInt())
                     val next = maxOf(minWork, c.workSec - Math.ceil(o.workSec * 0.1).toInt())
                     if (next < c.workSec) { changed = true; item.copy(conditioning = c.copy(workSec = next)) } else item
                 }

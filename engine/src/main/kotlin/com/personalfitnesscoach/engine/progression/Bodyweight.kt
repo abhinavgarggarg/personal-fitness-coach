@@ -34,12 +34,14 @@ object Bodyweight {
     private val CORE_FAMILIES = setOf("anti_extension", "anti_rotation", "anti_lateral_flexion", "rotation", "crawl", "bracing")
 
     /** BW-002 top of range: push-ups 15, pull-ups 10–12 (the exercise's own top within that), squats 20. */
-    fun topOfRange(ex: Exercise): Int = when (ex.family) {
+    fun topOfRange(ex: Exercise): Int = minOf(ex.maxExtendedReps, when (ex.family) {
         "push_up" -> P.BW_002.top_of_range.push_up
-        "pull_up" -> ex.defaultRepRange.last.coerceIn(P.BW_002.top_of_range.pull_up[0], P.BW_002.top_of_range.pull_up[1])
+        // Full pull-ups: 10–12; easier rungs such as slow negatives use their own (lower) top.
+        "pull_up" -> if (ex.defaultRepRange.last < P.BW_002.top_of_range.pull_up[0]) ex.defaultRepRange.last
+            else ex.defaultRepRange.last.coerceIn(P.BW_002.top_of_range.pull_up[0], P.BW_002.top_of_range.pull_up[1])
         "squat" -> P.BW_002.top_of_range.squat
         else -> ex.defaultRepRange.last
-    }
+    })
 
     fun isCoreLadder(ex: Exercise): Boolean = ex.family in CORE_FAMILIES ||
         (ex.family == null && (ex.pattern.coreCategory || ex.pattern == Pattern.ROTATION))
@@ -66,11 +68,15 @@ object Bodyweight {
 
         // CORE-002: 3 solid sets of 30–45 s (or 10–12/side) at about RIR 2, two sessions running → next rung.
         if (isCoreLadder(ex)) {
-            val need = if (ex.unit == DoseUnit.SECONDS) P.CORE_002.hold_seconds[0] else P.CORE_002.reps_per_side[0]
+            // Holds: 30–45 s; reps: 10–12 per side; carries and crawls: the top of their own distance range.
+            val (need, top, step) = when (ex.unit) {
+                DoseUnit.SECONDS -> Triple(P.CORE_002.hold_seconds[0], P.CORE_002.hold_seconds[1], 5)
+                DoseUnit.METRES -> Triple(ex.defaultRepRange.last, ex.defaultRepRange.last, 5)
+                DoseUnit.REPS -> Triple(P.CORE_002.reps_per_side[0], P.CORE_002.reps_per_side[1], 1)
+            }
             val solid = twoSessions && recent2.all { s -> s.sets.count { it.reps >= need && (it.rir ?: -1.0) >= 2.0 } >= 3 }
             if (solid && next != null) return out(BwAction.STEP_UP, next.id, next.defaultRepRange.first, null, ReasonKey.BW_STEP_UP, listOf(RuleIds.CORE_002, RuleIds.PROG_005))
-            val target = minOf(maxOf(last.sets.minOf { it.reps } + (if (ex.unit == DoseUnit.SECONDS) 5 else 1), lo),
-                if (ex.unit == DoseUnit.SECONDS) P.CORE_002.hold_seconds[1] else P.CORE_002.reps_per_side[1])
+            val target = minOf(maxOf(last.sets.minOf { it.reps } + step, lo), top, ex.maxExtendedReps)
             return out(BwAction.REPS_UP, ex.id, target, null, ReasonKey.REPS_UP, listOf(RuleIds.CORE_002, RuleIds.BW_001))
         }
 

@@ -231,7 +231,7 @@
     "equipment": ["barbell", "rack"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 2, "SPINE": 2, "WRIST": 1}, "fatigue": 4,
     "reps": [5, 8], "max_reps": 12, "e1rm": true, "setup": 50, "station": "rack",
-    "tags": ["overhead"], "regression": "db-shoulder-press",
+    "tags": ["overhead", "spinal_loading"], "regression": "db-shoulder-press",
     "text": {
       "setup": "Set the bar at upper-chest height in the rack. Grip just outside shoulder-width, step back with the bar resting on the front of your shoulders.",
       "cues": ["Squeeze glutes and brace so the lower back does not arch.", "Press the bar straight up, moving your head back then through once it passes.", "Finish with the bar over the middle of your feet."],
@@ -243,7 +243,7 @@
     "pattern": "VERTICAL_PUSH", "class": "BARBELL", "primary": ["FRONT_DELTS", "CHEST"], "secondary": ["TRICEPS", "CORE"],
     "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
-    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 40, "station": "landmine",
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 40, "station": "landmine", "not_overhead": true,
     "text": {
       "setup": "Load one end of a barbell anchored in a landmine. Kneel on the knee on the same side as the pressing arm and hold the bar end at your shoulder.",
       "cues": ["Squeeze the glute of the down knee.", "Press up and forward until the arm is straight.", "Lower back to the shoulder with control."],
@@ -255,7 +255,7 @@
     "pattern": "VERTICAL_PUSH", "class": "BARBELL", "primary": ["FRONT_DELTS", "QUADS", "TRICEPS"], "secondary": ["GLUTES", "CORE"],
     "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "KNEE": 1, "ELBOW": 1}, "fatigue": 3,
-    "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "unilateral": true, "tempo": 2.5, "setup": 40, "station": "landmine", "power": true,
+    "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "unilateral": true, "tempo": 2.5, "setup": 40, "station": "landmine", "not_overhead": true, "power": true,
     "text": {
       "setup": "Stand facing the landmine holding the loaded bar end at one shoulder, feet hip-width apart.",
       "cues": ["Dip quickly by bending the knees a little.", "Drive up through the legs and punch the bar up and forward.", "Lower under control and reset."],

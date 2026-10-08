@@ -70,16 +70,24 @@ object Aerobic {
      * AER-003 / PROG-006 steady progression: add 2–5 min per session (+3 by default) without
      * exceeding +15% of last week's aerobic minutes, until 30–40 min of Z1; then tempo, then intervals.
      */
+    /**
+     * @param plannedThisWeekMin aerobic minutes already planned in the week's *other* sessions
+     * @param sessionsLeft sessions still to plan this week, including this one; they share what is left of the weekly cap
+     */
     fun nextZ1Minutes(currentSessionMin: Double, lastWeekMin: Double, plannedThisWeekMin: Double, sessionsLeft: Int): EngineResult<Double> {
         val target = P.AER_003.z1_target_minutes[1].toDouble()
-        if (currentSessionMin >= target) return EngineResult(target)
         val step = 3.0.coerceIn(P.AER_003.per_session_minutes[0].toDouble(), P.AER_003.per_session_minutes[1].toDouble())
-        val weekCap = if (lastWeekMin > 0) lastWeekMin * (1 + P.AER_003.weekly_increase_pct_max / 100.0) else Double.MAX_VALUE
-        val room = if (sessionsLeft <= 0) 0.0 else (weekCap - plannedThisWeekMin) / sessionsLeft
-        val next = minOf(currentSessionMin + step, target, maxOf(currentSessionMin, currentSessionMin + room))
-        return EngineResult(Num.round1(next), listOf(Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.AER_003, RuleIds.PROG_006),
+        val weekCap = weeklyCap(lastWeekMin)
+        val allowed = if (sessionsLeft <= 0) 0.0 else (weekCap - plannedThisWeekMin) / sessionsLeft
+        val next = maxOf(0.0, minOf(currentSessionMin + step, target, allowed))
+        // Rounded down to 0.1 min so the weekly cap is never exceeded by rounding.
+        return EngineResult(Math.floor(next * 10 + 1e-9) / 10.0, listOf(Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.AER_003, RuleIds.PROG_006),
             ReasonKey.AEROBIC_DURATION_UP, inputs = mapOf("current" to currentSessionMin, "lastWeek" to lastWeekMin), outputs = mapOf("next" to next))))
     }
+
+    /** AER-003 / PROG-007: this week's aerobic minutes may be at most +15% on last week's (no limit before there is a week to compare). */
+    fun weeklyCap(lastWeekMin: Double): Double =
+        if (lastWeekMin > 0) lastWeekMin * (1 + P.AER_003.weekly_increase_pct_max / 100.0) else Double.MAX_VALUE
 
     /** AER-003: duration first; tempo once Z1 sessions reach 30 min; intervals once tempo is established and HIIT-003 allows. */
     fun stage(z1SessionMin: Double, tempoWeeks: Int, hiitBaseReady: Boolean): Stage = when {
@@ -209,21 +217,23 @@ object HiitMenu {
     }
 
     /**
-     * Protocol by block and purpose. The very first HIIT is always SHORT at 1:2 (HIIT-003); sprints
-     * only for advanced lifters, at most once a week; strength and build blocks use SHORT (lowest
-     * leg cost); the conditioning block alternates LONG and MEDIUM; the power block uses SHORT,
-     * or SPRINT for advanced lifters.
+     * Protocol by block and purpose, following the Phase 1 blueprint (D-050): Foundation and
+     * Strength blocks use SHORT; Build blocks LONG; the Conditioning block LONG then SHORT; the
+     * Power block SHORT, or one SPRINT a week for advanced lifters; Consolidation MEDIUM then
+     * SHORT. The very first HIIT is always SHORT at 1:2 (HIIT-003). `sessionIndex` is 0 for the
+     * week's first HIIT session, 1 for the second.
      */
-    fun choose(block: BlockKind, level: Level, hiitDoneEver: Int, sprintsThisWeek: Int, weekIndexInBlock: Int): EngineResult<HiitProtocol> {
+    fun choose(block: BlockKind, level: Level, hiitDoneEver: Int, sprintsThisWeek: Int, sessionIndex: Int): EngineResult<HiitProtocol> {
         val p = when {
             hiitDoneEver == 0 -> HiitProtocol.SHORT
-            block == BlockKind.CONDITIONING -> if (weekIndexInBlock % 2 == 1) HiitProtocol.LONG else HiitProtocol.MEDIUM
+            block == BlockKind.BUILD -> HiitProtocol.LONG
+            block == BlockKind.CONDITIONING -> if (sessionIndex == 0) HiitProtocol.LONG else HiitProtocol.SHORT
             block == BlockKind.POWER && level == Level.ADVANCED && sprintsThisWeek < P.HIIT_002.sprint.per_week_max -> HiitProtocol.SPRINT
-            level == Level.ADVANCED && block == BlockKind.CONSOLIDATION -> HiitProtocol.MEDIUM
+            block == BlockKind.CONSOLIDATION -> if (sessionIndex == 0) HiitProtocol.MEDIUM else HiitProtocol.SHORT
             else -> HiitProtocol.SHORT
         }
         return EngineResult(p, listOf(Decision(DecisionKind.LOAD_PRESCRIPTION, listOf(RuleIds.HIIT_002, RuleIds.HIIT_003), ReasonKey.HIIT_PROTOCOL_CHOSEN,
-            inputs = mapOf("block" to block.name, "level" to level.name, "hiitDoneEver" to hiitDoneEver), outputs = mapOf("protocol" to p.name))))
+            inputs = mapOf("block" to block.name, "level" to level.name, "hiitDoneEver" to hiitDoneEver, "sessionIndex" to sessionIndex), outputs = mapOf("protocol" to p.name))))
     }
 
     /** Starting prescription: bottom of the band; beginners and first-ever HIIT use a 1:2 work:rest ratio. */
@@ -237,17 +247,38 @@ object HiitMenu {
         return Interval(p, b.reps.first, work, rest, cr10)
     }
 
-    /** PROG-006: +1 repeat → longer work → shorter rest; at the top of the band, hold (pace +1–2% is the next lever). */
-    fun progress(cur: Interval): Interval {
+    /**
+     * PROG-006: +1 repeat → longer work → shorter rest; at the top of the band, hold (pace +1–2% is the
+     * next lever). Sprints keep rest ≥ 6 × work; beginners on SHORT intervals keep rest ≥ 2 × work (HIIT-002).
+     */
+    fun progress(cur: Interval, level: Level = Level.INTERMEDIATE): Interval {
         val b = band(cur.protocol)
-        val minRest = if (cur.protocol == HiitProtocol.SPRINT) maxOf(b.rest.first, cur.workSec * 6) else b.rest.first
+        val ratio = when {
+            cur.protocol == HiitProtocol.SPRINT -> 6
+            cur.protocol == HiitProtocol.SHORT && level == Level.BEGINNER -> 2
+            else -> 0
+        }
+        fun minRest(work: Int) = maxOf(b.rest.first, work * ratio)
         return when {
             cur.reps < b.reps.last -> cur.copy(reps = cur.reps + 1)
-            cur.workSec < b.work.last -> cur.copy(workSec = minOf(b.work.last, cur.workSec + 15))
-            cur.restSec > minRest -> cur.copy(restSec = maxOf(minRest, cur.restSec - 15))
+            cur.workSec < b.work.last && minRest(minOf(b.work.last, cur.workSec + 15)) <= b.rest.last -> {
+                val w = minOf(b.work.last, cur.workSec + 15)
+                cur.copy(workSec = w, restSec = maxOf(cur.restSec, minRest(w)))
+            }
+            cur.restSec > minRest(cur.workSec) -> cur.copy(restSec = maxOf(minRest(cur.workSec), cur.restSec - 15))
             else -> cur
         }
     }
+
+    /** The smallest valid HIIT session: the HIIT-003 first protocol (SHORT at 1:2), in minutes of work. */
+    fun firstSessionWorkMinutes(): Double = start(HiitProtocol.SHORT, Level.BEGINNER, firstEver = true).workMinutes
+
+    /**
+     * PROG-007: this week's HIIT work may be at most +2 min on last week's; the first HIIT-003 session is
+     * always allowed once the base is ready, even when that is a little more than 2 minutes (D-053).
+     */
+    fun weeklyWorkBudget(lastWeekWorkMin: Double): Double =
+        maxOf(lastWeekWorkMin + P.PROG_007.hiit_work_min_week, firstSessionWorkMinutes())
 
     /** HIIT-005: a session's HIIT work cap in minutes for the protocol. */
     fun workCapMinutes(p: HiitProtocol): Double = when (p) {

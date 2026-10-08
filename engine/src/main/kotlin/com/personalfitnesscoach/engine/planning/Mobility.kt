@@ -42,20 +42,24 @@ object Mobility {
         Joint.ANKLE -> setOf(Region.ANKLES)
     }
 
-    private fun usable(d: Drill, equipment: Set<String>) = equipment.containsAll(d.equipment) || d.equipment.all { it == "mat" }
+    private fun usable(d: Drill, equipment: Set<String>, limits: Map<Joint, Int> = emptyMap()) =
+        (equipment.containsAll(d.equipment) || d.equipment.all { it == "mat" }) && limits.all { (j, lim) -> d.stress(j) <= lim }
 
     /**
      * MOB-001: 3–5 minutes of dynamic drills for the session's patterns, inside the warm-up.
      * Restricted-joint drills go first (ORD-002); a balance drill is added at 65+ (WU-004).
      */
-    fun warmupDrills(patterns: Set<Pattern>, equipment: Set<String>, restricted: Set<Joint> = emptySet(), age: Int? = null): EngineResult<List<DrillDose>> {
+    fun warmupDrills(patterns: Set<Pattern>, equipment: Set<String>, restricted: Set<Joint> = emptySet(), age: Int? = null,
+                     jointLimits: Map<Joint, Int> = emptyMap()): EngineResult<List<DrillDose>> {
         val maxSec = P.MOB_001.minutes[1] * 60
         val minSec = P.MOB_001.minutes[0] * 60
-        val pool = drills.filter { (it.kind == DrillKind.MOBILISE || it.kind == DrillKind.ACTIVATE) && usable(it, equipment) }
+        // Pain limits apply to drills too (SAF-003): a drill never loads a joint beyond today's limit.
+        val pool = drills.filter { (it.kind == DrillKind.MOBILISE || it.kind == DrillKind.ACTIVATE) && usable(it, equipment, jointLimits) }
         val chosen = ArrayList<Drill>()
         // Restricted joints first.
         val restrictedRegions = restricted.flatMap { regionsOf(it) }.toSet()
-        pool.filter { d -> d.regions.any { it in restrictedRegions } }.sortedBy { it.id }.take(1).forEach { chosen += it }
+        pool.filter { d -> d.regions.any { it in restrictedRegions } }
+            .sortedWith(compareBy<Drill>({ d -> restricted.sumOf { d.stress(it) } }, { it.id })).take(1).forEach { chosen += it }
         // Then greedy cover of the session's patterns: most uncovered patterns first, ties by ID.
         val uncovered = patterns.toMutableSet()
         uncovered.removeAll(chosen.flatMap { it.prepares }.toSet())
@@ -72,7 +76,7 @@ object Mobility {
         }
         val out = chosen.map { DrillDose(it, 1, it.amount) }.toMutableList()
         if (age != null && age >= 65 && P.WU_004.age_65_balance_drill) {
-            drills.filter { it.kind == DrillKind.BALANCE && usable(it, equipment) }.minByOrNull { it.id }?.let { out += DrillDose(it, 1, it.amount) }
+            drills.filter { it.kind == DrillKind.BALANCE && usable(it, equipment, jointLimits) }.minByOrNull { it.id }?.let { out += DrillDose(it, 1, it.amount) }
         }
         return EngineResult(out, listOf(Decision(DecisionKind.WARMUP, listOf(RuleIds.MOB_001) + if (restricted.isNotEmpty()) listOf(RuleIds.ORD_002) else emptyList(),
             ReasonKey.MOBILITY_PLANNED, inputs = mapOf("patterns" to patterns.map { it.name }.sorted()), outputs = mapOf("drills" to out.map { it.drill.id }))))
@@ -85,7 +89,7 @@ object Mobility {
      * MOB-002 cool-down: 30–60 s stretches for the muscles trained, then 1–2 minutes of slow
      * breathing. `minutes` is the cool-down budget (≥ 2, TIME-001).
      */
-    fun cooldown(trained: Set<Muscle>, minutes: Double, equipment: Set<String> = emptySet()): EngineResult<List<DrillDose>> {
+    fun cooldown(trained: Set<Muscle>, minutes: Double, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int> = emptyMap()): EngineResult<List<DrillDose>> {
         val breathing = drills.first { it.kind == DrillKind.BREATHING }
         val minBreath = P.MOB_002.breathing_minutes[0] * 60
         val maxBreath = P.MOB_002.breathing_minutes[1] * 60
@@ -95,7 +99,7 @@ object Mobility {
         val out = ArrayList<DrillDose>()
         var used = 0
         // Stretches first, keeping room for at least 1 minute of breathing (+10 s change-over).
-        for (d in drills.filter { it.kind == DrillKind.STRETCH && usable(it, equipment) && it.regions.any { r -> r in regions } }
+        for (d in drills.filter { it.kind == DrillKind.STRETCH && usable(it, equipment, jointLimits) && it.regions.any { r -> r in regions } }
             .sortedWith(compareByDescending<Drill> { d -> d.regions.count { it in regions } }.thenBy { it.id })) {
             val dose = DrillDose(d, 1, holdSec)
             if (used + dose.seconds > budget - minBreath - 10) continue
@@ -110,9 +114,9 @@ object Mobility {
      * MOB-003: an optional drill for the *next* exercise during rests, only when it does not
      * work the muscles of the current exercise. Null when nothing qualifies.
      */
-    fun betweenSets(current: Exercise, next: Exercise, equipment: Set<String>): Drill? {
+    fun betweenSets(current: Exercise, next: Exercise, equipment: Set<String>, jointLimits: Map<Joint, Int> = emptyMap()): Drill? {
         val busy = (current.primary + current.secondary).flatMap { regionsOf(it) }.toSet()
-        return drills.filter { it.kind == DrillKind.MOBILISE && usable(it, equipment) && next.pattern in it.prepares && it.regions.none { r -> r in busy } }
+        return drills.filter { it.kind == DrillKind.MOBILISE && usable(it, equipment, jointLimits) && next.pattern in it.prepares && it.regions.none { r -> r in busy } }
             .minByOrNull { it.id }
     }
 
@@ -123,10 +127,10 @@ object Mobility {
      * MOB-005: optional off-day routine of 10–20 minutes covering hips, upper back, shoulders and
      * ankles, 2 × 30–60 s per position.
      */
-    fun offDayRoutine(minutes: Int, equipment: Set<String> = emptySet()): EngineResult<List<DrillDose>> {
+    fun offDayRoutine(minutes: Int, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int> = emptyMap()): EngineResult<List<DrillDose>> {
         val m = minutes.coerceIn(P.MOB_005.minutes[0], P.MOB_005.minutes[1])
         val focus = listOf(Region.HIPS, Region.UPPER_BACK, Region.SHOULDERS, Region.ANKLES)
-        val pool = drills.filter { (it.kind == DrillKind.MOBILISE || it.kind == DrillKind.STRETCH) && usable(it, equipment) }
+        val pool = drills.filter { (it.kind == DrillKind.MOBILISE || it.kind == DrillKind.STRETCH) && usable(it, equipment, jointLimits) }
         val ordered = focus.flatMap { r -> pool.filter { r in it.regions }.sortedBy { it.id } }.distinct() +
             pool.filter { d -> focus.none { it in d.regions } }.sortedBy { it.id }
         val out = ArrayList<DrillDose>()

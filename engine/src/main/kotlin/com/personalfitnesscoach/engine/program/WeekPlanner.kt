@@ -70,6 +70,8 @@ data class WeekInput(
     val hiitExposures: Int = 0,
     val z1SessionMinutes: Double = 15.0,
     val lastWeekAerobicMinutes: Double = 0.0,
+    /** Last week's HIIT work minutes (PROG-007: +2 min a week at most). */
+    val lastWeekHiitWorkMinutes: Double = 0.0,
     val carryOrRotationLastWeek: Set<Pattern> = emptySet(),
     val injuries: Set<Joint> = emptySet(),
     val blockedTags: Set<String> = emptySet(),
@@ -148,6 +150,9 @@ object WeekPlanner {
     private val TARGET_MUSCLES = listOf(Muscle.CHEST, Muscle.LATS, Muscle.UPPER_BACK, Muscle.SIDE_DELTS, Muscle.REAR_DELTS,
         Muscle.BICEPS, Muscle.TRICEPS, Muscle.QUADS, Muscle.HAMSTRINGS, Muscle.GLUTES)
 
+    /** CORE-003 counts dedicated core work: anti-movement core, rotation and loaded carries (D-054). */
+    fun isCoreWork(s: PlannedSlot): Boolean = s.spec.role == SlotRole.CORE || s.spec.role == SlotRole.ROTATION || s.spec.role == SlotRole.CARRY
+
     private fun selection(i: WeekInput) = SelectionContext(i.level, i.weeksTraining, i.equipment, i.blockedTags, i.jointLimits, i.excludedIds,
         i.preferences, i.favourites, i.crowded, i.ladderRungs, i.coreLifts, i.previousBlockChoices)
 
@@ -171,12 +176,24 @@ object WeekPlanner {
         val deload = (i.week.kind == WeekKind.DELOAD_OR_PIVOT && i.deload) || type == BlockType.REVIEW
         val light = deload || type == BlockType.CALIBRATE
         val dose = Blueprint.dose(type, i.level)
-        val days = Frequency.trainingDays(i.daysPerWeek)
-        val templates = Templates.forDays(days)
-        val assign = Templates.assign(templates, i.availableDays, i.preferredDays, i.level)
+        // FREQ-001 days, never more than the days actually available; templates for the number that will be trained.
+        val avail = i.availableDays.filter { it in 0..6 }.toSet().ifEmpty { (0..6).toSet() }
+        var days = Frequency.trainingDays(i.daysPerWeek)
+        if (avail.size >= P.FREQ_001.min_days) days = minOf(days, avail.size)
+        var assign = Templates.assign(Templates.forDays(days), avail, i.preferredDays, i.level)
+        // SCH-002: if the available days force more than 3 hard days in a row, train one day fewer.
+        while (Templates.maxHardRun(assign.value.days, assign.value.order) > P.SCH_002.max_consecutive_hard_days && days > P.FREQ_001.min_days) {
+            days--
+            assign = Templates.assign(Templates.forDays(days), avail, i.preferredDays, i.level)
+            d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.SCH_002), ReasonKey.WEEK_DAYS_REDUCED, outputs = mapOf("days" to days, "reason" to "consecutive_hard_days"))
+        }
         d += assign.decisions
         val order = assign.value.order
         val weekdays = assign.value.days
+        // SCH-002: heavy lower-body days closer than 48 h → the later one becomes a moderate lower-body day.
+        val downgraded = Templates.heavyConflicts(weekdays, order)
+        if (downgraded.isNotEmpty()) d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.SCH_002), ReasonKey.DAY_SPACING_ADJUSTED,
+            outputs = mapOf("moderated" to downgraded.map { weekdays[it] }))
 
         // Slots (power only outside calibration/deload; AGE-001 keeps power year-round from 50).
         val powerOk = !light && (dose.power || (i.age != null && i.age >= 50 && P.AGE_001.age_50.power_year_round))
@@ -186,19 +203,26 @@ object WeekPlanner {
         val coreLifts = LinkedHashMap<String, String>()
         val dayList = ArrayList<PlannedDay>()
         var firstLower = true
+        var impactPowerChosen = false
         for ((idx, t) in order.withIndex()) {
             val isLowerish = t == DayTemplate.FB_A || t == DayTemplate.LOWER_H || t == DayTemplate.FB_B || t == DayTemplate.LOWER_M
             val withPower = powerOk && isLowerish && firstLower && (t == DayTemplate.FB_A || t == DayTemplate.LOWER_H)
             if (withPower) firstLower = false
             val specs = Templates.slots(t, days, withPower, secondPower && (t == DayTemplate.FB_B || t == DayTemplate.LOWER_M))
                 .map { s -> if (s.role == SlotRole.CARRY_OR_ROTATION) resolveCarryRotation(s, i) else s }
+                .map { s -> if (idx in downgraded && s.exposure == Exposure.HEAVY) s.copy(exposure = Exposure.MODERATE) else s }
             val slots = ArrayList<PlannedSlot>()
             var p1Given = false
             for (spec in specs) {
-                val r = Selector.select(spec, ctx, used)
+                // CON-004: at most one jumping power exercise a week.
+                // An exercise appears at most once a day; a slot with nothing else left stays empty.
+                val today = ctx.copy(excludedIds = ctx.excludedIds + slots.map { it.exercise.id })
+                val c = if (spec.role == SlotRole.POWER && impactPowerChosen) today.copy(library = today.library.filter { it.impact == 0 }) else today
+                val r = Selector.select(spec, c, used)
                 d += r.decisions
                 val ex = r.value ?: continue
                 used += ex.id
+                if (spec.role == SlotRole.POWER && ex.impact > 0) impactPowerChosen = true
                 if (spec.role == SlotRole.MAIN) coreLifts[spec.key] = ex.id
                 val priority = when (spec.role) {
                     SlotRole.MAIN -> if (!p1Given) { p1Given = true; Priority.P1 } else Priority.P3
@@ -208,7 +232,7 @@ object WeekPlanner {
                 }
                 slots += doseSlot(spec, ex, i, type, blockWeek, loadingWeeks, dose, deload, light, priority)
             }
-            dayList += PlannedDay(weekdays[idx], t, slots, emptyList(), if (deload) 5.0 else 0.0, t.heavyLower)
+            dayList += PlannedDay(weekdays[idx], t, slots, emptyList(), if (deload) 5.0 else 0.0, t.heavyLower && idx !in downgraded)
         }
         var week = dayList.sortedBy { it.weekday }
 
@@ -229,6 +253,11 @@ object WeekPlanner {
         d += issues.decisions
         val aerobic = week.flatMap { day -> day.conditioning.map { AerobicBlock(it.zone, it.workMinutes, day.weekday) } }
         d += Aerobic.whoCheck(aerobic, week.count { it.slots.isNotEmpty() }).decisions
+        // FREQ-005 (aerobic on ≥ 3 days from 3 training days) and CON-006 (strength blocks: mostly Z1, ≤ 150 min) are reported when missed.
+        val freqOk = Aerobic.frequencyOk(aerobic, week.count { it.slots.isNotEmpty() || it.conditioning.isNotEmpty() })
+        val strengthOk = !type.isStrengthEmphasis || Aerobic.strengthBlockOk(aerobic)
+        if (!freqOk || !strengthOk) d += Decision(DecisionKind.VOLUME_CHANGE, listOfNotNull(if (!freqOk) RuleIds.FREQ_005 else null, if (!strengthOk) RuleIds.CON_006 else null),
+            ReasonKey.AEROBIC_CHECK_FAILED, outputs = mapOf("frequencyOk" to freqOk, "strengthBlockOk" to strengthOk))
         val weekly = Volume.weekly(week.flatMap { day -> day.slots.map { it.exercise to it.sets.toDouble() } })
         d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.SCH_001, RuleIds.PER_001, RuleIds.FREQ_002), ReasonKey.WEEK_PLANNED,
             inputs = mapOf("block" to type.name, "blockWeek" to blockWeek, "deload" to deload, "days" to days),
@@ -260,8 +289,8 @@ object WeekPlanner {
                 slots = slots.filterIndexed { j, _ -> j != k }
             }
             val cond = day.conditioning.map { c ->
-                if (c.zone == Zone.Z1 && !c.hiit) c else PlannedConditioning(c.modality, Zone.Z1,
-                    minOf(c.workMinutes + c.restMinutes, P.RDY_004.LIGHT.z1_minutes[1].toDouble()).coerceAtLeast(P.FREQ_005.min_block_minutes.toDouble()))
+                if (c.zone == Zone.Z1 && !c.hiit) c else c.copy(zone = Zone.Z1, hiit = false, interval = null, restMinutes = 0.0, purpose = ConditioningPurpose.STEADY,
+                    workMinutes = minOf(c.workMinutes + c.restMinutes, P.RDY_004.LIGHT.z1_minutes[1].toDouble()).coerceAtLeast(P.FREQ_005.min_block_minutes.toDouble()))
             }
             day.copy(slots = slots, conditioning = cond, mobilityMinutes = maxOf(day.mobilityMinutes, 5.0), conditioningPriority = false)
         }
@@ -431,14 +460,32 @@ object WeekPlanner {
             }
         }
         // CORE-003 minimum: reach 6 core sets a week (≤ 4 per session, ≤ 3 per exercise), making room on that
-        // day by taking a set from its largest accessory or secondary when the session would run long.
-        val isCore: (PlannedSlot) -> Boolean = { it.spec.role == SlotRole.CORE || it.spec.role == SlotRole.ROTATION }
+        // day by taking a set from its largest accessory or secondary when the session would run long. When the weekly
+        // credit of a muscle the core exercise trains is already at the SAF-005 cap (compound lifts credit the trunk as a
+        // secondary muscle), incidental credit gives way to dedicated core work: a set comes off the non-P1 accessory or
+        // secondary that credits that muscle only as a secondary (D-054).
+        val isCore: (PlannedSlot) -> Boolean = ::isCoreWork
         var coreGuard = 0
-        while (!deload && week.sumOf { d -> d.slots.filter(isCore).sumOf { it.sets } } < P.CORE_003.weekly_sets[0] && coreGuard++ < 20) {
-            val cand = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
+        while (!deload && week.sumOf { d -> d.slots.filter(isCore).sumOf { it.sets } } < P.CORE_003.weekly_sets[0] && coreGuard++ < 40) {
+            val cands = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
                 if (isCore(s) && s.sets < 3 && day.slots.filter(isCore).sumOf { it.sets } < P.CORE_003.max_sets_per_session) Triple(di, si, s) else null } }
-                .minWithOrNull(compareBy<Triple<Int, Int, PlannedSlot>>({ it.third.sets }, { it.first }, { it.second })) ?: break
-            if (!addOk(cand.first, cand.second)) break
+                .sortedWith(compareBy<Triple<Int, Int, PlannedSlot>>({ it.third.sets }, { it.first }, { it.second }))
+            if (cands.isEmpty()) break
+            val cand = cands.firstOrNull { addOk(it.first, it.second) }
+            if (cand == null) {
+                // Free weekly room for the cheapest candidate, or stop.
+                val first = cands.first()
+                val now = weekly(week)
+                val full = Volume.credit(first.third.exercise, 1.0).filter { (k, v) -> (now[k] ?: 0.0) + v > weeklyCap + 1e-9 }.keys
+                if (full.isEmpty()) break
+                val give = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
+                    if (s.spec.role in adjustable && s.priority != Priority.P1 && s.sets > 1 && !isCore(s) &&
+                        full.any { m -> m in s.exercise.secondary && m !in s.exercise.primary }) Triple(di, si, s) else null } }
+                    .maxWithOrNull(compareBy<Triple<Int, Int, PlannedSlot>>({ if (it.third.spec.role == SlotRole.ACCESSORY) 1 else 0 }, { it.third.sets }, { -it.first }, { -it.second }))
+                    ?: break
+                setSets(give.first, give.second, give.third.sets - 1)
+                continue
+            }
             setSets(cand.first, cand.second, cand.third.sets + 1)
             val day = week[cand.first]
             if (!fits(day, i)) {
@@ -479,7 +526,7 @@ object WeekPlanner {
         week = week.map { day ->
             var coreSets = 0
             day.copy(slots = day.slots.map { s ->
-                if (s.spec.role != SlotRole.CORE && s.spec.role != SlotRole.ROTATION) s else {
+                if (!isCoreWork(s)) s else {
                     val n = minOf(s.sets, P.CORE_003.max_sets_per_session - coreSets).coerceAtLeast(1)
                     coreSets += n; s.copy(sets = n)
                 }
@@ -559,22 +606,25 @@ object WeekPlanner {
         fun nextDayHeavyOrPower(wd: Int) = ((wd + 1) % 7) in heavyDays || ((wd + 1) % 7) in powerDays
         val jointSensitivity = if (i.injuries.isNotEmpty() || (i.age ?: 0) >= 50) 0.8 else 0.4
         val recent = ArrayList<Modality>()
-        var impactUsed = 0
+        // CON-004: impact work ≤ 1 session a week, counting jumping power exercises as well as conditioning.
+        val impactDays = week.filter { day -> day.slots.any { it.exercise.impact > 0 } }.map { it.weekday }.toMutableSet()
         fun pick(day: PlannedDay, purpose: ConditioningPurpose): Modality? {
             val legs = if (day.heavyLower || nextDayHeavyOrPower(day.weekday)) 1.0 else 0.3
-            val impactOk = impactUsed < P.CON_004.impact_sessions_per_week_max && !nextDayHeavyOrPower(day.weekday)
+            val impactOk = (day.weekday in impactDays || impactDays.size < P.CON_004.impact_sessions_per_week_max) && !nextDayHeavyOrPower(day.weekday)
             val r = ModalitySelection.rank(ModalityContext(i.equipment, purpose, legs, jointSensitivity, recent.toList(), i.modalityPreferences, i.jointLimits, impactOk))
             val m = r.value.firstOrNull()?.modality ?: return null
             recent += m
-            if (ModalitySelection.isImpact(m)) impactUsed++
+            if (ModalitySelection.isImpact(m)) impactDays += day.weekday
             return m
         }
+        fun impactOf(m: Modality) = if (ModalitySelection.isImpact(m)) 1 else 0
         // HIIT count: blueprint quota within HIIT-001/AGE-001/SAF-001/DEL-003 caps and only with a Z1 base (HIIT-003).
         val quota = Blueprint.hiitPerWeek(type, i.level, blockWeek, week.size)
         val cap = Caps.hiitPerWeek(HiitContext(i.level, Tier.FULL, 0, false, type == BlockType.CONDITIONING, i.screening, i.age, deload)).value
         val hiitCount = if (light || !i.hiitBaseReady || i.screening != ScreeningMode.STANDARD) 0 else minOf(quota, cap, P.HIIT_001.default_max)
-        // Z1 block length after strength: AER-003 duration progression, 10–20 min, a third of the session at most.
-        val z1Next = Aerobic.nextZ1Minutes(i.z1SessionMinutes, i.lastWeekAerobicMinutes, 0.0, maxOf(1, week.size)).value
+        // Z1 block length after strength: AER-003 duration progression within the +15% weekly cap, 10–20 min, a sixth of the session at most.
+        val aerobicDays = week.count { it.template != DayTemplate.EASY_AEROBIC_MOBILITY }
+        val z1Next = Aerobic.nextZ1Minutes(i.z1SessionMinutes, i.lastWeekAerobicMinutes, 0.0, maxOf(1, aerobicDays)).value
         val z1Post = z1Next.coerceIn(P.FREQ_005.min_block_minutes.toDouble(), maxOf(P.FREQ_005.min_block_minutes.toDouble(), minOf(20.0, i.sessionMinutes / 6.0)))
         // HIIT days: conditioning days first, then upper days, then full-body, then lower; never the day before heavy legs or power (CON-003/005).
         fun rank(t: DayTemplate) = when (t) {
@@ -589,60 +639,87 @@ object WeekPlanner {
                 .firstOrNull() ?: return@repeat
             hiitDays += c.weekday
         }
-        val protocol = HiitMenu.choose(type.kind, i.level, i.hiitDoneEver, 0, blockWeek)
-        if (hiitDays.isNotEmpty()) d += protocol.decisions
-        var interval = HiitMenu.start(protocol.value, i.level, i.hiitDoneEver == 0)
-        repeat(i.hiitExposures) { interval = HiitMenu.progress(interval) }
-        val capMin = HiitMenu.workCapMinutes(protocol.value)
-        while (interval.workMinutes > capMin + 1e-9 && interval.reps > 1) interval = interval.copy(reps = interval.reps - 1)
-        // Tempo (Z2) once a week in build/conditioning/consolidation blocks once the Z1 base exists (AER-003).
+        hiitDays.sort()
+        // One protocol per HIIT day (HIIT-002 by block), progressed (PROG-006) and kept inside the HIIT-005 session cap and the
+        // PROG-007 weekly work budget (+2 min on last week; D-053). A day whose interval cannot fit the budget gets steady work instead.
+        var budget = HiitMenu.weeklyWorkBudget(i.lastWeekHiitWorkMinutes)
+        val intervals = HashMap<Int, Interval>()
+        var sprints = 0
+        for ((n, wd) in hiitDays.withIndex()) {
+            val choice = HiitMenu.choose(type.kind, i.level, i.hiitDoneEver, sprints, n)
+            d += choice.decisions
+            fun build(p: HiitProtocol): Interval {
+                var iv = HiitMenu.start(p, i.level, i.hiitDoneEver == 0)
+                repeat(i.hiitExposures) { iv = HiitMenu.progress(iv, i.level) }
+                val band = HiitMenu.band(p)
+                val sessionCap = HiitMenu.workCapMinutes(p)
+                while ((iv.workMinutes > sessionCap + 1e-9 || iv.workMinutes > budget + 1e-9) && iv.reps > band.reps.first) iv = iv.copy(reps = iv.reps - 1)
+                return iv
+            }
+            var iv = build(choice.value)
+            if (iv.workMinutes > budget + 1e-9 && choice.value != HiitProtocol.SHORT) iv = build(HiitProtocol.SHORT)
+            if (iv.workMinutes > budget + 1e-9) continue
+            if (iv.protocol == HiitProtocol.SPRINT) sprints++
+            budget -= iv.workMinutes
+            intervals[wd] = iv
+        }
+        // Tempo (Z2) once a week in build/conditioning/consolidation blocks once the Z1 base exists (AER-003);
+        // only with standard screening — Z2 is vigorous (AER-001) and SAF-001 moderate-only users stay at Z1.
         val dose = Blueprint.dose(type, i.level)
-        var tempoLeft = if (light || !i.hiitBaseReady || i.screening == ScreeningMode.CONSERVATIVE) 0 else dose.tempoPerWeek
+        var tempoLeft = if (light || !i.hiitBaseReady || i.screening != ScreeningMode.STANDARD) 0 else dose.tempoPerWeek
+        fun tempo(m: Modality): PlannedConditioning {
+            val b = HiitMenu.band(null)
+            return PlannedConditioning(m, Zone.Z2, b.reps.first * b.work.first / 60.0, b.reps.first * b.rest.first / 60.0,
+                Interval(null, b.reps.first, b.work.first, b.rest.first, b.cr10), impact = impactOf(m))
+        }
         for ((idx, day) in week.withIndex()) {
             val blocks = ArrayList<PlannedConditioning>()
             var conditioningPriority = false
+            val iv = intervals[day.weekday]
             when {
-                day.weekday in hiitDays -> {
-                    val m = pick(day, ConditioningPurpose.INTERVALS)
-                    if (m != null) {
-                        val z = if (interval.protocol == HiitProtocol.SPRINT) Zone.Z4 else Zone.Z3
-                        blocks += PlannedConditioning(m, z, interval.workMinutes, interval.reps * interval.restSec / 60.0, interval, true,
-                            if (ModalitySelection.isImpact(m)) 1 else 0, ConditioningPurpose.INTERVALS)
-                        conditioningPriority = !day.template.strength
-                    }
+                iv != null -> pick(day, ConditioningPurpose.INTERVALS)?.let { m ->
+                    val z = if (iv.protocol == HiitProtocol.SPRINT) Zone.Z4 else Zone.Z3
+                    blocks += PlannedConditioning(m, z, iv.workMinutes, iv.reps * iv.restSec / 60.0, iv, true, impactOf(m), ConditioningPurpose.INTERVALS)
+                    conditioningPriority = !day.template.strength
                 }
                 day.template == DayTemplate.EASY_AEROBIC_MOBILITY -> pick(day, ConditioningPurpose.STEADY)?.let {
-                    blocks += PlannedConditioning(it, Zone.Z1, P.AER_003.z1_target_minutes[0].toDouble() + 5.0)
+                    blocks += PlannedConditioning(it, Zone.Z1, P.AER_003.z1_target_minutes[0].toDouble() + 5.0, impact = impactOf(it))
                 }
                 !day.template.strength && tempoLeft > 0 -> pick(day, ConditioningPurpose.STEADY)?.let {
-                    val b = HiitMenu.band(null)
-                    blocks += PlannedConditioning(it, Zone.Z2, b.reps.first * b.work.first / 60.0, b.reps.first * b.rest.first / 60.0,
-                        Interval(null, b.reps.first, b.work.first, b.rest.first, b.cr10))
-                    tempoLeft--; conditioningPriority = true
+                    blocks += tempo(it); tempoLeft--; conditioningPriority = true
                 }
-                !day.template.strength -> pick(day, ConditioningPurpose.STEADY)?.let { blocks += PlannedConditioning(it, Zone.Z1, 30.0) ; conditioningPriority = true }
+                !day.template.strength -> pick(day, ConditioningPurpose.STEADY)?.let {
+                    blocks += PlannedConditioning(it, Zone.Z1, 30.0, impact = impactOf(it)); conditioningPriority = true
+                }
                 tempoLeft > 0 && !day.heavyLower && (day.template == DayTemplate.UPPER_H || day.template == DayTemplate.UPPER_M || day.template == DayTemplate.FB_C) ->
-                    pick(day, ConditioningPurpose.STEADY)?.let {
-                        val b = HiitMenu.band(null)
-                        blocks += PlannedConditioning(it, Zone.Z2, b.reps.first * b.work.first / 60.0, b.reps.first * b.rest.first / 60.0,
-                            Interval(null, b.reps.first, b.work.first, b.rest.first, b.cr10))
-                        tempoLeft--
-                    }
-                else -> pick(day, ConditioningPurpose.STEADY)?.let { blocks += PlannedConditioning(it, Zone.Z1, z1Post) }
+                    pick(day, ConditioningPurpose.STEADY)?.let { blocks += tempo(it); tempoLeft-- }
+                else -> pick(day, ConditioningPurpose.STEADY)?.let { blocks += PlannedConditioning(it, Zone.Z1, z1Post, impact = impactOf(it)) }
             }
             val mobility = if (day.template == DayTemplate.EASY_AEROBIC_MOBILITY) P.MOB_005.minutes[0].toDouble() + 5.0 else day.mobilityMinutes
             week[idx] = day.copy(conditioning = blocks, mobilityMinutes = mobility, conditioningPriority = conditioningPriority)
         }
-        // AER-002: keep ≥ 75% of aerobic minutes in Z1 — turn tempo back into Z1 if the share falls short.
+        // AER-002: keep ≥ 75% of aerobic minutes in Z1 — turn tempo back into Z1 if the share falls short (impact kept).
         fun blocks() = week.flatMap { day -> day.conditioning.map { AerobicBlock(it.zone, it.workMinutes, day.weekday) } }
         if (!Aerobic.distributionOk(blocks())) {
             for ((idx, day) in week.withIndex()) week[idx] = day.copy(conditioning = day.conditioning.map {
-                if (it.zone == Zone.Z2 && !it.hiit) PlannedConditioning(it.modality, Zone.Z1, it.workMinutes + it.restMinutes) else it })
+                if (it.zone == Zone.Z2 && !it.hiit) it.copy(zone = Zone.Z1, workMinutes = it.workMinutes + it.restMinutes, restMinutes = 0.0, interval = null) else it })
+        }
+        // AER-003 / PROG-007: weekly aerobic minutes ≤ +15% on last week — shorten the longest steady Z1 blocks (not below 10 min).
+        val weekCap = Aerobic.weeklyCap(i.lastWeekAerobicMinutes)
+        var guard = 0
+        while (blocks().sumOf { it.workMinutes } > weekCap + 1e-9 && guard++ < 500) {
+            val target = week.withIndex().flatMap { (di, day) -> day.conditioning.mapIndexedNotNull { ci, c ->
+                if (c.zone == Zone.Z1 && c.interval == null && c.workMinutes > P.FREQ_005.min_block_minutes + 1e-9) Triple(di, ci, c) else null } }
+                .maxWithOrNull(compareBy({ it.third.workMinutes }, { -it.first })) ?: break
+            val over = blocks().sumOf { it.workMinutes } - weekCap
+            val next = maxOf(P.FREQ_005.min_block_minutes.toDouble(), target.third.workMinutes - minOf(1.0, over).coerceAtLeast(0.1))
+            week[target.first] = week[target.first].copy(conditioning = week[target.first].conditioning.mapIndexed { k, c -> if (k == target.second) c.copy(workMinutes = Num.round1(next)) else c })
         }
         d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.AER_002, RuleIds.AER_003, RuleIds.HIIT_001, RuleIds.HIIT_002, RuleIds.HIIT_003,
-            RuleIds.CON_003, RuleIds.CON_004, RuleIds.FREQ_005, RuleIds.MOD_002), ReasonKey.CONDITIONING_PLANNED,
-            inputs = mapOf("block" to type.name, "hiitQuota" to quota, "hiitCap" to cap, "baseReady" to i.hiitBaseReady),
-            outputs = mapOf("hiitDays" to hiitDays, "blocks" to week.flatMap { day -> day.conditioning.map { "${day.weekday}:${it.modality}:${it.zone}:${Num.round1(it.workMinutes)}" } }))
+            RuleIds.CON_003, RuleIds.CON_004, RuleIds.FREQ_005, RuleIds.MOD_002, RuleIds.PROG_007), ReasonKey.CONDITIONING_PLANNED,
+            inputs = mapOf("block" to type.name, "hiitQuota" to quota, "hiitCap" to cap, "baseReady" to i.hiitBaseReady, "lastWeekAerobic" to i.lastWeekAerobicMinutes,
+                "lastWeekHiitWork" to i.lastWeekHiitWorkMinutes),
+            outputs = mapOf("hiitDays" to intervals.keys.sorted(), "blocks" to week.flatMap { day -> day.conditioning.map { "${day.weekday}:${it.modality}:${it.zone}:${Num.round1(it.workMinutes)}" } }))
         return EngineResult(week, d)
     }
 

@@ -70,7 +70,7 @@
     "pattern": "LUNGE", "class": "DUMBBELL", "primary": ["QUADS", "GLUTES"], "secondary": [],
     "equipment": ["dumbbells", "plyo_box"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
-    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 20, "station": "plyo_box",
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 20, "station": "plyo_box", "shallow": true,
     "regression": "step-up",
     "text": {
       "setup": "Stand facing a sturdy box or bench at about knee height, a dumbbell in each hand. Place one whole foot on the box.",
@@ -136,7 +136,7 @@
     "pattern": "LUNGE", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": ["ADDUCTORS"],
     "equipment": ["bench"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 3, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 2,
-    "reps": [8, 15], "max_reps": 20, "unilateral": true, "failure_safe": true, "setup": 15, "station": "bench",
+    "reps": [8, 15], "max_reps": 20, "unilateral": true, "setup": 15, "station": "bench",
     "tags": ["deep_knee_flexion"], "family": "squat", "rung": 5,
     "progression": "db-rear-foot-elevated-split-squat", "regression": "bodyweight-split-squat",
     "text": {
@@ -150,7 +150,7 @@
     "pattern": "LUNGE", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": ["HAMSTRINGS"],
     "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 1,
-    "reps": [10, 15], "max_reps": 20, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor",
+    "reps": [10, 15], "max_reps": 20, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor", "tags": ["deep_knee_flexion"],
     "progression": "db-reverse-lunge",
     "text": {
       "setup": "Stand tall with feet hip-width apart and hands on your hips.",
@@ -163,7 +163,7 @@
     "pattern": "LUNGE", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": [],
     "equipment": ["plyo_box"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 1,
-    "reps": [10, 15], "max_reps": 20, "unilateral": true, "failure_safe": true, "setup": 10, "station": "plyo_box",
+    "reps": [10, 15], "max_reps": 20, "unilateral": true, "setup": 10, "station": "plyo_box", "shallow": true,
     "progression": "db-step-up",
     "text": {
       "setup": "Face a sturdy step, box or bench at a height where your thigh is roughly level when your foot is on top.",
@@ -176,7 +176,7 @@
     "pattern": "LUNGE", "class": "BODYWEIGHT", "primary": ["ADDUCTORS", "GLUTES", "QUADS"], "secondary": [],
     "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 1, "HIP": 2, "ANKLE": 1}, "fatigue": 1,
-    "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor",
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor", "tags": ["deep_knee_flexion"],
     "text": {
       "setup": "Stand with feet together, then take a wide step out to the side.",
       "cues": ["Sit back into the stepping leg while the other leg stays straight.", "Push back to the start."],

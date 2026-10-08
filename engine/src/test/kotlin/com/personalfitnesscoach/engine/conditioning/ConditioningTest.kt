@@ -48,8 +48,10 @@ class AerobicTest {
     }
 
     @Test fun `TC-AER-003b weekly aerobic minutes rise at most 15 percent, then tempo, then intervals`() {
-        // Last week 60 min → this week ≤ 69; 68 already planned with one session left → +1 only.
-        assertEquals(21.0, Aerobic.nextZ1Minutes(20.0, 60.0, 68.0, 1).value, 1e-9)
+        // Last week 60 min → this week ≤ 69; 48 already planned in the other sessions, one session left → 21 (+1 only).
+        assertEquals(21.0, Aerobic.nextZ1Minutes(20.0, 60.0, 48.0, 1).value, 1e-9)
+        // Three sessions sharing a 45-min week: ≤ 51.75 in total, so 17.25 each, not 18 (review finding 8).
+        assertEquals(17.2, Aerobic.nextZ1Minutes(15.0, 45.0, 0.0, 3).value, 1e-9)
         assertEquals(Aerobic.Stage.ADD_TEMPO, Aerobic.stage(30.0, 0, true))
         assertEquals(Aerobic.Stage.ADD_TEMPO, Aerobic.stage(35.0, 3, hiitBaseReady = false))
         assertEquals(Aerobic.Stage.ADD_INTERVALS, Aerobic.stage(35.0, 2, true))
@@ -147,12 +149,16 @@ class ModalityTest {
 
 class HiitMenuTest {
     @Test fun `TC-HIIT-002c protocol by block and purpose, first ever is short at 1 to 2`() {
-        assertEquals(HiitProtocol.SHORT, HiitMenu.choose(BlockKind.CONDITIONING, Level.ADVANCED, hiitDoneEver = 0, sprintsThisWeek = 0, weekIndexInBlock = 1).value)
-        assertEquals(HiitProtocol.LONG, HiitMenu.choose(BlockKind.CONDITIONING, Level.INTERMEDIATE, 5, 0, 1).value)
-        assertEquals(HiitProtocol.MEDIUM, HiitMenu.choose(BlockKind.CONDITIONING, Level.INTERMEDIATE, 5, 0, 2).value)
-        assertEquals(HiitProtocol.SPRINT, HiitMenu.choose(BlockKind.POWER, Level.ADVANCED, 5, 0, 1).value)
-        assertEquals(HiitProtocol.SHORT, HiitMenu.choose(BlockKind.POWER, Level.ADVANCED, 5, sprintsThisWeek = 1, weekIndexInBlock = 1).value)
-        assertEquals(HiitProtocol.SHORT, HiitMenu.choose(BlockKind.POWER, Level.INTERMEDIATE, 5, 0, 1).value)
+        assertEquals(HiitProtocol.SHORT, HiitMenu.choose(BlockKind.CONDITIONING, Level.ADVANCED, hiitDoneEver = 0, sprintsThisWeek = 0, sessionIndex = 0).value)
+        // Blueprint: Build "1 (long)", Conditioning "long + short", Consolidation medium + short, Power short (or one sprint for advanced).
+        assertEquals(HiitProtocol.LONG, HiitMenu.choose(BlockKind.BUILD, Level.INTERMEDIATE, 5, 0, 0).value)
+        assertEquals(HiitProtocol.LONG, HiitMenu.choose(BlockKind.CONDITIONING, Level.INTERMEDIATE, 5, 0, 0).value)
+        assertEquals(HiitProtocol.SHORT, HiitMenu.choose(BlockKind.CONDITIONING, Level.INTERMEDIATE, 5, 0, 1).value)
+        assertEquals(HiitProtocol.MEDIUM, HiitMenu.choose(BlockKind.CONSOLIDATION, Level.INTERMEDIATE, 5, 0, 0).value)
+        assertEquals(HiitProtocol.SPRINT, HiitMenu.choose(BlockKind.POWER, Level.ADVANCED, 5, 0, 0).value)
+        assertEquals(HiitProtocol.SHORT, HiitMenu.choose(BlockKind.POWER, Level.ADVANCED, 5, sprintsThisWeek = 1, sessionIndex = 1).value)
+        assertEquals(HiitProtocol.SHORT, HiitMenu.choose(BlockKind.POWER, Level.INTERMEDIATE, 5, 0, 0).value)
+        assertEquals(HiitProtocol.SHORT, HiitMenu.choose(BlockKind.STRENGTH, Level.INTERMEDIATE, 5, 0, 0).value)
         val first = HiitMenu.start(HiitProtocol.SHORT, Level.BEGINNER, firstEver = true)
         assertEquals(10, first.reps); assertEquals(15, first.workSec); assertEquals(30, first.restSec); assertEquals(7..8, first.cr10)
         assertTrue(first.workMinutes <= HiitMenu.workCapMinutes(HiitProtocol.SHORT))

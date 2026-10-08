@@ -189,17 +189,30 @@ object ProgressionCaps {
         return if (age != null && age >= 65) base * P.AGE_001.age_65.progression_cap_multiplier else base
     }
 
-    /** Highest load this week given last week's load for the same reps and effort. */
-    fun maxLoadThisWeek(lastWeekLoad: Double, level: Level, available: List<Double>, age: Int? = null): Double {
+    /**
+     * Highest load this week given last week's load for the same reps and effort. When the equipment's next step
+     * above last week's load is bigger than the weekly cap (light dumbbells, a 2.5 kg plate step on a light bar),
+     * that one step is allowed once the e1RM already supports it at the target reps and RIR (`supported`, the
+     * e1RM-prescribed load): the prescribed intensity relative to the e1RM does not change, and INT-004 already
+     * limits how fast the e1RM itself can rise (D-055). Without that, such lifts could never get heavier.
+     */
+    fun maxLoadThisWeek(lastWeekLoad: Double, level: Level, available: List<Double>, age: Int? = null, supported: Double? = null): Double {
         val limit = lastWeekLoad * (1.0 + intensityPctPerWeek(level, age) / 100.0)
-        return available.filter { it <= limit + 1e-9 }.maxOrNull() ?: lastWeekLoad
+        val byPercent = available.filter { it <= limit + 1e-9 }.maxOrNull() ?: lastWeekLoad
+        val nextStep = available.filter { it > lastWeekLoad + 1e-9 }.minOrNull()
+        return if (supported != null && nextStep != null && nextStep > limit + 1e-9 && nextStep <= supported + 1e-9) maxOf(byPercent, nextStep) else byPercent
     }
 
     fun capLoad(proposed: Double, lastWeekLoad: Double, level: Level, available: List<Double>, age: Int? = null): EngineResult<Double> {
-        val max = maxLoadThisWeek(lastWeekLoad, level, available, age)
-        return if (proposed <= max + 1e-9) EngineResult(proposed)
-        else EngineResult(max, listOf(Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_007), ReasonKey.LOAD_CAPPED_WEEKLY,
-            inputs = mapOf("proposed" to proposed, "lastWeek" to lastWeekLoad), outputs = mapOf("load" to max))))
+        val pctMax = maxLoadThisWeek(lastWeekLoad, level, available, age)
+        val max = maxLoadThisWeek(lastWeekLoad, level, available, age, supported = proposed)
+        val out = minOf(proposed, max)
+        val d = ArrayList<Decision>()
+        if (out > pctMax + 1e-9) d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_007, RuleIds.PROG_003), ReasonKey.LOAD_DISCRETE_STEP,
+            inputs = mapOf("proposed" to proposed, "lastWeek" to lastWeekLoad), outputs = mapOf("load" to out))
+        if (proposed > max + 1e-9) d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_007), ReasonKey.LOAD_CAPPED_WEEKLY,
+            inputs = mapOf("proposed" to proposed, "lastWeek" to lastWeekLoad), outputs = mapOf("load" to out))
+        return EngineResult(out, d)
     }
 
     fun maxSetsNextWeek(current: Int): Int = current + P.PROG_007.sets_per_week

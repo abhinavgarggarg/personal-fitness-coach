@@ -104,7 +104,9 @@ class YearSimulationTest {
                     val load = it.load ?: continue
                     val last = lastWeekLoads[key]
                     if (last != null && !it.calibrating && !it.exercise.assisted && it.exercise.id in e1rm) {
-                        val max = ProgressionCaps.maxLoadThisWeek(last, p.level, PlateMath.loadsFor(it.exercise, inv), p.age)
+                        // At most the PROG-007 percentage, or one equipment step when that step is bigger (D-055).
+                        val avail = PlateMath.loadsFor(it.exercise, inv)
+                        val max = maxOf(ProgressionCaps.maxLoadThisWeek(last, p.level, avail, p.age), avail.filter { a -> a > last + 1e-9 }.minOrNull() ?: last)
                         assertTrue("${p.name} week $week ${it.exercise.id}: $last → $load (max $max)", load <= maxOf(max, last) + 1e-9)
                     }
                     if (it.loadFactor >= 1.0 - 1e-9) thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, load)
@@ -137,8 +139,9 @@ class YearSimulationTest {
                             val rir = minOf(5, can - reps).coerceAtLeast(0).toDouble()
                             val session = E1rm.fromSet(load, reps, rir)
                             if (session != null) E1rm.update(e1rm[ex.id], session).value?.let { est -> e1rm[ex.id] = est; startE1rm.putIfAbsent(ex.id, est); startWeek.putIfAbsent(ex.id, week) }
-                            else {
-                                // No valid e1RM yet: the progression engine (PROG-001/002) sets the next load.
+                            // FS-5: after every full-load exposure the progression engine (PROG-001..008) writes the next prescription;
+                            // the generator uses it for the same rep range and the e1RM for a new one (D-055).
+                            if (it.loadFactor >= 1.0 - 1e-9) {
                                 val sets = List(it.sets) { com.personalfitnesscoach.engine.model.SetLog(load, reps, rir) }
                                 val next = com.personalfitnesscoach.engine.progression.Progression.next(com.personalfitnesscoach.engine.progression.ExposureInput(
                                     ex, it.reps, it.targetRir, load, sets, avail, recoveryOk = tier == Tier.FULL || tier == Tier.MODIFIED, level = p.level, age = p.age)).value
@@ -184,12 +187,14 @@ class YearSimulationTest {
         // Full adherence reaches the review/flex weeks; missed weeks pause the clock instead of cutting blocks.
         assertTrue("${results.getValue("beginner-3d").clockWeek}", results.getValue("beginner-3d").clockWeek >= 50)
         assertTrue(results.getValue("busy-6d").clockWeek < results.getValue("beginner-3d").clockWeek)
-        // The main lifts got stronger over the year.
-        val b = results.getValue("intermediate-4d")
-        // Lifts with an e1RM from the first 20 weeks had time to improve; most of them did.
-        val tracked = b.endE1rm.filterKeys { (b.startWeek[it] ?: 99) <= 20 }
-        val improved = tracked.count { (k, v) -> v > b.startE1rm.getValue(k) * 1.02 }
-        assertTrue("improved $improved of ${tracked.size}", tracked.isNotEmpty() && improved * 2 >= tracked.size)
+        // The tracked lifts got stronger over the year: lifts with an e1RM from the first 20 weeks had time to improve,
+        // and most of them did — dumbbells and light bars included (D-055).
+        for (name in listOf("beginner-3d", "intermediate-4d", "busy-6d")) {
+            val b = results.getValue(name)
+            val tracked = b.endE1rm.filterKeys { (b.startWeek[it] ?: 99) <= 20 }
+            val improved = tracked.count { (k, v) -> v > b.startE1rm.getValue(k) * 1.02 }
+            assertTrue("$name improved $improved of ${tracked.size}", tracked.isNotEmpty() && improved * 2 >= tracked.size)
+        }
         // Light dumbbells and machine stacks do not stay at the lightest load all year (D-052).
         for ((name, r) in results) assertTrue("$name ${r.progressionLoads}", r.progressionLoads.values.count { it > 10.0 } * 2 >= r.progressionLoads.size)
     }

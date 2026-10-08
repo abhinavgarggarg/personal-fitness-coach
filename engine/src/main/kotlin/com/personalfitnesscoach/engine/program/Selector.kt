@@ -50,14 +50,19 @@ object Selector {
             ctx.jointLimits.all { (j, lim) -> e.stress(j) <= lim } &&
             e.skill <= Substitution.levelNumber(ctx.level) + P.SUB_001.skill_margin
 
-    /** BW-001: on a ladder only the user's current rung (or the level's default rung) is eligible. */
+    /**
+     * BW-001: on a ladder only one rung is eligible. Ladders can cross patterns (squat-family rungs 4–5
+     * are split squats), so the rung is chosen among the ladder's exercises of the candidate's own
+     * pattern: the highest one not above the user's current rung (or the level's default rung).
+     */
     private fun rungOk(e: Exercise, ctx: SelectionContext): Boolean {
         val fam = e.family ?: return true
-        val current = ctx.ladderRungs[fam]?.let { Library[it] }
-        if (current != null) return e.rung == current.rung
-        val ladder = ctx.library.filter { it.family == fam }
-        val default = minOf(ctx.level.pick(1, 2, 3), ladder.maxOfOrNull { it.rung } ?: 1)
-        return e.rung == default
+        val samePattern = ctx.library.filter { it.family == fam && it.pattern == e.pattern }.map { it.rung }.distinct().sorted()
+        if (samePattern.isEmpty()) return true
+        val reference = ctx.ladderRungs[fam]?.let { Library[it] }?.rung
+            ?: minOf(ctx.level.pick(1, 2, 3), ctx.library.filter { it.family == fam }.maxOfOrNull { it.rung } ?: 1)
+        val rung = samePattern.lastOrNull { it <= reference } ?: samePattern.first()
+        return e.rung == rung
     }
 
     fun matches(e: Exercise, spec: SlotSpec): Boolean = when (spec.role) {
@@ -66,7 +71,8 @@ object Selector {
         SlotRole.ROTATION -> e.trains(Pattern.ROTATION)
         SlotRole.CORE -> spec.pattern != null && e.trains(spec.pattern) && (e.pattern in CORE_PATTERNS || e.pattern == Pattern.LOADED_CARRY || e.pattern == Pattern.HORIZONTAL_PULL)
         SlotRole.CARRY_OR_ROTATION -> false // resolved to CARRY or ROTATION by the planner
-        else -> when {
+        // Jumps and ballistic throws (bodyweight power drills) only ever fill power slots: a box jump is not a squat main lift (CON-004, ORD-001).
+        else -> !(e.powerCapable && e.loadType == LoadType.BODYWEIGHT) && when {
             spec.pattern == Pattern.ISOLATION -> e.pattern == Pattern.ISOLATION && spec.muscle != null && spec.muscle in e.primary
             spec.pattern == Pattern.LUNGE -> e.pattern == Pattern.LUNGE && e.unilateral
             else -> e.pattern == spec.pattern
@@ -104,7 +110,14 @@ object Selector {
             if (kept != null && allowed(kept, ctx) && matches(kept, spec)) return EngineResult(kept, listOf(Decision(DecisionKind.SUBSTITUTION,
                 listOf(RuleIds.ADH_003, RuleIds.GEN_001), ReasonKey.CORE_LIFT_KEPT, inputs = mapOf("slot" to spec.key), outputs = mapOf("exercise" to id))))
         }
-        val pool = ctx.library.filter { matches(it, spec) && allowed(it, ctx) && rungOk(it, ctx) }
+        var pool = ctx.library.filter { matches(it, spec) && allowed(it, ctx) && rungOk(it, ctx) }
+        var adjacent = false
+        // Nothing for this pattern today (kit, pain, limitation tags): an adjacent pattern keeps the slot (SUB-002 scores adjacency 0.5).
+        if (pool.isEmpty() && spec.pattern != null && spec.pattern != Pattern.ISOLATION && spec.role in setOf(SlotRole.MAIN, SlotRole.SECONDARY, SlotRole.ACCESSORY)) {
+            pool = ctx.library.filter { it.pattern.isAdjacentTo(spec.pattern) && it.pattern != Pattern.ISOLATION && allowed(it, ctx) && rungOk(it, ctx) &&
+                (it.pattern != Pattern.LUNGE || it.unilateral) }
+            adjacent = pool.isNotEmpty()
+        }
         if (pool.isEmpty()) return EngineResult(null, listOf(Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.GEN_001, RuleIds.SUB_001),
             ReasonKey.SLOT_EMPTY, inputs = mapOf("slot" to spec.key))))
         val ranked = pool.map { it to score(it, spec, ctx, usedThisWeek) }.sortedWith(compareByDescending<Pair<Exercise, Double>> { it.second }.thenBy { it.first.id })
@@ -117,6 +130,6 @@ object Selector {
         val e = pick.first
         return EngineResult(e, listOf(Decision(DecisionKind.SUBSTITUTION, if (rotated) listOf(RuleIds.ADH_003, RuleIds.GEN_001) else listOf(RuleIds.GEN_001, RuleIds.EQ_001),
             if (rotated) ReasonKey.ACCESSORY_ROTATED else ReasonKey.SLOT_FILLED, inputs = mapOf("slot" to spec.key),
-            outputs = mapOf("exercise" to e.id, "score" to pick.second, "loaded" to (e.loadType != LoadType.BODYWEIGHT)))))
+            outputs = mapOf("exercise" to e.id, "score" to pick.second, "loaded" to (e.loadType != LoadType.BODYWEIGHT), "adjacentPattern" to adjacent))))
     }
 }

@@ -72,7 +72,11 @@ data class GenerationRequest(
     val inventory: Inventory = Inventory(),
     /** Current e1RM per exercise ID (INT-004). */
     val e1rm: Map<String, Double> = emptyMap(),
-    /** The progression engine's next prescription per exercise (PROG-001..008), used when there is no e1RM: load and rep range. */
+    /**
+     * The progression engine's next-exposure prescription per exercise (FS-5, PROG-001..008): load and rep range. It sets
+     * the load whenever it was made for today's rep range (same bottom of range), for e1RM lifts too; otherwise the e1RM
+     * (INT-005) or calibration does (D-055).
+     */
     val progression: Map<String, Prescription> = emptyMap(),
     /** CAL-001 in progress over sessions 1–4: where today's calibration ramp starts, per exercise. */
     val calibrationLoads: Map<String, Double> = emptyMap(),
@@ -131,6 +135,12 @@ data class Workout(
     val validated: Session,
     /** The FULL-day working sets the tier and deload cuts were measured from (for audits and re-validation). */
     val fullTierWorkingSets: Int = 0,
+    /** Interval structure (repeats, work/rest seconds, CR10) for each validated conditioning block, or null for steady work (HIIT-002). */
+    val intervals: List<com.personalfitnesscoach.engine.conditioning.Interval?> = emptyList(),
+    /** ORD-002 / CON-001: conditioning comes before the lifts today. */
+    val conditioningFirst: Boolean = false,
+    /** Mobility minutes in the session (deload extra mobility, RDY-004 LIGHT 5–10 min). */
+    val mobilityMinutes: Double = 0.0,
 )
 
 /**
@@ -150,7 +160,9 @@ object SessionGenerator {
         if (stop.value != null) return EngineResult(rest(stop.value), d + done(r, Tier.RECOVERY, true))
         val ill = RedFlags.illnessGate(r.illnessSymptoms)
         d += ill.decisions
-        val tier = ill.value?.let { Tier.min(it, r.tier) } ?: r.tier
+        // SAF-007: illness locks the day to rest — no lifts, no conditioning, no warm-up (the optional Z1 of RECOVERY is for readiness only).
+        if (ill.value != null) return EngineResult(rest(null), d + Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_007), ReasonKey.ILLNESS_REST_DAY) + done(r, Tier.RECOVERY, true))
+        val tier = r.tier
 
         // 3) Slots from the week plan; 4) exercise per slot (planned lift if allowed today, else the best swap).
         val sub = SubContext(r.equipmentToday, r.level, mergedLimits(r), r.blockedTags, r.excludedIds, r.preferences, r.painCaution + r.regions.map { it.region })
@@ -160,17 +172,21 @@ object SessionGenerator {
                 d += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.CON_005), ReasonKey.POWER_DROPPED_AFTER_HIIT, inputs = mapOf("exercise" to s.exercise.id)); continue
             }
             if (allowedToday(s.exercise, r, sub)) { slots += s; continue }
-            val swap = Substitution.options(s.exercise, Library.all.filter { !it.userAddOnly }, sub)
+            // A swap never repeats an exercise already in today's session, and jumps or throws only replace power work.
+            val taken = (r.day.slots.map { it.exercise.id } + slots.map { it.exercise.id }).toSet()
+            val swap = Substitution.options(s.exercise, Library.all.filter { !it.userAddOnly && it.id !in taken &&
+                (s.spec.role == SlotRole.POWER || !(it.powerCapable && it.loadType == com.personalfitnesscoach.engine.model.LoadType.BODYWEIGHT)) }, sub)
             d += swap.decisions
             val pick = swap.value.autoPick?.exercise
             if (pick == null) { d += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.GEN_001), ReasonKey.SLOT_EMPTY, inputs = mapOf("slot" to s.spec.key)); continue }
             slots += s.copy(exercise = pick, rest = Rest.forSets(pick, s.reps.last), unit = pick.unit, perSide = pick.unilateral,
                 reps = if (pick.unit == s.unit) s.reps else pick.defaultRepRange)
         }
-        // PROG-002: without an e1RM the progression engine owns the rep range (it may have been extended).
+        // PROG-002: the progression engine owns the rep range (it may have been extended) when there is no e1RM, or when
+        // its prescription was made for today's range (D-055).
         for ((k, s) in slots.withIndex()) {
             val p = r.progression[s.exercise.id]
-            if (p != null && s.exercise.id !in r.e1rm && s.unit == DoseUnit.REPS) slots[k] = s.copy(reps = p.repRange)
+            if (p != null && s.unit == DoseUnit.REPS && (s.exercise.id !in r.e1rm || p.repRange.first == s.reps.first)) slots[k] = s.copy(reps = p.repRange)
         }
         // ORD-001/002: power, primary, secondary, accessories, core; conditioning first on conditioning-priority days.
         val ordered = Order.sort(slots, { slotOf(it) }, r.day.conditioningPriority)
@@ -195,10 +211,11 @@ object SessionGenerator {
             r.regions.filter { reg -> s.exercise.stress(reg.region) > 0 }.mapNotNull { it.minRir }.maxOrNull()?.let { rir = maxOf(rir, it.toDouble()) }
             if (tier != Tier.FULL || r.inDeload) lastToFailure = false
             item(s, r, tier, rir, lastToFailure, d)
-        }
+        }.filterNotNull()
         items = trimForTier(items, tier, r.inDeload, fullSets, d)
         var conditioning = r.day.conditioning.map { adaptConditioning(it, tier, r) }.filterNotNull()
-        if (tier == Tier.RECOVERY) conditioning = listOfNotNull(conditioning.firstOrNull()?.let { ConditioningBlock(it.modality, Zone.Z1, P.RDY_004.RECOVERY.optional_z1_minutes[0].toDouble()) })
+        if (tier == Tier.RECOVERY) conditioning = listOfNotNull(conditioning.firstOrNull()?.let {
+            it.copy(zone = Zone.Z1, workMinutes = P.RDY_004.RECOVERY.optional_z1_minutes[0].toDouble(), restMinutes = 0.0, hiit = false, protocol = null) })
         if (tier != r.tier || r.inDeload) d += Decision(DecisionKind.TIER_CAP, listOf(RuleIds.RDY_004) + if (r.inDeload) listOf(RuleIds.DEL_003) else emptyList(),
             ReasonKey.TIER_CAPPED_BY_ITEM, inputs = mapOf("requested" to r.tier, "deload" to r.inDeload), outputs = mapOf("tier" to tier))
 
@@ -206,7 +223,8 @@ object SessionGenerator {
         val wu = Warmup.minutes(10.0, compressed = false, age = r.age)
         d += wu.decisions
         val patterns = items.map { it.exercise.pattern }.toSet()
-        val drills = Mobility.warmupDrills(patterns, r.equipmentToday, restricted = mergedLimits(r).filterValues { it <= 1 }.keys, age = r.age)
+        val drills = Mobility.warmupDrills(patterns, r.equipmentToday, restricted = mergedLimits(r).filterValues { it <= 1 }.keys, age = r.age,
+            jointLimits = mergedLimits(r))
         d += drills.decisions
         var mainSeen = 0
         items = items.map { it ->
@@ -223,8 +241,9 @@ object SessionGenerator {
         // 8) Time fit (TIME-001..004): compress or extend to the minutes available.
         val trained = items.flatMap { it.exercise.primary }.toSet()
         val dayForFit = r.day.copy(slots = items.map { toSlot(it) }, conditioning = conditioning.map { toPlanned(it) })
-        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble(), WeekPlanner.planItems(dayForFit),
-            coreMobilityMin = r.day.mobilityMinutes)
+        // RDY-004: LIGHT days add 5–10 minutes of mobility.
+        val mobilityMin = if (tier == Tier.LIGHT) maxOf(r.day.mobilityMinutes, P.RDY_004.LIGHT.mobility_minutes[0].toDouble()) else r.day.mobilityMinutes
+        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble(), WeekPlanner.planItems(dayForFit), coreMobilityMin = mobilityMin)
         val fit = TimeBudget.fit(plan, r.minutes.toDouble(), r.age, r.personalFactor, r.crowded)
         d += fit.decisions
         val byId = fit.value.plan.items.associateBy { it.id }
@@ -235,7 +254,7 @@ object SessionGenerator {
             if (k.rounds > 1) c.copy(workMinutes = k.rounds * k.workSec / 60.0, restMinutes = k.rounds * k.restSec / 60.0) else c.copy(workMinutes = k.workSec / 60.0)
         }
         val warmupMin = fit.value.plan.warmupMin
-        val cooldown = Mobility.cooldown(trained, fit.value.plan.cooldownMin, r.equipmentToday)
+        val cooldown = Mobility.cooldown(trained, fit.value.plan.cooldownMin, r.equipmentToday, mergedLimits(r))
         d += cooldown.decisions
 
         // 9) Safety validator (SAF-008): corrected or replaced, never shown unvalidated.
@@ -248,23 +267,52 @@ object SessionGenerator {
         val final = rebuild(items, v.value.session, r)
         val minutes = TimeModel.minutes(SessionPlan(warmupMin, fit.value.plan.cooldownMin,
             WeekPlanner.planItems(r.day.copy(slots = final.map { toSlot(it) }, conditioning = v.value.session.conditioning.map { toPlanned(it) })),
-            coreMobilityMin = r.day.mobilityMinutes), r.personalFactor)
+            coreMobilityMin = mobilityMin), r.personalFactor)
+        // Interval structure for each validated block: kept when the validator left the block's zone and modality alone.
+        val intervals = v.value.session.conditioning.mapIndexed { j, b ->
+            val planned = conditioning.getOrNull(j)
+            val iv = r.day.conditioning.firstOrNull { it.modality == planned?.modality && it.zone == b.zone }?.interval
+            if (iv == null || planned == null || planned.modality != b.modality || planned.zone != b.zone || iv.workSec <= 0) null
+            else iv.copy(reps = maxOf(1, Math.round(b.workMinutes * 60 / iv.workSec).toInt()))
+        }
 
         // 10) Output.
         val w = Workout(v.value.session.tier, final, v.value.session.conditioning, warmupMin, drills.value, cooldown.value, Num.round1(minutes),
-            fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session, fullSets)
+            fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session, fullSets, intervals, r.day.conditioningPriority, mobilityMin)
         return EngineResult(w, d + done(r, w.tier, false))
     }
 
     /** Key for [GenerationRequest.lastWeekLoads]: heavy and moderate exposures of a lift are capped separately. */
     fun loadKey(slotKey: String, exerciseId: String): String = "$slotKey|$exerciseId"
 
-    /** ADH-004: the 20–30-minute express version of today's session, one tap away. */
+    /**
+     * ADH-004: the 20–30-minute express version of today's session, one tap away. It keeps the
+     * primary lift (P1), one other compound and one core exercise, drops conditioning, and is fitted
+     * to 30 minutes by TIME-002; the validator still runs last.
+     */
     fun express(r: GenerationRequest): EngineResult<Workout> {
-        val minutes = (Express.minutes.first + Express.minutes.last) / 2
-        val out = generate(r.copy(minutes = minutes))
-        return out + listOf(Decision(DecisionKind.TIME_FIT, listOf(RuleIds.ADH_004, RuleIds.TIME_002), ReasonKey.EXPRESS_SESSION,
-            inputs = mapOf("minutes" to minutes), outputs = mapOf("planned" to out.value.plannedMinutes)))
+        val slots = r.day.slots
+        val p1 = slots.firstOrNull { it.priority == Priority.P1 } ?: slots.firstOrNull { it.main }
+        val second = slots.firstOrNull { it !== p1 && (it.spec.role == SlotRole.MAIN || it.spec.role == SlotRole.SECONDARY) &&
+            it.exercise.pattern != p1?.exercise?.pattern }
+        val core = slots.firstOrNull { it.spec.role == SlotRole.CORE }
+        val minutes = Express.minutes.last
+        // Smaller and smaller versions until one fits 30 minutes: core 2 → 1 set, second compound 2 → 1, core out,
+        // P1 3 → 2 sets, second compound out. The P1 lift is always kept.
+        val p1Sets = p1?.let { minOf(it.sets, 3) } ?: 0
+        val variants = listOf(Triple(p1Sets, 2, 2), Triple(p1Sets, 2, 1), Triple(p1Sets, 1, 1), Triple(p1Sets, 1, 0),
+            Triple(minOf(p1Sets, 2), 1, 0), Triple(minOf(p1Sets, 2), 0, 0))
+        var keep: List<PlannedSlot> = emptyList()
+        var out: EngineResult<Workout>? = null
+        for ((a, b, c) in variants) {
+            keep = listOfNotNull(p1?.let { it.copy(sets = maxOf(1, a)) }, second?.takeIf { b > 0 }?.let { it.copy(sets = minOf(it.sets, b)) },
+                core?.takeIf { c > 0 }?.let { it.copy(sets = minOf(it.sets, c)) })
+            out = generate(r.copy(day = r.day.copy(slots = keep, conditioning = emptyList(), mobilityMinutes = 0.0, conditioningPriority = false), minutes = minutes))
+            if (out.value.plannedMinutes <= minutes + 1e-9) break
+        }
+        val res = out!!
+        return res + listOf(Decision(DecisionKind.TIME_FIT, listOf(RuleIds.ADH_004, RuleIds.TIME_002), ReasonKey.EXPRESS_SESSION,
+            inputs = mapOf("minutes" to minutes), outputs = mapOf("planned" to res.value.plannedMinutes, "kept" to keep.map { it.exercise.id })))
     }
 
     // ------------------------------------------------------------------ helpers
@@ -273,7 +321,7 @@ object SessionGenerator {
         inputs = mapOf("template" to r.day.template.name, "minutes" to r.minutes, "tier" to r.tier.name),
         outputs = mapOf("steps" to (if (stopped) STEPS.take(2) else STEPS), "tier" to tier.name))
 
-    private fun rest(stop: SafetyStop) = Workout(Tier.RECOVERY, emptyList(), emptyList(), 0.0, emptyList(), emptyList(), 0.0, false, stop, false,
+    private fun rest(stop: SafetyStop?) = Workout(Tier.RECOVERY, emptyList(), emptyList(), 0.0, emptyList(), emptyList(), 0.0, false, stop, false,
         Session(Tier.RECOVERY, emptyList()))
 
     private fun mergedLimits(r: GenerationRequest): Map<Joint, Int> {
@@ -311,9 +359,17 @@ object SessionGenerator {
         if (e.assisted) return (r.progression[e.id]?.load ?: PlateMath.choose(available.max() * 0.5, available)) to (e.id !in r.progression)
         val est = r.e1rm[e.id]
         if (est == null) r.calibrationLoads[e.id]?.let { return PlateMath.choose(it, available) to true }
-        // Without an e1RM the progression engine's next load is used as is: Progression.next already applies
-        // PROG-007 to load jumps through the implied intensity (PROG-002 resets reps on a jump).
-        if (est == null) return (r.progression[e.id]?.load ?: return Individual.calibrationStart(e, r.bodyweightKg, available) to true) to false
+        // FS-5 / D-055: the next-exposure prescription (PROG-001..008) sets the load whenever it was made for today's rep
+        // range, for e1RM lifts too, so double progression (PROG-002) and the under-loaded jump (D-052) work within a block.
+        // Progression.next already applies PROG-007 to load jumps through the implied intensity (PROG-002 resets reps on a
+        // jump). A new range (the next block, the other DUP exposure) takes its load from the e1RM (INT-005).
+        val prog = r.progression[e.id]
+        if (prog != null && (est == null || prog.repRange.first == s.reps.first)) {
+            d += Decision(DecisionKind.LOAD_PRESCRIPTION, listOf(RuleIds.PROG_001, RuleIds.PROG_002), ReasonKey.LOAD_FROM_PROGRESSION,
+                inputs = mapOf("exercise" to e.id, "action" to prog.action.name), outputs = mapOf("load" to prog.load, "reps" to prog.repRange.toString()))
+            return prog.load to false
+        }
+        if (est == null) return Individual.calibrationStart(e, r.bodyweightKg, available) to true
         val proposed = E1rm.prescribe(est, (s.reps.first + s.reps.last) / 2, rir, available).also { d += it.decisions }.value
         // PROG-007 / SAF-005: an e1RM-based load never rises faster than the weekly intensity cap over last week's load for this exposure.
         val last = r.lastWeekLoads[loadKey(s.spec.key, e.id)] ?: return proposed to false
@@ -322,21 +378,40 @@ object SessionGenerator {
         return capped.value to false
     }
 
-    private fun item(s: PlannedSlot, r: GenerationRequest, tier: Tier, rir: Double, lastToFailure: Boolean, d: MutableList<Decision>): WorkoutItem {
+    /**
+     * Dose one slot. RDY-004 caps main lifts (95% MODIFIED, 85% LIGHT) and DEL-003 caps everything at 90% in
+     * a deload; loads round down to real equipment and the reported load factor is the real one. When even the
+     * lightest load is above today's cap, the exercise's regression is tried; if that does not help either, the
+     * exercise is left out today (null). Assisted moves get more assistance instead of less load.
+     */
+    private fun item(s: PlannedSlot, r: GenerationRequest, tier: Tier, rir: Double, lastToFailure: Boolean, d: MutableList<Decision>, allowRegression: Boolean = true): WorkoutItem? {
         val e = s.exercise
         val (normal, calibrating) = normalLoad(s, e, r, s.targetRir.coerceAtLeast(1.0), d)
-        // RDY-004 caps main lifts (95% MODIFIED, 85% LIGHT); DEL-003 caps everything at 90% in a deload. Round down to real loads.
         var factor = SessionValidator.maxLoadFactor(s.main, tier, r.inDeload)
         if (s.spec.role == SlotRole.POWER) factor = minOf(factor, 1.0)
         var load = normal
+        var lf = 1.0
         if (normal != null && factor < 1.0) {
             val avail = PlateMath.loadsFor(e, r.inventory)
-            load = avail.filter { it <= normal * factor + 1e-9 }.maxOrNull() ?: avail.min()
-            if (e.assisted) load = normal // more assistance would be easier; keep it simple and never lighter on the body
+            when {
+                e.assisted -> { load = PlateMath.nextAbove(normal, avail) ?: normal; lf = factor }
+                // Calibration starts at the lightest sensible load and CAL-001 governs it; today's cap is met by construction.
+                calibrating -> { load = avail.filter { it <= normal + 1e-9 }.maxOrNull() ?: normal; lf = factor }
+                else -> {
+                    load = avail.filter { it <= normal * factor + 1e-9 }.maxOrNull() ?: avail.min()
+                    lf = if (normal > 0) load / normal else factor
+                }
+            }
         }
-        val lf = if (normal == null || load == null || normal <= 0.0) factor.coerceAtMost(1.0) else minOf(factor, load / normal)
+        if (lf > factor + 1e-9) {
+            val reg = if (allowRegression) Library.regressionOf(e)?.takeIf { allowedToday(it, r, SubContext(r.equipmentToday, r.level, mergedLimits(r), r.blockedTags, r.excludedIds)) } else null
+            val alt = reg?.let { item(s.copy(exercise = it, unit = it.unit, perSide = it.unilateral, rest = Rest.forSets(it, s.reps.last)), r, tier, rir, lastToFailure, d, allowRegression = false) }
+            d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.RDY_004, RuleIds.PROG_003), ReasonKey.LOAD_CANNOT_REDUCE,
+                inputs = mapOf("exercise" to e.id, "normal" to normal, "lightest" to load, "cap" to factor), outputs = mapOf("regression" to alt?.exercise?.id))
+            return alt
+        }
         val range = Mobility.rangeFor(painCaution = e.jointStress.keys.any { it in r.painCaution })
-        return WorkoutItem(e, s.spec.key, s.spec.role, s.priority, s.sets, s.reps, s.unit, s.perSide, rir, lastToFailure, load, Num.round2(lf),
+        return WorkoutItem(e, s.spec.key, s.spec.role, s.priority, s.sets, s.reps, s.unit, s.perSide, rir, lastToFailure, load, Num.round2(minOf(lf, 1.0)),
             Rest.forSets(e, s.reps.last, r.e1rm[e.id]?.let { est -> load?.let { it / est * 100 } }), emptyList(), range, calibrating, s.main)
     }
 
@@ -365,10 +440,11 @@ object SessionGenerator {
     private fun adaptConditioning(c: PlannedConditioning, tier: Tier, r: GenerationRequest): ConditioningBlock? {
         val b = c.toBlock()
         return when {
-            tier == Tier.LIGHT || r.inDeload -> ConditioningBlock(c.modality, Zone.Z1, minOf(c.workMinutes + c.restMinutes, P.RDY_004.LIGHT.z1_minutes[1].toDouble())
-                .coerceAtLeast(P.RDY_004.LIGHT.z1_minutes[0].toDouble()))
-            tier == Tier.MODIFIED && b.countsAsHiit -> ConditioningBlock(c.modality,
-                if (r.screening == ScreeningMode.STANDARD) Zone.Z2 else Zone.Z1, P.RDY_004.MODIFIED.hiit_replacement_minutes[0].toDouble())
+            // Conversions keep the block's impact flag, so CON-004 and SAF-004 still see jump rope as impact work.
+            tier == Tier.LIGHT || r.inDeload -> b.copy(zone = Zone.Z1, hiit = false, protocol = null, restMinutes = 0.0,
+                workMinutes = minOf(c.workMinutes + c.restMinutes, P.RDY_004.LIGHT.z1_minutes[1].toDouble()).coerceAtLeast(P.RDY_004.LIGHT.z1_minutes[0].toDouble()))
+            tier == Tier.MODIFIED && b.countsAsHiit -> b.copy(zone = if (r.screening == ScreeningMode.STANDARD) Zone.Z2 else Zone.Z1, hiit = false, protocol = null,
+                restMinutes = 0.0, workMinutes = P.RDY_004.MODIFIED.hiit_replacement_minutes[0].toDouble())
             else -> b
         }
     }
@@ -380,23 +456,51 @@ object SessionGenerator {
         b.protocol?.let { p -> com.personalfitnesscoach.engine.conditioning.Interval(p, 1, Math.round(b.workMinutes * 60).toInt(), Math.round(b.restMinutes * 60).toInt(), 7..9) },
         b.hiit, b.impact)
 
-    /** Rebuild workout items from the validated session (the validator may trim, swap or remove). */
-    private fun rebuild(before: List<WorkoutItem>, s: Session, r: GenerationRequest): List<WorkoutItem> =
-        s.exercises.mapIndexed { idx, e ->
-            val orig = before.firstOrNull { it.exercise.id == e.exercise.id } ?: before.getOrNull(idx)
-            if (orig == null) {
-                WorkoutItem(e.exercise, "validator:$idx", SlotRole.ACCESSORY, Priority.P4, e.sets, e.exercise.defaultRepRange, e.exercise.unit, e.exercise.unilateral,
-                    e.targetRir, e.lastSetToFailure, null, e.loadFactor, Rest.forSets(e.exercise, e.reps), emptyList(), RangeOfMotion.FULL, false, e.main)
-            } else if (orig.exercise.id != e.exercise.id) {
-                val slot = toSlot(orig).copy(exercise = e.exercise, sets = e.sets, targetRir = e.targetRir, rest = Rest.forSets(e.exercise, orig.reps.last))
-                item(slot, r, s.tier, e.targetRir, e.lastSetToFailure, ArrayList()).copy(warmupSets = emptyList())
-            } else {
-                val scaled = if (orig.load != null && e.loadFactor < orig.loadFactor - 1e-9) {
-                    val avail = PlateMath.loadsFor(e.exercise, r.inventory)
-                    val normal = orig.load / maxOf(orig.loadFactor, 1e-9)
-                    avail.filter { it <= normal * e.loadFactor + 1e-9 }.maxOrNull() ?: avail.minOrNull()
-                } else orig.load
-                orig.copy(sets = e.sets, targetRir = e.targetRir, lastSetToFailure = e.lastSetToFailure, loadFactor = e.loadFactor, load = scaled)
+    /**
+     * Rebuild workout items from the validated session. The validator keeps the order and may trim, swap or
+     * remove, so items are matched in sequence: same exercise → same item; otherwise a removed item is skipped
+     * when the exercise appears later, or the item was swapped (it then gets a role, rep range, load and ramp of its own).
+     */
+    private fun rebuild(before: List<WorkoutItem>, s: Session, r: GenerationRequest): List<WorkoutItem> {
+        val out = ArrayList<WorkoutItem>()
+        var p = 0
+        var mainSeen = 0
+        for ((idx, e) in s.exercises.withIndex()) {
+            val ahead = (p until before.size).firstOrNull { before[it].exercise.id == e.exercise.id }
+            val orig: WorkoutItem? = if (ahead != null) before[ahead].also { p = ahead + 1 } else before.getOrNull(p)?.also { p++ }
+            val built = when {
+                orig == null -> WorkoutItem(e.exercise, "validator:$idx", SlotRole.ACCESSORY, Priority.P4, e.sets, e.exercise.defaultRepRange, e.exercise.unit,
+                    e.exercise.unilateral, e.targetRir, e.lastSetToFailure, null, e.loadFactor, Rest.forSets(e.exercise, e.reps), emptyList(), RangeOfMotion.FULL, false, e.main)
+                orig.exercise.id != e.exercise.id -> {
+                    val role = if (orig.role == SlotRole.POWER && !e.exercise.powerCapable) SlotRole.SECONDARY else orig.role
+                    val reps = if (role != orig.role || e.exercise.unit != orig.unit) e.exercise.defaultRepRange else orig.reps
+                    val slot = toSlot(orig).copy(spec = com.personalfitnesscoach.engine.program.SlotSpec(orig.slotKey, role, e.exercise.pattern),
+                        exercise = e.exercise, sets = e.sets, reps = reps, unit = e.exercise.unit, perSide = e.exercise.unilateral,
+                        targetRir = e.targetRir, rest = Rest.forSets(e.exercise, reps.last))
+                    item(slot, r, s.tier, e.targetRir, e.lastSetToFailure, ArrayList())?.copy(loadFactor = minOf(e.loadFactor, 1.0))
+                        ?: WorkoutItem(e.exercise, orig.slotKey, role, orig.priority, e.sets, reps, e.exercise.unit, e.exercise.unilateral, e.targetRir,
+                            e.lastSetToFailure, PlateMath.loadsFor(e.exercise, r.inventory).minOrNull(), e.loadFactor, Rest.forSets(e.exercise, reps.last),
+                            emptyList(), RangeOfMotion.FULL, true, e.main)
+                }
+                else -> {
+                    val scaled = if (orig.load != null && e.loadFactor < orig.loadFactor - 1e-9) {
+                        val avail = PlateMath.loadsFor(e.exercise, r.inventory)
+                        val normal = orig.load / maxOf(orig.loadFactor, 1e-9)
+                        avail.filter { it <= normal * e.loadFactor + 1e-9 }.maxOrNull() ?: avail.minOrNull()
+                    } else orig.load
+                    orig.copy(sets = e.sets, targetRir = e.targetRir, lastSetToFailure = e.lastSetToFailure, loadFactor = e.loadFactor, load = scaled)
+                }
             }
+            // WU-002 ramp-up sets for the first two main lifts, including ones the validator swapped in.
+            val withRamp = if (built.main && built.load != null && mainSeen < 2) {
+                val first = mainSeen == 0
+                mainSeen++
+                if (built.warmupSets.isNotEmpty() && orig?.exercise?.id == built.exercise.id) built
+                else built.copy(warmupSets = Warmup.rampSets(built.load, built.reps.first, r.e1rm[built.exercise.id], built.exercise.loadType,
+                    PlateMath.loadsFor(built.exercise, r.inventory), firstMainLift = first, barKg = barKg(built.exercise, r.inventory)).value)
+            } else built
+            out += withRamp
         }
+        return out
+    }
 }

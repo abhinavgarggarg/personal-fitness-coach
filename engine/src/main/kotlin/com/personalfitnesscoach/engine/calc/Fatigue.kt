@@ -29,7 +29,7 @@ enum class Signal { F1_PERFORMANCE, F2_EFFORT_CREEP, F3_READINESS, F4_SORENESS, 
 
 object FatigueSignals {
     fun active(i: FatigueInputs): Set<Signal> {
-        val s = HashSet<Signal>()
+        val s = java.util.EnumSet.noneOf(Signal::class.java)
         // F1: ≥2 main lifts ≥3% below recent best on the last 2 exposures, or targets missed on ≥2 lifts in the last 2 sessions.
         val drop = 1.0 - P.DEL_001.F1.drop_pct / 100.0
         val n = P.DEL_001.F1.consecutive_exposures

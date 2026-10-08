@@ -19,7 +19,7 @@
     "equipment": ["barbell", "rack"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
     "difficulty": 4, "skill": 4, "joints": {"KNEE": 3, "HIP": 2, "SPINE": 2, "WRIST": 2, "ANKLE": 2}, "fatigue": 5,
     "reps": [4, 8], "max_reps": 10, "e1rm": true, "tempo": 4.0, "setup": 60, "station": "rack",
-    "tags": ["deep_knee_flexion", "wrist_extension_load"], "regression": "goblet-squat",
+    "tags": ["deep_knee_flexion", "wrist_extension_load", "spinal_loading"], "regression": "goblet-squat",
     "text": {
       "setup": "Rest the bar on the front of your shoulders with elbows pointing forward and fingertips under the bar (or arms crossed). Walk it out of the rack with the safety pins set just below your bottom position.",
       "cues": ["Keep the elbows high so the bar stays on your shoulders.", "Stay tall through the chest and sit straight down.", "Push up through the whole foot."],
@@ -59,7 +59,7 @@
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 2, "joints": {"KNEE": 2, "HIP": 2, "SPINE": 2, "WRIST": 1}, "fatigue": 4,
     "reps": [6, 10], "max_reps": 12, "setup": 25, "station": "kettlebells",
-    "tags": ["deep_knee_flexion"], "regression": "kb-goblet-squat",
+    "tags": ["deep_knee_flexion", "spinal_loading"], "regression": "kb-goblet-squat",
     "text": {
       "setup": "Clean two kettlebells to the rack position: handles in your palms, bells resting on the outside of your forearms, elbows tucked against your ribs.",
       "cues": ["Squeeze the handles and keep elbows tucked.", "Brace before you descend.", "Drive up through mid-foot."],
@@ -126,7 +126,7 @@
     "pattern": "SQUAT", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": [],
     "equipment": ["bench"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"KNEE": 1, "HIP": 1}, "fatigue": 1,
-    "reps": [10, 20], "max_reps": 20, "failure_safe": true, "setup": 10, "station": "bench",
+    "reps": [10, 20], "max_reps": 20, "failure_safe": true, "setup": 10, "station": "bench", "shallow": true,
     "family": "squat", "rung": 1, "progression": "air-squat",
     "text": {
       "setup": "Stand in front of a bench or box at knee height, feet shoulder-width apart, arms reaching forward.",
@@ -139,7 +139,7 @@
     "pattern": "SQUAT", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": [],
     "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"KNEE": 1, "HIP": 1}, "fatigue": 1,
-    "reps": [12, 20], "max_reps": 20, "failure_safe": true, "setup": 5, "station": "floor",
+    "reps": [12, 20], "max_reps": 20, "failure_safe": true, "setup": 5, "station": "floor", "tags": ["deep_knee_flexion"],
     "family": "squat", "rung": 2, "progression": "tempo-squat", "regression": "bodyweight-box-squat",
     "text": {
       "setup": "Stand with feet shoulder-width apart, toes slightly out, arms in front for balance.",
@@ -152,7 +152,7 @@
     "pattern": "SQUAT", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": ["CORE"],
     "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 1, "joints": {"KNEE": 1, "HIP": 1}, "fatigue": 2,
-    "reps": [10, 20], "max_reps": 20, "failure_safe": true, "tempo": 5.5, "setup": 5, "station": "floor",
+    "reps": [10, 20], "max_reps": 20, "failure_safe": true, "tempo": 5.5, "setup": 5, "station": "floor", "tags": ["deep_knee_flexion"],
     "family": "squat", "rung": 3, "progression": "bodyweight-split-squat", "regression": "air-squat",
     "text": {
       "setup": "Stand as for a bodyweight squat.",
@@ -165,7 +165,7 @@
     "pattern": "SQUAT", "class": "OTHER", "primary": ["QUADS", "GLUTES"], "secondary": ["CALVES"],
     "equipment": ["plyo_box"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"KNEE": 2, "ANKLE": 2, "HIP": 1}, "fatigue": 3, "impact": 2,
-    "objectives": ["POWER"], "reps": [3, 5], "max_reps": 5, "setup": 15, "station": "plyo_box", "power": true,
+    "objectives": ["POWER"], "reps": [3, 5], "max_reps": 5, "setup": 15, "station": "plyo_box", "shallow": true, "power": true,
     "tags": ["jumping"],
     "text": {
       "setup": "Stand about a foot from a sturdy box of a height you can land on softly.",

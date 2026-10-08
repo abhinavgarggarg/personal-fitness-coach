@@ -188,8 +188,8 @@ class CoreAndAdherencePlanTest {
     @Test fun `TC-CORE-003a 6-12 core sets a week across 2-4 sessions`() {
         for (days in 2..6) {
             val plan = WeekPlanner.plan(weekInput(days, 10, program = program), program).value
-            val coreSlots = plan.days.flatMap { d -> d.slots.filter { it.spec.role == SlotRole.CORE || it.spec.role == SlotRole.ROTATION } }
-            val coreDays = plan.days.count { d -> d.slots.any { it.spec.role == SlotRole.CORE || it.spec.role == SlotRole.ROTATION } }
+            val coreSlots = plan.days.flatMap { d -> d.slots.filter(WeekPlanner::isCoreWork) }
+            val coreDays = plan.days.count { d -> d.slots.any(WeekPlanner::isCoreWork) }
             assertTrue("$days days: ${coreSlots.sumOf { it.sets }}", coreSlots.sumOf { it.sets } in P.CORE_003.weekly_sets[0]..P.CORE_003.weekly_sets[1])
             assertTrue("$days days: $coreDays", coreDays in P.CORE_003.sessions[0]..maxOf(P.CORE_003.sessions[1], days))
         }
@@ -198,7 +198,7 @@ class CoreAndAdherencePlanTest {
     @Test fun `TC-CORE-003b at most 4 core sets in one session`() {
         for (days in 2..6) {
             val plan = WeekPlanner.plan(weekInput(days, 10, program = program).copy(sessionMinutes = 90), program).value
-            for (d in plan.days) assertTrue(d.slots.filter { it.spec.role == SlotRole.CORE || it.spec.role == SlotRole.ROTATION }.sumOf { it.sets } <= P.CORE_003.max_sets_per_session)
+            for (d in plan.days) assertTrue(d.slots.filter(WeekPlanner::isCoreWork).sumOf { it.sets } <= P.CORE_003.max_sets_per_session)
         }
     }
 

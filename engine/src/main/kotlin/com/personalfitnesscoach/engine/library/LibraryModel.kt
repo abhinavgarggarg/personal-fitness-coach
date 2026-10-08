@@ -26,7 +26,11 @@ data class Drill(
     val amount: Int,
     val perSide: Boolean,
     val equipment: Set<String>,
+    /** Joint stress 0–4, so pain limits apply to drills too (SAF-003). */
+    val jointStress: Map<com.personalfitnesscoach.engine.model.Joint, Int> = emptyMap(),
 ) {
+    fun stress(j: com.personalfitnesscoach.engine.model.Joint): Int = jointStress[j] ?: 0
+
     /** Seconds the drill takes, including a short change-over. */
     val seconds: Int
         get() = (if (unit == DoseUnit.SECONDS) amount else amount * 3) * (if (perSide) 2 else 1) + 10

@@ -3,7 +3,7 @@
     "id": "farmer-carry", "name": "Dumbbell farmer's carry", "aliases": ["farmers walk", "farmer carry"],
     "pattern": "LOADED_CARRY", "class": "DUMBBELL", "primary": ["FOREARMS", "UPPER_BACK", "CORE"], "secondary": ["GLUTES", "CALVES"],
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
-    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1}, "fatigue": 3,
+    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "setup": 15, "station": "dumbbells",
     "tags": ["grip_intensive"],
     "text": {
@@ -16,7 +16,7 @@
     "id": "trap-bar-carry", "name": "Trap bar carry", "aliases": ["hex bar carry"],
     "pattern": "LOADED_CARRY", "class": "BARBELL", "primary": ["FOREARMS", "UPPER_BACK", "CORE"], "secondary": ["GLUTES", "QUADS"],
     "equipment": ["trap_bar"], "load": "BARBELL", "bar": "trap_bar", "cost": "FREE_WEIGHT_COMPOUND",
-    "difficulty": 2, "skill": 1, "joints": {"SPINE": 2, "WRIST": 1}, "fatigue": 4,
+    "difficulty": 2, "skill": 1, "joints": {"SPINE": 2, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 4,
     "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 30], "max_reps": 40, "tempo": 1.0, "setup": 40, "station": "trap_bar",
     "tags": ["grip_intensive", "spinal_loading"],
     "text": {
@@ -29,7 +29,7 @@
     "id": "suitcase-carry", "name": "Dumbbell suitcase carry", "aliases": ["one arm carry", "suitcase carry"],
     "pattern": "LOADED_CARRY", "pattern2": "ANTI_LATERAL_FLEXION", "class": "DUMBBELL", "primary": ["CORE", "FOREARMS"], "secondary": ["UPPER_BACK", "GLUTES"],
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
-    "difficulty": 2, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1}, "fatigue": 2,
+    "difficulty": 2, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 2,
     "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "unilateral": true, "setup": 15, "station": "dumbbells",
     "tags": ["grip_intensive"], "family": "anti_lateral_flexion", "rung": 4,
     "progression": "kb-offset-overhead-carry", "regression": "side-plank-reach",
@@ -43,7 +43,7 @@
     "id": "goblet-carry", "name": "Goblet carry", "aliases": ["front loaded carry"],
     "pattern": "LOADED_CARRY", "pattern2": "ANTI_EXTENSION", "class": "DUMBBELL", "primary": ["CORE", "UPPER_BACK"], "secondary": ["FOREARMS"],
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
-    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1}, "fatigue": 2,
+    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 2,
     "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "setup": 10, "station": "dumbbells",
     "family": "bracing", "rung": 2, "regression": "brace-breathing",
     "text": {
@@ -56,7 +56,7 @@
     "id": "kb-farmer-carry", "name": "Kettlebell farmer's carry", "aliases": ["kb farmers walk"],
     "pattern": "LOADED_CARRY", "class": "KETTLEBELL", "primary": ["FOREARMS", "UPPER_BACK", "CORE"], "secondary": ["GLUTES"],
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
-    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1}, "fatigue": 3,
+    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "setup": 15, "station": "kettlebells",
     "tags": ["grip_intensive"],
     "text": {
@@ -69,7 +69,7 @@
     "id": "kb-suitcase-carry", "name": "Kettlebell suitcase carry", "aliases": ["kb suitcase carry"],
     "pattern": "LOADED_CARRY", "pattern2": "ANTI_LATERAL_FLEXION", "class": "KETTLEBELL", "primary": ["CORE", "FOREARMS"], "secondary": ["UPPER_BACK"],
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "ISOLATION_OR_CORE",
-    "difficulty": 2, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1}, "fatigue": 2,
+    "difficulty": 2, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 2,
     "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "unilateral": true, "setup": 15, "station": "kettlebells",
     "tags": ["grip_intensive"], "family": "anti_lateral_flexion", "rung": 4, "progression": "kb-offset-overhead-carry",
     "text": {
@@ -82,7 +82,7 @@
     "id": "kb-offset-overhead-carry", "name": "Kettlebell overhead carry (one arm)", "aliases": ["waiter carry", "overhead carry"],
     "pattern": "LOADED_CARRY", "pattern2": "ANTI_LATERAL_FLEXION", "class": "KETTLEBELL", "primary": ["CORE", "SIDE_DELTS"], "secondary": ["UPPER_BACK", "TRICEPS"],
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "ISOLATION_OR_CORE",
-    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "SPINE": 1, "WRIST": 1}, "fatigue": 2,
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "SPINE": 1, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 2,
     "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [15, 30], "max_reps": 40, "tempo": 1.0, "unilateral": true, "setup": 20, "station": "kettlebells",
     "tags": ["overhead"], "family": "anti_lateral_flexion", "rung": 5, "regression": "suitcase-carry",
     "text": {
@@ -211,7 +211,7 @@
     "pattern": "ANTI_EXTENSION", "class": "DUMBBELL", "primary": ["CORE"], "secondary": [],
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
-    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 10, "station": "dumbbells",
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 10, "station": "dumbbells",
     "regression": "dead-bug",
     "text": {
       "setup": "Lie in the dead bug position holding a light dumbbell in both hands straight above your chest.",

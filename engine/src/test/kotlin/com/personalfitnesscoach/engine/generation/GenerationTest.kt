@@ -56,6 +56,20 @@ class GenerationTest {
         }
     }
 
+    @Test fun `TC-GEN-001c the next-exposure prescription sets the load for its own rep range, the e1RM for a new one`() {
+        val d = day()
+        val slot = d.slots.first { it.exercise.id == "back-squat" }
+        val same = com.personalfitnesscoach.engine.progression.Prescription(77.5, slot.reps, slot.reps.first, com.personalfitnesscoach.engine.progression.ProgressionAction.LOAD_JUMP)
+        val r1 = SessionGenerator.generate(req(d).copy(progression = mapOf("back-squat" to same)))
+        assertEquals(77.5, r1.value.items.first { it.exercise.id == "back-squat" }.load!!, 1e-9)
+        assertTrue(r1.decisions.any { it.reason == ReasonKey.LOAD_FROM_PROGRESSION })
+        val other = same.copy(repRange = (slot.reps.first + 3)..(slot.reps.last + 3))
+        val r2 = SessionGenerator.generate(req(d).copy(progression = mapOf("back-squat" to other)))
+        val sq = r2.value.items.first { it.exercise.id == "back-squat" }
+        assertTrue(sq.load != 77.5 && sq.reps == slot.reps)
+        assertTrue(r2.decisions.any { it.reason == ReasonKey.LOAD_FROM_E1RM })
+    }
+
     @Test fun `missing equipment swaps to the same pattern`() {
         val d = day()
         val w = SessionGenerator.generate(req(d).copy(equipmentToday = FULL_GYM - "barbell")).value

@@ -33,6 +33,8 @@ object Streak {
     fun compute(history: List<WeekRecord>, thisYear: Int = history.lastOrNull()?.year ?: 0): StreakState {
         var current = 0; var best = 0; var lastFreeze: Int? = null; var trained = 0
         for ((i, w) in history.withIndex()) {
+            // A week with nothing planned (holiday, marked break) neither counts nor breaks the streak.
+            if (w.planned <= 0) continue
             if (counts(w)) {
                 current++; if (w.year == thisYear) trained++
             } else if (lastFreeze == null || i - lastFreeze >= P.ADH_001.freeze_per_weeks) {

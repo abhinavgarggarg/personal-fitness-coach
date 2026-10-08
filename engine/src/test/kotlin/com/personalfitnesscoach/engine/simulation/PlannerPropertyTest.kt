@@ -48,11 +48,13 @@ class PlannerPropertyTest {
     private fun randomInput(rnd: Random): WeekInput {
         val level = Level.entries[rnd.nextInt(3)]
         val days = 2 + rnd.nextInt(5)
-        val available = if (rnd.nextInt(3) == 0) (0..6).shuffled(rnd).take(days + rnd.nextInt(7 - days + 1)).toSet() else (0..6).toSet()
+        // A third of profiles have restricted days, sometimes fewer than the days they asked for (review findings R04, R16).
+        val available = if (rnd.nextInt(3) == 0) (0..6).shuffled(rnd).take(2 + rnd.nextInt(6)).toSet() else (0..6).toSet()
         val injuries = Joint.entries.filter { rnd.nextInt(8) == 0 }.toSet()
         val inj = Individual.injuries(injuries, weeksSinceStart = rnd.nextInt(8)).value
         val week = 1 + rnd.nextInt(52)
-        return WeekInput(level, rnd.nextInt(120), days, Gyms.ALL[rnd.nextInt(Gyms.ALL.size)], Blueprint.context(program, week),
+        val gym = Gyms.ALL[rnd.nextInt(Gyms.ALL.size)] + (if (rnd.nextInt(3) == 0) setOf("plyo_box", "jump_rope") else emptySet())
+        return WeekInput(level, rnd.nextInt(120), days, gym, Blueprint.context(program, week),
             age = 18 + rnd.nextInt(60), availableDays = available, preferredDays = (0..6).filter { rnd.nextBoolean() }.toSet(),
             sessionMinutes = listOf(30, 45, 60, 75, 90)[rnd.nextInt(5)], deload = rnd.nextBoolean(),
             screening = if (rnd.nextInt(6) == 0) ScreeningMode.CONSERVATIVE else ScreeningMode.STANDARD,
@@ -99,12 +101,22 @@ class PlannerPropertyTest {
                 assertTrue(tag, slots.all { it.targetRir >= P.SAF_001.conservative_mode.min_rir })
             }
             if (plan.deload) assertTrue(tag, slots.all { it.targetRir >= P.DEL_003.min_rir } && slots.none { it.power })
-            // Spacing when every day is available.
-            if (i.availableDays.size == 7) {
-                for (a in heavy) for (b in heavy) if (a != b) assertTrue(tag, ((b - a + 7) % 7) >= 2)
-            }
+            // SCH-002 spacing whatever days are available: heavy lower days ≥ 48 h apart (wrapping round the week)
+            // and no more than 3 hard days in a row (review finding R04).
+            for (a in heavy) for (b in heavy) if (a != b) assertTrue("$tag avail ${i.availableDays} heavy $heavy", ((b - a + 7) % 7) >= 2)
+            assertTrue("$tag avail ${i.availableDays}", com.personalfitnesscoach.engine.program.Templates.maxHardRun(plan.days.map { it.weekday },
+                plan.days.map { it.template }) <= P.SCH_002.max_consecutive_hard_days)
+            // CON-004: at most one impact session a week, counting plyometric power work too (R03).
+            val impactDays = plan.days.filter { d -> d.slots.any { it.exercise.impact > 0 } || d.conditioning.any { it.impact > 0 } }
+            assertTrue("$tag impact days: " + impactDays.map { d -> "${d.weekday}:${d.slots.filter { it.exercise.impact > 0 }.map { "${it.spec.role}:${it.exercise.id}" }}+${d.conditioning.filter { it.impact > 0 }.map { it.modality }}" },
+                impactDays.size <= P.CON_004.impact_sessions_per_week_max)
             // Never crunches by default (CORE-001).
             assertTrue(tag, slots.none { it.exercise.userAddOnly })
+            // An exercise at most once a day; jumps and throws only in power slots.
+            for (d in plan.days) assertEquals(tag, d.slots.size, d.slots.map { it.exercise.id }.toSet().size)
+            assertTrue(tag, slots.none { it.spec.role != com.personalfitnesscoach.engine.program.SlotRole.POWER &&
+                it.spec.role != com.personalfitnesscoach.engine.program.SlotRole.ROTATION && it.exercise.powerCapable &&
+                it.exercise.loadType == com.personalfitnesscoach.engine.model.LoadType.BODYWEIGHT })
         }
     }
 
@@ -137,6 +149,7 @@ class PlannerPropertyTest {
             if (req.hiitEarlierToday) assertTrue(w.items.none { it.role == com.personalfitnesscoach.engine.program.SlotRole.POWER })
             assertTrue(w.items.all { it.sets >= 1 && it.targetRir >= 1.0 })
             assertTrue(w.items.all { it.lastSetToFailure.not() || it.exercise.failureSafe })
+            assertEquals("case $n ${w.items.map { it.exercise.id }}", w.items.size, w.items.map { it.exercise.id }.toSet().size)
         }
     }
 

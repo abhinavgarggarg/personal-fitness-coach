@@ -191,8 +191,12 @@ object Blueprint {
     fun advanceClock(program: Program, clockWeek: Int, plannedSessions: Int, completedSessions: Int, disruption: Disruption = Disruption.NONE, breakDays: Int = 0): EngineResult<ClockStep> {
         val ctx = context(program, clockWeek)
         val step = when {
-            disruption == Disruption.BREAK && breakDays >= P.PER_005.restart_block_after_weeks * 7 ->
-                ClockStep(ctx.block.startWeek, ClockAction.RESTART_BLOCK)
+            // A finished block is not restarted: a break during its deload-or-pivot week restarts the next block; flex and review weeks stay put.
+            disruption == Disruption.BREAK && breakDays >= P.PER_005.restart_block_after_weeks * 7 -> ClockStep(when (ctx.kind) {
+                WeekKind.DELOAD_OR_PIVOT -> program.blocks.getOrNull(ctx.blockIndex + 1)?.startWeek ?: clockWeek
+                WeekKind.FLEX, WeekKind.REVIEW -> clockWeek
+                else -> ctx.block.startWeek
+            }, ClockAction.RESTART_BLOCK)
             disruption == Disruption.BREAK && breakDays >= 14 -> ClockStep(clockWeek, ClockAction.RETURN_TO_TRAINING)
             disruption == Disruption.HOLIDAY -> ClockStep(clockWeek, ClockAction.HOLIDAY_WEEK)
             disruption == Disruption.TRAVEL && completedSessions.toDouble() >= plannedSessions * P.PER_005.pause_below_session_share ->

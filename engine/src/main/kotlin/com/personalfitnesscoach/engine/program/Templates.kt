@@ -132,6 +132,28 @@ object Templates {
         return pen to ok
     }
 
+    /** Longest run of hard days in a row, wrapping round the week (SCH-002). */
+    fun maxHardRun(days: List<Int>, order: List<DayTemplate>): Int {
+        val hard = days.zip(order).filter { it.second.hard }.map { it.first }.toSet()
+        if (hard.size >= 7) return 7
+        var run = 0; var max = 0
+        for (d in 0 until 14) { if ((d % 7) in hard) { run++; max = maxOf(max, run) } else run = 0 }
+        return max
+    }
+
+    /**
+     * SCH-002: indices (into `order`) of heavy lower-body days that come less than 48 h after another
+     * heavy lower-body day. The planner turns them into moderate lower-body days.
+     */
+    fun heavyConflicts(days: List<Int>, order: List<DayTemplate>): Set<Int> {
+        val out = LinkedHashSet<Int>()
+        val heavy = days.indices.filter { order[it].heavyLower }.sortedBy { days[it] }
+        for (a in heavy) for (b in heavy) if (a != b && b !in out && a !in out) {
+            if (gap(days[a], days[b]) in 1 until P.SCH_002.heavy_lower_min_h / 24) out += b
+        }
+        return out
+    }
+
     /**
      * SCH-002: choose the weekdays (0 = Monday) and the session order. `available` days are hard
      * limits; `preferred` days are favoured. 2–4-day templates keep their order; 5–6-day

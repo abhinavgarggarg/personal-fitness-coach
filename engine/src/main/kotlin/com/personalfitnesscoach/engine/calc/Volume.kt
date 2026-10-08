@@ -9,22 +9,22 @@ import com.personalfitnesscoach.engine.registry.P
 object Volume {
     /** Credit per muscle for `hardSets` sets of an exercise: 1.0 primary, 0.5 secondary. */
     fun credit(ex: Exercise, hardSets: Double): Map<Muscle, Double> {
-        val out = HashMap<Muscle, Double>()
+        val out = java.util.EnumMap<Muscle, Double>(Muscle::class.java)
         for (m in ex.secondary) out[m] = P.VOL_002.secondary * hardSets
         for (m in ex.primary) out[m] = P.VOL_002.primary * hardSets // primary wins on overlap
         return out
     }
 
-    /** Sum of fractional credit across many (exercise, hard sets) entries. */
+    /** Sum of fractional credit across many (exercise, hard sets) entries. Iterates in muscle order (deterministic). */
     fun weekly(entries: List<Pair<Exercise, Double>>): Map<Muscle, Double> {
-        val acc = HashMap<Muscle, Double>()
+        val acc = java.util.EnumMap<Muscle, Double>(Muscle::class.java)
         for ((ex, sets) in entries) for ((m, c) in credit(ex, sets)) acc[m] = (acc[m] ?: 0.0) + c
         return acc
     }
 
     /** Direct (primary) sets per muscle in one session, for the per-session cap. */
     fun directPerSession(entries: List<Pair<Exercise, Double>>): Map<Muscle, Double> {
-        val acc = HashMap<Muscle, Double>()
+        val acc = java.util.EnumMap<Muscle, Double>(Muscle::class.java)
         for ((ex, sets) in entries) for (m in ex.primary) acc[m] = (acc[m] ?: 0.0) + sets
         return acc
     }
