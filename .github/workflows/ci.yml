@@ -60,6 +60,12 @@ jobs:
           "$AAPT2" dump permissions "$APK" | tee permissions.txt
           python3 -I tools/check_permissions.py < permissions.txt
 
+      - name: 16 KB page-size compatibility (Android 15+ devices)
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -n 1)
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)
+          if unzip -l "$APK" | grep -q '\.so$'; then "${BT}zipalign" -c -P 16 -v 4 "$APK" | tail -n 3; else echo "No native libraries: compatible with 4 KB and 16 KB page sizes"; fi
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:

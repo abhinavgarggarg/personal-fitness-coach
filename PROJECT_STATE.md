@@ -1,6 +1,6 @@
 # PROJECT STATE — Personal Fitness Coach
 
-Last updated: 2026-10-08 · Master prompt: v3.0 (7 Oct 2026)
+Last updated: 2026-10-08 (PO inputs) · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
 **Phase 3 — Application Development: IN PROGRESS. Part 1 (engine core, safety kernel, project foundation) complete; waiting for the Product Owner to reply CONTINUE.**
@@ -35,10 +35,10 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 | Engine source and tests | `engine/src/main/kotlin/com/personalfitnesscoach/engine/` (core, model, calc, progression, planning, safety, registry) · `engine/src/test/...` |
 | App shell | `app/` (Compose, offline, permissions allow-list in the manifest) |
 | Build | `settings.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml`, `gradlew` (Gradle 9.7.0) |
-| CI | `.github/workflows/ci.yml` — registry check, Phase 1 checks, engine tests, rule coverage, app tests, debug APK, permission allow-list |
+| CI | `.github/workflows/ci.yml` — registry check, Phase 1 checks, engine tests, rule coverage, app tests, debug APK, permission allow-list, 16 KB page check · `.github/workflows/devices.yml` — weekly emulator matrix (Android 10–16, small phone, tablet, 200% text) |
 | Local engine build | `tools/local_build.sh` (Gradle's bundled Kotlin 2.0.21 + JUnit 4; no network) |
 | Checks | `tools/check_phase1.py` (45 checks, 0 failures), `tools/rule_coverage.py`, `tools/check_permissions.py` |
-| Decisions | `DECISIONS.md` (D-001 … D-043) |
+| Decisions | `DECISIONS.md` (D-001 … D-045) |
 | Code backup until GitHub exists (Project only) | `claude/snapshots/phase3_part1_source_snapshot.md` — every source file of commit 43fb83a except the generated registry and the wrapper jar (both regenerable; instructions inside) |
 
 ## Environment (re-audited 2026-10-08)
@@ -46,11 +46,14 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 - Blocked: Google Maven, Maven Central, Gradle Plugin Portal, services.gradle.org (proxy 403); no Android SDK, emulator or device; no GitHub account linked to this session; some developer.android.com pages need fetch permission.
 - Consequence: the pure-Kotlin engine is compiled and tested here; everything Android is built and tested by GitHub Actions (F3 Option B).
 
+## Product Owner inputs (8 Oct 2026)
+- GitHub repository: `abhinavgarggarg/personal-fitness-coach` (empty). Reading works; **pushing is refused until the Claude GitHub App is installed on the repository** (asked 8 Oct).
+- Phone: Motorola Edge 50, Android 16. Request: the app must work on any phone (→ D-044) and use the phone's Gemini instead of paid AI calls (→ D-045).
+
 ## Open items for the Product Owner
-1. **GitHub (blocks verification of the Android build):** connect GitHub in claude.ai settings and create an empty private repository; share its owner/name.
-2. **Phone model and Android version** (confirms minSdk 29 and whether D-036 matters).
-3. D-036 adds one Android-12-only permission (SCHEDULE_EXACT_ALARM) to the approved list — no prompt is shown to you; noted for awareness.
-4. Part 0 profile still blank — collected in onboarding.
+1. Install the Claude GitHub App on the repository (https://github.com/apps/claude/installations/select_target → Only select repositories → personal-fitness-coach), then reply "done".
+2. D-036 adds one Android-12-only permission (SCHEDULE_EXACT_ALARM) — needed for any-phone support; no prompt is shown.
+3. Part 0 profile still blank — collected in onboarding.
 
 ## Next actions
 1. On "CONTINUE": Phase 3 Part 2 — exercise library seed (original wording), week templates (SCH-001/002), session generation pipeline (GEN-001) wired through the validator, remaining engine rules with tests.

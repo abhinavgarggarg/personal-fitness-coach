@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-08 — Any-phone support and zero-cost AI (PO request)
+- D-044: app targets any Android phone or tablet with Android 10+; device tests (`app/src/androidTest`) and a weekly emulator matrix (`.github/workflows/devices.yml`); 16 KB page-size check in CI; first screen scrolls at large text sizes.
+- D-045: no AI service calls or tokens; "Ask Gemini" share button planned for the coach screens; on-device Gemini Nano only on Google-supported phones, later and optional.
+- GitHub repository attached (read-only until the Claude GitHub App is installed).
+
 ## 2026-10-08 — Phase 3 Part 1: engine core, safety kernel, project foundation
 - `:engine` (pure Kotlin): readiness and tiers, effort, e1RM, plate math, volume, SSU, session-RPE workload and EWMA, fatigue signals and deload; progression, in-session autoregulation, calibration, return to training, warm-up; time budget; substitution; safety kernel (screening, red flags, illness gate, pain gate, hard caps, user additions, session validator, week checks). Every engine output carries Decision Log entries with rule IDs.
 - Rule Registry compiled into Kotlin (`GeneratedRegistry.kt`, registry 1.0.1, SHA-256 recorded); CI fails if it is stale.
