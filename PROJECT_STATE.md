@@ -1,18 +1,26 @@
 # PROJECT STATE — Personal Fitness Coach
 
-Last updated: 2026-10-07 · Master prompt: v3.0 (7 Oct 2026)
+Last updated: 2026-10-08 · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
-**Phase 2 — Product Requirements, UX & Technical Architecture: COMPLETE (draft), AWAITING PRODUCT OWNER SIGN-OFF.**
-Do not start Phase 3 (no app code) until the Product Owner replies "APPROVED".
+**Phase 3 — Application Development: IN PROGRESS. Part 1 (engine core, safety kernel, project foundation) complete; waiting for the Product Owner to reply CONTINUE.**
 
 | Phase | Status | Date |
 |---|---|---|
 | 1 Fitness research & evidence engine | APPROVED | 2026-10-07 |
-| 2 Product requirements, UX & architecture | Draft complete; gate presented | 2026-10-07 |
-| 3 Application development | NOT STARTED | — |
+| 2 Product requirements, UX & architecture | APPROVED (D-028) | 2026-10-07 |
+| 3 Application development | IN PROGRESS — Part 1 complete | 2026-10-08 |
 | 4 Testing, validation & UAT | NOT STARTED | — |
 | 5 Production build & APK delivery | NOT STARTED | — |
+
+## Phase 3 progress
+| Part | Content | Status |
+|---|---|---|
+| 1 | Project foundation (Gradle, version catalog, wrapper, CI workflow, app shell); `:engine` calculators (readiness, e1RM, plate math, volume, SSU, workload, fatigue/deload); progression, autoregulation, calibration, return-to-training, warm-up; time budget, substitution; safety kernel (screening, red flags, illness gate, pain gate, caps, user additions, session validator, week checks) | Engine: **VERIFIED** (compiled and 173 tests passing locally, 2026-10-08). Android app shell + CI: **IMPLEMENTED — PENDING ENVIRONMENT VERIFICATION** (needs GitHub) |
+| 2 | Exercise library (original text), week templates and session generation pipeline (GEN-001), remaining engine rules (reps, rest, aerobic, periodisation, adherence) | NOT STARTED |
+| 3+ | Room data layer, screens, rest-timer alarms, Tier 1 coach, backup/export, research-update workflow, Phase 3 gate | NOT STARTED |
+
+Rule coverage after Part 1: 73 of 140 rules have all their registry test cases (`python3 tools/rule_coverage.py`). The Phase 3 gate requires 140/140 (`--require-all`).
 
 ## Where things live
 In the claude.ai "Fitness App" Project, every repo file is stored under the `claude/` prefix (e.g. `claude/rules/rule_registry_v1.0.json`).
@@ -21,31 +29,29 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 |---|---|
 | Phase 1 report (commentable) | https://claude.ai/code/artifact/277679ce-731c-4ce0-8870-9cb5347a5d51 · copy `docs/phase1/phase1_report.md` |
 | Phase 2 report (commentable) | https://claude.ai/code/artifact/ddd84b34-8a3a-4466-b655-2c98bc041319 · copy `docs/phase2/phase2_report.md` |
-| Rule Registry (approved, registry_version 1.0.1) | `rules/rule_registry_v1.0.json` (v0.1 draft kept for history) |
-| Registry generator (single source of truth) | `tools/build_registry.py` |
-| Checks | `tools/check_phase1.py` — 45 checks, 0 failures on 2026-10-07 |
-| Decisions | `DECISIONS.md` (D-001 … D-027) |
+| Phase 3 Part 1 report | `docs/phase3/part1_report.md` |
+| Rule Registry (approved, registry_version 1.0.1) | `rules/rule_registry_v1.0.json` |
+| Registry → Kotlin generator | `tools/gen_registry_kotlin.py` (writes `engine/.../registry/GeneratedRegistry.kt`; `--check` fails if stale) |
+| Engine source and tests | `engine/src/main/kotlin/com/personalfitnesscoach/engine/` (core, model, calc, progression, planning, safety, registry) · `engine/src/test/...` |
+| App shell | `app/` (Compose, offline, permissions allow-list in the manifest) |
+| Build | `settings.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml`, `gradlew` (Gradle 9.7.0) |
+| CI | `.github/workflows/ci.yml` — registry check, Phase 1 checks, engine tests, rule coverage, app tests, debug APK, permission allow-list |
+| Local engine build | `tools/local_build.sh` (Gradle's bundled Kotlin 2.0.21 + JUnit 4; no network) |
+| Checks | `tools/check_phase1.py` (45 checks, 0 failures), `tools/rule_coverage.py`, `tools/check_permissions.py` |
+| Decisions | `DECISIONS.md` (D-001 … D-043) |
 
-## Phase 2 key decisions (summary)
-- Stack: Kotlin + Jetpack Compose + Material 3 + Room 3; modules `:engine` (pure Kotlin), `:coach` (pure Kotlin), `:data`, `:app`, `:simulator`.
-- V1 offline by construction: **no INTERNET permission**; Tier 1 deterministic coach; Tier 2 LLM interface off.
-- Rest alerts: exact alarm (setAlarmClock + USE_EXACT_ALARM) + countdown notification; permissions = POST_NOTIFICATIONS, USE_EXACT_ALARM, VIBRATE only.
-- Data: 26 Room tables, schema v1, explicit tested migrations only; registry + exercise library bundled read-only.
-- Backup: Android Auto Backup + `.pfcbackup` export (optional password, default off) + restore with automatic pre-restore export.
-- minSdk 29 ASSUMPTION; versions pinned at Phase 3 start (ref 7 Oct 2026: Kotlin 2.4, AGP 9.x, Compose 1.12.1, Material3 1.4.0, Room 3.0.3, Android 17/API 37).
+## Environment (re-audited 2026-10-08)
+- Available: shell, Python 3, git, JDK 21, Gradle 8.14.3 with bundled Kotlin 2.0.21 compiler and JUnit 4.13.2, web search.
+- Blocked: Google Maven, Maven Central, Gradle Plugin Portal, services.gradle.org (proxy 403); no Android SDK, emulator or device; no GitHub account linked to this session; some developer.android.com pages need fetch permission.
+- Consequence: the pure-Kotlin engine is compiled and tested here; everything Android is built and tested by GitHub Actions (F3 Option B).
 
-## Environment (A8, 2026-10-07) — re-audit before Phase 3
-- Available: web search/fetch, shell, Python 3.13, git, JDK 21, Gradle 8.14.3.
-- Not available: Android SDK, Flutter, emulator (/dev/kvm absent), device, GitHub auth.
-- Network policy blocks Google Maven, Maven Central, Gradle Plugin Portal, dl.google.com → all Android builds/tests run in GitHub Actions (F3 Option B).
-- PubMed/PMC blocked by bot check; some developer.android.com pages need fetch permission.
-
-## Open items for the Product Owner (none block Phase 2 sign-off)
-1. Phone model and Android version (confirms minSdk and on-device AI eligibility).
-2. GitHub account (existing one is fine) — required before Phase 3; send step-by-step instructions on approval.
-3. Part 0 profile still blank — collected in onboarding.
+## Open items for the Product Owner
+1. **GitHub (blocks verification of the Android build):** connect GitHub in claude.ai settings and create an empty private repository; share its owner/name.
+2. **Phone model and Android version** (confirms minSdk 29 and whether D-036 matters).
+3. D-036 adds one Android-12-only permission (SCHEDULE_EXACT_ALARM) to the approved list — no prompt is shown to you; noted for awareness.
+4. Part 0 profile still blank — collected in onboarding.
 
 ## Next actions
-1. Wait for Phase 2 sign-off or feedback; on feedback revise the Phase 2 doc, log changes, re-present the gate.
-2. On approval: log D-028 approval; re-run A8 audit; walk the PO through GitHub setup (repo, Actions, secrets for signing key); pin versions in a version catalog.
-3. Phase 3, Module 1 (project foundation + CI producing a debug APK) first; then modules 2–18 per D2, each building green in CI.
+1. On "CONTINUE": Phase 3 Part 2 — exercise library seed (original wording), week templates (SCH-001/002), session generation pipeline (GEN-001) wired through the validator, remaining engine rules with tests.
+2. When GitHub is connected: push the repo, run CI, fix anything the first real Gradle/AGP build finds, then pin GitHub Actions to exact versions (D-035).
+3. Keep the independent-review step for safety-relevant parts (Part 1 review: 14 defects found and fixed with regression tests).

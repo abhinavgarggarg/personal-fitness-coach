@@ -1,0 +1,81 @@
+# Continuous integration (Phase 2, F3 Option B). Runs on every push and pull request and produces a
+# debug APK. Release signing and the release APK are added in Phase 5; secrets never appear in logs.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Rule Registry and Phase 1 consistency
+        run: |
+          python3 -I tools/gen_registry_kotlin.py --check
+          python3 -I tools/check_phase1.py
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Engine tests (rules, calculators, safety kernel)
+        run: ./gradlew --no-daemon :engine:test
+
+      - name: Rule coverage report
+        run: python3 -I tools/rule_coverage.py --markdown rule-coverage.md
+
+      - name: App unit tests and debug APK
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Permission allow-list (no INTERNET)
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -n 1)
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)aapt2
+          "$AAPT2" dump permissions "$APK" | tee permissions.txt
+          python3 -I tools/check_permissions.py < permissions.txt
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-fitness-coach-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ github.run_number }}
+          path: |
+            rule-coverage.md
+            permissions.txt
+            engine/build/reports/tests/
+            app/build/reports/tests/
+          retention-days: 30
+          if-no-files-found: ignore

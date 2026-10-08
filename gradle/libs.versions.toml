@@ -1,0 +1,25 @@
+# Pinned versions (Phase 2: one catalog, changed only through change control — see DECISIONS.md D-035).
+# Checked 7–8 Oct 2026: AGP 9.4.0 (Sept 2026), Compose BOM 2026.09.00, Gradle 9.7.0, Kotlin 2.4.0.
+# core-ktx and activity-compose are pinned to releases known to exist; bump after the first green CI run.
+[versions]
+agp = "9.4.0"
+kotlin = "2.4.0"
+composeBom = "2026.09.00"
+coreKtx = "1.16.0"
+activityCompose = "1.10.1"
+junit4 = "4.13.2"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+junit4 = { group = "junit", name = "junit", version.ref = "junit4" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

@@ -1,0 +1,23 @@
+# Build output
+build/
+build-local/
+*/build/
+.gradle/
+.kotlin/
+local.properties
+captures/
+*.apk
+*.aab
+!**/src/**/*.apk
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Secrets — the release signing key and its passwords never enter the repository (Phase 2 D-022)
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+*.p12

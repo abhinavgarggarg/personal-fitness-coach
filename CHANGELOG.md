@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-10-08 — Phase 3 Part 1: engine core, safety kernel, project foundation
+- `:engine` (pure Kotlin): readiness and tiers, effort, e1RM, plate math, volume, SSU, session-RPE workload and EWMA, fatigue signals and deload; progression, in-session autoregulation, calibration, return to training, warm-up; time budget; substitution; safety kernel (screening, red flags, illness gate, pain gate, hard caps, user additions, session validator, week checks). Every engine output carries Decision Log entries with rule IDs.
+- Rule Registry compiled into Kotlin (`GeneratedRegistry.kt`, registry 1.0.1, SHA-256 recorded); CI fails if it is stale.
+- 173 JUnit tests passing locally, including seeded property tests (3,000 random sessions through the validator) and the Phase 1 worked examples. Rule coverage 73/140.
+- Independent review of the safety kernel (two passes): 14 defects fixed, each with a regression test; safety inputs now fail closed.
+- Project foundation: Gradle 9.7.0 wrapper, version catalog (AGP 9.4.0, Kotlin 2.4.0, Compose BOM 2026.09.00), app shell with permission allow-list and no INTERNET, GitHub Actions CI producing a debug APK — not yet run (GitHub not connected).
+- Decisions D-028 to D-043.
+
 ## 2026-10-07 — Phase 2 draft (awaiting sign-off)
 - Phase 2 report: 19 C19 deliverables, navigation map, 6 wireframes, state machine and system diagrams — https://claude.ai/code/artifact/ddd84b34-8a3a-4466-b655-2c98bc041319 (markdown copy `docs/phase2/phase2_report.md`).
 - Decisions D-019 to D-027 (stack, Tier 1 coach, no internet permission, alarm-based rest alerts, no SQLCipher, minSdk 29 assumption, manual DI, optional backup password, registry patch).
