@@ -18,7 +18,7 @@ The training "brain" of the app is built: it scores your daily check-in, picks t
 | First-week calibration, return after breaks and illness, warm-up ramps and compression | CAL-001, REG-001 to REG-005, WU-001 to WU-004 | VERIFIED |
 | Session time budget and extension; substitution scoring and learning | TIME-001 to TIME-004, SUB-001 to SUB-003 | VERIFIED |
 | Safety kernel: screening, red-flag stop, illness gate, pain gate, persistent-pain regions, hard caps, user additions, final validator, weekly balance checks | SAF-001 to SAF-008, INT-003, HIIT-001 to HIIT-005, CON-003, CON-004, MOD-001, PAT-001 to PAT-004, AGE-001 | VERIFIED |
-| Android project: Gradle wrapper 9.7.0, version catalog, app shell (offline, 4 permissions), CI workflow producing a debug APK | Phase 2 F3 Option B | IMPLEMENTED — PENDING ENVIRONMENT VERIFICATION |
+| Android project: Gradle wrapper 9.7.0, version catalog, app shell (offline, 4 permissions), CI workflow producing a debug APK, device matrix | Phase 2 F3 Option B, D-044 | VERIFIED on GitHub Actions (8 Oct): build, APK, permissions, launch tests on 5 emulator configurations |
 
 ## How it was checked
 - **173 tests, all passing** (local compile with Gradle's bundled Kotlin 2.0.21 and JUnit 4). Test names carry rule IDs, so coverage is counted automatically: **73 of 140 rules** have all their registry test cases so far; the rest belong to later parts (exercise library, generation, reps/rest/aerobic rules, adherence, data, coach).
@@ -32,10 +32,12 @@ The training "brain" of the app is built: it scores your daily check-in, picks t
 3. **Light dumbbell jumps (D-043).** Going from 10 to 12.5 kg is a 25% jump, more than the approved weekly limit. The engine now lowers the rep target to stay within the limit, or holds and suggests another variation when even the bottom of the rep range would be too big a jump.
 4. **Tests use JUnit 4 rather than the Kotest library named in Phase 2 (D-029),** so the engine can be tested here as well as on GitHub.
 
+**Update, 8 Oct:** the first real Android build on GitHub passed: 173/173 engine tests with the pinned Kotlin 2.4.0, the debug APK built, the permission check passed with no internet permission, and the app launched correctly on Android 10, 12, 14 (at 200% text) and 16, on a small phone, phones and a tablet.
+
 ## Risks and open issues
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Android versions chosen without access to the download servers (D-035) | First GitHub build may need small version fixes | First CI run is the check; fixes are routine |
+| Android versions chosen without access to the download servers (D-035) | Resolved — first GitHub build passed unchanged | — |
 | New coefficients (modality joint stress D-042, fit functions D-033, time model) | Recommendations slightly off | Labelled REQUIRES VALIDATION; tuned in Phase 4 with simulations and your data |
 | Week-level balance is reported, not yet auto-corrected | None yet (no week planner exists) | Week planner in Part 2 re-plans on any issue |
 

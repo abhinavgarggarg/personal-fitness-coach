@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-08 — First real Android build on GitHub
+- Code pushed to github.com/abhinavgarggarg/personal-fitness-coach. CI green on the first run: engine 173/173 tests (Kotlin 2.4.0 via Gradle 9.7.0, AGP 9.4.0), app unit tests, debug APK, permission allow-list (no INTERNET), 16 KB page check.
+- Device matrix green: launch tests on Android 10 (small phone), 12, 14 (200% text), 16 phone and 16 tablet emulators.
+- GitHub Actions pinned to commit SHAs (checkout v7.0.1, setup-java v6.0.1, setup-python v7.0.0, upload-artifact v7.0.2, gradle/actions v6.4.0, android-emulator-runner v2.38.0); results reported as annotations.
+
 ## 2026-10-08 — Any-phone support and zero-cost AI (PO request)
 - D-044: app targets any Android phone or tablet with Android 10+; device tests (`app/src/androidTest`) and a weekly emulator matrix (`.github/workflows/devices.yml`); 16 KB page-size check in CI; first screen scrolls at large text sizes.
 - D-045: no AI service calls or tokens; "Ask Gemini" share button planned for the coach screens; on-device Gemini Nano only on Google-supported phones, later and optional.
