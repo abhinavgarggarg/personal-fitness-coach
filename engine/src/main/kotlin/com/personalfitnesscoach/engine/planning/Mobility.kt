@@ -87,19 +87,21 @@ object Mobility {
      */
     fun cooldown(trained: Set<Muscle>, minutes: Double, equipment: Set<String> = emptySet()): EngineResult<List<DrillDose>> {
         val breathing = drills.first { it.kind == DrillKind.BREATHING }
-        val breathSec = breathing.amount.coerceIn(P.MOB_002.breathing_minutes[0] * 60, P.MOB_002.breathing_minutes[1] * 60)
-        val budget = (minutes * 60).toInt() - breathSec
+        val minBreath = P.MOB_002.breathing_minutes[0] * 60
+        val maxBreath = P.MOB_002.breathing_minutes[1] * 60
+        val budget = (minutes * 60).toInt()
         val holdSec = P.MOB_002.post_seconds_per_muscle[0]
         val regions = trained.flatMap { regionsOf(it) }.toSet()
         val out = ArrayList<DrillDose>()
         var used = 0
+        // Stretches first, keeping room for at least 1 minute of breathing (+10 s change-over).
         for (d in drills.filter { it.kind == DrillKind.STRETCH && usable(it, equipment) && it.regions.any { r -> r in regions } }
             .sortedWith(compareByDescending<Drill> { d -> d.regions.count { it in regions } }.thenBy { it.id })) {
             val dose = DrillDose(d, 1, holdSec)
-            if (used + dose.seconds > budget) continue
+            if (used + dose.seconds > budget - minBreath - 10) continue
             out += dose; used += dose.seconds
         }
-        out += DrillDose(breathing, 1, breathSec)
+        out += DrillDose(breathing, 1, (budget - used - 10).coerceIn(minBreath, maxBreath))
         return EngineResult(out, listOf(Decision(DecisionKind.WARMUP, listOf(RuleIds.MOB_002), ReasonKey.MOBILITY_PLANNED,
             outputs = mapOf("cooldown" to out.map { it.drill.id }))))
     }
