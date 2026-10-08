@@ -39,6 +39,7 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 | Local engine build | `tools/local_build.sh` (Gradle's bundled Kotlin 2.0.21 + JUnit 4; no network) |
 | Checks | `tools/check_phase1.py` (45 checks, 0 failures), `tools/rule_coverage.py`, `tools/check_permissions.py` |
 | Decisions | `DECISIONS.md` (D-001 … D-043) |
+| Code backup until GitHub exists (Project only) | `claude/snapshots/phase3_part1_source_snapshot.md` — every source file of commit 43fb83a except the generated registry and the wrapper jar (both regenerable; instructions inside) |
 
 ## Environment (re-audited 2026-10-08)
 - Available: shell, Python 3, git, JDK 21, Gradle 8.14.3 with bundled Kotlin 2.0.21 compiler and JUnit 4.13.2, web search.
