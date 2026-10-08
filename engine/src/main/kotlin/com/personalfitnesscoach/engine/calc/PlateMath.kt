@@ -1,5 +1,6 @@
 package com.personalfitnesscoach.engine.calc
 
+import com.personalfitnesscoach.engine.model.Exercise
 import com.personalfitnesscoach.engine.model.LoadType
 import com.personalfitnesscoach.engine.registry.P
 
@@ -16,6 +17,10 @@ data class Inventory(
     val dumbbells: List<Double> = (1..20).map { it * 2.5 },
     val kettlebells: List<Double> = listOf(8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 32.0),
     val stack: Stack = Stack(5.0, 100.0, 5.0),
+    /** Other bars by library bar ID; the standard barbell uses [barKg]. */
+    val bars: Map<String, Double> = mapOf("ez_bar" to 10.0, "trap_bar" to 25.0),
+    /** Machine- or cable-specific stacks by equipment ID; anything not listed uses [stack]. */
+    val stacks: Map<String, Stack> = emptyMap(),
 )
 
 /** Rounding to loads that really exist in the gym (PROG-003). */
@@ -30,17 +35,37 @@ object PlateMath {
         LoadType.BODYWEIGHT, LoadType.TIME, LoadType.DISTANCE -> emptyList()
     }
 
-    private fun barbellLoads(inv: Inventory): List<Double> {
-        // Achievable per-side totals with bounded plate pairs (subset sums), in 0.05 kg units.
+    /**
+     * Every achievable load for one exercise: the right bar (EZ, trap bar), one loaded end for a
+     * landmine (plates only, at least one plate), or that machine's own stack.
+     */
+    fun loadsFor(ex: Exercise, inv: Inventory): List<Double> = when (ex.loadType) {
+        LoadType.BARBELL -> when (val bar = ex.bar ?: "barbell") {
+            "barbell" -> barbellLoads(inv)
+            "landmine" -> plateSums(inv, perPair = false).filter { it > 0L }.map { round(it / 20.0) }.sorted()
+            else -> barbellLoads(inv, inv.bars[bar] ?: inv.barKg)
+        }
+        LoadType.STACK -> {
+            val s = ex.equipment.sorted().firstNotNullOfOrNull { inv.stacks[it] } ?: inv.stack
+            loads(LoadType.STACK, inv.copy(stack = s))
+        }
+        else -> loads(ex.loadType, inv)
+    }
+
+    private fun barbellLoads(inv: Inventory, barKg: Double = inv.barKg): List<Double> =
+        plateSums(inv, perPair = true).map { round(barKg + 2.0 * it / 20.0) }.sorted()
+
+    /** Achievable per-side plate totals (pairs) or one-end totals (single plates), in 0.05 kg units. */
+    private fun plateSums(inv: Inventory, perPair: Boolean): Set<Long> {
         var sides = setOf(0L)
         for ((plate, count) in inv.plates) {
-            val pairs = count / 2
+            val n = if (perPair) count / 2 else count
             val unit = Math.round(plate * 20)
             val next = HashSet<Long>()
-            for (s in sides) for (k in 0..pairs) next.add(s + k * unit)
+            for (s in sides) for (k in 0..n) next.add(s + k * unit)
             sides = next
         }
-        return sides.map { round(inv.barKg + 2.0 * it / 20.0) }.sorted()
+        return sides
     }
 
     /**

@@ -1,0 +1,356 @@
+[
+  {
+    "id": "bench-press", "name": "Barbell bench press", "aliases": ["bench", "bench press", "flat bench"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BARBELL", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["barbell", "bench", "rack"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 2, "WRIST": 1}, "fatigue": 4,
+    "reps": [5, 8], "max_reps": 12, "e1rm": true, "tempo": 3.5, "setup": 60, "station": "rack",
+    "regression": "db-bench-press",
+    "text": {
+      "setup": "Lie on the bench with your eyes under the bar and feet flat. Set the safety arms just below chest height. Grip the bar a little wider than shoulder-width.",
+      "cues": ["Pull your shoulder blades together and down before unracking.", "Lower the bar to the lower chest with elbows at about 45 degrees.", "Press up and slightly back towards the rack."],
+      "mistakes": ["Bouncing the bar off the chest.", "Flaring the elbows straight out to the sides."],
+      "safety": "Bench inside a rack with safety arms set, or with a spotter. Never use a thumbless grip."
+    }
+  },
+  {
+    "id": "incline-bench-press", "name": "Incline barbell bench press", "aliases": ["incline bench"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BARBELL", "primary": ["CHEST", "FRONT_DELTS"], "secondary": ["TRICEPS"],
+    "equipment": ["barbell", "incline_bench", "rack"], "load": "BARBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 2, "WRIST": 1}, "fatigue": 4,
+    "reps": [6, 10], "max_reps": 12, "e1rm": true, "setup": 60, "station": "rack",
+    "regression": "db-incline-press",
+    "text": {
+      "setup": "Set an adjustable bench to about 30 degrees inside a rack with safety arms at chest height. Lie back with eyes just in front of the bar.",
+      "cues": ["Lower to the upper chest just below the collarbones.", "Keep the shoulder blades pinned to the bench.", "Press straight up."],
+      "mistakes": ["Setting the bench so steep it becomes a shoulder press."],
+      "safety": "Use the safety arms or a spotter."
+    }
+  },
+  {
+    "id": "close-grip-bench-press", "name": "Close-grip bench press", "aliases": ["close grip bench"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BARBELL", "primary": ["TRICEPS", "CHEST"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["barbell", "bench", "rack"], "load": "BARBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "ELBOW": 3, "WRIST": 2}, "fatigue": 4,
+    "reps": [6, 10], "max_reps": 12, "e1rm": true, "setup": 60, "station": "rack",
+    "regression": "db-bench-press",
+    "text": {
+      "setup": "Set up as for the bench press but grip the bar about shoulder-width apart.",
+      "cues": ["Keep elbows tucked closer to your sides.", "Touch the lower chest and press back up."],
+      "mistakes": ["Gripping so narrow that the wrists bend painfully."],
+      "safety": "Use the safety arms or a spotter."
+    }
+  },
+  {
+    "id": "db-bench-press", "name": "Dumbbell bench press", "aliases": ["db bench", "dumbbell press"],
+    "pattern": "HORIZONTAL_PUSH", "class": "DUMBBELL", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["dumbbells", "bench"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2, "WRIST": 1}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 30, "station": "bench",
+    "progression": "bench-press", "regression": "push-up",
+    "text": {
+      "setup": "Sit on the end of a bench with dumbbells on your thighs. Lie back while bringing them to chest level, palms facing your feet or each other.",
+      "cues": ["Lower the dumbbells beside your chest under control.", "Press up and slightly together without clanking them.", "Keep feet planted and shoulder blades set."],
+      "mistakes": ["Dropping the elbows far below the bench at the bottom."],
+      "safety": "To finish, bring the dumbbells to your chest and sit up with them on your thighs rather than dropping them out to the sides."
+    }
+  },
+  {
+    "id": "db-incline-press", "name": "Incline dumbbell press", "aliases": ["incline db press"],
+    "pattern": "HORIZONTAL_PUSH", "class": "DUMBBELL", "primary": ["CHEST", "FRONT_DELTS"], "secondary": ["TRICEPS"],
+    "equipment": ["dumbbells", "incline_bench"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2, "WRIST": 1}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 30, "station": "incline_bench",
+    "progression": "incline-bench-press",
+    "text": {
+      "setup": "Set the bench to about 30 degrees. Sit with the dumbbells on your thighs, then lie back and bring them to the top of your chest.",
+      "cues": ["Press up over your upper chest.", "Lower slowly until the dumbbells are level with your chest."],
+      "mistakes": ["Arching off the bench to make the press easier."]
+    }
+  },
+  {
+    "id": "db-floor-press", "name": "Dumbbell floor press", "aliases": ["floor press"],
+    "pattern": "HORIZONTAL_PUSH", "class": "DUMBBELL", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 2, "WRIST": 1}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "setup": 20, "station": "dumbbells",
+    "progression": "db-bench-press",
+    "text": {
+      "setup": "Lie on the floor with knees bent and a dumbbell in each hand, upper arms resting on the floor.",
+      "cues": ["Press up until the arms are straight.", "Lower until the upper arms lightly touch the floor, then press again."],
+      "mistakes": ["Bouncing the elbows off the floor."]
+    }
+  },
+  {
+    "id": "kb-floor-press", "name": "Kettlebell floor press", "aliases": ["kb floor press"],
+    "pattern": "HORIZONTAL_PUSH", "class": "KETTLEBELL", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS", "CORE"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 1, "ELBOW": 2, "WRIST": 2}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 20, "station": "kettlebells",
+    "text": {
+      "setup": "Lie on your back with knees bent. Roll to one side to pick up the kettlebell with both hands, then roll back with it resting on your forearm, elbow on the floor.",
+      "cues": ["Keep the wrist straight with the bell on the back of the forearm.", "Press up and lower until the elbow touches the floor."],
+      "mistakes": ["Letting the wrist bend back under the bell."],
+      "safety": "Always pick up and put down the bell by rolling to the side with both hands."
+    }
+  },
+  {
+    "id": "cable-chest-press", "name": "Standing cable chest press", "aliases": ["cable press"],
+    "pattern": "HORIZONTAL_PUSH", "class": "CABLE", "primary": ["CHEST"], "secondary": ["TRICEPS", "FRONT_DELTS", "CORE"],
+    "equipment": ["cable"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
+    "reps": [10, 15], "max_reps": 18, "failure_safe": true, "setup": 30, "station": "cable",
+    "text": {
+      "setup": "Set both pulleys at chest height with handles attached. Stand in the middle with one foot forward and the handles beside your chest.",
+      "cues": ["Press the handles forward until your arms are straight.", "Return slowly until hands are beside the chest."],
+      "mistakes": ["Leaning far forward so the body does the work."]
+    }
+  },
+  {
+    "id": "chest-press-machine", "name": "Machine chest press", "aliases": ["chest press"],
+    "pattern": "HORIZONTAL_PUSH", "class": "MACHINE", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["chest_press_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "chest_press_machine",
+    "text": {
+      "setup": "Adjust the seat so the handles are level with the middle of your chest. Sit with your back flat against the pad.",
+      "cues": ["Press the handles forward without locking your elbows hard.", "Return slowly until you feel a light stretch in the chest."],
+      "mistakes": ["Shoulders rolling forward off the pad."]
+    }
+  },
+  {
+    "id": "push-up-incline", "name": "Incline push-up", "aliases": ["bench push up", "elevated push up"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BODYWEIGHT", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS", "CORE"],
+    "equipment": ["bench"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1, "WRIST": 1}, "fatigue": 1,
+    "reps": [8, 15], "max_reps": 15, "failure_safe": true, "setup": 10, "station": "bench",
+    "tags": ["wrist_extension_load"], "family": "push_up", "rung": 1, "progression": "push-up",
+    "text": {
+      "setup": "Place your hands on the edge of a sturdy bench or box, slightly wider than shoulders, and walk your feet back into a straight-body position.",
+      "cues": ["Keep a straight line from head to heels.", "Lower your chest to the edge, then push away."],
+      "mistakes": ["Hips sagging towards the floor."]
+    }
+  },
+  {
+    "id": "push-up", "name": "Push-up", "aliases": ["press up", "pushup"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BODYWEIGHT", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS", "CORE"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 2, "ELBOW": 1, "WRIST": 2}, "fatigue": 2,
+    "reps": [6, 15], "max_reps": 15, "failure_safe": true, "setup": 5, "station": "floor",
+    "tags": ["wrist_extension_load"], "family": "push_up", "rung": 2,
+    "progression": "push-up-feet-elevated", "regression": "push-up-incline",
+    "text": {
+      "setup": "Start in a high plank with hands slightly wider than shoulders and body straight from head to heels.",
+      "cues": ["Squeeze the glutes and brace the stomach.", "Lower until the chest is a fist's height from the floor.", "Push the floor away to the top."],
+      "mistakes": ["Head poking forward to touch the floor first.", "Elbows flaring straight out."]
+    }
+  },
+  {
+    "id": "push-up-feet-elevated", "name": "Feet-elevated push-up", "aliases": ["decline push up"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BODYWEIGHT", "primary": ["CHEST", "FRONT_DELTS", "TRICEPS"], "secondary": ["CORE"],
+    "equipment": ["bench"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 1, "WRIST": 2}, "fatigue": 2,
+    "reps": [6, 15], "max_reps": 15, "failure_safe": true, "setup": 10, "station": "bench",
+    "tags": ["wrist_extension_load"], "family": "push_up", "rung": 3,
+    "progression": "push-up-deficit", "regression": "push-up",
+    "text": {
+      "setup": "Place your feet on a bench and hands on the floor, body in a straight line.",
+      "cues": ["Lower the chest towards the floor with control.", "Keep the hips in line with the shoulders."],
+      "mistakes": ["Piking the hips upward."]
+    }
+  },
+  {
+    "id": "push-up-deficit", "name": "Deficit push-up", "aliases": ["push up on handles"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BODYWEIGHT", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS", "CORE"],
+    "equipment": ["dumbbells"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 3, "ELBOW": 1, "WRIST": 1}, "fatigue": 2,
+    "reps": [6, 15], "max_reps": 15, "failure_safe": true, "setup": 15, "station": "dumbbells",
+    "family": "push_up", "rung": 4, "progression": "push-up-weighted", "regression": "push-up-feet-elevated",
+    "text": {
+      "setup": "Grip two hexagonal dumbbells (or sturdy push-up handles) on the floor slightly wider than your shoulders and set a straight plank.",
+      "cues": ["Lower the chest below the level of your hands.", "Only go as deep as your shoulders feel comfortable."],
+      "mistakes": ["Forcing extra depth when the front of the shoulder pinches."]
+    }
+  },
+  {
+    "id": "push-up-weighted", "name": "Weighted push-up", "aliases": ["vest push up"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BODYWEIGHT", "primary": ["CHEST", "TRICEPS"], "secondary": ["FRONT_DELTS", "CORE"],
+    "equipment": ["weight_vest"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 4, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2, "WRIST": 2}, "fatigue": 3,
+    "reps": [6, 12], "max_reps": 15, "failure_safe": true, "setup": 30, "station": "floor",
+    "tags": ["wrist_extension_load"], "family": "push_up", "rung": 5, "regression": "push-up-deficit",
+    "text": {
+      "setup": "Wear a weight vest, or have a partner place a plate high on your upper back, then set a straight plank.",
+      "cues": ["Keep the same straight-body push-up you use without load.", "Lower under control."],
+      "mistakes": ["Letting the hips sag under the extra weight."]
+    }
+  },
+  {
+    "id": "dip-assisted", "name": "Assisted dip (machine)", "aliases": ["assisted dip"],
+    "pattern": "HORIZONTAL_PUSH", "class": "MACHINE", "primary": ["TRICEPS", "CHEST"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["assisted_pullup_machine"], "load": "STACK", "assisted": true, "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 3, "ELBOW": 2}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "failure_safe": true, "setup": 30, "station": "assisted_pullup_machine",
+    "tags": ["shoulder_extension_load"], "family": "dip", "rung": 1, "progression": "dip",
+    "text": {
+      "setup": "Choose an assistance weight (more weight means more help). Kneel or stand on the pad and grip the dip handles with arms straight.",
+      "cues": ["Lower until the upper arms are about parallel to the floor.", "Press back up to straight arms."],
+      "mistakes": ["Sinking too deep and straining the front of the shoulders."]
+    }
+  },
+  {
+    "id": "dip", "name": "Bar dip", "aliases": ["parallel bar dip", "dips"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BODYWEIGHT", "primary": ["TRICEPS", "CHEST"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["dip_station"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 3, "ELBOW": 2, "WRIST": 1}, "fatigue": 3,
+    "reps": [6, 12], "max_reps": 15, "setup": 15, "station": "dip_station",
+    "tags": ["shoulder_extension_load"], "family": "dip", "rung": 2,
+    "progression": "dip-weighted", "regression": "dip-assisted",
+    "text": {
+      "setup": "Grip the bars and jump or step up to straight arms, shoulders pressed down away from your ears.",
+      "cues": ["Lean slightly forward and lower until the upper arms are about parallel.", "Push back up to straight arms."],
+      "mistakes": ["Shrugging the shoulders up towards the ears.", "Dropping fast into the bottom."]
+    }
+  },
+  {
+    "id": "dip-weighted", "name": "Weighted dip", "aliases": ["belt dip"],
+    "pattern": "HORIZONTAL_PUSH", "class": "BODYWEIGHT", "primary": ["TRICEPS", "CHEST"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["dip_station", "weight_vest"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 4, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 3, "WRIST": 1}, "fatigue": 4,
+    "reps": [5, 10], "max_reps": 12, "setup": 40, "station": "dip_station",
+    "tags": ["shoulder_extension_load"], "family": "dip", "rung": 3, "regression": "dip",
+    "text": {
+      "setup": "Wear a dip belt with a plate or a weight vest, then mount the bars as for a normal dip.",
+      "cues": ["Keep the same controlled depth as your bodyweight dips.", "Stay tight so the weight does not swing."],
+      "mistakes": ["Adding load before 3 solid sets of 10 bodyweight dips."]
+    }
+  },
+  {
+    "id": "overhead-press", "name": "Standing barbell overhead press", "aliases": ["ohp", "military press", "shoulder press"],
+    "pattern": "VERTICAL_PUSH", "class": "BARBELL", "primary": ["FRONT_DELTS", "TRICEPS"], "secondary": ["SIDE_DELTS", "UPPER_BACK", "CORE"],
+    "equipment": ["barbell", "rack"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 2, "SPINE": 2, "WRIST": 1}, "fatigue": 4,
+    "reps": [5, 8], "max_reps": 12, "e1rm": true, "setup": 50, "station": "rack",
+    "tags": ["overhead"], "regression": "db-shoulder-press",
+    "text": {
+      "setup": "Set the bar at upper-chest height in the rack. Grip just outside shoulder-width, step back with the bar resting on the front of your shoulders.",
+      "cues": ["Squeeze glutes and brace so the lower back does not arch.", "Press the bar straight up, moving your head back then through once it passes.", "Finish with the bar over the middle of your feet."],
+      "mistakes": ["Leaning back to turn it into an incline press.", "Pressing the bar out in front of the face."]
+    }
+  },
+  {
+    "id": "landmine-press", "name": "Half-kneeling landmine press", "aliases": ["landmine press"],
+    "pattern": "VERTICAL_PUSH", "class": "BARBELL", "primary": ["FRONT_DELTS", "CHEST"], "secondary": ["TRICEPS", "CORE"],
+    "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 40, "station": "landmine",
+    "text": {
+      "setup": "Load one end of a barbell anchored in a landmine. Kneel on the knee on the same side as the pressing arm and hold the bar end at your shoulder.",
+      "cues": ["Squeeze the glute of the down knee.", "Press up and forward until the arm is straight.", "Lower back to the shoulder with control."],
+      "mistakes": ["Leaning sideways away from the bar."]
+    }
+  },
+  {
+    "id": "landmine-push-press", "name": "Landmine push press", "aliases": ["landmine push press"],
+    "pattern": "VERTICAL_PUSH", "class": "BARBELL", "primary": ["FRONT_DELTS", "QUADS", "TRICEPS"], "secondary": ["GLUTES", "CORE"],
+    "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "KNEE": 1, "ELBOW": 1}, "fatigue": 3,
+    "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "unilateral": true, "tempo": 2.5, "setup": 40, "station": "landmine", "power": true,
+    "text": {
+      "setup": "Stand facing the landmine holding the loaded bar end at one shoulder, feet hip-width apart.",
+      "cues": ["Dip quickly by bending the knees a little.", "Drive up through the legs and punch the bar up and forward.", "Lower under control and reset."],
+      "mistakes": ["Dipping too deep so it becomes a squat."]
+    }
+  },
+  {
+    "id": "db-shoulder-press", "name": "Seated dumbbell shoulder press", "aliases": ["db shoulder press", "dumbbell overhead press"],
+    "pattern": "VERTICAL_PUSH", "class": "DUMBBELL", "primary": ["FRONT_DELTS", "TRICEPS"], "secondary": ["SIDE_DELTS", "UPPER_BACK"],
+    "equipment": ["dumbbells", "incline_bench"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 3, "ELBOW": 2}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 30, "station": "incline_bench",
+    "tags": ["overhead"], "progression": "overhead-press", "regression": "landmine-press",
+    "text": {
+      "setup": "Set the bench upright. Sit with dumbbells on your thighs, then kick them up one at a time to shoulder height, palms forward.",
+      "cues": ["Press the dumbbells up until arms are straight.", "Lower until they are level with your ears or just below."],
+      "mistakes": ["Arching away from the backrest."]
+    }
+  },
+  {
+    "id": "db-half-kneeling-press", "name": "Half-kneeling one-arm dumbbell press", "aliases": ["kneeling db press"],
+    "pattern": "VERTICAL_PUSH", "class": "DUMBBELL", "primary": ["FRONT_DELTS", "TRICEPS"], "secondary": ["CORE", "SIDE_DELTS"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "dumbbells",
+    "tags": ["overhead"],
+    "text": {
+      "setup": "Kneel with one knee down and the other foot forward. Hold a dumbbell at the shoulder on the side of the down knee.",
+      "cues": ["Squeeze the glute of the down knee and keep ribs down.", "Press straight up and lower slowly."],
+      "mistakes": ["Leaning away from the working arm."]
+    }
+  },
+  {
+    "id": "kb-press", "name": "One-arm kettlebell press", "aliases": ["kb press", "kettlebell military press"],
+    "pattern": "VERTICAL_PUSH", "class": "KETTLEBELL", "primary": ["FRONT_DELTS", "TRICEPS"], "secondary": ["CORE", "SIDE_DELTS"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 1, "WRIST": 1}, "fatigue": 3,
+    "reps": [5, 10], "max_reps": 12, "unilateral": true, "setup": 20, "station": "kettlebells",
+    "tags": ["overhead"], "regression": "db-half-kneeling-press",
+    "text": {
+      "setup": "Clean the kettlebell to the rack position: handle in the palm, bell resting on the back of the forearm, elbow tucked.",
+      "cues": ["Grip hard and brace the whole body.", "Press up until the arm is straight with the biceps near the ear.", "Pull the bell back down to the rack."],
+      "mistakes": ["Letting the wrist bend back.", "Leaning sideways to finish."]
+    }
+  },
+  {
+    "id": "shoulder-press-machine", "name": "Machine shoulder press", "aliases": ["machine overhead press"],
+    "pattern": "VERTICAL_PUSH", "class": "MACHINE", "primary": ["FRONT_DELTS", "TRICEPS"], "secondary": ["SIDE_DELTS"],
+    "equipment": ["shoulder_press_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "shoulder_press_machine",
+    "tags": ["overhead"],
+    "text": {
+      "setup": "Adjust the seat so the handles start at about shoulder height. Sit with your back against the pad.",
+      "cues": ["Press up until arms are nearly straight.", "Lower slowly to shoulder height."],
+      "mistakes": ["Seat set so low that the shoulders are cramped at the start."]
+    }
+  },
+  {
+    "id": "smith-overhead-press", "name": "Smith machine seated overhead press", "aliases": ["smith shoulder press"],
+    "pattern": "VERTICAL_PUSH", "class": "MACHINE", "primary": ["FRONT_DELTS", "TRICEPS"], "secondary": ["SIDE_DELTS"],
+    "equipment": ["smith_machine", "incline_bench"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 3, "ELBOW": 2}, "fatigue": 3,
+    "reps": [6, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 45, "station": "smith_machine",
+    "tags": ["overhead"],
+    "text": {
+      "setup": "Place an upright bench inside the Smith machine so the bar lowers just in front of your face. Set the stops at chin height.",
+      "cues": ["Unhook and press straight up.", "Lower to chin level."],
+      "mistakes": ["Bench too far back so the bar path hits the nose."]
+    }
+  },
+  {
+    "id": "pike-push-up", "name": "Pike push-up", "aliases": ["pike press"],
+    "pattern": "VERTICAL_PUSH", "class": "BODYWEIGHT", "primary": ["FRONT_DELTS", "TRICEPS"], "secondary": ["UPPER_BACK"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "WRIST": 2, "ELBOW": 1}, "fatigue": 2,
+    "reps": [5, 12], "max_reps": 15, "failure_safe": true, "setup": 5, "station": "floor",
+    "tags": ["overhead", "wrist_extension_load"], "family": "pike", "rung": 1, "progression": "pike-push-up-elevated",
+    "text": {
+      "setup": "Start in a push-up position, then walk your feet in and lift your hips high so your body forms an upside-down V.",
+      "cues": ["Lower the top of your head towards a spot just in front of your hands.", "Press back up to the V."],
+      "mistakes": ["Letting the hips drop so it turns into a normal push-up."]
+    }
+  },
+  {
+    "id": "pike-push-up-elevated", "name": "Feet-elevated pike push-up", "aliases": ["box pike push up"],
+    "pattern": "VERTICAL_PUSH", "class": "BODYWEIGHT", "primary": ["FRONT_DELTS", "TRICEPS"], "secondary": ["UPPER_BACK"],
+    "equipment": ["bench"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "WRIST": 2, "ELBOW": 2}, "fatigue": 2,
+    "reps": [5, 10], "max_reps": 12, "failure_safe": true, "setup": 10, "station": "bench",
+    "tags": ["overhead", "wrist_extension_load"], "family": "pike", "rung": 2, "regression": "pike-push-up",
+    "text": {
+      "setup": "Put your feet on a bench and walk your hands back until your hips are stacked roughly over your shoulders.",
+      "cues": ["Lower your head between your hands with elbows angled back.", "Push up until arms are straight."],
+      "mistakes": ["Hands too far from the bench, which reduces the shoulder work."]
+    }
+  }
+]

@@ -1,0 +1,102 @@
+{
+  "library_version": "1.0.0",
+  "license": "All exercise names, instructions, cues, mistakes and safety notes were written originally for the Personal Fitness Coach project (master prompt D7). No third-party text, images or video are included. Licence recorded per asset: ORIGINAL.",
+  "defaults": {
+    "difficulty": 2,
+    "skill": 2,
+    "fatigue": 3,
+    "impact": 0,
+    "reps": [8, 12],
+    "tempo": 3.5,
+    "setup": 20,
+    "unit": "REPS"
+  },
+  "equipment": {
+    "barbell":                {"name": "Olympic barbell and plates", "class": "BARBELL"},
+    "ez_bar":                 {"name": "EZ curl bar", "class": "BARBELL"},
+    "trap_bar":               {"name": "Trap (hex) bar", "class": "BARBELL"},
+    "landmine":               {"name": "Landmine attachment or a barbell end wedged in a corner", "class": "BARBELL"},
+    "rack":                   {"name": "Squat rack or power rack with safety pins", "class": "OTHER"},
+    "bench":                  {"name": "Flat bench", "class": "OTHER"},
+    "incline_bench":          {"name": "Adjustable incline bench", "class": "OTHER"},
+    "dumbbells":              {"name": "Dumbbells", "class": "DUMBBELL"},
+    "kettlebells":            {"name": "Kettlebells", "class": "KETTLEBELL"},
+    "cable":                  {"name": "Adjustable cable column", "class": "CABLE"},
+    "cable_row":              {"name": "Seated cable row station", "class": "CABLE"},
+    "lat_pulldown":           {"name": "Lat pulldown station", "class": "CABLE"},
+    "leg_press":              {"name": "Leg press machine", "class": "MACHINE"},
+    "hack_squat":             {"name": "Hack squat machine", "class": "MACHINE"},
+    "smith_machine":          {"name": "Smith machine", "class": "MACHINE"},
+    "chest_press_machine":    {"name": "Chest press machine", "class": "MACHINE"},
+    "shoulder_press_machine": {"name": "Shoulder press machine", "class": "MACHINE"},
+    "row_machine":            {"name": "Chest-supported row machine", "class": "MACHINE"},
+    "assisted_pullup_machine":{"name": "Assisted pull-up and dip machine", "class": "MACHINE"},
+    "leg_extension":          {"name": "Leg extension machine", "class": "MACHINE"},
+    "leg_curl":               {"name": "Leg curl machine (lying or seated)", "class": "MACHINE"},
+    "calf_raise_machine":     {"name": "Standing or seated calf raise machine", "class": "MACHINE"},
+    "pec_deck":               {"name": "Pec deck / reverse fly machine", "class": "MACHINE"},
+    "hip_thrust_machine":     {"name": "Hip thrust or glute bridge machine", "class": "MACHINE"},
+    "hip_adductor_machine":   {"name": "Hip adductor machine", "class": "MACHINE"},
+    "back_extension":         {"name": "45-degree back extension bench", "class": "MACHINE"},
+    "pullup_bar":             {"name": "Pull-up bar", "class": "BODYWEIGHT"},
+    "dip_station":            {"name": "Dip bars", "class": "BODYWEIGHT"},
+    "plyo_box":               {"name": "Sturdy box or step", "class": "OTHER"},
+    "mat":                    {"name": "Exercise mat", "class": "BODYWEIGHT"},
+    "bands":                  {"name": "Resistance bands", "class": "BAND"},
+    "ab_wheel":               {"name": "Ab wheel", "class": "OTHER"},
+    "medicine_ball":          {"name": "Medicine ball", "class": "OTHER"},
+    "sliders":                {"name": "Floor sliders or a towel on a smooth floor", "class": "OTHER"},
+    "weight_vest":            {"name": "Weight vest, or a dip belt with plates", "class": "OTHER"},
+    "rower":                  {"name": "Rowing ergometer", "class": "CONDITIONING"},
+    "skierg":                 {"name": "SkiErg", "class": "CONDITIONING"},
+    "elliptical":             {"name": "Elliptical / cross-trainer", "class": "CONDITIONING"},
+    "sled":                   {"name": "Sled (Prowler) for pushing and pulling", "class": "CONDITIONING"},
+    "battle_ropes":           {"name": "Battle ropes", "class": "CONDITIONING"},
+    "jump_rope":              {"name": "Jump rope", "class": "CONDITIONING"}
+  },
+  "tags": {
+    "deep_knee_flexion":     "Loads the knee in deep bending (deep squats, lunges)",
+    "spinal_loading":        "Heavy load travels through the spine (bar on back, heavy pulls)",
+    "overhead":              "Arms work overhead",
+    "wrist_extension_load":  "Body weight or load rests on bent-back wrists",
+    "shoulder_extension_load": "Shoulder loaded behind the body (dips)",
+    "jumping":               "Jumping or landing",
+    "spinal_flexion":        "Repeated rounding of the spine under load (crunch-type movements)",
+    "grip_intensive":        "Long or heavy gripping"
+  },
+  "classes": ["BARBELL", "DUMBBELL", "KETTLEBELL", "CABLE", "MACHINE", "BODYWEIGHT", "BAND", "OTHER"],
+  "coverage_gaps": {
+    "VERTICAL_PUSH": {
+      "CABLE": "Overhead cable presses are awkward on most cable columns; machine, dumbbell, kettlebell and landmine presses cover the pattern."
+    },
+    "VERTICAL_PULL": {
+      "BARBELL": "No free-weight vertical pull exists; pull-up bar, pulldown and assisted machine cover the pattern.",
+      "DUMBBELL": "No free-weight vertical pull exists; covered by pulldown, pull-up and band options.",
+      "KETTLEBELL": "No free-weight vertical pull exists; covered by pulldown, pull-up and band options."
+    },
+    "LOADED_CARRY": {
+      "CABLE": "Carries need a held load you can walk with.",
+      "MACHINE": "Carries need a held load you can walk with.",
+      "BODYWEIGHT": "Carries need an external load; crawls (anti-extension) are the bodyweight substitute."
+    },
+    "ROTATION": {
+      "MACHINE": "Rotation is trained with cables, a landmine or a medicine ball.",
+      "BODYWEIGHT": "Controlled rotation needs resistance; band chops are the no-equipment option."
+    },
+    "ANTI_EXTENSION": {
+      "KETTLEBELL": "Covered by bodyweight progressions and the weighted dead bug with a dumbbell.",
+      "CABLE": "Covered by bodyweight progressions, ab wheel and barbell rollout.",
+      "MACHINE": "Covered by bodyweight progressions, ab wheel and barbell rollout."
+    },
+    "ANTI_ROTATION": {
+      "BARBELL": "Covered by cable and band Pallof presses, bird dog and renegade row.",
+      "KETTLEBELL": "Covered by cable and band Pallof presses, bird dog and renegade row.",
+      "MACHINE": "Covered by cable and band Pallof presses."
+    },
+    "ANTI_LATERAL_FLEXION": {
+      "BARBELL": "Covered by side planks and dumbbell or kettlebell suitcase carries.",
+      "CABLE": "Covered by side planks and suitcase carries.",
+      "MACHINE": "Covered by side planks and suitcase carries."
+    }
+  }
+}

@@ -32,8 +32,9 @@ object WeekChecks {
         val trainingDays = week.count { it.tier != com.personalfitnesscoach.engine.model.Tier.RECOVERY && (it.exercises.isNotEmpty() || it.conditioning.isNotEmpty()) }
         if (trainingDays > P.SAF_005.training_days_per_week) out += PatternIssue(RuleIds.SAF_005, "TOO_MANY_DAYS", "$trainingDays")
         val exercises = week.flatMap { it.exercises }
-        val count = exercises.groupingBy { it.exercise.pattern }.eachCount()
-        fun n(p: Pattern) = count[p] ?: 0
+        // Coverage counts an exercise's second pattern too (a suitcase carry covers anti-lateral flexion);
+        // the PAT-002/003 ratios below use main patterns only.
+        fun n(p: Pattern) = exercises.count { it.exercise.trains(p) }
         // PAT-001 coverage.
         for (p in LIFTING) if (n(p) < P.PAT_001.lifting_patterns_min) out += PatternIssue(RuleIds.PAT_001, "MISSING_PATTERN", p.name)
         for (p in CORE) if (n(p) < P.PAT_001.core_categories_min) out += PatternIssue(RuleIds.PAT_001, "MISSING_CORE", p.name)

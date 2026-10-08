@@ -1,0 +1,222 @@
+[
+  {
+    "id": "deadlift", "name": "Barbell deadlift", "aliases": ["deadlift", "conventional deadlift"],
+    "pattern": "HINGE", "class": "BARBELL", "primary": ["GLUTES", "HAMSTRINGS"], "secondary": ["UPPER_BACK", "QUADS", "FOREARMS", "CORE"],
+    "equipment": ["barbell"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
+    "difficulty": 4, "skill": 3, "joints": {"SPINE": 4, "HIP": 2, "KNEE": 1}, "fatigue": 5,
+    "reps": [3, 6], "max_reps": 8, "e1rm": true, "tempo": 4.0, "setup": 45, "station": "barbell",
+    "tags": ["spinal_loading", "grip_intensive"], "regression": "trap-bar-deadlift",
+    "text": {
+      "setup": "Stand with the bar over the middle of your feet, feet about hip-width apart. Hinge down and grip the bar just outside your shins, then bend your knees until your shins touch the bar.",
+      "cues": ["Pull the slack out of the bar before it leaves the floor.", "Push the floor away while keeping the bar against your legs.", "Finish standing tall with glutes squeezed, without leaning back."],
+      "mistakes": ["Hips shooting up first so the back does the lifting.", "Letting the bar drift forward away from the legs."],
+      "safety": "Reset at the bottom of every rep. Stop the set if your back starts to round."
+    }
+  },
+  {
+    "id": "trap-bar-deadlift", "name": "Trap bar deadlift", "aliases": ["hex bar deadlift"],
+    "pattern": "HINGE", "class": "BARBELL", "primary": ["GLUTES", "QUADS", "HAMSTRINGS"], "secondary": ["UPPER_BACK", "FOREARMS"],
+    "equipment": ["trap_bar"], "load": "BARBELL", "bar": "trap_bar", "cost": "HEAVY_BILATERAL",
+    "difficulty": 3, "skill": 2, "joints": {"SPINE": 3, "HIP": 2, "KNEE": 2}, "fatigue": 5,
+    "reps": [4, 8], "max_reps": 10, "e1rm": true, "tempo": 4.0, "setup": 45, "station": "trap_bar",
+    "tags": ["spinal_loading", "grip_intensive"], "progression": "deadlift", "regression": "kb-deadlift",
+    "text": {
+      "setup": "Step inside the trap bar so the handles line up with the middle of your feet. Squat down, grip the handles in the centre and set a flat back.",
+      "cues": ["Chest up and brace hard.", "Drive through the whole foot and stand straight up.", "Lower under control along the same path."],
+      "mistakes": ["Standing too far forward or back inside the frame.", "Rounding the back to reach the handles."]
+    }
+  },
+  {
+    "id": "romanian-deadlift", "name": "Barbell Romanian deadlift", "aliases": ["rdl", "romanian deadlift", "barbell rdl"],
+    "pattern": "HINGE", "class": "BARBELL", "primary": ["HAMSTRINGS", "GLUTES"], "secondary": ["UPPER_BACK", "FOREARMS", "CORE"],
+    "equipment": ["barbell"], "load": "BARBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"SPINE": 3, "HIP": 2}, "fatigue": 4,
+    "reps": [6, 10], "max_reps": 12, "e1rm": true, "tempo": 4.0, "setup": 40, "station": "barbell",
+    "tags": ["spinal_loading", "grip_intensive"], "regression": "db-romanian-deadlift",
+    "text": {
+      "setup": "Lift the bar from the rack or floor and stand tall holding it at hip height, hands just outside your thighs, knees softly bent.",
+      "cues": ["Push your hips back as if closing a car door with them.", "Keep the bar brushing your thighs on the way down.", "Stop when you feel a strong hamstring stretch, then drive the hips forward."],
+      "mistakes": ["Turning it into a squat by bending the knees more and more.", "Chasing depth by rounding the back."]
+    }
+  },
+  {
+    "id": "barbell-hip-thrust", "name": "Barbell hip thrust", "aliases": ["hip thrust"],
+    "pattern": "HINGE", "class": "BARBELL", "primary": ["GLUTES"], "secondary": ["HAMSTRINGS"],
+    "equipment": ["barbell", "bench"], "load": "BARBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"HIP": 2, "SPINE": 1}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 60, "station": "bench",
+    "regression": "glute-bridge",
+    "text": {
+      "setup": "Sit on the floor with your upper back against the long side of a bench and roll a padded bar over your hips. Plant your feet so your shins are vertical at the top.",
+      "cues": ["Tuck your chin and look forward, not at the ceiling.", "Drive through your heels until hips are level with your knees and shoulders.", "Pause and squeeze the glutes at the top."],
+      "mistakes": ["Arching the lower back to finish the rep.", "Feet too far away, which shifts work to the hamstrings."]
+    }
+  },
+  {
+    "id": "db-romanian-deadlift", "name": "Dumbbell Romanian deadlift", "aliases": ["db rdl", "dumbbell rdl"],
+    "pattern": "HINGE", "class": "DUMBBELL", "primary": ["HAMSTRINGS", "GLUTES"], "secondary": ["UPPER_BACK", "FOREARMS"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 2, "joints": {"SPINE": 2, "HIP": 2}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 15, "station": "dumbbells",
+    "tags": ["grip_intensive"], "progression": "romanian-deadlift", "regression": "kb-deadlift",
+    "text": {
+      "setup": "Stand tall with a dumbbell in each hand in front of your thighs, feet hip-width apart, knees soft.",
+      "cues": ["Slide the dumbbells down your thighs as your hips move back.", "Keep your back flat and neck long.", "Stand up by driving the hips forward."],
+      "mistakes": ["Letting the dumbbells swing away from the legs.", "Bending forward from the upper back instead of the hips."]
+    }
+  },
+  {
+    "id": "db-single-leg-rdl", "name": "Single-leg dumbbell Romanian deadlift", "aliases": ["single leg rdl", "sl rdl"],
+    "pattern": "HINGE", "class": "DUMBBELL", "primary": ["HAMSTRINGS", "GLUTES"], "secondary": ["CORE"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"HIP": 2, "SPINE": 1, "ANKLE": 1}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "dumbbells",
+    "regression": "bodyweight-single-leg-rdl",
+    "text": {
+      "setup": "Hold a dumbbell in the hand opposite your standing leg. Stand near a wall or rack you can touch for balance if needed.",
+      "cues": ["Reach the free leg back as your chest lowers, like a see-saw.", "Keep hips square to the floor.", "Return by pulling the standing hip forward."],
+      "mistakes": ["Opening the hip so the back leg rotates outwards.", "Rushing and losing balance."]
+    }
+  },
+  {
+    "id": "db-hip-thrust", "name": "Dumbbell hip thrust", "aliases": ["db hip thrust"],
+    "pattern": "HINGE", "class": "DUMBBELL", "primary": ["GLUTES"], "secondary": ["HAMSTRINGS"],
+    "equipment": ["dumbbells", "bench"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"HIP": 1}, "fatigue": 2,
+    "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 30, "station": "bench",
+    "progression": "barbell-hip-thrust", "regression": "glute-bridge",
+    "text": {
+      "setup": "Sit with your upper back against a bench and hold one dumbbell across your hip crease with both hands.",
+      "cues": ["Drive through your heels and lift the hips until the body is straight from knees to shoulders.", "Keep ribs down and chin tucked."],
+      "mistakes": ["Hyperextending the lower back at the top."]
+    }
+  },
+  {
+    "id": "kb-swing", "name": "Kettlebell swing", "aliases": ["kb swing", "russian swing"],
+    "pattern": "HINGE", "class": "KETTLEBELL", "primary": ["GLUTES", "HAMSTRINGS"], "secondary": ["CORE", "FOREARMS", "UPPER_BACK"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"SPINE": 2, "HIP": 2, "SHOULDER": 1}, "fatigue": 4,
+    "objectives": ["POWER", "CONDITIONING", "HYPERTROPHY"], "reps": [10, 15], "max_reps": 20, "tempo": 1.5, "setup": 15,
+    "station": "kettlebells", "power": true, "tags": ["grip_intensive"], "regression": "kb-deadlift",
+    "text": {
+      "setup": "Place the kettlebell about a foot in front of you. Hinge, grip the handle with both hands and tilt it towards you.",
+      "cues": ["Hike the bell back between your thighs like a long pass.", "Snap the hips forward so the bell floats to chest height.", "Let the arms stay loose; the hips do the work."],
+      "mistakes": ["Squatting the swing instead of hinging.", "Lifting the bell with the arms or leaning back at the top."],
+      "safety": "Finish each set by hiking the bell back and parking it on the floor in front of you."
+    }
+  },
+  {
+    "id": "kb-deadlift", "name": "Kettlebell deadlift", "aliases": ["kb deadlift"],
+    "pattern": "HINGE", "class": "KETTLEBELL", "primary": ["GLUTES", "HAMSTRINGS"], "secondary": ["QUADS", "FOREARMS"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "HIP": 1}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "setup": 10, "station": "kettlebells",
+    "progression": "kb-swing",
+    "text": {
+      "setup": "Stand with a kettlebell between your feet, in line with your ankles. Hinge and grip the handle with both hands.",
+      "cues": ["Shoulders over the bell, back flat.", "Stand up by pushing the floor away.", "Lower by sending the hips back first."],
+      "mistakes": ["Reaching for the bell with a rounded back."]
+    }
+  },
+  {
+    "id": "kb-single-leg-rdl", "name": "Single-leg kettlebell Romanian deadlift", "aliases": ["kb single leg rdl"],
+    "pattern": "HINGE", "class": "KETTLEBELL", "primary": ["HAMSTRINGS", "GLUTES"], "secondary": ["CORE"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"HIP": 2, "SPINE": 1, "ANKLE": 1}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "kettlebells",
+    "regression": "bodyweight-single-leg-rdl",
+    "text": {
+      "setup": "Hold a kettlebell in the hand opposite your standing leg, with a support within reach.",
+      "cues": ["Lower the bell straight down beside the standing foot.", "Keep the free leg in line with your torso."],
+      "mistakes": ["Twisting the torso as the bell goes down."]
+    }
+  },
+  {
+    "id": "cable-pull-through", "name": "Cable pull-through", "aliases": ["pull through"],
+    "pattern": "HINGE", "class": "CABLE", "primary": ["GLUTES", "HAMSTRINGS"], "secondary": [],
+    "equipment": ["cable"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 1, "skill": 2, "joints": {"HIP": 1, "SPINE": 1}, "fatigue": 2,
+    "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 30, "station": "cable",
+    "text": {
+      "setup": "Attach a rope to the lowest pulley. Face away from the machine, reach between your legs to grab the rope, and walk forward two steps.",
+      "cues": ["Push the hips back and let the rope travel through your legs.", "Stand up by driving the hips forward, arms just holding on."],
+      "mistakes": ["Pulling the rope with the arms.", "Squatting down instead of hinging."]
+    }
+  },
+  {
+    "id": "machine-hip-thrust", "name": "Hip thrust machine", "aliases": ["glute drive", "machine hip thrust"],
+    "pattern": "HINGE", "class": "MACHINE", "primary": ["GLUTES"], "secondary": ["HAMSTRINGS"],
+    "equipment": ["hip_thrust_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"HIP": 1}, "fatigue": 2,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "hip_thrust_machine",
+    "text": {
+      "setup": "Sit in the machine with the pad across your hips and feet flat, shins roughly vertical at the top of the movement.",
+      "cues": ["Lift the hips until your body is in a straight line.", "Hold for a second, then lower under control."],
+      "mistakes": ["Arching the lower back instead of extending the hips."]
+    }
+  },
+  {
+    "id": "back-extension", "name": "45-degree back extension", "aliases": ["hyperextension", "back extension"],
+    "pattern": "HINGE", "class": "MACHINE", "primary": ["GLUTES", "HAMSTRINGS"], "secondary": ["CORE"],
+    "equipment": ["back_extension"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "HIP": 1}, "fatigue": 2,
+    "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "back_extension",
+    "text": {
+      "setup": "Set the pad so its top edge sits just below your hip bones. Hook your heels under the foot pads and cross your arms over your chest (hold a plate later for extra load).",
+      "cues": ["Hinge at the hips, keeping the back flat.", "Rise until your body is straight; do not overarch."],
+      "mistakes": ["Pad set too high, which blocks the hips from bending.", "Swinging up past straight."]
+    }
+  },
+  {
+    "id": "glute-bridge", "name": "Glute bridge", "aliases": ["hip bridge", "bridge"],
+    "pattern": "HINGE", "class": "BODYWEIGHT", "primary": ["GLUTES"], "secondary": ["HAMSTRINGS"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"HIP": 1}, "fatigue": 1,
+    "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 10, "station": "floor",
+    "family": "bridge", "rung": 1, "progression": "single-leg-glute-bridge",
+    "text": {
+      "setup": "Lie on your back with knees bent, feet flat and hip-width apart, arms by your sides.",
+      "cues": ["Press through your heels and lift the hips.", "Squeeze the glutes for a second at the top."],
+      "mistakes": ["Pushing through the toes.", "Arching the lower back."]
+    }
+  },
+  {
+    "id": "single-leg-glute-bridge", "name": "Single-leg glute bridge", "aliases": ["one leg bridge"],
+    "pattern": "HINGE", "class": "BODYWEIGHT", "primary": ["GLUTES"], "secondary": ["HAMSTRINGS", "CORE"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"HIP": 1}, "fatigue": 1,
+    "reps": [8, 15], "max_reps": 20, "failure_safe": true, "unilateral": true, "setup": 10, "station": "floor",
+    "family": "bridge", "rung": 2, "regression": "glute-bridge",
+    "text": {
+      "setup": "Lie on your back with one foot planted and the other leg straight or hugged to your chest.",
+      "cues": ["Drive through the planted heel and keep hips level.", "Lower slowly."],
+      "mistakes": ["Letting one hip drop lower than the other."]
+    }
+  },
+  {
+    "id": "bodyweight-single-leg-rdl", "name": "Bodyweight single-leg Romanian deadlift", "aliases": ["single leg hinge"],
+    "pattern": "HINGE", "class": "BODYWEIGHT", "primary": ["HAMSTRINGS", "GLUTES"], "secondary": ["CORE"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 2, "joints": {"HIP": 1, "ANKLE": 1}, "fatigue": 1,
+    "reps": [8, 12], "max_reps": 15, "failure_safe": true, "unilateral": true, "setup": 5, "station": "floor",
+    "progression": "db-single-leg-rdl",
+    "text": {
+      "setup": "Stand on one leg next to a wall or rack, fingertips touching it lightly if needed.",
+      "cues": ["Tip forward from the hip as the free leg reaches back.", "Return slowly to standing."],
+      "mistakes": ["Bending the standing knee a lot."]
+    }
+  },
+  {
+    "id": "med-ball-scoop-toss", "name": "Medicine ball scoop toss", "aliases": ["med ball scoop toss"],
+    "pattern": "HINGE", "class": "OTHER", "primary": ["GLUTES", "HAMSTRINGS"], "secondary": ["CORE", "SIDE_DELTS"],
+    "equipment": ["medicine_ball"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 2, "joints": {"HIP": 1, "SPINE": 1}, "fatigue": 2,
+    "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "tempo": 3.0, "setup": 10, "station": "medicine_ball", "power": true,
+    "text": {
+      "setup": "Hold a light medicine ball at arm's length between your legs in a hinge position, facing an open space or a wall.",
+      "cues": ["Snap the hips forward and throw the ball forwards and up as far as you can.", "Reset fully between throws."],
+      "mistakes": ["Throwing with the arms instead of the hips."],
+      "safety": "Use a soft ball and a clear space; never throw against glass."
+    }
+  }
+]

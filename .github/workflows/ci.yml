@@ -36,6 +36,7 @@ jobs:
       - name: Rule Registry and Phase 1 consistency
         run: |
           python3 -I tools/gen_registry_kotlin.py --check
+          python3 -I tools/gen_library_kotlin.py --check
           python3 -I tools/check_phase1.py
 
       - name: Validate Gradle wrapper

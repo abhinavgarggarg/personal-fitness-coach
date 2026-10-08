@@ -1,0 +1,177 @@
+[
+  {
+    "id": "back-squat", "name": "Barbell back squat", "aliases": ["squat", "back squat", "barbell squat"],
+    "pattern": "SQUAT", "class": "BARBELL", "primary": ["QUADS", "GLUTES"], "secondary": ["ADDUCTORS", "CORE"],
+    "equipment": ["barbell", "rack"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
+    "difficulty": 3, "skill": 3, "joints": {"KNEE": 3, "HIP": 2, "SPINE": 3, "ANKLE": 1}, "fatigue": 5,
+    "reps": [5, 8], "max_reps": 12, "e1rm": true, "tempo": 4.0, "setup": 60, "station": "rack",
+    "tags": ["deep_knee_flexion", "spinal_loading"], "regression": "goblet-squat",
+    "text": {
+      "setup": "Set the bar at mid-chest height in the rack and the safety pins just below your lowest squat depth. Step under, rest the bar across your upper back, walk it out two or three steps and stand with feet about shoulder-width apart.",
+      "cues": ["Big breath into your belly, then brace before each rep.", "Sit down between your heels with knees travelling over your toes.", "Drive the floor away and stand tall."],
+      "mistakes": ["Letting the knees cave inwards on the way up.", "Losing the brace and rounding at the bottom."],
+      "safety": "Always squat inside the rack with the safety pins set. If a rep stalls, lower the bar onto the pins."
+    }
+  },
+  {
+    "id": "front-squat", "name": "Barbell front squat", "aliases": ["front squat"],
+    "pattern": "SQUAT", "class": "BARBELL", "primary": ["QUADS"], "secondary": ["GLUTES", "CORE", "UPPER_BACK"],
+    "equipment": ["barbell", "rack"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
+    "difficulty": 4, "skill": 4, "joints": {"KNEE": 3, "HIP": 2, "SPINE": 2, "WRIST": 2, "ANKLE": 2}, "fatigue": 5,
+    "reps": [4, 8], "max_reps": 10, "e1rm": true, "tempo": 4.0, "setup": 60, "station": "rack",
+    "tags": ["deep_knee_flexion", "wrist_extension_load"], "regression": "goblet-squat",
+    "text": {
+      "setup": "Rest the bar on the front of your shoulders with elbows pointing forward and fingertips under the bar (or arms crossed). Walk it out of the rack with the safety pins set just below your bottom position.",
+      "cues": ["Keep the elbows high so the bar stays on your shoulders.", "Stay tall through the chest and sit straight down.", "Push up through the whole foot."],
+      "mistakes": ["Elbows dropping, which tips the bar forward.", "Rising onto the toes."],
+      "safety": "If the bar rolls forward, push it away and step back; the pins catch it."
+    }
+  },
+  {
+    "id": "goblet-squat", "name": "Dumbbell goblet squat", "aliases": ["goblet squat", "db goblet squat"],
+    "pattern": "SQUAT", "class": "DUMBBELL", "primary": ["QUADS", "GLUTES"], "secondary": ["CORE", "ADDUCTORS"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 1, "joints": {"KNEE": 2, "HIP": 2, "SPINE": 1, "ANKLE": 1}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 15, "station": "dumbbells",
+    "tags": ["deep_knee_flexion"], "progression": "back-squat", "regression": "bodyweight-box-squat",
+    "text": {
+      "setup": "Hold one dumbbell vertically against your chest with both hands cupping the top end. Stand with feet slightly wider than hips, toes turned out a little.",
+      "cues": ["Keep the dumbbell glued to your chest.", "Let your elbows travel inside your knees at the bottom.", "Stand up by pushing your knees out."],
+      "mistakes": ["Letting the weight drift away from the body.", "Heels lifting off the floor."]
+    }
+  },
+  {
+    "id": "kb-goblet-squat", "name": "Kettlebell goblet squat", "aliases": ["kettlebell squat"],
+    "pattern": "SQUAT", "class": "KETTLEBELL", "primary": ["QUADS", "GLUTES"], "secondary": ["CORE", "ADDUCTORS"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 1, "joints": {"KNEE": 2, "HIP": 2, "SPINE": 1, "ANKLE": 1}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "setup": 15, "station": "kettlebells",
+    "tags": ["deep_knee_flexion"], "progression": "kb-double-front-squat", "regression": "bodyweight-box-squat",
+    "text": {
+      "setup": "Hold a kettlebell by the horns at chest height, bell facing down. Stand with feet a little wider than hips.",
+      "cues": ["Chest proud, kettlebell close.", "Sit between your heels.", "Exhale as you stand."],
+      "mistakes": ["Leaning forward as the set gets hard.", "Cutting depth short."]
+    }
+  },
+  {
+    "id": "kb-double-front-squat", "name": "Double kettlebell front squat", "aliases": ["double kb front squat"],
+    "pattern": "SQUAT", "class": "KETTLEBELL", "primary": ["QUADS", "GLUTES"], "secondary": ["CORE", "UPPER_BACK"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 2, "joints": {"KNEE": 2, "HIP": 2, "SPINE": 2, "WRIST": 1}, "fatigue": 4,
+    "reps": [6, 10], "max_reps": 12, "setup": 25, "station": "kettlebells",
+    "tags": ["deep_knee_flexion"], "regression": "kb-goblet-squat",
+    "text": {
+      "setup": "Clean two kettlebells to the rack position: handles in your palms, bells resting on the outside of your forearms, elbows tucked against your ribs.",
+      "cues": ["Squeeze the handles and keep elbows tucked.", "Brace before you descend.", "Drive up through mid-foot."],
+      "mistakes": ["Elbows flaring and the bells pulling you forward.", "Holding your breath for the whole set instead of re-bracing each rep."],
+      "safety": "Set the bells down by squatting, not by bending over with a round back."
+    }
+  },
+  {
+    "id": "leg-press", "name": "Leg press", "aliases": ["machine leg press"],
+    "pattern": "SQUAT", "class": "MACHINE", "primary": ["QUADS", "GLUTES"], "secondary": ["ADDUCTORS"],
+    "equipment": ["leg_press"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"KNEE": 2, "HIP": 2, "SPINE": 1}, "fatigue": 3,
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 40, "station": "leg_press",
+    "tags": ["deep_knee_flexion"],
+    "text": {
+      "setup": "Sit with your back and hips flat against the pad and feet shoulder-width apart in the middle of the platform. Release the safety handles once you are ready.",
+      "cues": ["Lower until your hips are about to lift off the seat, no further.", "Press through the whole foot.", "Stop just short of locking the knees."],
+      "mistakes": ["Letting the lower back peel off the pad at the bottom.", "Bouncing out of the bottom."],
+      "safety": "Re-engage the safety handles before you get off the machine."
+    }
+  },
+  {
+    "id": "hack-squat", "name": "Hack squat", "aliases": ["machine hack squat"],
+    "pattern": "SQUAT", "class": "MACHINE", "primary": ["QUADS"], "secondary": ["GLUTES"],
+    "equipment": ["hack_squat"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 2, "skill": 1, "joints": {"KNEE": 3, "HIP": 2, "SPINE": 1}, "fatigue": 4,
+    "reps": [6, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 40, "station": "hack_squat",
+    "tags": ["deep_knee_flexion"],
+    "text": {
+      "setup": "Stand on the platform with your back against the pad and shoulders under the shoulder pads, feet shoulder-width apart slightly in front of your hips.",
+      "cues": ["Lower under control until thighs are at least parallel.", "Keep your back flat on the pad.", "Push through mid-foot to the top."],
+      "mistakes": ["Feet placed so low that heels lift.", "Short, bouncing reps."],
+      "safety": "Lock the safety handles at the top before stepping off."
+    }
+  },
+  {
+    "id": "smith-squat", "name": "Smith machine squat", "aliases": ["smith squat"],
+    "pattern": "SQUAT", "class": "MACHINE", "primary": ["QUADS", "GLUTES"], "secondary": ["ADDUCTORS"],
+    "equipment": ["smith_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 2, "skill": 1, "joints": {"KNEE": 2, "HIP": 2, "SPINE": 2}, "fatigue": 4,
+    "reps": [6, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 40, "station": "smith_machine",
+    "tags": ["deep_knee_flexion", "spinal_loading"],
+    "text": {
+      "setup": "Set the machine's stops just below your squat depth. Stand under the bar with it across your upper back and feet slightly in front of your hips.",
+      "cues": ["Unhook the bar with a small twist and brace.", "Sit down and slightly back.", "Stand up tall, then re-hook by twisting the wrists."],
+      "mistakes": ["Feet directly under the bar, which pushes the knees far forward.", "Forgetting where the hooks are on the way up."]
+    }
+  },
+  {
+    "id": "cable-goblet-squat", "name": "Cable goblet squat", "aliases": ["cable squat"],
+    "pattern": "SQUAT", "class": "CABLE", "primary": ["QUADS", "GLUTES"], "secondary": ["CORE"],
+    "equipment": ["cable"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"KNEE": 2, "HIP": 2, "SPINE": 1}, "fatigue": 3,
+    "reps": [10, 15], "max_reps": 18, "failure_safe": true, "setup": 30, "station": "cable",
+    "tags": ["deep_knee_flexion"],
+    "text": {
+      "setup": "Attach a rope or handle to the lowest pulley. Hold it at your chest and step back until the cable is taut, feet shoulder-width apart.",
+      "cues": ["Let the cable pull you gently into the squat.", "Keep the handle at your chest.", "Stand up tall and squeeze the glutes."],
+      "mistakes": ["Leaning back to fight the cable."]
+    }
+  },
+  {
+    "id": "bodyweight-box-squat", "name": "Box squat (bodyweight)", "aliases": ["sit to stand", "box squat"],
+    "pattern": "SQUAT", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": [],
+    "equipment": ["bench"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"KNEE": 1, "HIP": 1}, "fatigue": 1,
+    "reps": [10, 20], "max_reps": 20, "failure_safe": true, "setup": 10, "station": "bench",
+    "family": "squat", "rung": 1, "progression": "air-squat",
+    "text": {
+      "setup": "Stand in front of a bench or box at knee height, feet shoulder-width apart, arms reaching forward.",
+      "cues": ["Sit back until you lightly touch the box.", "Stand straight back up without rocking."],
+      "mistakes": ["Dropping onto the box instead of touching it."]
+    }
+  },
+  {
+    "id": "air-squat", "name": "Bodyweight squat", "aliases": ["air squat"],
+    "pattern": "SQUAT", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": [],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"KNEE": 1, "HIP": 1}, "fatigue": 1,
+    "reps": [12, 20], "max_reps": 20, "failure_safe": true, "setup": 5, "station": "floor",
+    "family": "squat", "rung": 2, "progression": "tempo-squat", "regression": "bodyweight-box-squat",
+    "text": {
+      "setup": "Stand with feet shoulder-width apart, toes slightly out, arms in front for balance.",
+      "cues": ["Sit down as deep as you comfortably can with heels down.", "Push the floor away to stand."],
+      "mistakes": ["Knees caving inwards."]
+    }
+  },
+  {
+    "id": "tempo-squat", "name": "Tempo squat (3-second lower, 1-second pause)", "aliases": ["pause squat bodyweight"],
+    "pattern": "SQUAT", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": ["CORE"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"KNEE": 1, "HIP": 1}, "fatigue": 2,
+    "reps": [10, 20], "max_reps": 20, "failure_safe": true, "tempo": 5.5, "setup": 5, "station": "floor",
+    "family": "squat", "rung": 3, "progression": "bodyweight-split-squat", "regression": "air-squat",
+    "text": {
+      "setup": "Stand as for a bodyweight squat.",
+      "cues": ["Count three seconds on the way down.", "Hold the bottom for one second, then stand."],
+      "mistakes": ["Rushing the lowering phase."]
+    }
+  },
+  {
+    "id": "box-jump", "name": "Box jump (step down)", "aliases": ["box jumps"],
+    "pattern": "SQUAT", "class": "OTHER", "primary": ["QUADS", "GLUTES"], "secondary": ["CALVES"],
+    "equipment": ["plyo_box"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"KNEE": 2, "ANKLE": 2, "HIP": 1}, "fatigue": 3, "impact": 2,
+    "objectives": ["POWER"], "reps": [3, 5], "max_reps": 5, "setup": 15, "station": "plyo_box", "power": true,
+    "tags": ["jumping"],
+    "text": {
+      "setup": "Stand about a foot from a sturdy box of a height you can land on softly.",
+      "cues": ["Swing the arms and jump as high as you can.", "Land softly in a quarter squat on the box.", "Step down, never jump down."],
+      "mistakes": ["Choosing a box so high you land in a deep squat.", "Continuing once jumps lose height."],
+      "safety": "Stop the set as soon as jump height drops."
+    }
+  }
+]

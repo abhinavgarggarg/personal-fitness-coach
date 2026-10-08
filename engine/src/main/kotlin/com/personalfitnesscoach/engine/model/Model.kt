@@ -58,6 +58,12 @@ enum class LoadType { BARBELL, DUMBBELL, STACK, KETTLEBELL, BODYWEIGHT, TIME, DI
 
 enum class Objective { STRENGTH, HYPERTROPHY, ENDURANCE, POWER, CONDITIONING, CORE, MOBILITY, GPP }
 
+/** Equipment class used for library coverage and the equipment matrix (EQ-001). */
+enum class EquipmentClass { BARBELL, DUMBBELL, KETTLEBELL, CABLE, MACHINE, BODYWEIGHT, BAND, OTHER, CONDITIONING }
+
+/** What one "rep" of an exercise is: a repetition, a second of holding, or a metre carried/crawled. */
+enum class DoseUnit { REPS, SECONDS, METRES }
+
 /** Exercise metadata — the subset of the Phase 1 schema (section 29) the engine reasons with. */
 data class Exercise(
     val id: String,
@@ -83,8 +89,39 @@ data class Exercise(
     val setupSec: Int = 20,
     val station: Station = Station.FLOOR,
     val limitationTags: Set<String> = emptySet(),
+    val aliases: List<String> = emptyList(),
+    /** Optional second pattern (suitcase carry also trains anti-lateral flexion); counts for PAT-001 coverage only. */
+    val secondaryPattern: Pattern? = null,
+    val equipmentClass: EquipmentClass = EquipmentClass.OTHER,
+    /** Where the exercise is done (equipment ID or "floor"); a change costs TIME-004 station time. */
+    val stationKey: String = "floor",
+    /** Bodyweight or core ladder (BW-001, CORE-002) and the rung on it, 1 = easiest. */
+    val family: String? = null,
+    val rung: Int = 0,
+    val progressionId: String? = null,
+    val regressionId: String? = null,
+    val unit: DoseUnit = DoseUnit.REPS,
+    /** Usable for intent-based power sets (REP-004). */
+    val powerCapable: Boolean = false,
+    /** Machine or band assistance: more load means easier (BW-002). */
+    val assisted: Boolean = false,
+    /** Which bar a BARBELL load uses: barbell, ez_bar, trap_bar or landmine (one loaded end). */
+    val bar: String? = null,
+    /** Never prescribed by default; only when the user adds it (CORE-001 crunches). */
+    val userAddOnly: Boolean = false,
 ) {
     fun stress(j: Joint): Int = jointStress[j] ?: 0
+
+    /** True when the exercise trains `p` as its main or second pattern. */
+    fun trains(p: Pattern): Boolean = pattern == p || secondaryPattern == p
+
+    /**
+     * Dosed as a compound (REP-002, REST-002, INT-002): a lifting pattern with a compound cost class.
+     * Low-cost bodyweight moves (push-ups, inverted rows) are dosed like accessories.
+     */
+    val dosedAsCompound: Boolean
+        get() = pattern != Pattern.ISOLATION && !pattern.coreCategory && pattern != Pattern.ROTATION &&
+            costClass != CostClass.ISOLATION_OR_CORE
 }
 
 enum class Station { SINGLE_STATION, MULTI_STATION, FLOOR }

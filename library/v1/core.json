@@ -1,0 +1,482 @@
+[
+  {
+    "id": "farmer-carry", "name": "Dumbbell farmer's carry", "aliases": ["farmers walk", "farmer carry"],
+    "pattern": "LOADED_CARRY", "class": "DUMBBELL", "primary": ["FOREARMS", "UPPER_BACK", "CORE"], "secondary": ["GLUTES", "CALVES"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1}, "fatigue": 3,
+    "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "setup": 15, "station": "dumbbells",
+    "tags": ["grip_intensive"],
+    "text": {
+      "setup": "Stand between two heavy dumbbells, squat down and pick them up with a flat back.",
+      "cues": ["Stand tall with shoulders down and back.", "Walk with short, quick steps.", "Squat down to set the weights on the floor."],
+      "mistakes": ["Letting the shoulders round forward.", "Dropping the weights from standing."]
+    }
+  },
+  {
+    "id": "trap-bar-carry", "name": "Trap bar carry", "aliases": ["hex bar carry"],
+    "pattern": "LOADED_CARRY", "class": "BARBELL", "primary": ["FOREARMS", "UPPER_BACK", "CORE"], "secondary": ["GLUTES", "QUADS"],
+    "equipment": ["trap_bar"], "load": "BARBELL", "bar": "trap_bar", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 2, "skill": 1, "joints": {"SPINE": 2, "WRIST": 1}, "fatigue": 4,
+    "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 30], "max_reps": 40, "tempo": 1.0, "setup": 40, "station": "trap_bar",
+    "tags": ["grip_intensive", "spinal_loading"],
+    "text": {
+      "setup": "Deadlift the trap bar to standing, making sure there is a clear path in front of you.",
+      "cues": ["Brace and walk with steady, short steps.", "Keep the bar level and still."],
+      "mistakes": ["Walking so fast the plates swing."]
+    }
+  },
+  {
+    "id": "suitcase-carry", "name": "Dumbbell suitcase carry", "aliases": ["one arm carry", "suitcase carry"],
+    "pattern": "LOADED_CARRY", "pattern2": "ANTI_LATERAL_FLEXION", "class": "DUMBBELL", "primary": ["CORE", "FOREARMS"], "secondary": ["UPPER_BACK", "GLUTES"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1}, "fatigue": 2,
+    "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "unilateral": true, "setup": 15, "station": "dumbbells",
+    "tags": ["grip_intensive"], "family": "anti_lateral_flexion", "rung": 4,
+    "progression": "kb-offset-overhead-carry", "regression": "side-plank-reach",
+    "text": {
+      "setup": "Pick up one heavy dumbbell at your side, leaving the other hand free.",
+      "cues": ["Stand perfectly upright, as if the weight were not there.", "Walk slowly, then switch hands for the return."],
+      "mistakes": ["Leaning away from or towards the weight."]
+    }
+  },
+  {
+    "id": "goblet-carry", "name": "Goblet carry", "aliases": ["front loaded carry"],
+    "pattern": "LOADED_CARRY", "pattern2": "ANTI_EXTENSION", "class": "DUMBBELL", "primary": ["CORE", "UPPER_BACK"], "secondary": ["FOREARMS"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1}, "fatigue": 2,
+    "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "setup": 10, "station": "dumbbells",
+    "family": "bracing", "rung": 2, "regression": "brace-breathing",
+    "text": {
+      "setup": "Hold one dumbbell vertically at your chest, as for a goblet squat.",
+      "cues": ["Keep ribs down and stand tall against the weight.", "Breathe behind the brace as you walk."],
+      "mistakes": ["Leaning back to balance the weight."]
+    }
+  },
+  {
+    "id": "kb-farmer-carry", "name": "Kettlebell farmer's carry", "aliases": ["kb farmers walk"],
+    "pattern": "LOADED_CARRY", "class": "KETTLEBELL", "primary": ["FOREARMS", "UPPER_BACK", "CORE"], "secondary": ["GLUTES"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1}, "fatigue": 3,
+    "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "setup": 15, "station": "kettlebells",
+    "tags": ["grip_intensive"],
+    "text": {
+      "setup": "Deadlift a kettlebell in each hand to standing.",
+      "cues": ["Tall posture, shoulders packed down.", "Walk with control and set the bells down by squatting."],
+      "mistakes": ["Letting the bells bang against the legs."]
+    }
+  },
+  {
+    "id": "kb-suitcase-carry", "name": "Kettlebell suitcase carry", "aliases": ["kb suitcase carry"],
+    "pattern": "LOADED_CARRY", "pattern2": "ANTI_LATERAL_FLEXION", "class": "KETTLEBELL", "primary": ["CORE", "FOREARMS"], "secondary": ["UPPER_BACK"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1}, "fatigue": 2,
+    "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "unilateral": true, "setup": 15, "station": "kettlebells",
+    "tags": ["grip_intensive"], "family": "anti_lateral_flexion", "rung": 4, "progression": "kb-offset-overhead-carry",
+    "text": {
+      "setup": "Pick up one kettlebell at your side.",
+      "cues": ["Stay level and upright.", "Switch hands at the turn."],
+      "mistakes": ["Hiking the hip on the loaded side."]
+    }
+  },
+  {
+    "id": "kb-offset-overhead-carry", "name": "Kettlebell overhead carry (one arm)", "aliases": ["waiter carry", "overhead carry"],
+    "pattern": "LOADED_CARRY", "pattern2": "ANTI_LATERAL_FLEXION", "class": "KETTLEBELL", "primary": ["CORE", "SIDE_DELTS"], "secondary": ["UPPER_BACK", "TRICEPS"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "SPINE": 1, "WRIST": 1}, "fatigue": 2,
+    "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [15, 30], "max_reps": 40, "tempo": 1.0, "unilateral": true, "setup": 20, "station": "kettlebells",
+    "tags": ["overhead"], "family": "anti_lateral_flexion", "rung": 5, "regression": "suitcase-carry",
+    "text": {
+      "setup": "Press a light kettlebell overhead with one arm and lock the elbow, biceps beside the ear.",
+      "cues": ["Keep the arm vertical and the ribs down.", "Walk slowly and switch arms at the turn."],
+      "mistakes": ["Letting the arm drift forward.", "Arching the lower back."],
+      "safety": "Start light. If the arm wobbles, lower the bell to the rack position and set it down."
+    }
+  },
+  {
+    "id": "landmine-rotation", "name": "Landmine rotation", "aliases": ["landmine rainbow", "landmine twist"],
+    "pattern": "ROTATION", "class": "BARBELL", "primary": ["CORE"], "secondary": ["FRONT_DELTS", "GLUTES"],
+    "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 3, "joints": {"SPINE": 2, "SHOULDER": 1, "HIP": 1}, "fatigue": 2,
+    "objectives": ["CORE"], "reps": [6, 10], "max_reps": 12, "setup": 30, "station": "landmine",
+    "text": {
+      "setup": "Stand facing the landmine with feet wider than hips. Hold the end of an unloaded or lightly loaded bar in both hands at chest height, arms extended.",
+      "cues": ["Move the bar in an arc down towards one hip by turning the hips and shoulders together.", "Bring it back over the top to the other side under control."],
+      "mistakes": ["Twisting only the lower back while the hips stay still.", "Using a load that pulls you off balance."]
+    }
+  },
+  {
+    "id": "db-woodchop", "name": "Half-kneeling dumbbell chop", "aliases": ["db woodchop", "dumbbell chop"],
+    "pattern": "ROTATION", "class": "DUMBBELL", "primary": ["CORE"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 10, "station": "dumbbells",
+    "text": {
+      "setup": "Kneel on one knee and hold one dumbbell by both ends beside the shoulder on the side of the front leg.",
+      "cues": ["Bring the dumbbell diagonally down across the body to the opposite hip.", "Turn through the upper back while the hips stay square."],
+      "mistakes": ["Swinging the weight with momentum."]
+    }
+  },
+  {
+    "id": "kb-chop", "name": "Half-kneeling kettlebell chop", "aliases": ["kettlebell chop"],
+    "pattern": "ROTATION", "class": "KETTLEBELL", "primary": ["CORE"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 10, "station": "kettlebells",
+    "text": {
+      "setup": "Kneel on one knee holding a light kettlebell by the horns beside the shoulder on the side of the front leg.",
+      "cues": ["Chop diagonally down to the opposite hip with control.", "Return along the same line."],
+      "mistakes": ["Letting the hips rotate with the bell."]
+    }
+  },
+  {
+    "id": "cable-chop-half-kneeling", "name": "Half-kneeling cable chop", "aliases": ["cable woodchop", "high to low chop"],
+    "pattern": "ROTATION", "class": "CABLE", "primary": ["CORE"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable",
+    "family": "rotation", "rung": 1, "progression": "cable-chop-standing",
+    "text": {
+      "setup": "Set a rope or handle high on the cable column. Kneel side-on with the inside knee up and grip the handle with both hands above the outside shoulder.",
+      "cues": ["Pull the handle diagonally down past the opposite hip.", "Keep the hips still and let the ribs turn.", "Return slowly."],
+      "mistakes": ["Bending the arms to make it a pulldown."]
+    }
+  },
+  {
+    "id": "cable-lift-half-kneeling", "name": "Half-kneeling cable lift", "aliases": ["low to high chop", "cable lift"],
+    "pattern": "ROTATION", "class": "CABLE", "primary": ["CORE"], "secondary": ["FRONT_DELTS", "GLUTES"],
+    "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable",
+    "family": "rotation", "rung": 1, "progression": "cable-chop-standing",
+    "text": {
+      "setup": "Set the handle low. Kneel side-on with the outside knee up and hold the handle with both hands beside the inside hip.",
+      "cues": ["Lift the handle diagonally up across your body to above the opposite shoulder.", "Stay tall through the hips."],
+      "mistakes": ["Leaning back to lift the weight."]
+    }
+  },
+  {
+    "id": "cable-chop-standing", "name": "Standing cable chop", "aliases": ["standing woodchop"],
+    "pattern": "ROTATION", "class": "CABLE", "primary": ["CORE"], "secondary": ["FRONT_DELTS", "GLUTES"],
+    "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1, "HIP": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable",
+    "family": "rotation", "rung": 2, "progression": "med-ball-rotational-throw", "regression": "cable-chop-half-kneeling",
+    "text": {
+      "setup": "Stand side-on to a high cable with feet wider than shoulders, holding the handle with both hands above the near shoulder.",
+      "cues": ["Pivot the back foot and turn the hips as you chop down and across.", "Control the return."],
+      "mistakes": ["Twisting the knees while the feet stay planted."]
+    }
+  },
+  {
+    "id": "med-ball-rotational-throw", "name": "Medicine ball rotational throw", "aliases": ["rotational wall throw", "med ball side throw"],
+    "pattern": "ROTATION", "class": "OTHER", "primary": ["CORE"], "secondary": ["GLUTES", "FRONT_DELTS"],
+    "equipment": ["medicine_ball"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 3, "joints": {"SPINE": 2, "HIP": 1, "SHOULDER": 1}, "fatigue": 2,
+    "objectives": ["POWER", "CORE"], "reps": [4, 6], "max_reps": 8, "unilateral": true, "tempo": 3.0, "setup": 10, "station": "medicine_ball", "power": true,
+    "family": "rotation", "rung": 3, "regression": "cable-chop-standing",
+    "text": {
+      "setup": "Stand side-on to a solid wall about a metre away, holding a light medicine ball at your back hip.",
+      "cues": ["Shift weight to the back leg, then turn the hips hard and throw the ball into the wall.", "Catch or collect it and reset before the next throw."],
+      "mistakes": ["Throwing with the arms while the hips stay still."],
+      "safety": "Use a soft, non-bouncing ball and a wall without windows."
+    }
+  },
+  {
+    "id": "band-chop", "name": "Resistance band chop", "aliases": ["band woodchop"],
+    "pattern": "ROTATION", "class": "BAND", "primary": ["CORE"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["bands"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [10, 15], "max_reps": 20, "unilateral": true, "failure_safe": true, "setup": 20, "station": "floor",
+    "text": {
+      "setup": "Anchor a band high on a door or post. Stand side-on and hold it with both hands above the near shoulder.",
+      "cues": ["Chop diagonally down across the body.", "Return slowly against the band."],
+      "mistakes": ["Letting the band yank the arms back."]
+    }
+  },
+  {
+    "id": "dead-bug", "name": "Dead bug", "aliases": ["deadbug"],
+    "pattern": "ANTI_EXTENSION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": [],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor",
+    "family": "anti_extension", "rung": 1, "progression": "front-plank",
+    "text": {
+      "setup": "Lie on your back with arms pointing to the ceiling and hips and knees bent at 90 degrees.",
+      "cues": ["Press your lower back gently into the floor.", "Slowly reach one arm overhead and the opposite leg out long.", "Return and switch sides."],
+      "mistakes": ["The lower back lifting off the floor as the leg goes out."]
+    }
+  },
+  {
+    "id": "db-dead-bug", "name": "Weighted dead bug", "aliases": ["dumbbell dead bug"],
+    "pattern": "ANTI_EXTENSION", "class": "DUMBBELL", "primary": ["CORE"], "secondary": [],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 10, "station": "dumbbells",
+    "regression": "dead-bug",
+    "text": {
+      "setup": "Lie in the dead bug position holding a light dumbbell in both hands straight above your chest.",
+      "cues": ["Keep the dumbbell still while one leg at a time reaches out long.", "Keep the lower back in contact with the floor."],
+      "mistakes": ["Holding the breath for the whole set."]
+    }
+  },
+  {
+    "id": "front-plank", "name": "Front plank", "aliases": ["plank", "forearm plank"],
+    "pattern": "ANTI_EXTENSION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["FRONT_DELTS"],
+    "equipment": [], "load": "TIME", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "unit": "SECONDS", "reps": [20, 45], "max_reps": 60, "tempo": 1.0, "failure_safe": true, "setup": 5, "station": "floor",
+    "family": "anti_extension", "rung": 2, "progression": "long-lever-plank", "regression": "dead-bug",
+    "text": {
+      "setup": "Rest on your forearms and toes with elbows under your shoulders and body in a straight line.",
+      "cues": ["Squeeze the glutes and pull the ribs down.", "Breathe slowly while holding the position."],
+      "mistakes": ["Hips sagging or piking up.", "Holding on after your form breaks."]
+    }
+  },
+  {
+    "id": "long-lever-plank", "name": "Long-lever plank", "aliases": ["extended plank"],
+    "pattern": "ANTI_EXTENSION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["FRONT_DELTS"],
+    "equipment": [], "load": "TIME", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 2}, "fatigue": 1,
+    "objectives": ["CORE"], "unit": "SECONDS", "reps": [20, 40], "max_reps": 45, "tempo": 1.0, "failure_safe": true, "setup": 5, "station": "floor",
+    "family": "anti_extension", "rung": 3, "progression": "body-saw", "regression": "front-plank",
+    "text": {
+      "setup": "Set up a forearm plank, then walk your elbows forward a few centimetres in front of your shoulders.",
+      "cues": ["Keep the body straight and glutes tight.", "Breathe behind the brace."],
+      "mistakes": ["Letting the lower back arch as the lever gets longer."]
+    }
+  },
+  {
+    "id": "body-saw", "name": "Body saw", "aliases": ["plank saw"],
+    "pattern": "ANTI_EXTENSION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["FRONT_DELTS"],
+    "equipment": ["sliders"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 2}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "failure_safe": true, "setup": 10, "station": "floor",
+    "family": "anti_extension", "rung": 4, "progression": "ab-wheel-kneeling", "regression": "long-lever-plank",
+    "text": {
+      "setup": "Get into a forearm plank with your feet on sliders or a towel on a smooth floor.",
+      "cues": ["Rock your body back a few centimetres by pushing through the forearms.", "Pull back to the start without the hips sagging."],
+      "mistakes": ["Sliding further than you can control."]
+    }
+  },
+  {
+    "id": "ab-wheel-kneeling", "name": "Kneeling ab wheel rollout", "aliases": ["ab wheel", "rollout"],
+    "pattern": "ANTI_EXTENSION", "class": "OTHER", "primary": ["CORE"], "secondary": ["LATS", "FRONT_DELTS"],
+    "equipment": ["ab_wheel"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 2, "SPINE": 1}, "fatigue": 2,
+    "objectives": ["CORE"], "reps": [6, 12], "max_reps": 15, "failure_safe": true, "setup": 10, "station": "floor",
+    "family": "anti_extension", "rung": 5, "progression": "ab-wheel-standing", "regression": "body-saw",
+    "text": {
+      "setup": "Kneel on a mat holding the ab wheel under your shoulders.",
+      "cues": ["Roll forward slowly while keeping the hips in line with the body.", "Go only as far as you can without the back arching, then pull back."],
+      "mistakes": ["Hips staying back so the movement is a cat stretch.", "Lower back sagging at the far point."]
+    }
+  },
+  {
+    "id": "ab-wheel-standing", "name": "Standing ab wheel rollout", "aliases": ["standing rollout"],
+    "pattern": "ANTI_EXTENSION", "class": "OTHER", "primary": ["CORE"], "secondary": ["LATS", "FRONT_DELTS"],
+    "equipment": ["ab_wheel"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 5, "skill": 4, "joints": {"SHOULDER": 3, "SPINE": 2}, "fatigue": 2,
+    "objectives": ["CORE"], "reps": [3, 8], "max_reps": 10, "setup": 10, "station": "floor",
+    "family": "anti_extension", "rung": 6, "regression": "ab-wheel-kneeling",
+    "text": {
+      "setup": "Stand with feet hip-width apart, bend down and place the ab wheel on the floor in front of your feet.",
+      "cues": ["Roll out slowly as far as you can control.", "Pull back with a tight, straight body."],
+      "mistakes": ["Attempting this before kneeling rollouts are easy."],
+      "safety": "Advanced only. Roll towards a wall at first so the wall limits how far you can go."
+    }
+  },
+  {
+    "id": "barbell-rollout", "name": "Kneeling barbell rollout", "aliases": ["barbell ab rollout"],
+    "pattern": "ANTI_EXTENSION", "class": "BARBELL", "primary": ["CORE"], "secondary": ["LATS", "FRONT_DELTS"],
+    "equipment": ["barbell"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 2, "SPINE": 1}, "fatigue": 2,
+    "objectives": ["CORE"], "reps": [6, 12], "max_reps": 15, "failure_safe": true, "setup": 30, "station": "barbell",
+    "regression": "body-saw",
+    "text": {
+      "setup": "Load a barbell with round plates of the same size so it rolls. Kneel behind it and grip the bar shoulder-width apart.",
+      "cues": ["Roll the bar forward while keeping the body straight from knees to head.", "Pull back using the stomach and lats."],
+      "mistakes": ["Letting the lower back arch at the end of the range."]
+    }
+  },
+  {
+    "id": "bear-hold", "name": "Bear hold", "aliases": ["bear plank"],
+    "pattern": "ANTI_EXTENSION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["FRONT_DELTS", "QUADS"],
+    "equipment": [], "load": "TIME", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"WRIST": 1, "SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE", "GPP"], "unit": "SECONDS", "reps": [20, 40], "max_reps": 45, "tempo": 1.0, "failure_safe": true, "setup": 5, "station": "floor",
+    "tags": ["wrist_extension_load"], "family": "crawl", "rung": 1, "progression": "bear-crawl",
+    "text": {
+      "setup": "Start on hands and knees with hands under shoulders and knees under hips. Lift the knees a few centimetres off the floor.",
+      "cues": ["Keep the back flat like a table top.", "Breathe slowly and hold."],
+      "mistakes": ["Hips rising high into the air."]
+    }
+  },
+  {
+    "id": "bear-crawl", "name": "Bear crawl", "aliases": ["crawl"],
+    "pattern": "ANTI_EXTENSION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["FRONT_DELTS", "QUADS"],
+    "equipment": [], "load": "DISTANCE", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 2, "joints": {"WRIST": 1, "SHOULDER": 1}, "fatigue": 2,
+    "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [10, 20], "max_reps": 30, "tempo": 2.0, "failure_safe": true, "setup": 5, "station": "floor",
+    "tags": ["wrist_extension_load"], "family": "crawl", "rung": 2, "progression": "lateral-bear-crawl", "regression": "bear-hold",
+    "text": {
+      "setup": "Start in the bear hold position with knees just off the floor.",
+      "cues": ["Move the opposite hand and foot forward a short step at a time.", "Keep the hips level and low."],
+      "mistakes": ["Big steps that make the hips sway."]
+    }
+  },
+  {
+    "id": "lateral-bear-crawl", "name": "Lateral bear crawl", "aliases": ["side crawl"],
+    "pattern": "ANTI_EXTENSION", "pattern2": "ANTI_ROTATION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["FRONT_DELTS", "ADDUCTORS"],
+    "equipment": [], "load": "DISTANCE", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 2, "joints": {"WRIST": 1, "SHOULDER": 1}, "fatigue": 2,
+    "objectives": ["CORE", "GPP"], "unit": "METRES", "reps": [10, 20], "max_reps": 30, "tempo": 2.0, "failure_safe": true, "setup": 5, "station": "floor",
+    "tags": ["wrist_extension_load"], "family": "crawl", "rung": 3, "regression": "bear-crawl",
+    "text": {
+      "setup": "Start in the bear hold position.",
+      "cues": ["Crawl sideways with small hand and foot steps.", "Go the same distance back the other way."],
+      "mistakes": ["Letting the knees touch down."]
+    }
+  },
+  {
+    "id": "brace-breathing", "name": "Breathing and brace drill", "aliases": ["brace drill", "90-90 breathing"],
+    "pattern": "ANTI_EXTENSION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": [],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {}, "fatigue": 1,
+    "objectives": ["CORE", "MOBILITY"], "reps": [5, 8], "max_reps": 10, "tempo": 8.0, "failure_safe": true, "setup": 5, "station": "floor",
+    "family": "bracing", "rung": 1, "progression": "goblet-carry",
+    "text": {
+      "setup": "Lie on your back with feet on a wall or bench so hips and knees are bent at right angles.",
+      "cues": ["Breathe in through the nose, filling the belly and the sides of your waist.", "Breathe out fully, feeling the ribs lower.", "On the last breath, tighten the stomach as if bracing for a light poke and hold for 5 seconds."],
+      "mistakes": ["Breathing only into the chest and shoulders."]
+    }
+  },
+  {
+    "id": "pallof-half-kneeling", "name": "Half-kneeling Pallof press", "aliases": ["kneeling pallof"],
+    "pattern": "ANTI_ROTATION", "class": "CABLE", "primary": ["CORE"], "secondary": [],
+    "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 20, "station": "cable",
+    "family": "anti_rotation", "rung": 1, "progression": "pallof-standing",
+    "text": {
+      "setup": "Set a handle at chest height. Kneel side-on to the machine and hold the handle against your chest with both hands.",
+      "cues": ["Press the handle straight out in front of you.", "Hold for two seconds without letting the cable twist you.", "Bring it back to the chest."],
+      "mistakes": ["Letting the hands drift towards the machine."]
+    }
+  },
+  {
+    "id": "pallof-standing", "name": "Standing Pallof press", "aliases": ["pallof press"],
+    "pattern": "ANTI_ROTATION", "class": "CABLE", "primary": ["CORE"], "secondary": ["GLUTES"],
+    "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 20, "station": "cable",
+    "family": "anti_rotation", "rung": 2, "progression": "pallof-walkout", "regression": "pallof-half-kneeling",
+    "text": {
+      "setup": "Stand side-on to a cable at chest height with feet shoulder-width apart, holding the handle at your chest.",
+      "cues": ["Press straight out and hold for two seconds.", "Keep hips and shoulders facing forward."],
+      "mistakes": ["Standing too close so there is no tension."]
+    }
+  },
+  {
+    "id": "pallof-walkout", "name": "Pallof walkout", "aliases": ["pallof walk out"],
+    "pattern": "ANTI_ROTATION", "class": "CABLE", "primary": ["CORE"], "secondary": ["GLUTES"],
+    "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 2, "joints": {}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [6, 10], "max_reps": 12, "unilateral": true, "failure_safe": true, "setup": 20, "station": "cable",
+    "family": "anti_rotation", "rung": 3, "progression": "single-arm-cable-row", "regression": "pallof-standing",
+    "text": {
+      "setup": "Hold the handle at your chest with arms straight out, standing side-on next to the machine.",
+      "cues": ["Side-step away from the machine slowly with arms locked out.", "Pause, then step back in under control."],
+      "mistakes": ["Twisting towards the machine as tension rises."]
+    }
+  },
+  {
+    "id": "band-pallof-press", "name": "Resistance band Pallof press", "aliases": ["band pallof"],
+    "pattern": "ANTI_ROTATION", "class": "BAND", "primary": ["CORE"], "secondary": [],
+    "equipment": ["bands"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [10, 15], "max_reps": 20, "unilateral": true, "failure_safe": true, "setup": 20, "station": "floor",
+    "text": {
+      "setup": "Anchor a band at chest height and stand side-on, holding it at your chest.",
+      "cues": ["Press out, hold for two seconds and return.", "Step further away to make it harder."],
+      "mistakes": ["Rotating towards the anchor."]
+    }
+  },
+  {
+    "id": "bird-dog", "name": "Bird dog", "aliases": ["quadruped reach"],
+    "pattern": "ANTI_ROTATION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["GLUTES"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"WRIST": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [6, 10], "max_reps": 12, "unilateral": true, "failure_safe": true, "tempo": 5.0, "setup": 5, "station": "floor",
+    "text": {
+      "setup": "Start on hands and knees with hands under shoulders and knees under hips.",
+      "cues": ["Reach one arm forward and the opposite leg back until both are level with the body.", "Hold for two seconds without the hips tipping, then switch."],
+      "mistakes": ["Lifting the leg so high the lower back arches."]
+    }
+  },
+  {
+    "id": "plank-shoulder-tap", "name": "Plank shoulder tap", "aliases": ["shoulder taps"],
+    "pattern": "ANTI_ROTATION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["FRONT_DELTS"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"WRIST": 2, "SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor",
+    "tags": ["wrist_extension_load"],
+    "text": {
+      "setup": "Start in a high plank with feet a little wider than hip-width.",
+      "cues": ["Lift one hand to tap the opposite shoulder without the hips rocking.", "Alternate sides slowly."],
+      "mistakes": ["Swaying the hips side to side."]
+    }
+  },
+  {
+    "id": "renegade-row", "name": "Renegade row", "aliases": ["plank row"],
+    "pattern": "ANTI_ROTATION", "pattern2": "HORIZONTAL_PULL", "class": "DUMBBELL", "primary": ["CORE", "UPPER_BACK"], "secondary": ["LATS", "FRONT_DELTS"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"WRIST": 2, "SHOULDER": 2}, "fatigue": 2,
+    "objectives": ["CORE"], "reps": [6, 10], "max_reps": 12, "unilateral": true, "setup": 15, "station": "dumbbells",
+    "family": "anti_rotation", "rung": 5, "regression": "single-arm-cable-row",
+    "text": {
+      "setup": "Set up a high plank with hands on two hexagonal dumbbells and feet wide.",
+      "cues": ["Row one dumbbell to your ribs while the hips stay square to the floor.", "Set it down softly and alternate."],
+      "mistakes": ["Rotating the body open to lift the weight."],
+      "safety": "Use hexagonal dumbbells that cannot roll."
+    }
+  },
+  {
+    "id": "side-plank-kneeling", "name": "Kneeling side plank", "aliases": ["short side plank"],
+    "pattern": "ANTI_LATERAL_FLEXION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["GLUTES"],
+    "equipment": [], "load": "TIME", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "unit": "SECONDS", "reps": [20, 40], "max_reps": 45, "tempo": 1.0, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor",
+    "family": "anti_lateral_flexion", "rung": 1, "progression": "side-plank",
+    "text": {
+      "setup": "Lie on your side with knees bent and your elbow under your shoulder.",
+      "cues": ["Lift the hips so the body is straight from knees to head.", "Hold, breathing slowly, then switch sides."],
+      "mistakes": ["Hips sinking back behind the body."]
+    }
+  },
+  {
+    "id": "side-plank", "name": "Side plank", "aliases": ["side bridge"],
+    "pattern": "ANTI_LATERAL_FLEXION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["GLUTES", "ADDUCTORS"],
+    "equipment": [], "load": "TIME", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 2}, "fatigue": 1,
+    "objectives": ["CORE"], "unit": "SECONDS", "reps": [20, 45], "max_reps": 60, "tempo": 1.0, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor",
+    "family": "anti_lateral_flexion", "rung": 2, "progression": "side-plank-reach", "regression": "side-plank-kneeling",
+    "text": {
+      "setup": "Lie on your side with legs straight, feet stacked and elbow under the shoulder.",
+      "cues": ["Lift the hips into a straight line from feet to head.", "Keep the top hip stacked over the bottom one."],
+      "mistakes": ["Rolling forward towards the floor."]
+    }
+  },
+  {
+    "id": "side-plank-reach", "name": "Side plank with reach-through", "aliases": ["side plank thread the needle"],
+    "pattern": "ANTI_LATERAL_FLEXION", "class": "BODYWEIGHT", "primary": ["CORE"], "secondary": ["GLUTES"],
+    "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 2, "SPINE": 1}, "fatigue": 1,
+    "objectives": ["CORE"], "reps": [6, 10], "max_reps": 12, "unilateral": true, "failure_safe": true, "tempo": 4.0, "setup": 5, "station": "floor",
+    "family": "anti_lateral_flexion", "rung": 3, "progression": "suitcase-carry", "regression": "side-plank",
+    "text": {
+      "setup": "Hold a side plank with the top arm reaching up to the ceiling.",
+      "cues": ["Slowly thread the top arm under your body, turning the chest down.", "Reach back up to the ceiling while the hips stay high."],
+      "mistakes": ["Letting the hips drop on each reach."]
+    }
+  }
+]

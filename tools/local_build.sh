@@ -17,6 +17,7 @@ export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Xss8m"
 kotlinc() { java -Xmx2g -cp "$COMPILER_CP" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -no-reflect -jvm-target 17 "$@"; }
 
 python3 -I "$ROOT/tools/gen_registry_kotlin.py" --check
+python3 -I "$ROOT/tools/gen_library_kotlin.py" --check
 
 rm -rf "$OUT" && mkdir -p "$OUT/engine/main" "$OUT/engine/test"
 echo "== compiling :engine"
