@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-08 — Phase 3 Part 2: exercise library, 12-month programme, week planner, session generator
+- Exercise library v1.0.1 (`library/v1/*.json`, original wording): 152 exercises, 31 drills, 10 modality guides; generator with safety checks (`tools/gen_library_kotlin.py --check` in CI).
+- Engine: reps, rest, effort, order and supersets; cardio zones, progression and interval menus; bodyweight and core ladders; mobility; frequency and experience; 12-month blueprint with block clock; week planner (days, exercise choice, volume within caps, balance, core minimum, cardio, time shaping); session generator (GEN-001, 10 steps ending in the validator; tiers, deload, swaps, illness rest day, express session); streak, milestones and session-RPE prompt.
+- 345 tests passing locally and on GitHub (Kotlin 2.4.0); rule coverage 137/140 (remaining: DATA-001, SAF-009, COACH-001). Property tests over random users, gyms, injuries and schedules; 52-week simulation for five users with no rule broken.
+- Independent review: 1 high, 11 medium, 8 low findings, all fixed with regression tests (R01–R20); three more issues found while fixing (core minimum, box jump as a main lift, lifts stuck behind coarse equipment steps).
+- Decisions D-046 to D-057. **D-056 (moderate-only screening → Z1 cardio only) awaits Product Owner confirmation.**
+
 ## 2026-10-08 — First real Android build on GitHub
 - Code pushed to github.com/abhinavgarggarg/personal-fitness-coach. CI green on the first run: engine 173/173 tests (Kotlin 2.4.0 via Gradle 9.7.0, AGP 9.4.0), app unit tests, debug APK, permission allow-list (no INTERNET), 16 KB page check.
 - Device matrix green: launch tests on Android 10 (small phone), 12, 14 (200% text), 16 phone and 16 tablet emulators.
