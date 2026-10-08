@@ -20,16 +20,16 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
@@ -39,26 +39,34 @@ jobs:
           python3 -I tools/check_phase1.py
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
       - name: Engine tests (rules, calculators, safety kernel)
-        run: ./gradlew --no-daemon :engine:test
+        run: |
+          ./gradlew --no-daemon :engine:test
+          python3 -I tools/ci_summary.py "Engine tests=engine/build/test-results/test/*.xml"
 
       - name: Rule coverage report
-        run: python3 -I tools/rule_coverage.py --markdown rule-coverage.md
+        run: |
+          python3 -I tools/rule_coverage.py --markdown rule-coverage.md | tee coverage.txt
+          echo "::notice title=Rule coverage::$(head -n 1 coverage.txt)"
 
       - name: App unit tests and debug APK
-        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+        run: |
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+          python3 -I tools/ci_summary.py "App unit tests=app/build/test-results/testDebugUnitTest/*.xml"
+          ls -l app/build/outputs/apk/debug/*.apk | awk '{print "::notice title=Debug APK::" $NF " (" $5 " bytes)"}'
 
       - name: Permission allow-list (no INTERNET)
         run: |
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -n 1)
           AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)aapt2
           "$AAPT2" dump permissions "$APK" | tee permissions.txt
-          python3 -I tools/check_permissions.py < permissions.txt
+          python3 -I tools/check_permissions.py < permissions.txt | tee permission-check.txt
+          echo "::notice title=Permissions::$(tail -n 1 permission-check.txt)"
 
       - name: 16 KB page-size compatibility (Android 15+ devices)
         run: |
@@ -67,7 +75,7 @@ jobs:
           if unzip -l "$APK" | grep -q '\.so$'; then "${BT}zipalign" -c -P 16 -v 4 "$APK" | tail -n 3; else echo "No native libraries: compatible with 4 KB and 16 KB page sizes"; fi
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: personal-fitness-coach-debug-${{ github.run_number }}
           path: app/build/outputs/apk/debug/*.apk
@@ -75,7 +83,7 @@ jobs:
 
       - name: Upload reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: reports-${{ github.run_number }}
           path: |
