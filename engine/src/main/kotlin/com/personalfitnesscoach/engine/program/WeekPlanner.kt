@@ -349,16 +349,59 @@ object WeekPlanner {
             week = week.mapIndexed { di, day -> if (di != dayIdx) day else day.copy(slots = day.slots.mapIndexed { si, s -> if (si == slotIdx) s.copy(sets = n) else s }) }
         }
         val adjustable = setOf(SlotRole.ACCESSORY, SlotRole.SECONDARY)
-        // 1) Never above the weekly cap: trim accessories, then secondaries, largest first (min 1 set).
-        for (m in Muscle.entries) {
-            var guard = 0
-            while ((weekly(week)[m] ?: 0.0) > weeklyCap + 1e-9 && guard++ < 200) {
-                val cand = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
-                    if (s.spec.role in adjustable && s.sets > 1 && (m in s.exercise.primary || m in s.exercise.secondary)) Triple(di, si, s) else null } }
-                    .sortedWith(compareBy<Triple<Int, Int, PlannedSlot>>({ if (it.third.spec.role == SlotRole.ACCESSORY) 0 else 1 }, { -it.third.sets }, { it.first }, { it.second }))
-                    .firstOrNull() ?: break
-                setSets(cand.first, cand.second, cand.third.sets - 1)
+        // 1) Never above the weekly cap (SAF-005): trim slots where the muscle is primary first, then accessories,
+        //    core work and secondaries, largest first; every slot keeps ≥ 1 set. Run again at the end as a guard.
+        val trimmable = adjustable + setOf(SlotRole.CORE, SlotRole.CARRY, SlotRole.ROTATION, SlotRole.POWER)
+        fun trimToCaps() {
+            for (m in Muscle.entries) {
+                var g = 0
+                while ((weekly(week)[m] ?: 0.0) > weeklyCap + 1e-9 && g++ < 200) {
+                    val cand = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
+                        if (s.spec.role in trimmable && s.sets > 1 && (m in s.exercise.primary || m in s.exercise.secondary)) Triple(di, si, s) else null } }
+                        .sortedWith(compareBy<Triple<Int, Int, PlannedSlot>>({ if (m in it.third.exercise.primary) 0 else 1 },
+                            { when (it.third.spec.role) { SlotRole.ACCESSORY -> 0; SlotRole.CORE, SlotRole.CARRY, SlotRole.ROTATION, SlotRole.POWER -> 1; else -> 2 } },
+                            { -it.third.sets }, { it.first }, { it.second }))
+                        .firstOrNull()
+                    if (cand != null) { setSets(cand.first, cand.second, cand.third.sets - 1); continue }
+                    // Then main lifts down to 2 sets, then the lowest-priority exercise that trains the muscle goes (P1 stays).
+                    val main = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
+                        if (s.spec.role == SlotRole.MAIN && s.sets > 2 && m in s.exercise.primary) Triple(di, si, s) else null } }
+                        .maxWithOrNull(compareBy<Triple<Int, Int, PlannedSlot>>({ it.third.priority.ordinal }, { it.third.sets }, { -it.first }))
+                    if (main != null) { setSets(main.first, main.second, main.third.sets - 1); continue }
+                    val drop = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
+                        if (s.priority != Priority.P1 && (m in s.exercise.primary || m in s.exercise.secondary)) Triple(di, si, s) else null } }
+                        .maxWithOrNull(compareBy<Triple<Int, Int, PlannedSlot>>({ it.third.priority.ordinal }, { if (m in it.third.exercise.primary) 1 else 0 }, { -it.first }, { -it.second }))
+                        ?: break
+                    week = week.mapIndexed { di, day -> if (di != drop.first) day else day.copy(slots = day.slots.filterIndexed { si, _ -> si != drop.second }) }
+                }
             }
+            // VOL-005 direct sets per muscle per session and VOL-008 working sets per session.
+            for (di in week.indices) {
+                var g = 0
+                while (g++ < 200) {
+                    val day = week[di]
+                    val direct = Volume.directPerSession(day.slots.map { it.exercise to it.sets.toDouble() })
+                    val over = direct.entries.filter { it.value > directCap + 1e-9 }.map { it.key }
+                    val tooMany = day.workingSets > sessionCap
+                    if (over.isEmpty() && !tooMany) break
+                    val c = day.slots.withIndex().filter { (it.value.spec.role in trimmable || over.isNotEmpty()) && it.value.sets > 1 &&
+                        (tooMany || it.value.exercise.primary.any { m -> m in over }) && it.value.priority != Priority.P1 }
+                        .maxWithOrNull(compareBy({ it.value.priority.ordinal }, { it.value.sets }, { -it.index }))
+                        ?: day.slots.withIndex().filter { it.value.sets > 1 && (tooMany || it.value.exercise.primary.any { m -> m in over }) }
+                            .maxWithOrNull(compareBy({ it.value.sets }, { -it.index })) ?: break
+                    setSets(di, c.index, c.value.sets - 1)
+                }
+            }
+        }
+        trimToCaps()
+        fun addOk(di: Int, si: Int): Boolean {
+            val day = week[di]
+            val s = day.slots[si]
+            if (day.workingSets + 1 > sessionCap) return false
+            val direct = Volume.directPerSession(day.slots.map { it.exercise to it.sets.toDouble() })
+            if (s.exercise.primary.any { (direct[it] ?: 0.0) + 1 > directCap + 1e-9 }) return false
+            val now = weekly(week)
+            return Volume.credit(s.exercise, 1.0).all { (k, v) -> (now[k] ?: 0.0) + v <= weeklyCap + 1e-9 }
         }
         // 2) Grow toward the target where it fits every cap; spread sets, accessories first (never in a deload or review week).
         val maxSets = if (deload) 2 else 4
@@ -395,6 +438,7 @@ object WeekPlanner {
             val cand = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
                 if (isCore(s) && s.sets < 3 && day.slots.filter(isCore).sumOf { it.sets } < P.CORE_003.max_sets_per_session) Triple(di, si, s) else null } }
                 .minWithOrNull(compareBy<Triple<Int, Int, PlannedSlot>>({ it.third.sets }, { it.first }, { it.second })) ?: break
+            if (!addOk(cand.first, cand.second)) break
             setSets(cand.first, cand.second, cand.third.sets + 1)
             val day = week[cand.first]
             if (!fits(day, i)) {
@@ -419,9 +463,8 @@ object WeekPlanner {
                     else -> break
                 }
                 val add = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
-                    if (grow(s.exercise) && s.spec.role in adjustable && s.sets < maxSets && day.workingSets < sessionCap &&
-                        fits(day.copy(slots = day.slots.mapIndexed { k, x -> if (k == si) x.copy(sets = x.sets + 1) else x }), i) &&
-                        Volume.credit(s.exercise, 1.0).all { (k, v) -> (weekly(week)[k] ?: 0.0) + v <= weeklyCap + 1e-9 }) Triple(di, si, s) else null } }
+                    if (grow(s.exercise) && s.spec.role in adjustable && s.sets < maxSets && addOk(di, si) &&
+                        fits(day.copy(slots = day.slots.mapIndexed { k, x -> if (k == si) x.copy(sets = x.sets + 1) else x }), i)) Triple(di, si, s) else null } }
                     .minWithOrNull(compareBy<Triple<Int, Int, PlannedSlot>>({ it.third.sets }, { it.first }, { it.second }))
                 if (add != null) { setSets(add.first, add.second, add.third.sets + 1); continue }
                 val cut = week.flatMapIndexed { di, day -> day.slots.mapIndexedNotNull { si, s ->
@@ -442,6 +485,7 @@ object WeekPlanner {
                 }
             })
         }
+        trimToCaps()
         val after = weekly(week)
         val short = TARGET_MUSCLES.filter { (after[it] ?: 0.0) < target(it, i, dose, blockWeek, deload) - 1e-9 }
         return EngineResult(week, listOf(Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.VOL_003, RuleIds.VOL_005, RuleIds.VOL_006, RuleIds.VOL_008,

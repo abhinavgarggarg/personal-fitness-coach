@@ -67,6 +67,7 @@ object Calibration {
             val up = PlateMath.nextAbove(load, available)
             val limit = load * (1.0 + band[1] / 100.0) * (1.0 + P.PROG_003.over_target_tolerance_pct / 100.0)
             next = if (up != null && up <= limit + 1e-9) up else load
+
         }
         if (next <= load + 1e-9) {
             // No safe heavier step (top of the equipment, or the next step is too big): this is the working load.

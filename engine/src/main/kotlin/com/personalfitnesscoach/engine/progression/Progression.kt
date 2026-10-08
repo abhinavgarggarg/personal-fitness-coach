@@ -128,6 +128,12 @@ object Progression {
             val before = implied(e.load, hi, e.targetRir)
             val proportional = maxOf(lo, Math.floor(hi * e.load / step + 1e-9).toInt())
             val reps = (proportional downTo lo).firstOrNull { implied(step, it, e.targetRir) <= before * cap + 1e-9 }
+            if (reps == null && work.all { (it.rir ?: -1.0) >= UNDERLOADED_RIR - 1e-9 }) {
+                // D-052: every set was rated RIR 4+ at the top of the extended range, so the user is clearly
+                // under-loaded and the equipment has no smaller step: take the next available load, reps to the bottom.
+                return result(Prescription(step, e.repRange, lo, ProgressionAction.LOAD_JUMP),
+                    listOf(RuleIds.PROG_002, RuleIds.PROG_003, RuleIds.PROG_007), ReasonKey.LOAD_JUMP_UNDERLOADED)
+            }
             if (reps == null) {
                 // Even the bottom of the range would be too big a jump: hold and offer another variation.
                 return result(Prescription(e.load, e.repRange, hi, ProgressionAction.HOLD, offerRegression = false), listOf(RuleIds.PROG_002, RuleIds.PROG_007),
@@ -145,6 +151,9 @@ object Progression {
         return result(Prescription(e.load, e.repRange, Num.clampInt(work.maxOf { it.reps } + 1, lo, hi), ProgressionAction.REPS_UP),
             listOf(RuleIds.PROG_002), ReasonKey.REPS_UP)
     }
+
+    /** D-052: sets rated this easy (RPE ≤ 6) are not hard sets (VOL-001 counts RIR ≤ 4) and show the load is too light. */
+    const val UNDERLOADED_RIR: Double = 4.0
 
     /** PROG-002 limit: up to +3 reps above the default range, max 15 for compounds and 20 for isolation. */
     fun maxExtendedReps(ex: Exercise): Int {

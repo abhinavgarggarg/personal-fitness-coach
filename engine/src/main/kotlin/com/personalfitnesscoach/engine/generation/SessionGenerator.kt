@@ -1,5 +1,6 @@
 package com.personalfitnesscoach.engine.generation
 
+import com.personalfitnesscoach.engine.calc.E1rm
 import com.personalfitnesscoach.engine.calc.Inventory
 import com.personalfitnesscoach.engine.calc.PlateMath
 import com.personalfitnesscoach.engine.conditioning.Concurrent
@@ -38,6 +39,8 @@ import com.personalfitnesscoach.engine.program.PlannedDay
 import com.personalfitnesscoach.engine.program.PlannedSlot
 import com.personalfitnesscoach.engine.program.SlotRole
 import com.personalfitnesscoach.engine.program.WeekPlanner
+import com.personalfitnesscoach.engine.progression.Prescription
+import com.personalfitnesscoach.engine.progression.ProgressionCaps
 import com.personalfitnesscoach.engine.progression.Warmup
 import com.personalfitnesscoach.engine.progression.WarmupSet
 import com.personalfitnesscoach.engine.registry.P
@@ -69,8 +72,12 @@ data class GenerationRequest(
     val inventory: Inventory = Inventory(),
     /** Current e1RM per exercise ID (INT-004). */
     val e1rm: Map<String, Double> = emptyMap(),
-    /** Next working load per exercise from the progression engine (PROG), used when there is no e1RM. */
-    val nextLoads: Map<String, Double> = emptyMap(),
+    /** The progression engine's next prescription per exercise (PROG-001..008), used when there is no e1RM: load and rep range. */
+    val progression: Map<String, Prescription> = emptyMap(),
+    /** CAL-001 in progress over sessions 1–4: where today's calibration ramp starts, per exercise. */
+    val calibrationLoads: Map<String, Double> = emptyMap(),
+    /** Last week's working load per slot and exercise ([SessionGenerator.loadKey]); caps the weekly rise (PROG-007, SAF-005). */
+    val lastWeekLoads: Map<String, Double> = emptyMap(),
     val bodyweightKg: Double? = null,
     val personalFactor: Double = 1.0,
     val crowded: Boolean = false,
@@ -122,6 +129,8 @@ data class Workout(
     val fallbackUsed: Boolean,
     /** The exact session the validator approved (SAF-008); nothing else is ever shown. */
     val validated: Session,
+    /** The FULL-day working sets the tier and deload cuts were measured from (for audits and re-validation). */
+    val fullTierWorkingSets: Int = 0,
 )
 
 /**
@@ -158,6 +167,11 @@ object SessionGenerator {
             slots += s.copy(exercise = pick, rest = Rest.forSets(pick, s.reps.last), unit = pick.unit, perSide = pick.unilateral,
                 reps = if (pick.unit == s.unit) s.reps else pick.defaultRepRange)
         }
+        // PROG-002: without an e1RM the progression engine owns the rep range (it may have been extended).
+        for ((k, s) in slots.withIndex()) {
+            val p = r.progression[s.exercise.id]
+            if (p != null && s.exercise.id !in r.e1rm && s.unit == DoseUnit.REPS) slots[k] = s.copy(reps = p.repRange)
+        }
         // ORD-001/002: power, primary, secondary, accessories, core; conditioning first on conditioning-priority days.
         val ordered = Order.sort(slots, { slotOf(it) }, r.day.conditioningPriority)
 
@@ -180,7 +194,7 @@ object SessionGenerator {
             if (r.screening == ScreeningMode.CONSERVATIVE) rir = maxOf(rir, P.SAF_001.conservative_mode.min_rir.toDouble())
             r.regions.filter { reg -> s.exercise.stress(reg.region) > 0 }.mapNotNull { it.minRir }.maxOrNull()?.let { rir = maxOf(rir, it.toDouble()) }
             if (tier != Tier.FULL || r.inDeload) lastToFailure = false
-            item(s, r, tier, rir, lastToFailure)
+            item(s, r, tier, rir, lastToFailure, d)
         }
         items = trimForTier(items, tier, r.inDeload, fullSets, d)
         var conditioning = r.day.conditioning.map { adaptConditioning(it, tier, r) }.filterNotNull()
@@ -238,9 +252,12 @@ object SessionGenerator {
 
         // 10) Output.
         val w = Workout(v.value.session.tier, final, v.value.session.conditioning, warmupMin, drills.value, cooldown.value, Num.round1(minutes),
-            fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session)
+            fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session, fullSets)
         return EngineResult(w, d + done(r, w.tier, false))
     }
+
+    /** Key for [GenerationRequest.lastWeekLoads]: heavy and moderate exposures of a lift are capped separately. */
+    fun loadKey(slotKey: String, exerciseId: String): String = "$slotKey|$exerciseId"
 
     /** ADH-004: the 20–30-minute express version of today's session, one tap away. */
     fun express(r: GenerationRequest): EngineResult<Workout> {
@@ -287,23 +304,27 @@ object SessionGenerator {
         r.day.slots.firstOrNull { s -> s.spec.key == it.slotKey }?.targetRir?.let { maxOf(it, 1.0) } ?: it.targetRir
 
     /** Normal working load (FULL day) from e1RM (INT-005), the progression engine, or calibration (CAL-001, IND-001). */
-    private fun normalLoad(s: PlannedSlot, e: Exercise, r: GenerationRequest, rir: Double): Pair<Double?, Boolean> {
+    private fun normalLoad(s: PlannedSlot, e: Exercise, r: GenerationRequest, rir: Double, d: MutableList<Decision>): Pair<Double?, Boolean> {
         if (e.loadType == LoadType.BODYWEIGHT || e.loadType == LoadType.TIME || e.loadType == LoadType.DISTANCE) return null to false
         val available = PlateMath.loadsFor(e, r.inventory)
         if (available.isEmpty()) return null to false
-        if (e.assisted) return (r.nextLoads[e.id] ?: PlateMath.choose(available.max() * 0.5, available)) to (e.id !in r.nextLoads)
+        if (e.assisted) return (r.progression[e.id]?.load ?: PlateMath.choose(available.max() * 0.5, available)) to (e.id !in r.progression)
         val est = r.e1rm[e.id]
-        if (est != null) {
-            val reps = (s.reps.first + s.reps.last) / 2
-            return PlateMath.choose(est / (1.0 + (reps + rir) / P.INT_005.divisor), available) to false
-        }
-        r.nextLoads[e.id]?.let { return it to false }
-        return Individual.calibrationStart(e, r.bodyweightKg, available) to true
+        if (est == null) r.calibrationLoads[e.id]?.let { return PlateMath.choose(it, available) to true }
+        // Without an e1RM the progression engine's next load is used as is: Progression.next already applies
+        // PROG-007 to load jumps through the implied intensity (PROG-002 resets reps on a jump).
+        if (est == null) return (r.progression[e.id]?.load ?: return Individual.calibrationStart(e, r.bodyweightKg, available) to true) to false
+        val proposed = E1rm.prescribe(est, (s.reps.first + s.reps.last) / 2, rir, available).also { d += it.decisions }.value
+        // PROG-007 / SAF-005: an e1RM-based load never rises faster than the weekly intensity cap over last week's load for this exposure.
+        val last = r.lastWeekLoads[loadKey(s.spec.key, e.id)] ?: return proposed to false
+        val capped = ProgressionCaps.capLoad(proposed, last, r.level, available, r.age)
+        d += capped.decisions
+        return capped.value to false
     }
 
-    private fun item(s: PlannedSlot, r: GenerationRequest, tier: Tier, rir: Double, lastToFailure: Boolean): WorkoutItem {
+    private fun item(s: PlannedSlot, r: GenerationRequest, tier: Tier, rir: Double, lastToFailure: Boolean, d: MutableList<Decision>): WorkoutItem {
         val e = s.exercise
-        val (normal, calibrating) = normalLoad(s, e, r, s.targetRir.coerceAtLeast(1.0))
+        val (normal, calibrating) = normalLoad(s, e, r, s.targetRir.coerceAtLeast(1.0), d)
         // RDY-004 caps main lifts (95% MODIFIED, 85% LIGHT); DEL-003 caps everything at 90% in a deload. Round down to real loads.
         var factor = SessionValidator.maxLoadFactor(s.main, tier, r.inDeload)
         if (s.spec.role == SlotRole.POWER) factor = minOf(factor, 1.0)
@@ -368,7 +389,7 @@ object SessionGenerator {
                     e.targetRir, e.lastSetToFailure, null, e.loadFactor, Rest.forSets(e.exercise, e.reps), emptyList(), RangeOfMotion.FULL, false, e.main)
             } else if (orig.exercise.id != e.exercise.id) {
                 val slot = toSlot(orig).copy(exercise = e.exercise, sets = e.sets, targetRir = e.targetRir, rest = Rest.forSets(e.exercise, orig.reps.last))
-                item(slot, r, s.tier, e.targetRir, e.lastSetToFailure).copy(warmupSets = emptyList())
+                item(slot, r, s.tier, e.targetRir, e.lastSetToFailure, ArrayList()).copy(warmupSets = emptyList())
             } else {
                 val scaled = if (orig.load != null && e.loadFactor < orig.loadFactor - 1e-9) {
                     val avail = PlateMath.loadsFor(e.exercise, r.inventory)
