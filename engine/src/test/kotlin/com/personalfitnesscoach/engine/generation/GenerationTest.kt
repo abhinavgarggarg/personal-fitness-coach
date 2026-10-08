@@ -70,6 +70,22 @@ class GenerationTest {
         assertTrue(r2.decisions.any { it.reason == ReasonKey.LOAD_FROM_E1RM })
     }
 
+    @Test fun `no box in the gym - box work is never planned, and a missing box swaps power only to power`() {
+        val gym = setOf("dumbbells", "bench", "incline_bench", "pullup_bar", "bands", "mat", "plyo_box", "rack", "barbell")
+        val w = (1..52).first { Blueprint.context(program, it).block.type == com.personalfitnesscoach.engine.program.BlockType.POWER_ATHLETICISM &&
+            Blueprint.context(program, it).kind == com.personalfitnesscoach.engine.program.WeekKind.LOADING }
+        val noBox = WeekPlanner.plan(weekInput(3, w, program = program, gym = gym - "plyo_box"), program).value
+        assertTrue(noBox.days.flatMap { it.slots }.none { "plyo_box" in it.exercise.equipment })
+        val plan = WeekPlanner.plan(weekInput(3, w, program = program, gym = gym), program).value
+        val d = plan.days.first { day -> day.slots.any { it.exercise.id == "box-jump" } }
+        val today = SessionGenerator.generate(req(d).copy(equipmentToday = gym - "plyo_box")).value
+        assertTrue(today.items.none { "plyo_box" in it.exercise.equipment })
+        assertTrue(today.items.filter { it.role == SlotRole.POWER }.all { it.exercise.powerCapable })
+        assertTrue(today.items.none { it.exercise.id == "tempo-squat" })
+        // The box-assisted pull-up negative becomes a band-assisted pull-up.
+        assertTrue(today.items.any { it.exercise.id == "pull-up-band-assisted" })
+    }
+
     @Test fun `missing equipment swaps to the same pattern`() {
         val d = day()
         val w = SessionGenerator.generate(req(d).copy(equipmentToday = FULL_GYM - "barbell")).value

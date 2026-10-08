@@ -172,10 +172,11 @@ object SessionGenerator {
                 d += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.CON_005), ReasonKey.POWER_DROPPED_AFTER_HIIT, inputs = mapOf("exercise" to s.exercise.id)); continue
             }
             if (allowedToday(s.exercise, r, sub)) { slots += s; continue }
-            // A swap never repeats an exercise already in today's session, and jumps or throws only replace power work.
+            // A swap never repeats an exercise already in today's session; jumps or throws only replace power work, and
+            // power work is only replaced by power work (a slow tempo squat is not a box jump) — otherwise it is left out today.
             val taken = (r.day.slots.map { it.exercise.id } + slots.map { it.exercise.id }).toSet()
             val swap = Substitution.options(s.exercise, Library.all.filter { !it.userAddOnly && it.id !in taken &&
-                (s.spec.role == SlotRole.POWER || !(it.powerCapable && it.loadType == com.personalfitnesscoach.engine.model.LoadType.BODYWEIGHT)) }, sub)
+                (if (s.spec.role == SlotRole.POWER) it.powerCapable else !(it.powerCapable && it.loadType == com.personalfitnesscoach.engine.model.LoadType.BODYWEIGHT)) }, sub)
             d += swap.decisions
             val pick = swap.value.autoPick?.exercise
             if (pick == null) { d += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.GEN_001), ReasonKey.SLOT_EMPTY, inputs = mapOf("slot" to s.spec.key)); continue }
