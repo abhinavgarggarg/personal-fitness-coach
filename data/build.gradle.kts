@@ -34,12 +34,13 @@ room3 {
 }
 
 dependencies {
+    // Types from these appear in the data layer's public API (PfcDatabase is a RoomDatabase, records carry JSON, calls suspend).
     api(project(":engine"))
-    implementation(libs.room3.runtime)
+    api(libs.room3.runtime)
+    api(libs.kotlinx.serialization.json)
+    api(libs.kotlinx.coroutines.android)
     ksp(libs.room3.compiler)
     implementation(libs.sqlite.framework)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)

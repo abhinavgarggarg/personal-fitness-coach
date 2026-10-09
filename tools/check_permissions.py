@@ -11,6 +11,7 @@ ALLOWED = {
     "android.permission.VIBRATE",
     "android.permission.USE_EXACT_ALARM",
     "android.permission.SCHEDULE_EXACT_ALARM",  # maxSdkVersion 32 only (D-036)
+    "android.permission.ACTIVITY_RECOGNITION",  # phone step counter, asked only when step tracking is switched on (D-062)
 }
 FORBIDDEN = {"android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"}
 # AndroidX core declares and uses this app-private signature permission for its own receivers.
