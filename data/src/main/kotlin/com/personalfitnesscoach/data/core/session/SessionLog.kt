@@ -68,7 +68,8 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
     suspend fun start(
         workout: Workout,
         template: DayTemplate,
-        weekday: Int = Days.weekday(clock.today()),
+        /** The planned day's weekday (the session may be done on another day, SCH-002/003). */
+        weekday: Int,
         express: Boolean = false,
         awayFromGym: Boolean = false,
         inDeload: Boolean = false,
@@ -147,8 +148,9 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
         val w = store.workout(workoutId) ?: error("no workout $workoutId")
         check(w.status == Status.IN_PROGRESS) { "workout $workoutId is not in progress" }
         val doc = WorkoutDoc.decode(w.json)
-        val done = conditioningDoneMinutes ?: doc.conditioning.map { 0.0 }
-        require(done.size == doc.conditioning.size && done.all { it in 0.0..600.0 }) { "one done-minutes value per conditioning block" }
+        // Not recorded = null per block (counted as planned for caps and spacing); 0 = skipped.
+        val done: List<Double?> = conditioningDoneMinutes ?: doc.conditioning.map { null }
+        require(done.size == doc.conditioning.size && done.all { it == null || it in 0.0..600.0 }) { "one done-minutes value per conditioning block" }
         val newDoc = doc.copy(conditioning = doc.conditioning.zip(done) { c, m -> c.copy(doneWorkMinutes = m) })
         for (ex in store.exercisesOf(workoutId)) {
             val logged = store.setsOf(ex.id).any { it.kind != SetKind.WARMUP }

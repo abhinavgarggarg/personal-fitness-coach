@@ -29,6 +29,9 @@ import com.personalfitnesscoach.data.core.store.WorkoutRow
 import com.personalfitnesscoach.data.core.time.AppClock
 import com.personalfitnesscoach.data.core.time.Days
 import com.personalfitnesscoach.engine.library.GeneratedLibrary
+import com.personalfitnesscoach.engine.model.FormCheck
+import com.personalfitnesscoach.engine.model.Tier
+import com.personalfitnesscoach.engine.program.DayTemplate
 import com.personalfitnesscoach.engine.registry.Registry
 import com.personalfitnesscoach.engine.safety.GeneratedConditions
 import kotlinx.serialization.json.JsonArray
@@ -102,13 +105,19 @@ object BackupFormat {
             enc = obj { put("cipher", "AES-256-GCM"); put("kdf", "PBKDF2-HMAC-SHA256"); put("iterations", iterations); put("salt", b64.encodeToString(salt))
                 put("iv", b64.encodeToString(iv)) }
         }
+        // A password-protected file says nothing about its content outside the ciphertext (no dates, counts or checksum); the GCM tag
+        // protects it instead. A plain file carries the summary and the SHA-256 of its payload.
         val header = obj {
             put("format", "pfcbackup"); put("formatVersion", FORMAT_VERSION); put("app", appVersion); put("schemaVersion", DataSchema.SCHEMA_VERSION)
             put("registryVersion", Registry.VERSION); put("libraryVersion", GeneratedLibrary.VERSION); put("conditionsVersion", GeneratedConditions.VERSION)
-            put("createdAtMs", createdAtMs); put("firstDay", days.minOrNull()); put("lastDay", days.maxOrNull())
-            put("sessions", snapshot.workouts.count { it.status == Status.DONE }); put("sets", snapshot.sets.size)
-            put("records", snapshot.docs.size + snapshot.workouts.size + snapshot.exercises.size + snapshot.sets.size)
-            put("payloadBytes", payload.size); put("sha256", sha256(payload)); put("encryption", enc)
+            put("createdAtMs", createdAtMs)
+            if (enc == null) {
+                put("firstDay", days.minOrNull()); put("lastDay", days.maxOrNull())
+                put("sessions", snapshot.workouts.count { it.status == Status.DONE }); put("sets", snapshot.sets.size)
+                put("records", snapshot.docs.size + snapshot.workouts.size + snapshot.exercises.size + snapshot.sets.size)
+                put("payloadBytes", payload.size); put("sha256", sha256(payload))
+            }
+            put("encryption", enc)
         }.toString()
         val head = "$MAGIC $FORMAT_VERSION\n$header\n"
         val body = if (password == null) payload else {
@@ -152,7 +161,7 @@ object BackupFormat {
                 try { c.doFinal(cipherBytes) } catch (e: AEADBadTagException) {
                     throw BackupException(BackupProblem.WRONG_PASSWORD_OR_DAMAGED, "wrong password, or the file is damaged", e) }
             }
-            if (payload.size != header.int("payloadBytes") || sha256(payload) != header.str("sha256"))
+            if (enc == null && (payload.size != header.int("payloadBytes") || sha256(payload) != header.str("sha256")))
                 throw BackupException(BackupProblem.DAMAGED, "the file is damaged or incomplete (checksum does not match)")
             val snapshot = migrate(readPayload(Js.parse(String(payload, Charsets.UTF_8))), schema)
             validate(snapshot)
@@ -188,6 +197,9 @@ object BackupFormat {
         val statuses = setOf(Status.PLANNED, Status.IN_PROGRESS, Status.DONE, Status.SKIPPED, Status.MOVED)
         for (w in s.workouts) {
             if (w.status !in statuses) throw DataFormatException("workout ${w.id} has an unknown status")
+            if (DayTemplate.entries.none { it.name == w.template }) throw DataFormatException("workout ${w.id} has an unknown template")
+            if (w.tier != null && Tier.entries.none { it.name == w.tier }) throw DataFormatException("workout ${w.id} has an unknown tier")
+            if (w.sessionRpe != null && w.sessionRpe !in 0.0..10.0) throw DataFormatException("workout ${w.id} has a session rating out of range")
             WorkoutDoc.decode(w.json)
         }
         val exercises = s.exercises.associateBy { it.id }
@@ -202,9 +214,13 @@ object BackupFormat {
         for (x in s.sets) {
             if (x.workoutExerciseId !in exercises) throw DataFormatException("set ${x.id} belongs to a missing exercise")
             if (x.kind !in SetKind.all) throw DataFormatException("set ${x.id} has an unknown kind")
+            if (FormCheck.entries.none { it.name == x.formCheck }) throw DataFormatException("set ${x.id} has an unknown form check")
+            if (x.deviation !in DEVIATIONS) throw DataFormatException("set ${x.id} has an unknown deviation")
         }
         s.active?.let { if (it.workoutId !in workouts) throw DataFormatException("the open workout is missing") }
     }
+
+    private val DEVIATIONS = setOf("AS_PLANNED", "ADJUSTED", "USER_ADDED")
 
     private fun key(password: CharArray, salt: ByteArray, iterations: Int): SecretKeySpec {
         require(iterations in 10_000..10_000_000) { "iterations out of range" }
@@ -274,10 +290,11 @@ class BackupService(private val store: RowStore, private val docs: Docs, private
 
     fun inspect(bytes: ByteArray, password: CharArray? = null): RestorePreview = BackupFormat.decode(bytes, password)
 
-    suspend fun restore(preview: RestorePreview, safetyCopy: BackupSink) {
+    /** `safetyPassword` protects the automatic copy of the current data the same way an export would (the user's choice). */
+    suspend fun restore(preview: RestorePreview, safetyPassword: CharArray? = null, safetyCopy: BackupSink) {
         val current = store.snapshot()
         if (!current.isEmpty) {
-            val bytes = BackupFormat.encode(current, clock.nowMs(), appVersion)
+            val bytes = BackupFormat.encode(current, clock.nowMs(), appVersion, safetyPassword)
             safetyCopy.save("before-restore-" + BackupFormat.fileName(clock.today()), bytes)
         }
         store.replaceAll(preview.snapshot)

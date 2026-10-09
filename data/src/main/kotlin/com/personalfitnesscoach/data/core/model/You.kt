@@ -3,6 +3,7 @@ package com.personalfitnesscoach.data.core.model
 import com.personalfitnesscoach.data.core.json.DataFormatException
 import com.personalfitnesscoach.data.core.json.Obj
 import com.personalfitnesscoach.data.core.json.bool
+import com.personalfitnesscoach.data.core.json.boolOrNull
 import com.personalfitnesscoach.data.core.json.dbl
 import com.personalfitnesscoach.data.core.json.doubleMap
 import com.personalfitnesscoach.data.core.json.doubles
@@ -53,8 +54,8 @@ data class Profile(
     val sessionMinutes: Int = 60,
     val priorities: List<Goal> = emptyList(),
     val focusMuscles: Set<Muscle> = emptySet(),
-    /** IND-001 prior injuries (screening Q6 follow-up): conservative for the first 4 weeks, then "sensitive". */
-    val priorInjuries: Set<Joint> = emptySet(),
+    /** IND-001 prior injuries (screening Q6 follow-up) with the day each was added: conservative for 4 weeks from then, then "sensitive". */
+    val priorInjuries: Map<Joint, Int> = emptyMap(),
     /** Optional (DATA-001 "sex"): only for the waist reference line (FL-005); the training algorithm never reads it (IND-001). */
     val referenceSex: ReferenceSex? = null,
     /** Optional typed-in heart rates (DATA-001 "heart_rate") for HR zones instead of the talk test (AER-001). */
@@ -84,7 +85,7 @@ data class Profile(
             put("daysPerWeek", v.daysPerWeek); ints("availableDays", v.availableDays); ints("preferredDays", v.preferredDays)
             put("sessionMinutes", v.sessionMinutes)
             strings("priorities", v.priorities.map { it.name }, sort = false)
-            enums("focusMuscles", v.focusMuscles); enums("priorInjuries", v.priorInjuries)
+            enums("focusMuscles", v.focusMuscles); intMap("priorInjuries", v.priorInjuries.mapKeys { it.key.name })
             put("referenceSex", v.referenceSex); put("restingHr", v.restingHr); put("maxHr", v.maxHr)
             put("onboardingStep", v.onboardingStep); put("createdDay", v.createdDay)
         }
@@ -94,7 +95,7 @@ data class Profile(
                 e.bool("structuredProgramming"), e.bool("confidentEffortRatings")) },
             daysPerWeek = o.intOrNull("daysPerWeek"), availableDays = o.ints("availableDays").toSet(), preferredDays = o.ints("preferredDays").toSet(),
             sessionMinutes = o.int("sessionMinutes"), priorities = o.strings("priorities").map { parseEnum<Goal>(it, "priorities") },
-            focusMuscles = o.enums("focusMuscles"), priorInjuries = o.enums("priorInjuries"), referenceSex = o.enumOrNull<ReferenceSex>("referenceSex"),
+            focusMuscles = o.enums("focusMuscles"), priorInjuries = o.intMap("priorInjuries").mapKeys { parseEnum<Joint>(it.key, "priorInjuries") }, referenceSex = o.enumOrNull<ReferenceSex>("referenceSex"),
             restingHr = o.intOrNull("restingHr"), maxHr = o.intOrNull("maxHr"), onboardingStep = o.strOrNull("onboardingStep"),
             createdDay = o.int("createdDay"),
         )
@@ -117,7 +118,7 @@ data class ScreeningRecord(val answers: ScreeningAnswers, val takenDay: Int, val
         }
         override fun read(o: JsonObject, version: Int): ScreeningRecord {
             val a = o.obj("answers")
-            fun req(k: String) = a.bool(k).also { if (a[k] == null) throw DataFormatException("missing screening answer '$k'") }
+            fun req(k: String) = a.boolOrNull(k) ?: throw DataFormatException("missing screening answer '$k'")
             return ScreeningRecord(ScreeningAnswers(req("heartOrBloodPressure"), req("metabolicRenalPulmonary"), req("symptoms"), req("palpitations"),
                 req("limitOrPregnancy"), req("musculoskeletal"), req("longTermMedication"), req("regularlyActive")),
                 o.int("takenDay"), o.intOrNull("clearanceConfirmedDay"))
@@ -156,7 +157,9 @@ data class StoredCondition(
      */
     fun toUserCondition(today: Int, trainingWeeks: Int): UserCondition = UserCondition(
         id = id, weeks = trainingWeeks, controlled = controlled, clearance = clearance, subFlags = subFlags,
-        pregnancyWeek = pregnancyWeek?.let { w -> w + maxOf(0, today - (pregnancyWeekDay ?: today)) / 7 },
+        // Weeks are counted up from the day the week was given (the added day when none was stored), rounded up: limits that
+        // start at a given week start no later than they should.
+        pregnancyWeek = pregnancyWeek?.let { w -> w + (maxOf(0, today - (pregnancyWeekDay ?: addedDay)) + 6) / 7 },
         weeksSinceBirth = birthDay?.let { maxOf(0, today - it) / 7 },
         attested = attested, impactChecksPassed = impactChecksPassed, impactOptIn = impactOptIn, painRuleMetWeeks = painRuleMetWeeks,
         blockIfYes = blockIfYes, previouslyVigorous = previouslyVigorous, alreadyDoingImpact = alreadyDoingImpact,

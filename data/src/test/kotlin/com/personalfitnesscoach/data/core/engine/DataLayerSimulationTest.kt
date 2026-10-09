@@ -97,7 +97,7 @@ class DataLayerSimulationTest {
                 if (load > maxOf(max, last) + 1e-9) caps += "${it.exercise.id} $last → $load (max $max)"
             }
             w.items.filter { !it.calibrating && it.load != null && it.loadFactor >= 1.0 - 1e-9 }.forEach { loads.getOrPut(it.exercise.id) { ArrayList() } += it.load!! to it.reps.last }
-            val id = d.sessions.start(w, next.template, Days.weekday(day), inDeload = t.week.deload)
+            val id = d.sessions.start(w, next.template, next.weekday, inDeload = t.week.deload)
             val stored = d.sessions.load(id)!!
             for ((i, e) in stored.exercises.withIndex()) {
                 val item = w.items[i]
@@ -168,7 +168,9 @@ class DataLayerSimulationTest {
         val bytes = d.backup.export(iterations = 10_000).second
         d.eraseAll()
         d.restore(d.backup.inspect(bytes)) { _, _ -> }
-        assertEquals(before, d.store.snapshot())
+        // Everything returns except the step-counter reading, which belonged to the phone the backup came from (R4-28).
+        fun noCounter(s: com.personalfitnesscoach.data.core.store.Snapshot) = s.copy(docs = s.docs.filter { it.type != "step_counter" })
+        assertEquals(noCounter(before), d.store.snapshot())
         assertTrue(d.planToday() != null)
     }
 

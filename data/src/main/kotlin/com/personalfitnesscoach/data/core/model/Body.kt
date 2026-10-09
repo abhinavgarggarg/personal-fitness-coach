@@ -94,16 +94,14 @@ data class PainRecord(
 
 // ==================================================================================================== recovery
 /** Illness and "I feel run down" (RecoveryLog): SAF-007 and fatigue signal F6. */
-data class RecoveryRecord(val day: Int, val illness: Boolean = false, val runDown: Boolean = false, val symptoms: Set<String> = emptySet(), val note: String? = null) {
-    init { require(note == null || note.length <= 500) { "note too long" } }
-
+data class RecoveryRecord(val day: Int, val illness: Boolean = false, val runDown: Boolean = false, val symptoms: Set<String> = emptySet()) {
     companion object Codec : DocCodec<RecoveryRecord>("recovery", 1, RecordKind.COLLECTED, setOf(DataItem.READINESS), "Illness and feeling run down") {
         override fun key(v: RecoveryRecord) = dayKey(v.day)
         override fun day(v: RecoveryRecord) = v.day
         override fun write(v: RecoveryRecord, o: Obj) = with(o) {
-            put("day", v.day); flag("illness", v.illness); flag("runDown", v.runDown); strings("symptoms", v.symptoms); put("note", v.note)
+            put("day", v.day); flag("illness", v.illness); flag("runDown", v.runDown); strings("symptoms", v.symptoms)
         }
-        override fun read(o: JsonObject, version: Int) = RecoveryRecord(o.int("day"), o.bool("illness"), o.bool("runDown"), o.strings("symptoms").toSet(), o.strOrNull("note"))
+        override fun read(o: JsonObject, version: Int) = RecoveryRecord(o.int("day"), o.bool("illness"), o.bool("runDown"), o.strings("symptoms").toSet())
     }
 }
 
@@ -160,11 +158,25 @@ data class StepStateRecord(val weekStartDay: Int, val baseline: Int? = null, val
  * The last reading of the phone's step counter (it counts from the last reboot). The next reading's difference is shared across
  * the days it spans ([com.personalfitnesscoach.data.core.steps.StepLedger]).
  */
-data class StepCounterRecord(val atMs: Long, val elapsedMs: Long, val counter: Long) {
+data class StepCounterRecord(val atMs: Long, val elapsedMs: Long, val counter: Long, /** The phone's boot count (Settings.Global.BOOT_COUNT), when known. */ val bootCount: Int? = null) {
     companion object Codec : DocCodec<StepCounterRecord>("step_counter", 1, RecordKind.DERIVED, setOf(DataItem.DAILY_STEPS_PHONE_SENSOR), "Step counter reading") {
         override fun key(v: StepCounterRecord) = SINGLE
-        override fun write(v: StepCounterRecord, o: Obj) = with(o) { put("atMs", v.atMs); put("elapsedMs", v.elapsedMs); put("counter", v.counter) }
-        override fun read(o: JsonObject, version: Int) = StepCounterRecord(o.long("atMs"), o.long("elapsedMs"), o.long("counter"))
+        override fun write(v: StepCounterRecord, o: Obj) = with(o) { put("atMs", v.atMs); put("elapsedMs", v.elapsedMs); put("counter", v.counter); put("bootCount", v.bootCount) }
+        override fun read(o: JsonObject, version: Int) = StepCounterRecord(o.long("atMs"), o.long("elapsedMs"), o.long("counter"), o.intOrNull("bootCount"))
+    }
+}
+
+// ==================================================================================================== safety stop
+/**
+ * A SAF-002 red-flag stop. Training stays stopped until the user confirms the symptoms have resolved or were reviewed by a
+ * clinician; the first session back is then LIGHT at most (RedFlags.tierAfterStop).
+ */
+data class SafetyStopRecord(val day: Int, val symptoms: Set<String>, val confirmedDay: Int? = null) {
+    companion object Codec : DocCodec<SafetyStopRecord>("safety_stop", 1, RecordKind.COLLECTED, setOf(DataItem.READINESS, DataItem.SCREENING),
+        "A red-flag stop and when it was cleared") {
+        override fun key(v: SafetyStopRecord) = SINGLE
+        override fun write(v: SafetyStopRecord, o: Obj) = with(o) { put("day", v.day); strings("symptoms", v.symptoms); put("confirmedDay", v.confirmedDay) }
+        override fun read(o: JsonObject, version: Int) = SafetyStopRecord(o.int("day"), o.strings("symptoms").toSet(), o.intOrNull("confirmedDay"))
     }
 }
 

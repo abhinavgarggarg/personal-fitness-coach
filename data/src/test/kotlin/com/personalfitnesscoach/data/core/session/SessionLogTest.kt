@@ -15,14 +15,14 @@ import org.junit.Test
 
 /** Phase 2 data rule 4: a logged set and the resume point are written together; sessions resume, finish, discard and correct cleanly. */
 class SessionLogTest {
-    private suspend fun ready(withHistory: Boolean = false): Triple<PfcData, Workout, com.personalfitnesscoach.engine.program.DayTemplate> {
+    private suspend fun ready(withHistory: Boolean = false): Triple<PfcData, Workout, com.personalfitnesscoach.engine.program.PlannedDay> {
         val (d, _) = Fixtures.data()
         Fixtures.onboard(d)
         if (withHistory) for (e in com.personalfitnesscoach.engine.library.Library.all.filter { it.trackE1rm })
             d.docs.put(com.personalfitnesscoach.data.core.model.ExerciseState, com.personalfitnesscoach.data.core.model.ExerciseState(e.id, e1rm = 60.0, e1rmDay = Fixtures.MONDAY - 3))
         val t = d.planToday()!!
         val day = t.next ?: t.week.days.first()
-        return Triple(d, d.generate(t, day, Tier.FULL).value, day.template)
+        return Triple(d, d.generate(t, day, Tier.FULL).value, day)
     }
 
     private suspend fun fails(what: String, block: suspend () -> Unit) {
@@ -32,7 +32,7 @@ class SessionLogTest {
 
     @Test fun `start saves the approved workout and makes it the active session`() = runBlocking {
         val (d, w, template) = ready()
-        val id = d.sessions.start(w, template, activeState = "{\"exercise\":0}")
+        val id = d.sessions.start(w, template.template, template.weekday, activeState = "{\"exercise\":0}")
         val (stored, active) = d.sessions.active()!!
         assertEquals(id, stored.id)
         assertEquals("{\"exercise\":0}", active.json)
@@ -41,12 +41,12 @@ class SessionLogTest {
         assertEquals(w.items.map { it.sets }, stored.exercises.map { it.doc.sets })
         assertEquals(w.items.map { it.load }, stored.exercises.map { it.doc.load })
         assertEquals(w.conditioning.size, stored.doc.conditioning.size)
-        fails("a second workout while one is open") { d.sessions.start(w, template) }
+        fails("a second workout while one is open") { d.sessions.start(w, template.template, template.weekday) }
     }
 
     @Test fun `a logged set and the resume point land together, or neither does`() = runBlocking {
         val (d, w, template) = ready()
-        val id = d.sessions.start(w, template)
+        val id = d.sessions.start(w, template.template, template.weekday)
         val ex = d.sessions.load(id)!!.exercises.first()
         d.sessions.logSet(ex.row.id, NewSet(0, SetKind.WORKING, 40.0, 8, rir = 2.0), "{\"set\":1}")
         assertEquals("{\"set\":1}", d.sessions.active()!!.second.json)
@@ -62,7 +62,7 @@ class SessionLogTest {
 
     @Test fun `finish marks done and skipped exercises and clears the resume point`() = runBlocking {
         val (d, w, template) = ready()
-        val id = d.sessions.start(w, template)
+        val id = d.sessions.start(w, template.template, template.weekday)
         val exs = d.sessions.load(id)!!.exercises
         d.sessions.logSet(exs[0].row.id, NewSet(0, SetKind.WORKING, 40.0, 8, rir = 2.0, formCheck = FormCheck.NO), "{}")
         if (exs.size > 2) d.sessions.skipExercise(exs[2].row.id)
@@ -81,7 +81,7 @@ class SessionLogTest {
 
     @Test fun `discard removes an abandoned workout and its sets`() = runBlocking {
         val (d, w, template) = ready()
-        val id = d.sessions.start(w, template)
+        val id = d.sessions.start(w, template.template, template.weekday)
         val ex = d.sessions.load(id)!!.exercises.first()
         d.sessions.logSet(ex.row.id, NewSet(0, SetKind.WORKING, 40.0, 8), "{}")
         d.sessions.discard(id)
@@ -91,7 +91,7 @@ class SessionLogTest {
 
     @Test fun `a swap keeps the old exercise for history and only before sets are logged`() = runBlocking {
         val (d, w, template) = ready()
-        val id = d.sessions.start(w, template)
+        val id = d.sessions.start(w, template.template, template.weekday)
         val ex = d.sessions.load(id)!!.exercises.first()
         d.sessions.swap(ex.row.id, "goblet-squat", ex.doc.copy(load = 12.0))
         val swapped = d.sessions.load(id)!!.exercises.first()
@@ -103,7 +103,7 @@ class SessionLogTest {
 
     @Test fun `correcting a past set rebuilds the training state from the logged sets`() = runBlocking {
         val (d, w, template) = ready(withHistory = true)
-        val id = d.sessions.start(w, template)
+        val id = d.sessions.start(w, template.template, template.weekday)
         val ex = d.sessions.load(id)!!.exercises.first { it.doc.load != null && !it.doc.calibrating }
         val setId = d.sessions.logSet(ex.row.id, NewSet(0, SetKind.WORKING, ex.doc.load, ex.doc.reps.last, rir = 4.0), "{}")
         d.finishWorkout(id, 6.0, 50.0)

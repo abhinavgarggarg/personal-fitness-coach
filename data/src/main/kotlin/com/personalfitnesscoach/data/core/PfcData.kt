@@ -10,6 +10,7 @@ import com.personalfitnesscoach.data.core.engine.ProgramClock
 import com.personalfitnesscoach.data.core.engine.ProgressRecorder
 import com.personalfitnesscoach.data.core.engine.UserState
 import com.personalfitnesscoach.data.core.model.ProgramRecord
+import com.personalfitnesscoach.data.core.model.ReadinessRecord
 import com.personalfitnesscoach.data.core.model.SettingsRecord
 import com.personalfitnesscoach.data.core.model.StepCounterRecord
 import com.personalfitnesscoach.data.core.model.StepsRecord
@@ -67,22 +68,31 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
     suspend fun planToday(): TodayPlan? = store.transaction {
         onAppOpen()
         val u = bridge.user() ?: return@transaction null
+        if (u.profile.onboardingStep != null) return@transaction null // onboarding not finished: nothing is planned yet
         val program = docs.get(ProgramRecord) ?: return@transaction null
         val plan = bridge.planWeek(u, program)
         val program2 = docs.get(ProgramRecord)!!
         val today = u.today
         val week = sessions.between(Days.weekStart(today), today)
         val doneWeekdays = week.filter { it.row.status == Status.DONE || it.row.status == Status.SKIPPED }.map { it.doc.weekday }.toSet()
-        val strengthYesterday = week.any { it.day == today - 1 && it.row.status == Status.DONE && it.template.strength }
+        // Yesterday may be last week (Sunday before Monday): SAF-010 "no strength on consecutive days" looks across the week boundary.
+        val strengthYesterday = sessions.done(today - 1, today - 1).any { it.template.strength }
         val doneToday = week.any { it.day == today && it.row.status == Status.DONE }
         val next = if (doneToday) null else WeekPlanner.nextSession(plan.value, doneWeekdays, strengthYesterday, u.conditions)
         TodayPlan(u, program2, plan.value, next, u.decisions + plan.decisions)
     }
 
-    /** GEN-001 for a planned day with today's tier; the validated workout is what [SessionLog.start] saves. */
+    /**
+     * GEN-001 for a planned day. Today's check-in decides: its tier caps the one asked for and its red flags and illness answers go to
+     * the safety gates; the stored safety state (stop, return, lighter week) caps it again in [EngineBridge.request]. The validated
+     * workout is what [SessionLog.start] saves.
+     */
     suspend fun generate(t: TodayPlan, day: PlannedDay, tier: Tier, minutes: Int = t.user.profile.sessionMinutes,
                          redFlags: Set<String> = emptySet(), illnessSymptoms: Set<String> = emptySet()): EngineResult<Workout> {
-        val req = bridge.request(t.user, t.program, t.week, day, tier, minutes, redFlags, illnessSymptoms)
+        val checkIn = docs.get(ReadinessRecord, dayKey(t.user.today))
+        val capped = checkIn?.let { Tier.min(tier, it.tier) } ?: tier
+        val req = bridge.request(t.user, t.program, t.week, day, capped, minutes, redFlags + (checkIn?.redFlags ?: emptySet()),
+            illnessSymptoms + (checkIn?.illnessSymptoms ?: emptySet()))
         val w = SessionGenerator.generate(req)
         decisions.append(w.decisions)
         return w
@@ -103,10 +113,19 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
         bridge.user()?.let { progress.rebuild(it) }
     }
 
+    /** Deletes a set of a finished workout from history and rebuilds every exercise's state. */
+    suspend fun deletePastSet(setId: Long) = store.transaction {
+        sessions.deleteSet(setId)
+        bridge.user()?.let { progress.rebuild(it) }
+    }
+
+    /** The user confirms red-flag symptoms resolved or were reviewed (SAF-002); training resumes with a LIGHT session. */
+    suspend fun confirmStopResolved(): Boolean = store.transaction { checkIns.confirmStopResolved() }
+
     /** A new step-counter reading (only kept while step tracking is on, D-062). */
-    suspend fun recordStepReading(atMs: Long, elapsedMs: Long, counter: Long) = store.transaction {
+    suspend fun recordStepReading(atMs: Long, elapsedMs: Long, counter: Long, bootCount: Int? = null) = store.transaction {
         if (docs.get(SettingsRecord)?.stepTracking != true) return@transaction
-        val now = StepCounterRecord(atMs, elapsedMs, counter)
+        val now = StepCounterRecord(atMs, elapsedMs, counter, bootCount)
         for ((day, steps) in StepLedger.split(docs.get(StepCounterRecord), now, clock.zone())) {
             val cur = docs.get(StepsRecord, dayKey(day))?.steps ?: 0
             docs.put(StepsRecord, StepsRecord(day, minOf(200_000, cur + steps)))
@@ -122,8 +141,10 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
 
     suspend fun completedWorkouts(): Int = sessions.between(Int.MIN_VALUE / 2, Int.MAX_VALUE / 2).count { it.row.status == Status.DONE }
 
-    suspend fun restore(preview: RestorePreview, safetyCopy: BackupSink) {
-        backup.restore(preview, safetyCopy)
+    /** Restores a checked backup (current data saved first). The step-counter reading belongs to the old phone and is dropped. */
+    suspend fun restore(preview: RestorePreview, safetyPassword: CharArray? = null, safetyCopy: BackupSink) {
+        backup.restore(preview, safetyPassword, safetyCopy)
+        docs.delete(StepCounterRecord)
         decisions.reset()
     }
 

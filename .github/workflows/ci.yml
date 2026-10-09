@@ -97,6 +97,7 @@ jobs:
           "$AAPT2" dump permissions "$APK" | tee permissions.txt
           python3 -I tools/check_permissions.py < permissions.txt | tee permission-check.txt
           echo "::notice title=Permissions::$(tail -n 1 permission-check.txt)"
+          python3 -I tools/check_backup_rules.py
 
       - name: 16 KB page-size compatibility (Android 15+ devices)
         run: |

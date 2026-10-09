@@ -92,27 +92,30 @@ object ExerciseProgress {
             s = s.copy(knownApplied = true)
         }
 
-        // CAL-001 ramp, replayed in the order logged.
-        val ramp = done.calibration.filter { it.loadKg != null && it.reps != null }.sortedWith(compareBy({ it.setIndex }, { it.id }))
+        // CAL-001 ramp, replayed in the order logged — only for an exposure the generator planned as calibration.
+        val ramp = if (!item.calibrating) emptyList() else done.calibration.filter { it.loadKg != null && it.reps != null }.sortedWith(compareBy({ it.setIndex }, { it.id }))
         if (ramp.isNotEmpty()) {
             val target = calibrationReps(item.reps)
             val sessions = (state.calibration?.sessions ?: 0) + 1
             var last: CalibrationStep? = null
+            var lastRated: Double? = null
             for ((i, set) in ramp.withIndex()) {
-                val rir = set.rir ?: set.rpe?.let { 10.0 - it } ?: break // an unrated ramp set ends the ramp: next time starts from it
+                val rir = set.rir ?: set.rpe?.let { 10.0 - it } ?: break // an unrated set ends the replay: next time starts from the last rated load
+                lastRated = set.loadKg
                 val step = Calibration.next(set.loadKg!!, target, rir, i + 1, avail, ceiling, Calibration.coarseStepsAllowed(ex.loadType))
                 d += step.decisions
                 last = step.value
                 if (last !is CalibrationStep.Continue) break
             }
-            val lastLifted = ramp.last().loadKg!!
+            // An unfinished ramp restarts from the last load the user rated (every rated set before it was easy), else from where it began.
+            val restart = lastRated ?: ramp.first().loadKg!!
             // CAL-001 runs over sessions 1–4; after the 4th, progression takes over from the best load the ramp allowed.
             fun next(load: Double) = if (sessions < P.CAL_001.sessions[1]) s.copy(calibration = CalibrationState(load, sessions, ceiling))
                 else s.copy(calibration = null, prescription = Prescription(load, item.reps, item.reps.first, ProgressionAction.HOLD), prescriptionDay = day)
             s = when (val l = last) {
                 is CalibrationStep.Found -> if (l.startE1rm != null) s.copy(e1rm = l.startE1rm, e1rmDay = day, calibration = null) else next(l.workingLoad)
                 is CalibrationStep.Stop -> next(l.nextSessionLoad)
-                is CalibrationStep.Continue, null -> next(lastLifted)
+                is CalibrationStep.Continue, null -> next(restart)
             }
         } else if (s.e1rm == null && item.calibrating && done.working.isEmpty()) {
             return EngineResult(ExposureOutcome(s), d)

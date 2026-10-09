@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+: cloud backup and device-to-device transfer keep the database (training history) and settings; caches never.
-     A future AI key will be stored with the Android Keystore and excluded here (Phase 2 section 16). -->
+<!-- Android 12+: cloud backup keeps the database (training history) and settings, and only when the backup can be end-to-end
+     encrypted with the screen lock (Phase 2 section 16); device-to-device transfer keeps the same. Caches are never included.
+     A future AI key will be stored with the Android Keystore and excluded here. -->
 <data-extraction-rules>
-    <cloud-backup>
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
         <include domain="database" path="." />
         <include domain="sharedpref" path="." />
     </cloud-backup>

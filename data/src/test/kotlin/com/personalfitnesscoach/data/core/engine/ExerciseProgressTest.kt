@@ -53,9 +53,17 @@ class ExerciseProgressTest {
         assertEquals(CalibrationState(57.5, 1, null), r.state.calibration)
     }
 
-    @Test fun `an unrated ramp set ends the ramp there`() {
+    @Test fun `an unrated ramp set ends the ramp and the next session restarts from the last rated load`() {
+        // R4-24: the unrated set may have been too hard; the last rated one was easy (RIR 6).
         val r = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(40.0, 10, 6.0), cal(50.0, 10, null)), day, ctx, null).value
-        assertEquals(50.0, r.state.calibration!!.nextLoad, 0.0)
+        assertEquals(40.0, r.state.calibration!!.nextLoad, 0.0)
+    }
+
+    @Test fun `calibration sets on an exposure that was not calibrating never overwrite the e1RM`() {
+        // R4-24: only an exposure the generator planned as calibration replays a ramp.
+        val s = ExerciseState(bench.id, e1rm = 80.0)
+        val r = ExerciseProgress.apply(s, bench, exposure(item(false), cal(30.0, 6, 3.0)), day, ctx, null).value
+        assertEquals(80.0, r.state.e1rm!!, 0.0)
     }
 
     @Test fun `after the fourth calibration session progression takes over`() {

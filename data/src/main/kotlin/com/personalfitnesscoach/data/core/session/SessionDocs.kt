@@ -35,8 +35,14 @@ data class ConditioningItem(
     val doneWorkMinutes: Double? = null,
 ) {
     fun block(): ConditioningBlock = ConditioningBlock(modality, zone, workMinutes, restMinutes, hiit, impact, protocol)
-    /** The block as done: same structure, work minutes as logged (never more than planned for counting). */
-    fun doneBlock(): ConditioningBlock? = doneWorkMinutes?.takeIf { it > 0 }?.let { block().copy(workMinutes = it) }
+    /**
+     * The block as it counts once the workout is finished: work minutes as logged, never more than planned; as planned when the
+     * minutes were not recorded (null), so caps and spacing never miss it; nothing when logged as 0 (skipped).
+     */
+    fun countedBlock(): ConditioningBlock? {
+        val m = doneWorkMinutes ?: workMinutes
+        return if (m <= 0.0) null else block().copy(workMinutes = minOf(m, workMinutes))
+    }
 
     companion object {
         fun of(b: ConditioningBlock) = ConditioningItem(b.modality, b.zone, b.workMinutes, b.restMinutes, b.hiit, b.impact, b.protocol)

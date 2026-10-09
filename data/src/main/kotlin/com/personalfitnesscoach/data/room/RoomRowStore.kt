@@ -1,5 +1,6 @@
 package com.personalfitnesscoach.data.room
 
+import androidx.room3.useWriterConnection
 import androidx.room3.withWriteTransaction
 import com.personalfitnesscoach.data.core.store.ActiveRow
 import com.personalfitnesscoach.data.core.store.DocRow
@@ -63,7 +64,14 @@ class RoomRowStore(private val db: PfcDatabase) : RowStore {
         snapshot.active?.let { putActive(it) }
     }
 
-    override suspend fun eraseAll() = db.withWriteTransaction { eraseAllInTransaction() }
+    /** Erases every row, then compacts the file so deleted records do not linger in free pages or the write-ahead log. */
+    override suspend fun eraseAll() {
+        db.withWriteTransaction { eraseAllInTransaction() }
+        db.useWriterConnection { c ->
+            c.usePrepared("PRAGMA wal_checkpoint(TRUNCATE)") { it.step() }
+            c.usePrepared("VACUUM") { it.step() }
+        }
+    }
 
     /** Workouts cascade to their exercises, sets and the active session. */
     private suspend fun eraseAllInTransaction() {

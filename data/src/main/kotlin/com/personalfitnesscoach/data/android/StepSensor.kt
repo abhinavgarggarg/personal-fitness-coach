@@ -8,14 +8,15 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.SystemClock
+import android.provider.Settings
 import com.personalfitnesscoach.data.core.PfcData
 import com.personalfitnesscoach.data.core.model.SettingsRecord
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
-/** One reading of the step counter: the running total since the phone restarted, and when it was counted. */
-data class StepReading(val atMs: Long, val elapsedMs: Long, val counter: Long)
+/** One reading of the step counter: the running total since the phone restarted, when it was counted, and the phone's boot count. */
+data class StepReading(val atMs: Long, val elapsedMs: Long, val counter: Long, val bootCount: Int?)
 
 /**
  * The phone's built-in step counter (D-062, CR-005). Read once when the app opens or returns to the foreground — no background
@@ -43,10 +44,7 @@ class StepSensor(context: Context) {
                     override fun onSensorChanged(event: SensorEvent) {
                         m.unregisterListener(this)
                         if (!cont.isActive) return
-                        // event.timestamp is when the value was counted (nanoseconds since boot); convert it to wall-clock time.
-                        val elapsedMs = event.timestamp / 1_000_000
-                        val atMs = System.currentTimeMillis() - (SystemClock.elapsedRealtime() - elapsedMs)
-                        cont.resume(StepReading(atMs, elapsedMs, event.values[0].toLong()))
+                        cont.resume(reading(event.timestamp, event.values[0], System.currentTimeMillis(), SystemClock.elapsedRealtime(), bootCount()))
                     }
                     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
                 }
@@ -59,8 +57,20 @@ class StepSensor(context: Context) {
         }
     }
 
+    /** Settings.Global.BOOT_COUNT identifies restarts exactly (the counter starts again from 0 after each). */
+    private fun bootCount(): Int? = Settings.Global.getInt(app.contentResolver, Settings.Global.BOOT_COUNT, -1).takeIf { it >= 0 }
+
     companion object {
         const val PERMISSION = Manifest.permission.ACTIVITY_RECOGNITION
+
+        /**
+         * A sensor event as a reading: the event's timestamp is when the value was counted (nanoseconds since boot), turned into
+         * wall-clock time with the current wall and boot clocks.
+         */
+        fun reading(timestampNs: Long, value: Float, nowMs: Long, elapsedNowMs: Long, bootCount: Int?): StepReading {
+            val elapsedMs = timestampNs / 1_000_000
+            return StepReading(nowMs - (elapsedNowMs - elapsedMs), elapsedMs, value.toLong(), bootCount)
+        }
     }
 }
 
@@ -68,6 +78,6 @@ class StepSensor(context: Context) {
 suspend fun syncSteps(data: PfcData, sensor: StepSensor): Boolean {
     if (data.docs.get(SettingsRecord)?.stepTracking != true) return false
     val r = sensor.read() ?: return false
-    data.recordStepReading(r.atMs, r.elapsedMs, r.counter)
+    data.recordStepReading(r.atMs, r.elapsedMs, r.counter, r.bootCount)
     return true
 }

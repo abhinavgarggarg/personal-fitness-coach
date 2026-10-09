@@ -55,7 +55,7 @@ class DataOnDeviceTest {
             val t = d.planToday()!!
             val day = t.next ?: t.week.days.first()
             val w = d.generate(t, day, Tier.FULL).value
-            val id = d.sessions.start(w, day.template)
+            val id = d.sessions.start(w, day.template, day.weekday)
             val stored = d.sessions.load(id)!!
             for (e in stored.exercises) {
                 val item = e.doc

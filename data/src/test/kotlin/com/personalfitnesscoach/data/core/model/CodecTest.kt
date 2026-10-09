@@ -47,7 +47,7 @@ class CodecTest {
     val samples: List<Pair<DocCodec<*>, Any>> = listOf(
         Profile to Profile(birthYear = 1979, level = Level.ADVANCED, experience = ExperienceAnswers(30, setOf("squat", "hinge"), true, false), daysPerWeek = 4,
             availableDays = setOf(0, 1, 3, 5), preferredDays = setOf(1, 3), sessionMinutes = 75, priorities = listOf(Goal.FAT_LOSS, Goal.STRENGTH),
-            focusMuscles = setOf(Muscle.GLUTES), priorInjuries = setOf(Joint.KNEE, Joint.SHOULDER), referenceSex = ReferenceSex.WOMAN, restingHr = 58, maxHr = 178,
+            focusMuscles = setOf(Muscle.GLUTES), priorInjuries = mapOf(Joint.KNEE to 19990, Joint.SHOULDER to 20000), referenceSex = ReferenceSex.WOMAN, restingHr = 58, maxHr = 178,
             onboardingStep = "equipment", createdDay = 20000),
         Profile to Profile(createdDay = 1),
         ScreeningRecord to ScreeningRecord(ScreeningAnswers(true, false, false, false, true, false, true, false), 20001, 20005),
@@ -63,9 +63,9 @@ class CodecTest {
             setOf(Modality.TREADMILL_RUN), hiitOptIn = true, circuitJumps = true, crowdedGym = true),
         SettingsRecord to SettingsRecord(Units.LB, Theme.DARK, true, 20000, 16, 12),
         ProgramRecord to ProgramRecord(listOf(Goal.MUSCLE), 20000, 20002, 5, 4, 2, mapOf("main_squat" to "goblet_squat"), mapOf("a" to "b"), mapOf("push_up" to "knee_push_up"),
-            3, true, 2, true, 22.5, setOf(Pattern.LOADED_CARRY), Blueprint.ClockAction.PAUSE),
+            3, true, 2, true, 22.5, setOf(Pattern.LOADED_CARRY), Blueprint.ClockAction.PAUSE, 20001, 2, true),
         WeekSummary to WeekSummary(20002, 4, 3, 2, 40.0, 30.0, 10.0, 1, 4.0, 60.0, 110.0, 120.5, 900.0, true, Blueprint.ClockAction.ADVANCE),
-        WeekPlanRecord to WeekPlanRecord(20002, listOf(0 to DayTemplate.FB_A, 2 to DayTemplate.FB_B), true, listOf(4, 6)),
+        WeekPlanRecord to WeekPlanRecord(20002, listOf(0 to DayTemplate.FB_A, 2 to DayTemplate.FB_B), true, listOf(4, 6), 17.5),
         ExerciseState to ExerciseState("goblet_squat", 61.3, 20010, Prescription(22.5, 8..12, 8, ProgressionAction.LOAD_UP, true), 20010,
             CalibrationState(20.0, 2, 30.0), 1, true, 25.0, 20010, 7, true),
         ExerciseState to ExerciseState("plank"),
@@ -77,12 +77,13 @@ class CodecTest {
             setOf("fever"), 99L),
         PainRecord to PainRecord(5000L, 20000, 9L, "goblet_squat", PainReport(Joint.KNEE, PainKind.JOINT_OR_TENDON, 4, true, setOf("sharp"), true), Side.LEFT,
             PainAction.STOP_REGION, 20003),
-        RecoveryRecord to RecoveryRecord(20000, illness = true, runDown = true, symptoms = setOf("fever"), note = "flu"),
+        RecoveryRecord to RecoveryRecord(20000, illness = true, runDown = true, symptoms = setOf("fever")),
+        SafetyStopRecord to SafetyStopRecord(20000, setOf("chest_pain"), 20002),
         WeightRecord to WeightRecord(20000, 82.4),
         WaistRecord to WaistRecord(20000, listOf(90.5, 90.0, 91.0)),
         StepsRecord to StepsRecord(20000, 8432),
         StepStateRecord to StepStateRecord(20002, 6000, 6500, 1),
-        StepCounterRecord to StepCounterRecord(123456789L, 98765L, 4242L),
+        StepCounterRecord to StepCounterRecord(123456789L, 98765L, 4242L, 17),
         WalkRecord to WalkRecord(20000, 7 * 60 + 30, 25, brisk = false),
     )
 
@@ -141,7 +142,10 @@ class CodecTest {
     @Test fun `time-based condition facts are computed for the day asked`() {
         val c = StoredCondition("pregnancy", 100, pregnancyWeek = 12, pregnancyWeekDay = 100)
         assertEquals(12, c.toUserCondition(100, 0).pregnancyWeek)
+        assertEquals("rounded up: a day later counts as the next week", 13, c.toUserCondition(101, 0).pregnancyWeek)
         assertEquals(14, c.toUserCondition(114, 2).pregnancyWeek)
+        // R4-12: without the day the week was given, it counts from the day the condition was added (never frozen).
+        assertEquals(18, StoredCondition("pregnancy", 100, pregnancyWeek = 12).toUserCondition(142, 0).pregnancyWeek)
         assertEquals(2, c.toUserCondition(114, 2).weeks)
         val pp = StoredCondition("postpartum", 100, birthDay = 90)
         assertEquals(0, pp.toUserCondition(95, 0).weeksSinceBirth)

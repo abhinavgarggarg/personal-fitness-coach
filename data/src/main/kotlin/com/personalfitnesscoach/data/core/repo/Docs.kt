@@ -13,6 +13,7 @@ import com.personalfitnesscoach.data.core.model.ProgramRecord
 import com.personalfitnesscoach.data.core.model.ReadinessRecord
 import com.personalfitnesscoach.data.core.model.RecoveryRecord
 import com.personalfitnesscoach.data.core.model.SINGLE
+import com.personalfitnesscoach.data.core.model.SafetyStopRecord
 import com.personalfitnesscoach.data.core.model.ScreeningRecord
 import com.personalfitnesscoach.data.core.model.SettingsRecord
 import com.personalfitnesscoach.data.core.model.StepCounterRecord
@@ -41,7 +42,8 @@ object DataSchema {
     val documents: List<DocCodec<*>> = listOf(
         Profile, ScreeningRecord, ConditionsRecord, EquipmentRecord, PreferencesRecord, SettingsRecord,
         ProgramRecord, WeekSummary, WeekPlanRecord, ExerciseState, KnownNumber, DecisionEntry,
-        ReadinessRecord, PainRecord, RecoveryRecord, WeightRecord, WaistRecord, StepsRecord, StepStateRecord, StepCounterRecord, WalkRecord,
+        ReadinessRecord, PainRecord, RecoveryRecord, SafetyStopRecord, WeightRecord, WaistRecord, StepsRecord, StepStateRecord, StepCounterRecord,
+        WalkRecord,
     )
 
     val sessionTables: List<StoredType> = listOf(

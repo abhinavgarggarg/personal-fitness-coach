@@ -65,7 +65,17 @@ data class ProgramRecord(
     val carryOrRotationLastWeek: Set<Pattern> = emptySet(),
     /** PER-005 last clock action (ADVANCE, PAUSE …), for the "why" text. */
     val lastClockAction: Blueprint.ClockAction? = null,
+    /** First day of the current block (HIIT protocol progression counts sessions since then, PROG-006). */
+    val blockStartDay: Int = startDay,
+    /** DEL-002 lighter week: sessions still capped at MODIFIED. */
+    val lighterSessionsLeft: Int = 0,
+    /** DEL-002 chose a lighter week for the current week. */
+    val lighterThisWeek: Boolean = false,
 ) {
+    /** A DEL-002 deload placed inside a block (not at its deload-or-pivot week): the block clock waits for it. */
+    fun insertedDeload(ctx: com.personalfitnesscoach.engine.program.WeekContext): Boolean =
+        deloadThisWeek && ctx.kind != com.personalfitnesscoach.engine.program.WeekKind.DELOAD_OR_PIVOT
+
     companion object Codec : DocCodec<ProgramRecord>("program", 1, RecordKind.DERIVED, setOf(DataItem.PRIORITIES, DataItem.DAYS, DataItem.LOGGED_SETS),
         "Your programme and where you are in it") {
         override fun key(v: ProgramRecord) = SINGLE
@@ -76,12 +86,13 @@ data class ProgramRecord(
             put("hiitDoneEver", v.hiitDoneEver); flag("deloadThisWeek", v.deloadThisWeek); put("weeksSinceLighter", v.weeksSinceLighter)
             flag("justFinishedLighterWeek", v.justFinishedLighterWeek); put("z1SessionMinutes", v.z1SessionMinutes)
             enums("carryOrRotationLastWeek", v.carryOrRotationLastWeek); put("lastClockAction", v.lastClockAction)
+            put("blockStartDay", v.blockStartDay); if (v.lighterSessionsLeft != 0) put("lighterSessionsLeft", v.lighterSessionsLeft); flag("lighterThisWeek", v.lighterThisWeek)
         }
         override fun read(o: JsonObject, version: Int) = ProgramRecord(
             o.strings("priorities").map { parseEnum<Goal>(it, "priorities") }, o.int("startDay"), o.int("weekStartDay"), o.int("clockWeek"),
             o.int("weeksTraining"), o.int("blockIndex"), o.stringMap("coreLifts"), o.stringMap("previousBlockChoices"), o.stringMap("ladderRungs"),
             o.int("hiitDoneEver"), o.bool("deloadThisWeek"), o.int("weeksSinceLighter"), o.bool("justFinishedLighterWeek"), o.dbl("z1SessionMinutes"),
-            o.enums("carryOrRotationLastWeek"), o.enumOrNull<Blueprint.ClockAction>("lastClockAction"))
+            o.enums("carryOrRotationLastWeek"), o.enumOrNull<Blueprint.ClockAction>("lastClockAction"), o.int("blockStartDay"), o.int("lighterSessionsLeft", 0), o.bool("lighterThisWeek"))
     }
 }
 
@@ -127,7 +138,9 @@ data class WeekSummary(
 }
 
 /** The plan for the current week as it was last made (weekdays and templates), so the block clock knows what was planned. */
-data class WeekPlanRecord(val weekStartDay: Int, val days: List<Pair<Int, DayTemplate>>, val deload: Boolean, val walkDays: List<Int> = emptyList()) {
+data class WeekPlanRecord(val weekStartDay: Int, val days: List<Pair<Int, DayTemplate>>, val deload: Boolean, val walkDays: List<Int> = emptyList(),
+                          /** AER-003: the Z1 session length planned this week (the longest Z1 block on a strength day), if any. */
+                          val z1SessionMinutes: Double? = null) {
     val planned: Int get() = days.size
 
     companion object Codec : DocCodec<WeekPlanRecord>("week_plan", 1, RecordKind.DERIVED, setOf(DataItem.DAYS, DataItem.PRIORITIES), "This week's plan") {
@@ -136,10 +149,10 @@ data class WeekPlanRecord(val weekStartDay: Int, val days: List<Pair<Int, DayTem
         override fun write(v: WeekPlanRecord, o: Obj) = with(o) {
             put("weekStartDay", v.weekStartDay)
             objs("days", v.days.map { (wd, t) -> obj { put("weekday", wd); put("template", t) } })
-            flag("deload", v.deload); ints("walkDays", v.walkDays)
+            flag("deload", v.deload); ints("walkDays", v.walkDays); put("z1SessionMinutes", v.z1SessionMinutes)
         }
         override fun read(o: JsonObject, version: Int) = WeekPlanRecord(o.int("weekStartDay"),
-            o.objs("days").map { it.int("weekday") to it.enum<DayTemplate>("template") }, o.bool("deload"), o.ints("walkDays"))
+            o.objs("days").map { it.int("weekday") to it.enum<DayTemplate>("template") }, o.bool("deload"), o.ints("walkDays"), o.dblOrNull("z1SessionMinutes"))
     }
 }
 

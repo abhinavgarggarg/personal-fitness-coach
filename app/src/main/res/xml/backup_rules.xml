@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 11 and lower: same content as data_extraction_rules.xml. -->
+<!-- Android 11 and lower: the database and settings, only into an end-to-end encrypted backup (screen lock set, Android 9+). -->
 <full-backup-content>
-    <include domain="database" path="." />
-    <include domain="sharedpref" path="." />
+    <include domain="database" path="." requireFlags="clientSideEncryption" />
+    <include domain="sharedpref" path="." requireFlags="clientSideEncryption" />
 </full-backup-content>

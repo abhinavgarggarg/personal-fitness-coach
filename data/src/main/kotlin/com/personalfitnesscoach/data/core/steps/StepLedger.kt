@@ -13,15 +13,21 @@ object StepLedger {
     /** Faster than any sustained walking or running cadence: a larger difference is a sensor glitch and is capped. */
     const val MAX_STEPS_PER_MINUTE = 250
 
-    /** A restart moves the boot time; readings within this much of each other are the same boot. */
-    private const val SAME_BOOT_MS = 60_000L
+    /**
+     * Same boot: the phone's boot count matches when both readings carry it; otherwise time since boot went up and the counter did not
+     * go back. The wall clock is never used for this, so changing the phone's time cannot double-count steps.
+     */
+    fun sameBoot(prev: StepCounterRecord, now: StepCounterRecord): Boolean {
+        if (now.counter < prev.counter || now.elapsedMs < prev.elapsedMs) return false
+        val a = prev.bootCount; val b = now.bootCount
+        return a == null || b == null || a == b
+    }
 
     /** Steps to add per day for a new reading after `prev` (none for the first reading, which only sets the starting point). */
     fun split(prev: StepCounterRecord?, now: StepCounterRecord, zone: ZoneId): List<Pair<Int, Int>> {
         if (prev == null || now.atMs <= prev.atMs) return emptyList()
         val bootNow = now.atMs - now.elapsedMs
-        val bootPrev = prev.atMs - prev.elapsedMs
-        val sameBoot = Math.abs(bootNow - bootPrev) < SAME_BOOT_MS && now.counter >= prev.counter
+        val sameBoot = sameBoot(prev, now)
         // After a restart the counter starts again from 0 at boot; steps between the last reading and the restart are unknown.
         val fromMs = if (sameBoot) prev.atMs else maxOf(prev.atMs, bootNow)
         val raw = if (sameBoot) now.counter - prev.counter else now.counter

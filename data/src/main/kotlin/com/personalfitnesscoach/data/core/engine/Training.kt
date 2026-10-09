@@ -6,6 +6,7 @@ import com.personalfitnesscoach.data.core.model.KnownNumber
 import com.personalfitnesscoach.data.core.model.PainRecord
 import com.personalfitnesscoach.data.core.model.ProgramRecord
 import com.personalfitnesscoach.data.core.model.ReadinessRecord
+import com.personalfitnesscoach.data.core.model.SafetyStopRecord
 import com.personalfitnesscoach.data.core.model.SettingsRecord
 import com.personalfitnesscoach.data.core.model.StepStateRecord
 import com.personalfitnesscoach.data.core.model.StepsRecord
@@ -34,6 +35,7 @@ import com.personalfitnesscoach.engine.model.Joint
 import com.personalfitnesscoach.engine.model.LoadType
 import com.personalfitnesscoach.engine.model.Tier
 import com.personalfitnesscoach.engine.program.Blueprint
+import com.personalfitnesscoach.engine.program.Frequency
 import com.personalfitnesscoach.engine.program.WeekKind
 import com.personalfitnesscoach.engine.registry.P
 import com.personalfitnesscoach.engine.registry.Registry
@@ -81,7 +83,11 @@ class ProgressRecorder(private val docs: Docs, private val log: SessionLog, priv
         for (e in w.exercises) {
             if (e.row.status != Status.DONE) continue
             val ex = Library[e.exerciseId] ?: continue
-            val state = docs.get(ExerciseState, ex.id) ?: ExerciseState(ex.id)
+            val stored = docs.get(ExerciseState, ex.id) ?: ExerciseState(ex.id)
+            // A calibrating exposure of an exercise that had an e1RM is a recalibration after a long layoff (REG-004): start afresh,
+            // keeping the count and the "own number used" flag.
+            val state = if (e.doc.calibrating && (stored.e1rm != null || stored.prescription != null))
+                ExerciseState(ex.id, exposures = stored.exposures, knownApplied = true, lastDoneDay = stored.lastDoneDay) else stored
             val ladderType = ex.assisted || ex.loadType == LoadType.BODYWEIGHT || ex.loadType == LoadType.TIME || ex.loadType == LoadType.DISTANCE
             val recent = if (!ladderType) listOf(e) else log.history(ex.id, w.day - 56, w.day)
                 .filter { (day, x) -> day < w.day || (day == w.day && x.row.workoutId <= w.id) }.map { it.second }.takeLast(P.BW_002.consecutive_sessions)
@@ -91,8 +97,10 @@ class ProgressRecorder(private val docs: Docs, private val log: SessionLog, priv
             d += r.decisions
         }
         val hiit = bridge.doneSession(w).hiitBlocks
-        if (hiit > 0 || ladders.isNotEmpty()) docs.update(ProgramRecord) { p ->
-            checkNotNull(p) { "no programme" }.copy(hiitDoneEver = p.hiitDoneEver + if (hiit > 0) 1 else 0, ladderRungs = p.ladderRungs + ladders)
+        docs.get(ProgramRecord)?.let { p ->
+            val next = p.copy(hiitDoneEver = p.hiitDoneEver + if (hiit > 0) 1 else 0, ladderRungs = p.ladderRungs + ladders,
+                lighterSessionsLeft = maxOf(0, p.lighterSessionsLeft - 1))
+            if (next != p) docs.put(ProgramRecord, next)
         }
         return d
     }
@@ -101,33 +109,60 @@ class ProgressRecorder(private val docs: Docs, private val log: SessionLog, priv
     suspend fun rebuild(u: UserState) {
         docs.deleteAll(ExerciseState)
         val program = docs.get(ProgramRecord) ?: return
-        docs.put(ProgramRecord, program.copy(hiitDoneEver = 0))
+        docs.put(ProgramRecord, program.copy(hiitDoneEver = 0, lighterSessionsLeft = 0))
         for (w in log.done(Int.MIN_VALUE / 2, Int.MAX_VALUE / 2)) record(w, u)
     }
 }
 
-/** What the daily check-in produced (RDY-001…007, SAF-002, SAF-007). */
+/** What the daily check-in produced (RDY-001…007, SAF-002, SAF-007, REG, DEL-002). */
 data class CheckInOutcome(val record: ReadinessRecord, val safetyStop: SafetyStop?, val decisions: List<Decision>)
 
-/** The daily check-in: readiness tier with the personal baseline and fatigue signals, red flags and the illness gate. */
+/**
+ * The daily check-in: readiness tier with the personal baseline and fatigue signals, then every safety limit stored for today —
+ * red flags (a stop is kept until the user confirms it resolved), the illness gate, the return rules and a lighter week — and a
+ * mid-block DEL-002 "deload now" when the signals call for it. The stored tier is the final, capped tier.
+ */
 class CheckIns(private val docs: Docs, private val bridge: EngineBridge, private val clock: AppClock) {
     suspend fun record(u: UserState, checkIn: CheckIn, minutesAvailable: Int? = null, redFlags: Set<String> = emptySet(),
                        illnessSymptoms: Set<String> = emptySet(), requestedTier: Tier? = null): CheckInOutcome {
         val today = u.today
         val d = ArrayList<Decision>()
+        val program = docs.get(ProgramRecord)
         val baseline = Baseline.of(docs.between(ReadinessRecord, today - P.RDY_002.window_days, today - 1).map { it.rRaw })
-        val signals = bridge.fatigue(u, docs.get(ProgramRecord)).second
+        val signals = bridge.fatigue(u, program).second
         val r = Readiness.tier(checkIn, baseline, signals.size).also { d += it.decisions }.value
-        val stop = RedFlags.check(redFlags).also { d += it.decisions }.value
+        // SAF-002: new red flags start a stop that lasts until confirmed.
+        var stop = RedFlags.check(redFlags).also { d += it.decisions }.value
+        if (stop != null) docs.put(SafetyStopRecord, SafetyStopRecord(today, stop.symptoms))
         val illness = RedFlags.illnessGate(illnessSymptoms).also { d += it.decisions }.value
-        var tier = r.tier
-        if (illness != null && illness.ordinal < tier.ordinal) tier = illness
-        val locked = stop != null || illness != null || u.flaggedScreen || bridge.painToday(today).first.isNotEmpty()
+        val gate = bridge.gate(u, program).also { d += it.decisions }
+        if (stop == null) stop = gate.stop
+        var tier = gate.cap(r.tier)
+        if (illness != null) tier = Tier.min(tier, illness)
+        if (stop != null) tier = Tier.RECOVERY
+        val locked = stop != null || illness != null || gate.locked || u.flaggedScreen || bridge.painToday(today).first.isNotEmpty()
         val chosen = requestedTier?.let { Readiness.userChoice(tier, it, locked).also { x -> d += x.decisions }.value }?.takeIf { it != tier }
         val rec = ReadinessRecord(today, checkIn, minutesAvailable, r.rRaw, r.r, tier, chosen, signals.map { it.name }.toSet(), redFlags, illnessSymptoms,
             clock.nowMs())
         docs.put(ReadinessRecord, rec)
+        // DEL-002 between block ends: enough signals now → the rest of this week is a deload (the block clock waits for it).
+        if (program != null && !program.deloadThisWeek) {
+            val multi = docs.between(ReadinessRecord, today - 13, today).count { it.signals.size >= 2 }
+            val a = Deload.decide(signals.size, multi, atBlockEnd = false, program.weeksSinceLighter, u.age, justFinishedLighterWeek = false)
+            if (a.value == DeloadAction.DELOAD_NOW) {
+                d += a.decisions
+                docs.put(ProgramRecord, program.copy(deloadThisWeek = true, weeksSinceLighter = 0))
+            }
+        }
         return CheckInOutcome(rec, stop, d)
+    }
+
+    /** The user confirms the red-flag symptoms have resolved or were reviewed; the next session is LIGHT at most (SAF-002). */
+    suspend fun confirmStopResolved(): Boolean {
+        val s = docs.get(SafetyStopRecord) ?: return false
+        if (s.confirmedDay != null) return false
+        docs.put(SafetyStopRecord, s.copy(confirmedDay = clock.today()))
+        return true
     }
 }
 
@@ -136,6 +171,10 @@ class CheckIns(private val docs: Docs, private val bridge: EngineBridge, private
  * PER-005 block clock, DEL-002 for the coming week, AER-003 Z1 length, STEP-001 target — then moves the programme to this week.
  */
 class ProgramClock(private val docs: Docs, private val log: SessionLog, private val bridge: EngineBridge, private val clock: AppClock) {
+    companion object {
+        /** Days of decision history kept. */
+        const val DECISION_DAYS = 400
+    }
 
     /** Starts the programme from the profile's priorities (once; a new start keeps history but resets the clock). */
     suspend fun start(today: Int = clock.today()): ProgramRecord {
@@ -154,36 +193,47 @@ class ProgramClock(private val docs: Docs, private val log: SessionLog, private 
         while (prog.weekStartDay < thisWeek && guard++ < 520) {
             val ws = prog.weekStartDay
             val we = ws + 6
-            val planned = docs.get(WeekPlanRecord, dayKey(ws))?.planned ?: 0
+            val planRec = docs.get(WeekPlanRecord, dayKey(ws))
+            // A week nobody opened the app still had sessions planned: the usual number (PER-005 must not advance through it).
+            val planned = planRec?.planned ?: Frequency.trainingDays(u.profile.daysPerWeek)
             val t = bridge.totals(ws, we)
             val lastSession = log.done(ws - 365, we).lastOrNull()?.day
             val breakDays = if (lastSession == null) we - prog.startDay + 1 else we - lastSession
             val disruption = if (t.completed == 0 && breakDays >= 14) Blueprint.Disruption.BREAK else Blueprint.Disruption.NONE
             val program = bridge.blueprint(prog)
-            val step = Blueprint.advanceClock(program, prog.clockWeek, planned, t.completed, disruption, breakDays).also { d += it.decisions }.value
+            val ctx = Blueprint.context(program, prog.clockWeek)
+            // What the finished week actually was: the plan's own deload flag, and a lighter week if one ran.
+            val wasDeload = planRec?.deload ?: prog.deloadThisWeek
+            val wasLighter = wasDeload || prog.lighterThisWeek
+            val step = if (prog.insertedDeload(ctx) && wasDeload) Blueprint.ClockStep(prog.clockWeek, Blueprint.ClockAction.PAUSE) // the block waits for an inserted deload
+                else Blueprint.advanceClock(program, prog.clockWeek, planned, t.completed, disruption, breakDays).also { d += it.decisions }.value
             docs.put(WeekSummary, WeekSummary(ws, prog.clockWeek, planned, t.completed, t.aerobicMinutes, t.z1Minutes, t.z2PlusMinutes, t.hiitSessions,
-                t.hiitWorkMinutes, t.walkingMinutes, t.equivalentMinutes, t.ssu, t.workload, prog.deloadThisWeek, step.action))
+                t.hiitWorkMinutes, t.walkingMinutes, t.equivalentMinutes, t.ssu, t.workload, wasDeload, step.action))
 
             val nextCtx = Blueprint.context(program, step.nextClockWeek)
             val newBlock = nextCtx.blockIndex != prog.blockIndex
             // DEL-002 for the coming week: at a block's deload-or-pivot week, or now when the signals call for it.
             val signals = bridge.fatigue(u.copy(today = we + 1), prog).second.size
             val deloadAction = Deload.decide(signals, recentMultiSignalDays(we), atBlockEnd = nextCtx.kind == WeekKind.DELOAD_OR_PIVOT,
-                prog.weeksSinceLighter, u.age, prog.justFinishedLighterWeek).also { d += it.decisions }.value
+                prog.weeksSinceLighter, u.age, justFinishedLighterWeek = wasLighter).also { d += it.decisions }.value
             val deload = deloadAction == DeloadAction.DELOAD_NOW || (deloadAction == DeloadAction.DELOAD_AT_BLOCK_END && nextCtx.kind == WeekKind.DELOAD_OR_PIVOT)
-            val lighter = deload || deloadAction == DeloadAction.LIGHTER_WEEK
-            val finishedWasDeload = prog.deloadThisWeek
+            val lighter = !deload && deloadAction == DeloadAction.LIGHTER_WEEK
             prog = prog.copy(
                 weekStartDay = ws + 7, clockWeek = step.nextClockWeek, weeksTraining = prog.weeksTraining + if (t.completed > 0) 1 else 0,
                 blockIndex = nextCtx.blockIndex, coreLifts = if (newBlock) emptyMap() else prog.coreLifts,
-                previousBlockChoices = if (newBlock) prog.coreLifts else prog.previousBlockChoices,
-                deloadThisWeek = deload, weeksSinceLighter = if (lighter) 0 else prog.weeksSinceLighter + 1,
-                justFinishedLighterWeek = prog.deloadThisWeek, z1SessionMinutes = if (t.longestZ1Block > 0) t.longestZ1Block else prog.z1SessionMinutes,
+                previousBlockChoices = if (newBlock) prog.coreLifts else prog.previousBlockChoices, blockStartDay = if (newBlock) ws + 7 else prog.blockStartDay,
+                deloadThisWeek = deload, lighterSessionsLeft = if (lighter) P.DEL_002.lighter_week_sessions else 0, lighterThisWeek = lighter,
+                weeksSinceLighter = if (deload || lighter) 0 else prog.weeksSinceLighter + 1,
+                justFinishedLighterWeek = wasLighter,
+                // AER-003: the next Z1 length grows from the one planned in a week that was trained.
+                z1SessionMinutes = if (t.completed > 0) planRec?.z1SessionMinutes ?: prog.z1SessionMinutes else prog.z1SessionMinutes,
                 carryOrRotationLastWeek = t.carryOrRotation, lastClockAction = step.action,
             )
-            stepWeek(u.copy(today = we + 1), ws, finishedWasDeload)?.let { d += it }
+            stepWeek(u.copy(today = we + 1), ws, wasDeload)?.let { d += it }
         }
         docs.put(ProgramRecord, prog)
+        // The decision log keeps about a year ("Why?" for recent changes); older entries are removed.
+        for (old in docs.between(DecisionEntry, Int.MIN_VALUE / 2, today - DECISION_DAYS)) docs.delete(DecisionEntry, DecisionEntry.key(old))
         return EngineResult(prog, d)
     }
 
