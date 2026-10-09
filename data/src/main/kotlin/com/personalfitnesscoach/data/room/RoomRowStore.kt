@@ -54,7 +54,7 @@ class RoomRowStore(private val db: PfcDatabase) : RowStore {
             dao.allSets().map { it.toRow() }, active())
     }
 
-    override suspend fun replaceAll(snapshot: Snapshot) = db.withWriteTransaction {
+    override suspend fun replaceAll(snapshot: Snapshot): Unit = db.withWriteTransaction {
         eraseAllInTransaction()
         snapshot.docs.forEach { dao.putDoc(it.toEntity()) }
         snapshot.workouts.forEach { dao.insertWorkout(it.toEntity()) }

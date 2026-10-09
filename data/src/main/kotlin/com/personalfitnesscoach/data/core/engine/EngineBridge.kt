@@ -197,8 +197,8 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
 
     /**
      * PROG-007 / SAF-005 reference loads: for each slot and exercise, the heaviest full-load working set of its latest exposure
-     * before this week (8 weeks back at most). A calibration exposure contributes the heaviest ramp load rated RIR 3 or more —
-     * the load the ramp found, never one that was too hard.
+     * before this week (8 weeks back at most). A calibration exposure contributes the heaviest ramp load lifted for the ramp's
+     * target reps (review R3-13: the load the ramp reached, not where it started).
      */
     suspend fun lastWeekLoads(today: Int): Map<String, Double> {
         val weekStart = Days.weekStart(today)
@@ -207,7 +207,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             for (e in w.exercises) {
                 val key = SessionGenerator.loadKey(e.row.slotKey, e.exerciseId)
                 if (key in out) continue
-                val load = if (e.doc.calibrating) e.calibration.filter { (it.rir ?: -1.0) >= 3.0 }.mapNotNull { it.loadKg }.maxOrNull()
+                val load = if (e.doc.calibrating) e.calibration.filter { (it.reps ?: 0) >= ExerciseProgress.calibrationReps(e.doc.reps) }.mapNotNull { it.loadKg }.maxOrNull()
                     else if (e.doc.loadFactor >= 1.0 - 1e-9) e.working.mapNotNull { it.loadKg }.maxOrNull() else null
                 if (load != null && load > 0) out[key] = load
             }

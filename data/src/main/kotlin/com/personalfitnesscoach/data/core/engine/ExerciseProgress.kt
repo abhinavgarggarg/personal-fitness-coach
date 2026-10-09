@@ -106,13 +106,13 @@ object ExerciseProgress {
                 if (last !is CalibrationStep.Continue) break
             }
             val lastLifted = ramp.last().loadKg!!
+            // CAL-001 runs over sessions 1–4; after the 4th, progression takes over from the best load the ramp allowed.
+            fun next(load: Double) = if (sessions < P.CAL_001.sessions[1]) s.copy(calibration = CalibrationState(load, sessions, ceiling))
+                else s.copy(calibration = null, prescription = Prescription(load, item.reps, item.reps.first, ProgressionAction.HOLD), prescriptionDay = day)
             s = when (val l = last) {
-                is CalibrationStep.Found ->
-                    if (l.startE1rm != null) s.copy(e1rm = l.startE1rm, e1rmDay = day, calibration = null)
-                    else if (sessions < P.CAL_001.sessions[1]) s.copy(calibration = CalibrationState(l.workingLoad, sessions, ceiling))
-                    else s.copy(calibration = null, prescription = Prescription(l.workingLoad, item.reps, item.reps.first, ProgressionAction.HOLD), prescriptionDay = day)
-                is CalibrationStep.Stop -> s.copy(calibration = CalibrationState(l.nextSessionLoad, sessions, ceiling))
-                is CalibrationStep.Continue, null -> s.copy(calibration = CalibrationState(lastLifted, sessions, ceiling))
+                is CalibrationStep.Found -> if (l.startE1rm != null) s.copy(e1rm = l.startE1rm, e1rmDay = day, calibration = null) else next(l.workingLoad)
+                is CalibrationStep.Stop -> next(l.nextSessionLoad)
+                is CalibrationStep.Continue, null -> next(lastLifted)
             }
         } else if (s.e1rm == null && item.calibrating && done.working.isEmpty()) {
             return EngineResult(ExposureOutcome(s), d)
