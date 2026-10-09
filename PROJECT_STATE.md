@@ -9,7 +9,7 @@ Last updated: 2026-10-09 (change requests CR-001–CR-005) · Master prompt: v3.
 |---|---|---|
 | 1 Fitness research & evidence engine | APPROVED | 2026-10-07 |
 | 2 Product requirements, UX & architecture | APPROVED (D-028) | 2026-10-07 |
-| 3 Application development | IN PROGRESS — Parts 1–2 of 6 complete; Research Update 1.1 in progress | 2026-10-09 |
+| 3 Application development | IN PROGRESS — Parts 1–2 complete; Research Update 1.1 awaiting sign-off; Phase 3 becomes 7 parts | 2026-10-09 |
 | 4 Testing, validation & UAT | NOT STARTED | — |
 | 5 Production build & APK delivery | NOT STARTED | — |
 
@@ -45,6 +45,7 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 | Checks | `tools/check_phase1.py` (45 checks, 0 failures), `tools/rule_coverage.py`, `tools/check_permissions.py` |
 | Decisions | `DECISIONS.md` (D-001 … D-063) |
 | Change requests | `docs/change_requests/README.md` (CR-001 … CR-005) |
+| Research Update 1.1 | `docs/research_update_1_1/report.md` · evidence reviews A and B in the same folder · proposed rules `rules/proposed/registry_v1.1.0_proposed_delta.json` · condition table `rules/proposed/health_conditions_v1.0_draft.json` · builders `tools/proposed_build_*.py` |
 | Illustration sample (CR-004) | https://claude.ai/artifact/DYdTjK75unCNA4Rk3GoiBt (Form Guide Preview) |
 | Code (source of truth) | https://github.com/abhinavgarggarg/personal-fitness-coach (branch `main`); Actions: CI on every push, Devices weekly / on demand |
 
@@ -59,7 +60,7 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 - Phone: Motorola Edge 50, Android 16. Request: the app must work on any phone (→ D-044) and use the phone's Gemini instead of paid AI calls (→ D-045).
 
 ## Open items for the Product Owner
-1. **Research Update 1.1 sign-off** (when ready): new and changed rules for the default fat-loss goal, age bands, steps and the health-condition table. Change log: `docs/change_requests/README.md`.
+1. **Research Update 1.1 sign-off:** `docs/research_update_1_1/report.md` — 9 new rules, 4 changed, health-condition table v1.0 draft (21 entries), and decision MOD-001 (treadmill walking and bikes as a per-person choice). Change log: `docs/change_requests/README.md`.
 2. D-036 adds one Android-12-only permission (SCHEDULE_EXACT_ALARM) — needed for any-phone support; no prompt is shown.
 3. Part 0 profile still blank — collected in onboarding.
 

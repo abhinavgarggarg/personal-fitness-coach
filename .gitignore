@@ -21,3 +21,6 @@ captures/
 keystore.properties
 signing.properties
 *.p12
+
+# Local Claude permissions (not shared)
+.claude/settings.local.json

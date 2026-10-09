@@ -4,6 +4,7 @@
 - Health-condition picker driven by a data table (D-058); starting weights and personal records (D-059); default goal "Lose fat, keep muscle (30+)" with an age-banded training mix and no food features (D-060); original animated exercise illustrations (D-061, sample published); phone step counter (D-062); no-box gyms (D-063).
 - Fix: a missing plyo box no longer turns a box jump into a slow tempo squat; power work swaps only to power work (346 tests).
 - Part 3 paused for Research Update 1.1. Change log: `docs/change_requests/README.md`.
+- Research Update 1.1 ready for sign-off: evidence reviews (fat loss without diet, age and muscle, HIIT, steps, progress measures; 11 health conditions plus 3 optional; medical-device boundaries), proposed Registry 1.1.0 (9 new rules FL-001–005, STEP-001–002, SAF-010, CAL-002; CON-004, CON-006, PH-001, DATA-001 changed; MOD-001 decision) and health-condition table v1.0 draft. Independently checked: 18 findings fixed before release.
 
 ## 2026-10-08 — Phase 3 Part 2: exercise library, 12-month programme, week planner, session generator
 - Exercise library v1.0.1 (`library/v1/*.json`, original wording): 152 exercises, 31 drills, 10 modality guides; generator with safety checks (`tools/gen_library_kotlin.py --check` in CI).
