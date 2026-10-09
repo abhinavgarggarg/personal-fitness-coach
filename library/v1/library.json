@@ -1,5 +1,5 @@
 {
-  "library_version": "1.0.1",
+  "library_version": "1.1.0",
   "license": "All exercise names, instructions, cues, mistakes and safety notes were written originally for the Personal Fitness Coach project (master prompt D7). No third-party text, images or video are included. Licence recorded per asset: ORIGINAL.",
   "defaults": {
     "difficulty": 2,
@@ -70,7 +70,20 @@
     "shoulder_extension_load": "Shoulder loaded behind the body (dips)",
     "jumping":               "Jumping or landing",
     "spinal_flexion":        "Repeated rounding of the spine under load (crunch-type movements)",
-    "grip_intensive":        "Long or heavy gripping"
+    "grip_intensive":        "Long or heavy gripping",
+    "breath_hold_max":       "Usually lifted heavy with a held breath (heavy barbell squats, deadlifts, presses, leg press) (SAF-010)",
+    "isometric_heavy":       "A long or heavy hold (heavy carries, long-lever planks, hanging) (SAF-010)",
+    "loaded_spinal_rotation": "Twisting the trunk against a load (chops, lifts, rotational throws) (SAF-010)",
+    "deep_hip_flexion":      "Deep hip bending (deep squats, knee-to-chest positions) (SAF-010, MOB-004 range limits)",
+    "head_down":             "Head below the heart (pike and feet-up push-ups, forward folds) (SAF-010)",
+    "supine_lying":          "Lying flat on the back (bench press, bridges, dead bugs) (SAF-010)",
+    "prone_lying":           "Lying face down or with the belly on a pad (chest-supported rows, back extensions) (SAF-010)",
+    "high_fall_risk":        "Balance-demanding or easy to fall from (single-leg hinges, step-ups, jumps, standing rollouts) (SAF-010)",
+    "unsupported_single_leg": "Standing on one leg without a hand on a support (SAF-010)",
+    "contact":               "Contact with other people or objects at speed; used for activities the user adds (SAF-010)",
+    "olympic_lift":          "Olympic lifts and their variations; none in the built-in library (SAF-010)",
+    "uneven_surface_running": "Running on trails or uneven ground; used for activities the user adds (SAF-010)",
+    "overhead_heavy":        "An external load pressed or held overhead (SAF-010)"
   },
   "classes": ["BARBELL", "DUMBBELL", "KETTLEBELL", "CABLE", "MACHINE", "BODYWEIGHT", "BAND", "OTHER"],
   "coverage_gaps": {

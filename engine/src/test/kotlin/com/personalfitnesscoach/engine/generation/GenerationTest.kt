@@ -1,6 +1,7 @@
 package com.personalfitnesscoach.engine.generation
 
 import com.personalfitnesscoach.engine.core.ReasonKey
+import com.personalfitnesscoach.engine.library.Library
 import com.personalfitnesscoach.engine.model.Level
 import com.personalfitnesscoach.engine.model.Pattern
 import com.personalfitnesscoach.engine.model.Tier
@@ -20,6 +21,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+
+/** Library 1.1.0 low-impact power drills (D-063); tests that need a box jump switch them off. */
+val LOW_IMPACT_POWER = setOf("db-speed-squat", "speed-squat", "fast-sit-to-stand", "db-swing", "db-push-press")
 
 class GenerationTest {
     private val program = Blueprint.plan(listOf(Goal.STRENGTH, Goal.CARDIO)).value
@@ -75,15 +79,34 @@ class GenerationTest {
         val w = (1..52).first { Blueprint.context(program, it).block.type == com.personalfitnesscoach.engine.program.BlockType.POWER_ATHLETICISM &&
             Blueprint.context(program, it).kind == com.personalfitnesscoach.engine.program.WeekKind.LOADING }
         val noBox = WeekPlanner.plan(weekInput(3, w, program = program, gym = gym - "plyo_box"), program).value
-        assertTrue(noBox.days.flatMap { it.slots }.none { "plyo_box" in it.exercise.equipment })
-        val plan = WeekPlanner.plan(weekInput(3, w, program = program, gym = gym), program).value
+        assertTrue(noBox.days.flatMap { it.slots }.all { it.exercise.usableWith(gym - "plyo_box") })
+        assertTrue(noBox.days.flatMap { it.slots }.none { it.exercise.id == "box-jump" })
+        // The low-impact power drills (Library 1.1.0) normally win the power slot; with them switched off a box jump is planned.
+        val plan = WeekPlanner.plan(weekInput(3, w, program = program, gym = gym).copy(excludedIds = LOW_IMPACT_POWER), program).value
         val d = plan.days.first { day -> day.slots.any { it.exercise.id == "box-jump" } }
         val today = SessionGenerator.generate(req(d).copy(equipmentToday = gym - "plyo_box")).value
-        assertTrue(today.items.none { "plyo_box" in it.exercise.equipment })
+        assertTrue(today.items.all { it.exercise.usableWith(gym - "plyo_box") })
+        assertTrue(today.items.none { it.exercise.id == "box-jump" })
         assertTrue(today.items.filter { it.role == SlotRole.POWER }.all { it.exercise.powerCapable })
         assertTrue(today.items.none { it.exercise.id == "tempo-squat" })
-        // The box-assisted pull-up negative becomes a band-assisted pull-up.
-        assertTrue(today.items.any { it.exercise.id == "pull-up-band-assisted" })
+        // D-063 "any of": a bench does the job of the box, so the pull-up negative stays.
+        if (d.slots.any { it.exercise.id == "pull-up-negative" }) assertTrue(today.items.any { it.exercise.id == "pull-up-negative" })
+        // With neither a box nor a bench, the pull-up negative becomes a band-assisted pull-up.
+        val bare = gym - "plyo_box" - "bench"
+        val bareDay = SessionGenerator.generate(req(d).copy(equipmentToday = bare)).value
+        assertTrue(bareDay.items.all { it.exercise.usableWith(bare) })
+        if (d.slots.any { it.exercise.id == "pull-up-negative" }) assertTrue(bareDay.items.any { it.exercise.id == "pull-up-band-assisted" })
+    }
+
+    @Test fun `any-of equipment (D-063) - a step-up works on a box or a bench, not on neither`() {
+        val stepUp = Library.require("step-up")
+        assertTrue(stepUp.usableWith(setOf("plyo_box")))
+        assertTrue(stepUp.usableWith(setOf("bench")))
+        assertFalse(stepUp.usableWith(setOf("dumbbells")))
+        val dbStepUp = Library.require("db-step-up")
+        assertTrue(dbStepUp.usableWith(setOf("dumbbells", "bench")))
+        assertFalse(dbStepUp.usableWith(setOf("bench")))
+        assertTrue("plyo_box" in dbStepUp.allEquipment && "bench" in dbStepUp.allEquipment && "dumbbells" in dbStepUp.allEquipment)
     }
 
     @Test fun `missing equipment swaps to the same pattern`() {

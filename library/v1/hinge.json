@@ -5,7 +5,7 @@
     "equipment": ["barbell"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
     "difficulty": 4, "skill": 3, "joints": {"SPINE": 4, "HIP": 2, "KNEE": 1}, "fatigue": 5,
     "reps": [3, 6], "max_reps": 8, "e1rm": true, "tempo": 4.0, "setup": 45, "station": "barbell",
-    "tags": ["spinal_loading", "grip_intensive"], "regression": "trap-bar-deadlift",
+    "tags": ["spinal_loading", "grip_intensive", "breath_hold_max"], "regression": "trap-bar-deadlift",
     "text": {
       "setup": "Stand with the bar over the middle of your feet, feet about hip-width apart. Hinge down and grip the bar just outside your shins, then bend your knees until your shins touch the bar.",
       "cues": ["Pull the slack out of the bar before it leaves the floor.", "Push the floor away while keeping the bar against your legs.", "Finish standing tall with glutes squeezed, without leaning back."],
@@ -19,7 +19,7 @@
     "equipment": ["trap_bar"], "load": "BARBELL", "bar": "trap_bar", "cost": "HEAVY_BILATERAL",
     "difficulty": 3, "skill": 2, "joints": {"SPINE": 3, "HIP": 2, "KNEE": 2}, "fatigue": 5,
     "reps": [4, 8], "max_reps": 10, "e1rm": true, "tempo": 4.0, "setup": 45, "station": "trap_bar",
-    "tags": ["spinal_loading", "grip_intensive"], "progression": "deadlift", "regression": "kb-deadlift",
+    "tags": ["spinal_loading", "grip_intensive", "breath_hold_max"], "progression": "deadlift", "regression": "kb-deadlift",
     "text": {
       "setup": "Step inside the trap bar so the handles line up with the middle of your feet. Squat down, grip the handles in the centre and set a flat back.",
       "cues": ["Chest up and brace hard.", "Drive through the whole foot and stand straight up.", "Lower under control along the same path."],
@@ -46,6 +46,7 @@
     "difficulty": 2, "skill": 2, "joints": {"HIP": 2, "SPINE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 60, "station": "bench",
     "regression": "glute-bridge",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Sit on the floor with your upper back against the long side of a bench and roll a padded bar over your hips. Plant your feet so your shins are vertical at the top.",
       "cues": ["Tuck your chin and look forward, not at the ceiling.", "Drive through your heels until hips are level with your knees and shoulders.", "Pause and squeeze the glutes at the top."],
@@ -72,6 +73,7 @@
     "difficulty": 3, "skill": 3, "joints": {"HIP": 2, "SPINE": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "dumbbells",
     "regression": "bodyweight-single-leg-rdl",
+    "tags": ["high_fall_risk", "unsupported_single_leg"],
     "text": {
       "setup": "Hold a dumbbell in the hand opposite your standing leg. Stand near a wall or rack you can touch for balance if needed.",
       "cues": ["Reach the free leg back as your chest lowers, like a see-saw.", "Keep hips square to the floor.", "Return by pulling the standing hip forward."],
@@ -85,6 +87,7 @@
     "difficulty": 1, "skill": 1, "joints": {"HIP": 1}, "fatigue": 2,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 30, "station": "bench",
     "progression": "barbell-hip-thrust", "regression": "glute-bridge",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Sit with your upper back against a bench and hold one dumbbell across your hip crease with both hands.",
       "cues": ["Drive through your heels and lift the hips until the body is straight from knees to shoulders.", "Keep ribs down and chin tucked."],
@@ -125,6 +128,7 @@
     "difficulty": 3, "skill": 3, "joints": {"HIP": 2, "SPINE": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "kettlebells",
     "regression": "bodyweight-single-leg-rdl",
+    "tags": ["high_fall_risk", "unsupported_single_leg"],
     "text": {
       "setup": "Hold a kettlebell in the hand opposite your standing leg, with a support within reach.",
       "cues": ["Lower the bell straight down beside the standing foot.", "Keep the free leg in line with your torso."],
@@ -149,6 +153,7 @@
     "equipment": ["hip_thrust_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"HIP": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "hip_thrust_machine",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Sit in the machine with the pad across your hips and feet flat, shins roughly vertical at the top of the movement.",
       "cues": ["Lift the hips until your body is in a straight line.", "Hold for a second, then lower under control."],
@@ -161,6 +166,7 @@
     "equipment": ["back_extension"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "HIP": 1}, "fatigue": 2,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "back_extension",
+    "tags": ["prone_lying"],
     "text": {
       "setup": "Set the pad so its top edge sits just below your hip bones. Hook your heels under the foot pads and cross your arms over your chest (hold a plate later for extra load).",
       "cues": ["Hinge at the hips, keeping the back flat.", "Rise until your body is straight; do not overarch."],
@@ -174,6 +180,7 @@
     "difficulty": 1, "skill": 1, "joints": {"HIP": 1}, "fatigue": 1,
     "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 10, "station": "floor",
     "family": "bridge", "rung": 1, "progression": "single-leg-glute-bridge",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Lie on your back with knees bent, feet flat and hip-width apart, arms by your sides.",
       "cues": ["Press through your heels and lift the hips.", "Squeeze the glutes for a second at the top."],
@@ -187,6 +194,7 @@
     "difficulty": 2, "skill": 1, "joints": {"HIP": 1}, "fatigue": 1,
     "reps": [8, 15], "max_reps": 20, "failure_safe": true, "unilateral": true, "setup": 10, "station": "floor",
     "family": "bridge", "rung": 2, "regression": "glute-bridge",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Lie on your back with one foot planted and the other leg straight or hugged to your chest.",
       "cues": ["Drive through the planted heel and keep hips level.", "Lower slowly."],
@@ -200,6 +208,7 @@
     "difficulty": 2, "skill": 2, "joints": {"HIP": 1, "ANKLE": 1}, "fatigue": 1,
     "reps": [8, 12], "max_reps": 15, "failure_safe": true, "unilateral": true, "setup": 5, "station": "floor",
     "progression": "db-single-leg-rdl",
+    "tags": ["high_fall_risk", "unsupported_single_leg"],
     "text": {
       "setup": "Stand on one leg next to a wall or rack, fingertips touching it lightly if needed.",
       "cues": ["Tip forward from the hip as the free leg reaches back.", "Return slowly to standing."],
@@ -217,6 +226,20 @@
       "cues": ["Snap the hips forward and throw the ball forwards and up as far as you can.", "Reset fully between throws."],
       "mistakes": ["Throwing with the arms instead of the hips."],
       "safety": "Use a soft ball and a clear space; never throw against glass."
+    }
+  },
+  {
+    "id": "db-swing", "name": "Dumbbell swing", "aliases": ["db swing"],
+    "pattern": "HINGE", "class": "DUMBBELL", "primary": ["GLUTES", "HAMSTRINGS"], "secondary": ["CORE", "FOREARMS"],
+    "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "difficulty": 3, "skill": 3, "joints": {"SPINE": 2, "HIP": 2, "SHOULDER": 1}, "fatigue": 3,
+    "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "tempo": 1.5, "setup": 10, "station": "dumbbells", "power": true, "power_only": true,
+    "tags": ["grip_intensive"],
+    "text": {
+      "setup": "Stand with feet a little wider than your hips. Hold one dumbbell by one end with both hands and let it hang at arm's length.",
+      "cues": ["Hinge at the hips and let the dumbbell travel back between your thighs.", "Drive the hips forward hard so it floats up to chest height.", "Keep the arms relaxed; the hips do the work."],
+      "mistakes": ["Squatting down instead of hinging back.", "Lifting the weight with the arms or leaning back at the top."],
+      "safety": "Use a dumbbell with tight end-caps. Let the swing die down before you set the weight on the floor."
     }
   }
 ]

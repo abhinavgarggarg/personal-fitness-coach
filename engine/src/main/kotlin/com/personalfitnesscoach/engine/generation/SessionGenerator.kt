@@ -178,7 +178,7 @@ object SessionGenerator {
             // power work is only replaced by power work (a slow tempo squat is not a box jump) — otherwise it is left out today.
             val taken = (r.day.slots.map { it.exercise.id } + slots.map { it.exercise.id }).toSet()
             val swap = Substitution.options(s.exercise, Library.all.filter { !it.userAddOnly && it.id !in taken &&
-                (if (s.spec.role == SlotRole.POWER) it.powerCapable else !(it.powerCapable && it.loadType == com.personalfitnesscoach.engine.model.LoadType.BODYWEIGHT)) }, sub)
+                (if (s.spec.role == SlotRole.POWER) it.powerCapable else !it.powerOnly) }, sub)
             d += swap.decisions
             val pick = swap.value.autoPick?.exercise
             if (pick == null) { d += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.GEN_001), ReasonKey.SLOT_EMPTY, inputs = mapOf("slot" to s.spec.key)); continue }
@@ -335,7 +335,7 @@ object SessionGenerator {
     }
 
     private fun allowedToday(e: Exercise, r: GenerationRequest, sub: SubContext): Boolean =
-        r.equipmentToday.containsAll(e.equipment) && e.id !in r.excludedIds && e.limitationTags.none { it in r.blockedTags } &&
+        e.usableWith(r.equipmentToday) && e.id !in r.excludedIds && e.limitationTags.none { it in r.blockedTags } &&
             sub.jointLimits.all { (j, lim) -> e.stress(j) <= lim } && e.equipment.none { it in Substitution.CARDIO_MACHINE_EQUIPMENT }
 
     private fun slotOf(s: PlannedSlot): OrderSlot = when (s.spec.role) {

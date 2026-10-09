@@ -7,7 +7,7 @@ import org.junit.Test
 /** JVM unit test: the app module sees the approved registry through :engine. */
 class AppLinksEngineTest {
     @Test fun appUsesApprovedRegistry() {
-        assertEquals("1.0.1", Registry.VERSION)
-        assertEquals(140, Registry.RULE_COUNT)
+        assertEquals("1.1.0", Registry.VERSION)
+        assertEquals(152, Registry.RULE_COUNT)
     }
 }

@@ -109,8 +109,19 @@ data class Exercise(
     val bar: String? = null,
     /** Never prescribed by default; only when the user adds it (CORE-001 crunches). */
     val userAddOnly: Boolean = false,
+    /** "Any of" equipment (D-063): one item from each group is enough (a step-up works on a box or a bench). */
+    val equipmentAnyOf: List<Set<String>> = emptyList(),
+    /** Fills power slots only, never a lifting slot (D-057: jumps, throws and speed drills). */
+    val powerOnly: Boolean = false,
 ) {
     fun stress(j: Joint): Int = jointStress[j] ?: 0
+
+    /** True when `available` has every required item and one item from each "any of" group. */
+    fun usableWith(available: Set<String>): Boolean =
+        available.containsAll(equipment) && equipmentAnyOf.all { g -> g.any { it in available } }
+
+    /** Every item the exercise could use: required plus all "any of" options. */
+    val allEquipment: Set<String> get() = equipment + equipmentAnyOf.flatten()
 
     /** True when the exercise trains `p` as its main or second pattern. */
     fun trains(p: Pattern): Boolean = pattern == p || secondaryPattern == p

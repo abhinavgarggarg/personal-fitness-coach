@@ -17,7 +17,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** A fully equipped gym: every library item plus the allowed conditioning machines. */
-val FULL_GYM: Set<String> = Library.all.flatMap { it.equipment }.toSet() + setOf("rower", "skierg", "elliptical", "sled", "battle_ropes", "jump_rope", "medicine_ball")
+val FULL_GYM: Set<String> = Library.all.flatMap { it.allEquipment }.toSet() + setOf("rower", "skierg", "elliptical", "sled", "battle_ropes", "jump_rope", "medicine_ball")
 
 fun weekInput(days: Int, week: Int, level: Level = Level.INTERMEDIATE, minutes: Int = 60, program: Program = Blueprint.plan(listOf(Goal.GENERAL_FITNESS)).value,
               gym: Set<String> = FULL_GYM, baseReady: Boolean = true) =

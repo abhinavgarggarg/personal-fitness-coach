@@ -112,7 +112,7 @@ class IndividualTest {
         assertTrue(later.blockedTags.isEmpty() && later.regions.isEmpty())
         assertEquals(setOf(Joint.SHOULDER), later.sensitiveJoints)
         // The blocked tags really remove overhead pressing from swaps.
-        val ctx = SubContext(Library.all.flatMap { it.equipment }.toSet(), Level.INTERMEDIATE, blockedTags = early.blockedTags)
+        val ctx = SubContext(Library.all.flatMap { it.allEquipment }.toSet(), Level.INTERMEDIATE, blockedTags = early.blockedTags)
         assertTrue(Substitution.options(ex("db-shoulder-press"), Library.all, ctx).value.ranked.none { "overhead" in it.exercise.limitationTags })
     }
 }

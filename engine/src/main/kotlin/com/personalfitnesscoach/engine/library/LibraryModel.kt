@@ -28,6 +28,8 @@ data class Drill(
     val equipment: Set<String>,
     /** Joint stress 0–4, so pain limits apply to drills too (SAF-003). */
     val jointStress: Map<com.personalfitnesscoach.engine.model.Joint, Int> = emptyMap(),
+    /** Limitation tags (SAF-010 avoids e.g. lying on the back or head-down positions in drills too). */
+    val tags: Set<String> = emptySet(),
 ) {
     fun stress(j: com.personalfitnesscoach.engine.model.Joint): Int = jointStress[j] ?: 0
 
@@ -45,4 +47,17 @@ data class ModalityInfo(
     val equipment: Set<String>,
     val altEquipment: Set<String>,
     val units: List<ConditioningUnit>,
+    /** Moves for a bodyweight circuit (EQ-003 defaults to the no-jump ones). */
+    val moves: List<CircuitMove> = emptyList(),
 )
+
+/** One bodyweight-circuit move; `jumping` moves carry the `jumping` tag, so impact limits and condition tags apply. */
+data class CircuitMove(
+    val id: String,
+    val name: String,
+    val jumping: Boolean,
+    val jointStress: Map<com.personalfitnesscoach.engine.model.Joint, Int>,
+    val tags: Set<String>,
+) {
+    fun stress(j: com.personalfitnesscoach.engine.model.Joint): Int = jointStress[j] ?: 0
+}

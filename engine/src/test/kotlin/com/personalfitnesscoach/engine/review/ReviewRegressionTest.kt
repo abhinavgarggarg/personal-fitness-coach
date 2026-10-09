@@ -253,7 +253,7 @@ class ReviewRegressionTest {
 
     @Test fun `R18 a validator swap keeps the slot's role sensible and main lifts keep their ramp`() {
         val gym = setOf("dumbbells", "bench", "incline_bench", "pullup_bar", "bands", "mat", "plyo_box", "rack", "barbell", "leg_press", "hack_squat")
-        val plan = WeekPlanner.plan(weekInput(4, weekOf(BlockType.POWER_ATHLETICISM), program = program, gym = gym), program).value
+        val plan = WeekPlanner.plan(weekInput(4, weekOf(BlockType.POWER_ATHLETICISM), program = program, gym = gym).copy(excludedIds = com.personalfitnesscoach.engine.generation.LOW_IMPACT_POWER), program).value
         val day = plan.days.first { d -> d.slots.any { it.exercise.id == "box-jump" } }
         val req = GenerationRequest(day, Level.INTERMEDIATE, 40, 90, gym, Tier.FULL, 35,
             e1rm = mapOf("back-squat" to 140.0, "front-squat" to 110.0, "leg-press" to 250.0, "hack-squat" to 180.0, "goblet-squat" to 40.0), week = vctx(impactSoFar = 1))

@@ -43,7 +43,7 @@ object Selector {
 
     fun allowed(e: Exercise, ctx: SelectionContext): Boolean =
         !e.userAddOnly &&
-            ctx.equipment.containsAll(e.equipment) &&
+            e.usableWith(ctx.equipment) &&
             e.equipment.none { it in Substitution.CARDIO_MACHINE_EQUIPMENT } &&
             e.id !in ctx.excludedIds &&
             e.limitationTags.none { it in ctx.blockedTags } &&
@@ -71,8 +71,8 @@ object Selector {
         SlotRole.ROTATION -> e.trains(Pattern.ROTATION)
         SlotRole.CORE -> spec.pattern != null && e.trains(spec.pattern) && (e.pattern in CORE_PATTERNS || e.pattern == Pattern.LOADED_CARRY || e.pattern == Pattern.HORIZONTAL_PULL)
         SlotRole.CARRY_OR_ROTATION -> false // resolved to CARRY or ROTATION by the planner
-        // Jumps and ballistic throws (bodyweight power drills) only ever fill power slots: a box jump is not a squat main lift (CON-004, ORD-001).
-        else -> !(e.powerCapable && e.loadType == LoadType.BODYWEIGHT) && when {
+        // Power drills (jumps, throws, speed squats, swings; `powerOnly`) only ever fill power slots: a box jump is not a squat main lift (D-057, CON-004, ORD-001).
+        else -> !e.powerOnly && when {
             spec.pattern == Pattern.ISOLATION -> e.pattern == Pattern.ISOLATION && spec.muscle != null && spec.muscle in e.primary
             spec.pattern == Pattern.LUNGE -> e.pattern == Pattern.LUNGE && e.unilateral
             else -> e.pattern == spec.pattern

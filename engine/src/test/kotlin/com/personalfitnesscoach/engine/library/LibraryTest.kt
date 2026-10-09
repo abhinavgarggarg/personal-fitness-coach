@@ -138,4 +138,69 @@ class LibraryTest {
         for (k in listOf(DrillKind.BALANCE, DrillKind.STRETCH, DrillKind.BREATHING))
             assertTrue(k.name, GeneratedLibrary.drills.any { it.kind == k })
     }
+
+    // ---- Library 1.1.0 (Research Update 1.1: SAF-010 tags, D-063 power and "any of" equipment, EQ-003 circuit moves) ----
+
+    @Test fun `library 1_1_0 carries the condition-profile safety tags on the right exercises (SAF-010)`() {
+        assertEquals("1.1.0", Library.VERSION)
+        val newTags = listOf("breath_hold_max", "isometric_heavy", "loaded_spinal_rotation", "deep_hip_flexion", "head_down", "supine_lying",
+            "prone_lying", "high_fall_risk", "contact", "olympic_lift", "uneven_surface_running", "overhead_heavy", "unsupported_single_leg")
+        assertTrue(GeneratedLibrary.tags.keys.containsAll(newTags))
+        fun tagged(id: String, tag: String) = tag in Library.require(id).limitationTags
+        for (e in all) {
+            if (e.costClass == CostClass.HEAVY_BILATERAL) assertTrue(e.id, "breath_hold_max" in e.limitationTags)
+            if (e.pattern == Pattern.ROTATION) assertTrue(e.id, "loaded_spinal_rotation" in e.limitationTags)
+            if (e.pattern == Pattern.VERTICAL_PUSH && "overhead" in e.limitationTags && e.loadType != LoadType.BODYWEIGHT)
+                assertTrue(e.id, "overhead_heavy" in e.limitationTags)
+            if ("unsupported_single_leg" in e.limitationTags) assertTrue(e.id, "high_fall_risk" in e.limitationTags)
+        }
+        assertTrue(tagged("bench-press", "supine_lying") && tagged("glute-bridge", "supine_lying") && !tagged("db-incline-press", "supine_lying"))
+        assertTrue(tagged("chest-supported-db-row", "prone_lying") && tagged("pike-push-up", "head_down") && tagged("farmer-carry", "isometric_heavy"))
+        assertTrue(tagged("db-single-leg-rdl", "high_fall_risk") && tagged("box-jump", "high_fall_risk") && !tagged("goblet-squat", "high_fall_risk"))
+        // Drills carry tags too, so condition profiles reach warm-ups and cool-downs.
+        assertTrue(GeneratedLibrary.drills.all { d -> d.tags.all { it in GeneratedLibrary.tags } })
+        assertTrue("supine_lying" in Library.drill("stretch-hamstring")!!.tags && "head_down" in Library.drill("drill-inchworm")!!.tags)
+        // Every position-avoiding drill has an untagged alternative of the same kind.
+        for (tag in listOf("supine_lying", "head_down", "spinal_flexion", "deep_hip_flexion"))
+            for (k in setOf(DrillKind.STRETCH, DrillKind.MOBILISE, DrillKind.ACTIVATE))
+                assertTrue("$tag/$k", GeneratedLibrary.drills.any { it.kind == k && tag !in it.tags })
+    }
+
+    @Test fun `any-of equipment - box, step and bench stand in for each other where safe (D-063)`() {
+        for (e in all) for (g in e.equipmentAnyOf) {
+            assertTrue(e.id, g.size >= 2 && g.all { it in GeneratedLibrary.equipment } && g.none { it in e.equipment })
+        }
+        for (id in listOf("step-up", "db-step-up", "bodyweight-box-squat", "pull-up-negative", "db-rear-foot-elevated-split-squat", "push-up-incline"))
+            assertTrue(id, Library.require(id).usableWith(Library.require(id).equipment + "bench"))
+        // A box jump needs a real box: a bench is not something to jump onto.
+        assertFalse(Library.require("box-jump").usableWith(setOf("bench")))
+        assertTrue(Library.available(setOf("bench")).any { it.id == "step-up" })
+    }
+
+    @Test fun `low-impact power options exist for dumbbell-only and bodyweight-only gyms, and fill power slots only (D-063, D-057)`() {
+        val dbOnly = setOf("dumbbells")
+        assertTrue(Library.available(dbOnly).any { it.powerCapable && it.impact == 0 && it.equipmentClass == EquipmentClass.DUMBBELL })
+        assertTrue(Library.available(emptySet()).any { it.powerCapable && it.impact == 0 })
+        assertTrue(Library.available(setOf("bench")).any { it.id == "fast-sit-to-stand" })
+        for (e in all.filter { it.powerOnly }) {
+            assertTrue(e.id, e.powerCapable)
+            for (role in listOf(com.personalfitnesscoach.engine.program.SlotRole.MAIN, com.personalfitnesscoach.engine.program.SlotRole.SECONDARY,
+                com.personalfitnesscoach.engine.program.SlotRole.ACCESSORY))
+                assertFalse(e.id, com.personalfitnesscoach.engine.program.Selector.matches(e,
+                    com.personalfitnesscoach.engine.program.SlotSpec("x", role, e.pattern, com.personalfitnesscoach.engine.program.Blueprint.Exposure.MODERATE)))
+        }
+        // Bodyweight jumps and throws are power-only automatically.
+        assertTrue(all.filter { it.powerCapable && it.loadType == LoadType.BODYWEIGHT }.all { it.powerOnly })
+        // New balance drills (FL-003 balance minutes, AGE-001 65+ balance days).
+        assertTrue(GeneratedLibrary.drills.count { it.kind == DrillKind.BALANCE } >= 8)
+    }
+
+    @Test fun `bodyweight circuit has at least six no-jump moves and jumping moves carry the jumping tag (EQ-003)`() {
+        val moves = GeneratedLibrary.modalities.first { it.modality == Modality.BODYWEIGHT_CIRCUIT }.moves
+        assertTrue(moves.count { !it.jumping } >= 6)
+        assertTrue(moves.all { it.jumping == ("jumping" in it.tags) })
+        assertTrue(moves.all { m -> m.tags.all { it in GeneratedLibrary.tags } })
+        assertEquals(moves.map { it.id }.toSet(), GeneratedLibraryText.circuitMoves.keys)
+        assertTrue(GeneratedLibraryText.circuitMoves.values.all { it.setup.isNotBlank() && it.cues.isNotEmpty() })
+    }
 }

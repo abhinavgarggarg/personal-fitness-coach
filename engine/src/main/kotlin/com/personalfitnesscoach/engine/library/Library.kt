@@ -19,8 +19,8 @@ object Library {
     fun drill(id: String): Drill? = drillsById[id]
     fun text(id: String): ExerciseText? = GeneratedLibraryText.exercises[id] ?: GeneratedLibraryText.drills[id]
 
-    /** Exercises whose equipment is all in `equipment` (bodyweight moves with no equipment always qualify). */
-    fun available(equipment: Set<String>): List<Exercise> = all.filter { equipment.containsAll(it.equipment) }
+    /** Exercises usable with `equipment`: every required item plus one from each "any of" group (D-063). */
+    fun available(equipment: Set<String>): List<Exercise> = all.filter { it.usableWith(equipment) }
 
     /** The rungs of a bodyweight or core ladder, easiest first (BW-001, CORE-002). */
     fun ladder(family: String): List<Exercise> = all.filter { it.family == family }.sortedWith(compareBy({ it.rung }, { it.id }))

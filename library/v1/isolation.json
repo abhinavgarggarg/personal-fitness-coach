@@ -90,6 +90,7 @@
     "equipment": ["ez_bar", "bench"], "load": "BARBELL", "bar": "ez_bar", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"ELBOW": 3}, "fatigue": 1,
     "reps": [8, 12], "max_reps": 15, "setup": 25, "station": "bench",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Lie on a bench holding an EZ bar above your chest with straight arms.",
       "cues": ["Bend the elbows to lower the bar towards the top of your head.", "Straighten the arms back to the start."],
@@ -211,6 +212,7 @@
     "equipment": ["sliders"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 1, "HIP": 1}, "fatigue": 1,
     "reps": [8, 12], "max_reps": 15, "failure_safe": true, "setup": 10, "station": "floor",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Lie on your back with heels on sliders or a towel, knees bent. Lift the hips into a bridge.",
       "cues": ["Slide the heels out until the legs are nearly straight, keeping hips up.", "Pull the heels back in."],
@@ -284,7 +286,7 @@
     "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SPINE": 1}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [10, 20], "max_reps": 25, "failure_safe": true, "setup": 5, "station": "floor",
-    "tags": ["spinal_flexion"], "user_add_only": true,
+    "tags": ["spinal_flexion", "supine_lying"], "user_add_only": true,
     "text": {
       "setup": "Lie on your back with knees bent and fingertips lightly at your temples.",
       "cues": ["Curl your shoulders off the floor by shortening the stomach.", "Lower slowly."],

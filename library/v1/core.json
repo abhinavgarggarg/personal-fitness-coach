@@ -5,7 +5,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "setup": 15, "station": "dumbbells",
-    "tags": ["grip_intensive"],
+    "tags": ["grip_intensive", "isometric_heavy"],
     "text": {
       "setup": "Stand between two heavy dumbbells, squat down and pick them up with a flat back.",
       "cues": ["Stand tall with shoulders down and back.", "Walk with short, quick steps.", "Squat down to set the weights on the floor."],
@@ -18,7 +18,7 @@
     "equipment": ["trap_bar"], "load": "BARBELL", "bar": "trap_bar", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 1, "joints": {"SPINE": 2, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 4,
     "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 30], "max_reps": 40, "tempo": 1.0, "setup": 40, "station": "trap_bar",
-    "tags": ["grip_intensive", "spinal_loading"],
+    "tags": ["grip_intensive", "spinal_loading", "isometric_heavy"],
     "text": {
       "setup": "Deadlift the trap bar to standing, making sure there is a clear path in front of you.",
       "cues": ["Brace and walk with steady, short steps.", "Keep the bar level and still."],
@@ -58,7 +58,7 @@
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "WRIST": 1, "KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "objectives": ["GPP", "CORE"], "unit": "METRES", "reps": [20, 40], "max_reps": 50, "tempo": 1.0, "setup": 15, "station": "kettlebells",
-    "tags": ["grip_intensive"],
+    "tags": ["grip_intensive", "isometric_heavy"],
     "text": {
       "setup": "Deadlift a kettlebell in each hand to standing.",
       "cues": ["Tall posture, shoulders packed down.", "Walk with control and set the bells down by squatting."],
@@ -98,6 +98,7 @@
     "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "ISOLATION_OR_CORE",
     "difficulty": 3, "skill": 3, "joints": {"SPINE": 2, "SHOULDER": 1, "HIP": 1}, "fatigue": 2,
     "objectives": ["CORE"], "reps": [6, 10], "max_reps": 12, "setup": 30, "station": "landmine",
+    "tags": ["loaded_spinal_rotation"],
     "text": {
       "setup": "Stand facing the landmine with feet wider than hips. Hold the end of an unloaded or lightly loaded bar in both hands at chest height, arms extended.",
       "cues": ["Move the bar in an arc down towards one hip by turning the hips and shoulders together.", "Bring it back over the top to the other side under control."],
@@ -110,6 +111,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 10, "station": "dumbbells",
+    "tags": ["loaded_spinal_rotation"],
     "text": {
       "setup": "Kneel on one knee and hold one dumbbell by both ends beside the shoulder on the side of the front leg.",
       "cues": ["Bring the dumbbell diagonally down across the body to the opposite hip.", "Turn through the upper back while the hips stay square."],
@@ -122,6 +124,7 @@
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 10, "station": "kettlebells",
+    "tags": ["loaded_spinal_rotation"],
     "text": {
       "setup": "Kneel on one knee holding a light kettlebell by the horns beside the shoulder on the side of the front leg.",
       "cues": ["Chop diagonally down to the opposite hip with control.", "Return along the same line."],
@@ -135,6 +138,7 @@
     "difficulty": 1, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable",
     "family": "rotation", "rung": 1, "progression": "cable-chop-standing",
+    "tags": ["loaded_spinal_rotation"],
     "text": {
       "setup": "Set a rope or handle high on the cable column. Kneel side-on with the inside knee up and grip the handle with both hands above the outside shoulder.",
       "cues": ["Pull the handle diagonally down past the opposite hip.", "Keep the hips still and let the ribs turn.", "Return slowly."],
@@ -148,6 +152,7 @@
     "difficulty": 1, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable",
     "family": "rotation", "rung": 1, "progression": "cable-chop-standing",
+    "tags": ["loaded_spinal_rotation"],
     "text": {
       "setup": "Set the handle low. Kneel side-on with the outside knee up and hold the handle with both hands beside the inside hip.",
       "cues": ["Lift the handle diagonally up across your body to above the opposite shoulder.", "Stay tall through the hips."],
@@ -161,6 +166,7 @@
     "difficulty": 2, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1, "HIP": 1}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable",
     "family": "rotation", "rung": 2, "progression": "med-ball-rotational-throw", "regression": "cable-chop-half-kneeling",
+    "tags": ["loaded_spinal_rotation"],
     "text": {
       "setup": "Stand side-on to a high cable with feet wider than shoulders, holding the handle with both hands above the near shoulder.",
       "cues": ["Pivot the back foot and turn the hips as you chop down and across.", "Control the return."],
@@ -174,6 +180,7 @@
     "difficulty": 3, "skill": 3, "joints": {"SPINE": 2, "HIP": 1, "SHOULDER": 1}, "fatigue": 2,
     "objectives": ["POWER", "CORE"], "reps": [4, 6], "max_reps": 8, "unilateral": true, "tempo": 3.0, "setup": 10, "station": "medicine_ball", "power": true,
     "family": "rotation", "rung": 3, "regression": "cable-chop-standing",
+    "tags": ["loaded_spinal_rotation"],
     "text": {
       "setup": "Stand side-on to a solid wall about a metre away, holding a light medicine ball at your back hip.",
       "cues": ["Shift weight to the back leg, then turn the hips hard and throw the ball into the wall.", "Catch or collect it and reset before the next throw."],
@@ -187,6 +194,7 @@
     "equipment": ["bands"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 2, "joints": {"SPINE": 1, "SHOULDER": 1}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [10, 15], "max_reps": 20, "unilateral": true, "failure_safe": true, "setup": 20, "station": "floor",
+    "tags": ["loaded_spinal_rotation"],
     "text": {
       "setup": "Anchor a band high on a door or post. Stand side-on and hold it with both hands above the near shoulder.",
       "cues": ["Chop diagonally down across the body.", "Return slowly against the band."],
@@ -200,6 +208,7 @@
     "difficulty": 1, "skill": 1, "joints": {}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor",
     "family": "anti_extension", "rung": 1, "progression": "front-plank",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Lie on your back with arms pointing to the ceiling and hips and knees bent at 90 degrees.",
       "cues": ["Press your lower back gently into the floor.", "Slowly reach one arm overhead and the opposite leg out long.", "Return and switch sides."],
@@ -213,6 +222,7 @@
     "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 10, "station": "dumbbells",
     "regression": "dead-bug",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Lie in the dead bug position holding a light dumbbell in both hands straight above your chest.",
       "cues": ["Keep the dumbbell still while one leg at a time reaches out long.", "Keep the lower back in contact with the floor."],
@@ -239,6 +249,7 @@
     "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 2}, "fatigue": 1,
     "objectives": ["CORE"], "unit": "SECONDS", "reps": [20, 40], "max_reps": 45, "tempo": 1.0, "failure_safe": true, "setup": 5, "station": "floor",
     "family": "anti_extension", "rung": 3, "progression": "body-saw", "regression": "front-plank",
+    "tags": ["isometric_heavy"],
     "text": {
       "setup": "Set up a forearm plank, then walk your elbows forward a few centimetres in front of your shoulders.",
       "cues": ["Keep the body straight and glutes tight.", "Breathe behind the brace."],
@@ -278,6 +289,7 @@
     "difficulty": 5, "skill": 4, "joints": {"SHOULDER": 3, "SPINE": 2}, "fatigue": 2,
     "objectives": ["CORE"], "reps": [3, 8], "max_reps": 10, "setup": 10, "station": "floor",
     "family": "anti_extension", "rung": 6, "regression": "ab-wheel-kneeling",
+    "tags": ["high_fall_risk"],
     "text": {
       "setup": "Stand with feet hip-width apart, bend down and place the ab wheel on the floor in front of your feet.",
       "cues": ["Roll out slowly as far as you can control.", "Pull back with a tight, straight body."],

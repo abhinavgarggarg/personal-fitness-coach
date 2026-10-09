@@ -28,11 +28,11 @@
   {
     "id": "db-one-arm-row", "name": "One-arm dumbbell row", "aliases": ["db row", "single arm row"],
     "pattern": "HORIZONTAL_PULL", "class": "DUMBBELL", "primary": ["LATS", "UPPER_BACK"], "secondary": ["REAR_DELTS", "BICEPS"],
-    "equipment": ["dumbbells", "bench"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "equipment": ["dumbbells"], "equipment_any": [["bench", "plyo_box"]], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "unilateral": true, "setup": 20, "station": "bench",
     "text": {
-      "setup": "Place one hand and the same-side knee on a bench, the other foot on the floor. Hold a dumbbell in the free hand with the arm hanging straight.",
+      "setup": "Place one hand and the same-side knee on a bench or a sturdy box, the other foot on the floor. Hold a dumbbell in the free hand with the arm hanging straight.",
       "cues": ["Pull the dumbbell towards your hip.", "Keep your shoulders square to the floor.", "Lower until the arm is straight and feel the stretch."],
       "mistakes": ["Twisting the torso to heave the weight up."]
     }
@@ -43,6 +43,7 @@
     "equipment": ["dumbbells", "incline_bench"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "incline_bench",
+    "tags": ["prone_lying"],
     "text": {
       "setup": "Set a bench to about 30 degrees and lie face down on it with your chest at the top edge, a dumbbell in each hand hanging down.",
       "cues": ["Row both dumbbells up, squeezing the shoulder blades together.", "Keep your chest on the pad."],
@@ -116,6 +117,7 @@
     "equipment": ["rack", "barbell"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [6, 15], "max_reps": 15, "failure_safe": true, "setup": 30, "station": "rack",
+    "tags": ["supine_lying"],
     "text": {
       "setup": "Set a bar in a rack at about hip height. Lie underneath it, grip it just wider than shoulders and lift your body into a straight line from heels to head.",
       "cues": ["Pull your chest to the bar.", "Lower until arms are straight, keeping the body rigid.", "Bend your knees to make it easier, or lower the bar to make it harder."],
@@ -201,13 +203,13 @@
   {
     "id": "pull-up-negative", "name": "Pull-up negative (slow lowering)", "aliases": ["negative pull up", "eccentric pull up"],
     "pattern": "VERTICAL_PULL", "class": "BODYWEIGHT", "primary": ["LATS"], "secondary": ["BICEPS", "UPPER_BACK"],
-    "equipment": ["pullup_bar", "plyo_box"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "equipment": ["pullup_bar"], "equipment_any": [["plyo_box", "bench"]], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2}, "fatigue": 2,
     "reps": [3, 6], "max_reps": 8, "tempo": 6.0, "setup": 20, "station": "pullup_bar", "tags": ["overhead"],
     "family": "pull_up", "rung": 2, "progression": "pull-up", "regression": "pull-up-assisted",
     "text": {
-      "setup": "Stand on a box under the pull-up bar so you can grip it with your chin already above it.",
-      "cues": ["Step off and lower yourself slowly for 3 to 5 seconds.", "Reach straight arms at the bottom, then step back onto the box."],
+      "setup": "Stand on a sturdy box or bench under the pull-up bar so you can grip it with your chin already above it.",
+      "cues": ["Step off and lower yourself slowly for 3 to 5 seconds.", "Reach straight arms at the bottom, then step back up."],
       "mistakes": ["Dropping quickly through the bottom half."]
     }
   },

@@ -165,7 +165,7 @@ class YearSimulationTest {
         return YearResult(clock, sessions, fallbacks, startE1rm, e1rm, deloads, nextLoads.mapValues { it.value.load }, startWeek.toMap())
     }
 
-    private val full = Library.all.flatMap { it.equipment }.toSet() + setOf("rower", "skierg", "elliptical", "sled", "battle_ropes", "jump_rope", "medicine_ball")
+    private val full = Library.all.flatMap { it.allEquipment }.toSet() + setOf("rower", "skierg", "elliptical", "sled", "battle_ropes", "jump_rope", "medicine_ball")
 
     @Test fun `a full year for five different users keeps every hard rule`() {
         val personas = listOf(

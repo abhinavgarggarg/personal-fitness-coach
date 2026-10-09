@@ -143,7 +143,7 @@ class PlannerPropertyTest {
                 library = Library.all.filter { !it.userAddOnly })
             val v = SessionValidator.violations(w.validated, ctx)
             assertTrue("case $n ${day.template} $tier: $v", v.isEmpty())
-            assertTrue(w.items.all { today.containsAll(it.exercise.equipment) })
+            assertTrue(w.items.all { it.exercise.usableWith(today) })
             assertTrue(w.items.all { it.exercise.limitationTags.none { t -> t in i.blockedTags } })
             if (w.tier == Tier.RECOVERY) assertTrue(w.items.isEmpty())
             if (req.hiitEarlierToday) assertTrue(w.items.none { it.role == com.personalfitnesscoach.engine.program.SlotRole.POWER })

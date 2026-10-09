@@ -29,12 +29,12 @@
   {
     "id": "db-rear-foot-elevated-split-squat", "name": "Dumbbell rear-foot-elevated split squat", "aliases": ["bulgarian split squat", "rfess"],
     "pattern": "LUNGE", "class": "DUMBBELL", "primary": ["QUADS", "GLUTES"], "secondary": ["ADDUCTORS"],
-    "equipment": ["dumbbells", "bench"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "equipment": ["dumbbells"], "equipment_any": [["bench", "plyo_box"]], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"KNEE": 3, "HIP": 2, "ANKLE": 1}, "fatigue": 4,
     "reps": [6, 12], "max_reps": 15, "e1rm": true, "unilateral": true, "setup": 25, "station": "bench",
-    "tags": ["deep_knee_flexion"], "regression": "db-split-squat",
+    "tags": ["deep_knee_flexion", "deep_hip_flexion", "high_fall_risk", "unsupported_single_leg"], "regression": "db-split-squat",
     "text": {
-      "setup": "Stand about two foot-lengths in front of a bench, holding dumbbells at your sides. Rest the top of your back foot on the bench.",
+      "setup": "Stand about two foot-lengths in front of a bench or a sturdy box at about knee height, holding dumbbells at your sides. Rest the top of your back foot on it.",
       "cues": ["Sink straight down until the front thigh is about parallel.", "Keep the front knee tracking over the toes.", "Drive up through the front foot."],
       "mistakes": ["Standing too close to the bench.", "Pushing off the back foot."]
     }
@@ -58,7 +58,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 2, "joints": {"KNEE": 2, "HIP": 2, "ANKLE": 1}, "fatigue": 4,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "dumbbells",
-    "tags": ["deep_knee_flexion"], "regression": "db-reverse-lunge",
+    "tags": ["deep_knee_flexion", "high_fall_risk"], "regression": "db-reverse-lunge",
     "text": {
       "setup": "Hold dumbbells at your sides with a clear walkway of about 10 metres in front of you.",
       "cues": ["Take a long step and lower the back knee towards the floor.", "Drive up and bring the back foot through into the next step."],
@@ -68,10 +68,11 @@
   {
     "id": "db-step-up", "name": "Dumbbell step-up", "aliases": ["step up"],
     "pattern": "LUNGE", "class": "DUMBBELL", "primary": ["QUADS", "GLUTES"], "secondary": [],
-    "equipment": ["dumbbells", "plyo_box"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
+    "equipment": ["dumbbells"], "equipment_any": [["plyo_box", "bench"]], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 20, "station": "plyo_box", "shallow": true,
     "regression": "step-up",
+    "tags": ["deep_hip_flexion", "high_fall_risk", "unsupported_single_leg"],
     "text": {
       "setup": "Stand facing a sturdy box or bench at about knee height, a dumbbell in each hand. Place one whole foot on the box.",
       "cues": ["Lean slightly forward and stand up using the top leg.", "Lower slowly with the same leg in control."],
@@ -134,13 +135,13 @@
   {
     "id": "bodyweight-rear-foot-elevated-split-squat", "name": "Rear-foot-elevated split squat (bodyweight)", "aliases": ["bodyweight bulgarian split squat"],
     "pattern": "LUNGE", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": ["ADDUCTORS"],
-    "equipment": ["bench"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "equipment": [], "equipment_any": [["bench", "plyo_box"]], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 3, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 2,
     "reps": [8, 15], "max_reps": 20, "unilateral": true, "setup": 15, "station": "bench",
-    "tags": ["deep_knee_flexion"], "family": "squat", "rung": 5,
+    "tags": ["deep_knee_flexion", "deep_hip_flexion", "high_fall_risk", "unsupported_single_leg"], "family": "squat", "rung": 5,
     "progression": "db-rear-foot-elevated-split-squat", "regression": "bodyweight-split-squat",
     "text": {
-      "setup": "Stand in front of a bench with the top of your back foot resting on it.",
+      "setup": "Stand in front of a bench or a sturdy box at about knee height with the top of your back foot resting on it.",
       "cues": ["Drop straight down under control.", "Keep your torso tall and drive up through the front foot."],
       "mistakes": ["Bouncing off the bottom."]
     }
@@ -161,10 +162,11 @@
   {
     "id": "step-up", "name": "Step-up (bodyweight)", "aliases": ["box step up"],
     "pattern": "LUNGE", "class": "BODYWEIGHT", "primary": ["QUADS", "GLUTES"], "secondary": [],
-    "equipment": ["plyo_box"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
+    "equipment": [], "equipment_any": [["plyo_box", "bench"]], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"KNEE": 1, "HIP": 1, "ANKLE": 1}, "fatigue": 1,
     "reps": [10, 15], "max_reps": 20, "unilateral": true, "setup": 10, "station": "plyo_box", "shallow": true,
     "progression": "db-step-up",
+    "tags": ["deep_hip_flexion", "high_fall_risk", "unsupported_single_leg"],
     "text": {
       "setup": "Face a sturdy step, box or bench at a height where your thigh is roughly level when your foot is on top.",
       "cues": ["Step up and stand fully on the top leg.", "Step down slowly with the same leg leading back."],
@@ -176,7 +178,7 @@
     "pattern": "LUNGE", "class": "BODYWEIGHT", "primary": ["ADDUCTORS", "GLUTES", "QUADS"], "secondary": [],
     "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 1, "HIP": 2, "ANKLE": 1}, "fatigue": 1,
-    "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor", "tags": ["deep_knee_flexion"],
+    "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 5, "station": "floor", "tags": ["deep_knee_flexion", "deep_hip_flexion"],
     "text": {
       "setup": "Stand with feet together, then take a wide step out to the side.",
       "cues": ["Sit back into the stepping leg while the other leg stays straight.", "Push back to the start."],

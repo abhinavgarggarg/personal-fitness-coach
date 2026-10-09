@@ -62,7 +62,7 @@ object Substitution {
     /** SUB-001 hard filters. */
     fun passesFilters(c: Exercise, original: Exercise, ctx: SubContext): Boolean =
         c.id != original.id &&
-            ctx.equipmentToday.containsAll(c.equipment) &&
+            c.usableWith(ctx.equipmentToday) &&
             c.equipment.none { it in CARDIO_MACHINE_EQUIPMENT } &&
             c.id !in ctx.excludedIds &&
             c.limitationTags.none { it in ctx.blockedTags } &&

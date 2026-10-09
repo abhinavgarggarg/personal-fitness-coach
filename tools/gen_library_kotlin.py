@@ -7,8 +7,9 @@ Writes two files under engine/src/main/kotlin/com/personalfitnesscoach/engine/li
 Each JSON file becomes its own Kotlin function so no method grows past the JVM 64 KB limit.
 Validation fails (exit 1) on: unknown keys or enum values, duplicate IDs, unknown equipment
 or tags, broken ladder links, a class that its equipment cannot provide, missing text, a
-failure-safe free-weight barbell lift, and any movement pattern with no exercise for a
-class unless the gap is justified in library.json (and no stale justifications).
+failure-safe free-weight barbell lift, a missing safety tag (SAF-010), a bad "any of"
+equipment group (D-063), and any movement pattern with no exercise for a class unless the
+gap is justified in library.json (and no stale justifications).
 
     python3 -I tools/gen_library_kotlin.py           # validate + write
     python3 -I tools/gen_library_kotlin.py --check   # CI: fail if invalid or stale
@@ -50,7 +51,11 @@ BAR_FOR = {"trap_bar": "trap_bar", "ez_bar": "ez_bar", "landmine": "landmine", "
 EX_KEYS = {"id", "name", "aliases", "pattern", "pattern2", "class", "primary", "secondary", "equipment", "load", "cost",
            "difficulty", "skill", "joints", "fatigue", "impact", "objectives", "reps", "max_reps", "failure_safe", "e1rm",
            "unilateral", "tempo", "setup", "station", "tags", "family", "rung", "progression", "regression", "unit",
-           "power", "assisted", "bar", "one_sided", "user_add_only", "shallow", "not_overhead", "text"}
+           "power", "assisted", "bar", "one_sided", "user_add_only", "shallow", "not_overhead", "text",
+           # Library 1.1.0: "any of" equipment groups (D-063) and power drills that fill power slots only (D-057).
+           "equipment_any", "power_only"}
+DRILL_KEYS = {"id", "name", "kind", "regions", "prepares", "unit", "amount", "per_side", "equipment", "joints", "tags", "text"}
+MOVE_KEYS = {"id", "name", "jumping", "joints", "tags", "text"}
 REQUIRED = ["id", "name", "pattern", "class", "primary", "equipment", "load", "cost", "text"]
 TEXT_KEYS = {"setup", "cues", "mistakes", "safety"}
 
@@ -179,6 +184,19 @@ def main():
         for e in ex["equipment"]:
             if e not in equipment:
                 err(f"{owner}: unknown equipment {e}")
+        ex.setdefault("equipment_any", [])
+        if not isinstance(ex["equipment_any"], list):
+            err(f"{owner}: equipment_any must be a list of groups")
+            ex["equipment_any"] = []
+        for g in ex["equipment_any"]:
+            if not isinstance(g, list) or len(g) < 2 or len(set(g)) != len(g):
+                err(f"{owner}: each equipment_any group lists 2+ different items")
+                continue
+            for e in g:
+                if e not in equipment:
+                    err(f"{owner}: unknown equipment {e} in equipment_any")
+                if e in ex["equipment"]:
+                    err(f"{owner}: {e} is both required and in an equipment_any group")
         for t in ex["tags"]:
             if t not in tags:
                 err(f"{owner}: unknown tag {t}")
@@ -225,19 +243,23 @@ def main():
             err(f"{owner}: e1rm needs a rep-based unit")
         # Class must be something the listed equipment can provide.
         cls = ex["class"]
-        eq_classes = {equipment[e]["class"] for e in ex["equipment"] if e in equipment}
+        eq_classes = {equipment[e]["class"] for e in ex["equipment"] + [x for g in ex["equipment_any"] for x in g] if e in equipment}
         if cls in ("BARBELL", "DUMBBELL", "KETTLEBELL", "CABLE", "MACHINE", "BAND") and cls not in eq_classes:
             err(f"{owner}: class {cls} but no {cls} equipment listed")
         if cls == "BODYWEIGHT" and eq_classes & {"DUMBBELL", "KETTLEBELL", "CABLE", "MACHINE"} and ex["load"] != "BODYWEIGHT":
             err(f"{owner}: bodyweight class with an external load")
+        def is_fixed(e):
+            return e in FIXED_EXTRA or (e in equipment and equipment[e]["class"] in ("CABLE", "MACHINE"))
+        # A group whose options all fix you to one spot (box or bench) counts as a fixed station, named by its first option.
+        fixed = [e for e in ex["equipment"] if is_fixed(e)] + [g[0] for g in ex["equipment_any"] if all(is_fixed(e) for e in g)]
         st = ex.get("station")
         if st is None:
-            st = next((e for e in ex["equipment"] if e in FIXED_EXTRA or equipment[e]["class"] in ("CABLE", "MACHINE")), None) \
-                or (ex["equipment"][0] if ex["equipment"] else "floor")
+            st = fixed[0] if fixed else (ex["equipment"][0] if ex["equipment"] else "floor")
         if st != "floor" and st not in equipment:
             err(f"{owner}: station '{st}' is not floor or an equipment id")
+        if fixed and st not in fixed:
+            err(f"{owner}: station '{st}' should be one of its fixed items {fixed}")
         ex["station"] = st
-        fixed = [e for e in ex["equipment"] if e in FIXED_EXTRA or equipment[e]["class"] in ("CABLE", "MACHINE")]
         ex["_station_kind"] = "FLOOR" if not fixed else "SINGLE_STATION"
         for k in ("progression", "regression"):
             if ex.get(k) is not None and ex[k] not in ids:
@@ -258,6 +280,20 @@ def main():
             err(f"{owner}: carries load the knee, hip and ankle (joint stress ≥ 1 each)")
         if ex.get("failure_safe") and "overhead" in ex["tags"] and ex["load"] in ("DUMBBELL", "KETTLEBELL", "BARBELL"):
             err(f"{owner}: a free weight held overhead is never failure-safe (INT-003)")
+        # Library 1.1.0 (SAF-010): condition profiles avoid these tags, so they must not go missing either.
+        if ex["cost"] == "HEAVY_BILATERAL" and "breath_hold_max" not in ex["tags"]:
+            err(f"{owner}: heavy bilateral lifts need the breath_hold_max tag")
+        if ex["pattern"] == "ROTATION" and "loaded_spinal_rotation" not in ex["tags"]:
+            err(f"{owner}: rotation-pattern exercises need the loaded_spinal_rotation tag")
+        if ex["pattern"] == "VERTICAL_PUSH" and "overhead" in ex["tags"] and ex["load"] in ("BARBELL", "DUMBBELL", "KETTLEBELL", "STACK") \
+                and "overhead_heavy" not in ex["tags"]:
+            err(f"{owner}: a loaded overhead press needs the overhead_heavy tag")
+        if "unsupported_single_leg" in ex["tags"] and "high_fall_risk" not in ex["tags"]:
+            err(f"{owner}: unsupported single-leg work is also high_fall_risk")
+        if ex.get("power") and ex["load"] == "BODYWEIGHT":
+            ex["power_only"] = True  # jumps and throws never fill lifting slots (D-057)
+        if ex.get("power_only") and not ex.get("power"):
+            err(f"{owner}: power_only needs power")
         validate_text(owner, ex["text"])
 
     by_id = {ex["id"]: ex for ex in exercises}
@@ -308,8 +344,13 @@ def main():
     drill_ids = set()
     for d in drills:
         owner = f"drills:{d.get('id', '?')}"
+        if set(d) - DRILL_KEYS:
+            err(f"{owner}: unknown keys {sorted(set(d) - DRILL_KEYS)}")
         if d.get("id") in drill_ids or d.get("id") in ids:
             err(f"{owner}: duplicate id")
+        for t in d.get("tags", []):
+            if t not in tags:
+                err(f"{owner}: unknown tag {t}")
         drill_ids.add(d.get("id"))
         if d.get("kind") not in DRILL_KINDS:
             err(f"{owner}: unknown kind {d.get('kind')}")
@@ -338,7 +379,7 @@ def main():
             err(f"drills: no {kind} drill")
 
     modalities = load_json("modalities") or []
-    seen_mod = set()
+    seen_mod, move_ids = set(), set()
     for m in modalities:
         owner = f"modalities:{m.get('modality', '?')}"
         if m.get("modality") not in MODALITIES or m.get("modality") in seen_mod:
@@ -351,6 +392,29 @@ def main():
             if u not in MOD_UNITS:
                 err(f"{owner}: unknown unit {u}")
         validate_text(owner, m.get("text"))
+        # Circuit moves (EQ-003: away-from-gym conditioning defaults to the no-jump moves).
+        for mv in m.get("moves", []):
+            mo = f"{owner}:{mv.get('id', '?')}"
+            if set(mv) - MOVE_KEYS:
+                err(f"{mo}: unknown keys {sorted(set(mv) - MOVE_KEYS)}")
+            if not re.fullmatch(r"move-[a-z0-9]+(-[a-z0-9]+)*", mv.get("id", "")):
+                err(f"{mo}: move ids are kebab-case starting with move-")
+            if mv.get("id") in ids or mv.get("id") in drill_ids or mv.get("id") in move_ids:
+                err(f"{mo}: duplicate id")
+            move_ids.add(mv.get("id"))
+            if not isinstance(mv.get("jumping"), bool):
+                err(f"{mo}: jumping must be true or false")
+            elif mv["jumping"] != ("jumping" in mv.get("tags", [])):
+                err(f"{mo}: jumping moves, and only they, carry the jumping tag")
+            for t in mv.get("tags", []):
+                if t not in tags:
+                    err(f"{mo}: unknown tag {t}")
+            for j, v in mv.get("joints", {}).items():
+                if j not in JOINTS or not isinstance(v, int) or not 0 <= v <= 4:
+                    err(f"{mo}: bad joint stress {j}={v}")
+            validate_text(mo, mv.get("text"), need_mistakes=False)
+        if m.get("modality") == "BODYWEIGHT_CIRCUIT" and sum(1 for mv in m.get("moves", []) if mv.get("jumping") is False) < 6:
+            err(f"{owner}: needs at least 6 no-jump moves (EQ-003)")
     for m in MODALITIES:
         if m not in seen_mod:
             err(f"modalities: {m} has no entry")
@@ -383,6 +447,8 @@ def exercise_kt(ex):
         f"unit = DoseUnit.{ex['unit']}", f"powerCapable = {str(bool(ex.get('power'))).lower()}",
         f"assisted = {str(bool(ex.get('assisted'))).lower()}", f"bar = {kstr(ex['bar']) if ex.get('bar') else 'null'}",
         f"userAddOnly = {str(bool(ex.get('user_add_only'))).lower()}",
+        "equipmentAnyOf = " + ("emptyList()" if not ex["equipment_any"] else "listOf(" + ", ".join(kstrset(g) for g in ex["equipment_any"]) + ")"),
+        f"powerOnly = {str(bool(ex.get('power_only'))).lower()}",
     ]
     return "        Exercise(\n            " + ",\n            ".join(args) + ",\n        ),"
 
@@ -426,13 +492,18 @@ def write_or_check(meta, exercises, drills, modalities):
         joints = ", ".join(f"Joint.{j} to {v}" for j, v in d.get("joints", {}).items())
         lib.append(f"        Drill({kstr(d['id'])}, {kstr(d['name'])}, DrillKind.{d['kind']}, {kset('Region', d.get('regions', []))}, "
                    f"{kset('Pattern', d.get('prepares', []))}, DoseUnit.{d['unit']}, {d['amount']}, {str(bool(d.get('per_side'))).lower()}, "
-                   f"{kstrset(d.get('equipment', []))}, {'mapOf(' + joints + ')' if joints else 'emptyMap()'}),")
+                   f"{kstrset(d.get('equipment', []))}, {'mapOf(' + joints + ')' if joints else 'emptyMap()'}, {kstrset(d.get('tags', []))}),")
     lib.append("    )\n")
     lib.append("    val modalities: List<ModalityInfo> = listOf(")
     for m in modalities:
         units = ", ".join(f"ConditioningUnit.{u}" for u in m.get("units", []))
+        moves = []
+        for mv in m.get("moves", []):
+            mj = ", ".join(f"Joint.{j} to {v}" for j, v in mv.get("joints", {}).items())
+            moves.append(f"CircuitMove({kstr(mv['id'])}, {kstr(mv['name'])}, {str(mv['jumping']).lower()}, "
+                         f"{'mapOf(' + mj + ')' if mj else 'emptyMap()'}, {kstrset(mv.get('tags', []))})")
         lib.append(f"        ModalityInfo(Modality.{m['modality']}, {kstr(m['name'])}, {kstrset(m.get('equipment', []))}, "
-                   f"{kstrset(m.get('alt_equipment', []))}, listOf({units})),")
+                   f"{kstrset(m.get('alt_equipment', []))}, listOf({units})" + (", listOf(\n            " + ",\n            ".join(moves) + ",\n        )" if moves else "") + "),")
     lib.append("    )")
     lib.append("}")
     lib_src = "\n".join(lib) + "\n"
@@ -454,6 +525,10 @@ def write_or_check(meta, exercises, drills, modalities):
         t = m["text"]
         txt.append(f"        Modality.{m['modality']} to ExerciseText({kstr(t['setup'])}, {kstrlist(t['cues'])}, "
                    f"{kstrlist(t.get('mistakes', []))}, {kstr(t['safety']) if t.get('safety') else 'null'}),")
+    txt.append("    ) }\n")
+    txt.append("    /** Bodyweight-circuit moves (EQ-003). */")
+    txt.append("    val circuitMoves: Map<String, ExerciseText> by lazy { mapOf(")
+    txt.extend(text_kt(mv["id"], mv["text"]) for m in modalities for mv in m.get("moves", []))
     txt.append("    ) }")
     txt.append("}")
     txt_src = "\n".join(txt) + "\n"
