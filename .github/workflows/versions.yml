@@ -1,0 +1,44 @@
+# Manual check of dependency versions (Phase 2 version policy: versions change only through change control).
+# Reads Maven metadata on GitHub's runner and reports each artifact's latest versions as annotations.
+name: Versions
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  versions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Look up versions
+        shell: bash
+        run: |
+          check() {
+            local name="$1" url="$2"
+            local xml; xml=$(curl -fsSL "$url" 2>/dev/null) || { echo "::warning title=$name::not found"; return; }
+            local latest release versions
+            latest=$(echo "$xml" | sed -n 's:.*<latest>\(.*\)</latest>.*:\1:p' | head -1)
+            release=$(echo "$xml" | sed -n 's:.*<release>\(.*\)</release>.*:\1:p' | head -1)
+            versions=$(echo "$xml" | grep -o '<version>[^<]*</version>' | sed 's:</\?version>::g' | tail -12 | tr '\n' ' ')
+            echo "::notice title=$name::latest=$latest release=$release recent=$versions"
+          }
+          G=https://dl.google.com/android/maven2
+          C=https://repo.maven.apache.org/maven2
+          P=https://plugins.gradle.org/m2
+          check "room3-runtime" "$G/androidx/room3/room3-runtime/maven-metadata.xml"
+          check "room3-compiler" "$G/androidx/room3/room3-compiler/maven-metadata.xml"
+          check "room3-testing" "$G/androidx/room3/room3-testing/maven-metadata.xml"
+          check "room3-gradle-plugin" "$G/androidx/room3/room3-gradle-plugin/maven-metadata.xml"
+          check "room-runtime (2.x)" "$G/androidx/room/room-runtime/maven-metadata.xml"
+          check "sqlite-bundled" "$G/androidx/sqlite/sqlite-bundled/maven-metadata.xml"
+          check "ksp plugin" "$P/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml"
+          check "kotlinx-serialization-json" "$C/org/jetbrains/kotlinx/kotlinx-serialization-json/maven-metadata.xml"
+          check "kotlinx-coroutines-core" "$C/org/jetbrains/kotlinx/kotlinx-coroutines-core/maven-metadata.xml"
+          check "kotlin-serialization plugin" "$P/org/jetbrains/kotlin/plugin/serialization/org.jetbrains.kotlin.plugin.serialization.gradle.plugin/maven-metadata.xml"
+          check "android-library plugin (AGP)" "$G/com/android/library/com.android.library.gradle.plugin/maven-metadata.xml"
+          check "robolectric" "$C/org/robolectric/robolectric/maven-metadata.xml"
+          check "androidx-test-core" "$G/androidx/test/core/maven-metadata.xml"
+          check "lifecycle-runtime" "$G/androidx/lifecycle/lifecycle-runtime/maven-metadata.xml"
