@@ -40,8 +40,9 @@ object Calibration {
      * @param load the load just lifted for the target reps
      * @param reportedRir the answer to "how many more could you have done?" (use 5.0 for "5+")
      * @param setsDone ramp sets completed for this exercise including this one
+     * @param ceiling CAL-002: an old known number caps the ramp (the ramp never goes above it)
      */
-    fun next(load: Double, targetReps: Int, reportedRir: Double, setsDone: Int, available: List<Double>): EngineResult<CalibrationStep> {
+    fun next(load: Double, targetReps: Int, reportedRir: Double, setsDone: Int, available: List<Double>, ceiling: Double? = null): EngineResult<CalibrationStep> {
         val inputs = mapOf("load" to load, "reps" to targetReps, "rir" to reportedRir, "setsDone" to setsDone)
         fun d(reason: ReasonKey, out: Map<String, Any?>) =
             listOf(Decision(DecisionKind.CALIBRATION, listOf(RuleIds.CAL_001, RuleIds.PROG_003), reason, inputs, out))
@@ -69,8 +70,9 @@ object Calibration {
             next = if (up != null && up <= limit + 1e-9) up else load
 
         }
+        if (ceiling != null && next > ceiling + 1e-9) next = maxOf(load, available.filter { it <= ceiling + 1e-9 }.maxOrNull() ?: load)
         if (next <= load + 1e-9) {
-            // No safe heavier step (top of the equipment, or the next step is too big): this is the working load.
+            // No safe heavier step (top of the equipment, the next step is too big, or the CAL-002 ceiling): this is the working load.
             return EngineResult(CalibrationStep.Found(load, null), d(ReasonKey.CALIBRATION_CAPPED, mapOf("workingLoad" to load)))
         }
         return EngineResult(CalibrationStep.Continue(next), d(ReasonKey.CALIBRATION_STEP, mapOf("nextLoad" to next)))

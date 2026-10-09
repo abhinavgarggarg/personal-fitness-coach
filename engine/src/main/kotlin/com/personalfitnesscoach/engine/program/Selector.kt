@@ -65,7 +65,7 @@ object Selector {
         return e.rung == rung
     }
 
-    fun matches(e: Exercise, spec: SlotSpec): Boolean = when (spec.role) {
+    fun matches(e: Exercise, spec: SlotSpec): Boolean = if (spec.only != null) e.id in spec.only else when (spec.role) {
         SlotRole.POWER -> e.powerCapable
         SlotRole.CARRY -> e.pattern == Pattern.LOADED_CARRY
         SlotRole.ROTATION -> e.trains(Pattern.ROTATION)

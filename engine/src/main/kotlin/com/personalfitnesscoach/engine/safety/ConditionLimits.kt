@@ -8,8 +8,11 @@ import com.personalfitnesscoach.engine.model.Zone
 enum class ImpactLevel(val key: String) {
     NONE("none"), LOW("low"), LOW_VOLUME("low_volume"), ONLY_IF_ALREADY("only_if_already_doing_it"), AS_TOLERATED("as_tolerated"), ENCOURAGED("encouraged");
 
-    /** Jumping power work and impact cardio may be planned (≤ 1 a week under CON-004). */
-    val allowsImpact: Boolean get() = this >= ONLY_IF_ALREADY
+    /**
+     * Jumping power work and impact cardio may be planned (≤ 1 a week under CON-004). "Only if already doing it" is resolved per
+     * user before the merge: it stays only when the user already did impact work, otherwise it becomes LOW.
+     */
+    val allowsImpact: Boolean get() = this >= LOW_VOLUME
 
     companion object { fun of(key: String): ImpactLevel = entries.first { it.key == key } }
 }
@@ -41,8 +44,8 @@ data class ConditionLimits(
     val impact: ImpactLevel = ImpactLevel.AS_TOLERATED,
     /** Lowest reps in reserve on any working set (the highest entry value); null = the app's default. */
     val minRir: Double? = null,
-    /** When set, [minRir] applies only to exercises with one of these tags (low back pain: spinal loading). */
-    val minRirTags: Set<String>? = null,
+    /** Minimum RIR for exercises with a tag (low back pain: spinal loading → 2). */
+    val minRirByTag: Map<String, Double> = emptyMap(),
     val failureAllowed: Boolean = true,
     val avoidTags: Set<String> = emptySet(),
     /** Exercises with these tags are done through a shorter, comfortable range (MOB-004). */
@@ -57,6 +60,8 @@ data class ConditionLimits(
     val conservative: Boolean = false,
     /** Effort by feel (RPE/talk test), not heart-rate numbers. */
     val effortByFeel: Boolean = false,
+    /** Type 1 diabetes: strength before cardio in a session (the entry's default order). */
+    val strengthBeforeCardio: Boolean = false,
     /** Living with obesity: FL-003 impact gate (BMI ≥ 30) and low-impact intervals. */
     val obesity: Boolean = false,
     /** Osteoporosis: a short bone-loading block most days (CON-004 1.1.0 exemption) and required balance/back-extensor work. */
@@ -74,6 +79,10 @@ data class ConditionLimits(
     val blocked: Set<String> = emptySet(),
 ) {
     val any: Boolean get() = entries.isNotEmpty()
+
+    /** The RIR floor for one exercise with these tags (general floor and any tag floor), or null. */
+    fun minRirFor(tags: Set<String>): Double? =
+        (listOfNotNull(minRir) + minRirByTag.filterKeys { it in tags }.values).maxOrNull()
 
     /** True when intervals are allowed at all given `regularWeeks` of training. */
     fun hiitAllowed(regularWeeks: Int): Boolean = when (hiit) {

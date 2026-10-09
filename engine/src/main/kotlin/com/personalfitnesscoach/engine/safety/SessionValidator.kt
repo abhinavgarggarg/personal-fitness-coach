@@ -106,7 +106,18 @@ data class ValidationContext(
     val fullTierWorkingSets: Int? = null,
     val equipmentToday: Set<String> = emptySet(),
     val library: List<Exercise> = emptyList(),
-)
+    /** SAF-010 merged health-condition limits: tags, joints, zone, intervals, impact, effort and failure. */
+    val conditions: ConditionLimits = ConditionLimits.NONE,
+) {
+    /** Tags to avoid today: limitation tags plus the condition entries' (SAF-010). */
+    val allBlockedTags: Set<String> get() = blockedTags + conditions.avoidTags
+    /** Joint limits today: pain limits and condition limits, the lower of the two per joint. */
+    val allJointLimits: Map<Joint, Int> get() =
+        if (conditions.jointLimits.isEmpty()) jointLimits
+        else (jointLimits.keys + conditions.jointLimits.keys).associateWith { minOf(jointLimits[it] ?: 4, conditions.jointLimits[it] ?: 4) }
+    /** SAF-001 conservative mode, also while a condition's doctor's OK is outstanding (SAF-010 "always"). */
+    val effectiveScreening: ScreeningMode get() = if (conditions.conservative) ScreeningMode.CONSERVATIVE else screening
+}
 
 data class Violation(val ruleId: String, val code: String, val index: Int = -1, val detail: String = "")
 
@@ -161,8 +172,11 @@ object SessionValidator {
             else if (!modalityAllowed(b.modality, c)) v += Violation(RuleIds.SAF_003, "CONDITIONING_JOINT", i)
             if (b.impact > 0 && !impactAllowed(c)) v += Violation(RuleIds.CON_004, "IMPACT_NOT_ALLOWED", i)
             if (b.impact > 0 && c.regions.any { it.noJumping && it.region in IMPACT_JOINTS }) v += Violation(RuleIds.SAF_004, "IMPACT_NOT_ALLOWED", i)
+            // SAF-010: the highest zone and which machines intervals may use.
+            if (b.zone > c.conditions.maxZone) v += Violation(RuleIds.SAF_010, "ZONE_ABOVE_LIMIT", i)
+            else if (b.countsAsHiit && !intervalModalityAllowed(b.modality, c)) v += Violation(RuleIds.SAF_010, "INTERVAL_MODALITY", i)
         }
-        // Exclusions, pain limits, tags, impact for exercises.
+        // Exclusions, pain limits, tags (limitation and SAF-010), impact for exercises.
         strength.forEachIndexed { i, e -> if (!exerciseAllowed(e.exercise, c)) v += Violation(RuleIds.SAF_003, "EXERCISE_NOT_ALLOWED", i, e.exercise.id) }
         // RDY-004 tier compliance.
         if (s.tier == Tier.RECOVERY) {
@@ -184,13 +198,14 @@ object SessionValidator {
             if (e.sets < 1) v += Violation(RuleIds.SAF_008, "EMPTY_EXERCISE", i)
         }
         // INT-003 failure policy.
-        val rir0Allowed = Caps.rir0ExercisesPerSession(c.level, c.weeksTraining, s.tier, c.inDeload, c.screening)
+        val rir0Allowed = Caps.rir0ExercisesPerSession(c.level, c.weeksTraining, s.tier, c.inDeload, c.effectiveScreening)
         var failures = 0
         strength.forEachIndexed { i, e ->
             if (e.lastSetToFailure) {
                 failures++
                 val regionNoFailure = regionsFor(e.exercise, c).any { it.noFailure }
                 if (!e.exercise.failureSafe || failures > rir0Allowed || regionNoFailure) v += Violation(RuleIds.INT_003, "FAILURE_NOT_ALLOWED", i)
+                else if (!c.conditions.failureAllowed) v += Violation(RuleIds.SAF_010, "FAILURE_NOT_ALLOWED", i)
             }
         }
         // VOL-005 direct sets per muscle per session; VOL-008 / SAF-005 working sets per session.
@@ -203,14 +218,16 @@ object SessionValidator {
         val credit = Volume.weekly(strength.map { it.exercise to it.sets.toDouble() })
         for ((m, add) in credit) if ((c.weekSetsSoFar[m] ?: 0.0) + add > weeklyCap + 1e-9) v += Violation(RuleIds.SAF_005, "WEEKLY_SETS", detail = m.name)
         // HIIT and Z3: SAF-001 screening, HIIT-001/003/004/005, CON-003, RDY-004 tiers, DEL-003.
-        val z3Allowed = c.screening == ScreeningMode.STANDARD && !c.inDeload && (s.tier == Tier.FULL || s.tier == Tier.MODIFIED)
-        val hiitAllowed = c.screening == ScreeningMode.STANDARD && !c.inDeload && s.tier == Tier.FULL && c.hiitBaseReady &&
+        val z3Allowed = c.effectiveScreening == ScreeningMode.STANDARD && !c.inDeload && (s.tier == Tier.FULL || s.tier == Tier.MODIFIED)
+        val hiitAllowed = c.effectiveScreening == ScreeningMode.STANDARD && !c.inDeload && s.tier == Tier.FULL && c.hiitBaseReady &&
+            c.conditions.hiitAllowed(c.weeksTraining) &&
             (c.hoursSinceLastHiit ?: Double.MAX_VALUE) >= P.HIIT_004.min_hours &&
             (c.hoursToNextHeavyLower ?: Double.MAX_VALUE) >= P.CON_003.hours_before_heavy_lower
         s.conditioning.forEachIndexed { i, b ->
             if (b.countsAsHiit && !hiitAllowed) v += Violation(RuleIds.HIIT_004, "HIIT_NOT_ALLOWED", i)
             else if (!b.countsAsHiit && b.zone >= Zone.Z3 && !z3Allowed) v += Violation(RuleIds.SAF_001, "Z3_NOT_ALLOWED", i)
-            if (b.protocol == HiitProtocol.SPRINT && (c.level != Level.ADVANCED || c.sprintsThisWeekSoFar >= P.HIIT_002.sprint.per_week_max)) v += Violation(RuleIds.HIIT_002, "SPRINT_NOT_ALLOWED", i)
+            if (b.protocol == HiitProtocol.SPRINT && (c.level != Level.ADVANCED || c.sprintsThisWeekSoFar >= P.HIIT_002.sprint.per_week_max ||
+                    c.conditions.maxZone < Zone.Z4)) v += Violation(RuleIds.HIIT_002, "SPRINT_NOT_ALLOWED", i)
             val workCap = hiitWorkCap(b)
             if (workCap != null && b.workMinutes > workCap + 1e-9) v += Violation(RuleIds.HIIT_005, "HIIT_WORK_CAP", i)
         }
@@ -307,7 +324,8 @@ object SessionValidator {
         fun setBlock(i: Int, b: ConditioningBlock?) = s.copy(conditioning = s.conditioning.mapIndexedNotNull { j, x -> if (j == i) b else x })
         fun steady(b: ConditioningBlock): ConditioningBlock {
             val r = P.RDY_004.MODIFIED.hiit_replacement_minutes
-            val easy = s.tier == Tier.LIGHT || s.tier == Tier.RECOVERY || c.inDeload
+            val easy = s.tier == Tier.LIGHT || s.tier == Tier.RECOVERY || c.inDeload || c.conditions.maxZone < Zone.Z2 ||
+                c.effectiveScreening != ScreeningMode.STANDARD
             return b.copy(zone = if (easy) Zone.Z1 else Zone.Z2, hiit = false, protocol = null, restMinutes = 0.0,
                 workMinutes = b.totalMinutes.coerceIn(r[0].toDouble(), r[1].toDouble()))
         }
@@ -369,7 +387,14 @@ object SessionValidator {
                 trim(s) { m in it.exercise.primary || m in it.exercise.secondary }?.let { it to d(ReasonKey.VALIDATOR_TRIMMED, mapOf("muscle" to m)) }
             }
             "SESSION_SETS" -> trim(s) { true }?.let { it to d(ReasonKey.VALIDATOR_TRIMMED) }
-            "HIIT_NOT_ALLOWED", "Z3_NOT_ALLOWED", "SPRINT_NOT_ALLOWED" -> setBlock(v.index, steady(s.conditioning[v.index])) to d(ReasonKey.VALIDATOR_REMOVED_HIIT)
+            "HIIT_NOT_ALLOWED", "Z3_NOT_ALLOWED", "SPRINT_NOT_ALLOWED", "ZONE_ABOVE_LIMIT" -> setBlock(v.index, steady(s.conditioning[v.index])) to d(ReasonKey.VALIDATOR_REMOVED_HIIT)
+            "INTERVAL_MODALITY" -> {
+                val b = s.conditioning[v.index]
+                val alt = (c.conditions.hiitModalities?.sortedBy { it.name } ?: SWAP_ORDER).firstOrNull { modalityAllowed(it, c) && intervalModalityAllowed(it, c) &&
+                    (c.equipmentToday.isEmpty() || com.personalfitnesscoach.engine.conditioning.ModalitySelection.available(it, c.equipmentToday)) }
+                if (alt != null) setBlock(v.index, b.copy(modality = alt, impact = 0)) to d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, mapOf("from" to b.modality, "to" to alt))
+                else setBlock(v.index, steady(b)) to d(ReasonKey.VALIDATOR_REMOVED_HIIT)
+            }
             "HIIT_COUNT" -> {
                 val i = s.conditioning.indexOfLast { it.countsAsHiit }.let { if (it >= 0) it else s.conditioning.indexOfLast { b -> b.zone == Zone.Z3 } }
                 setBlock(i, steady(s.conditioning[i])) to d(ReasonKey.VALIDATOR_REMOVED_HIIT)
@@ -412,16 +437,26 @@ object SessionValidator {
 
     private fun regionsFor(e: Exercise, c: ValidationContext) = c.regions.filter { e.stress(it.region) >= 1 }
 
-    /** CON-004: impact work at most once a week and never the day before heavy legs. */
+    /** CON-004: impact work at most once a week and never the day before heavy legs; SAF-010 may rule impact out entirely. */
     fun impactAllowed(c: ValidationContext): Boolean =
-        c.impactSessionsThisWeekSoFar < P.CON_004.impact_sessions_per_week_max && !c.heavyLegsNextDay
+        c.impactSessionsThisWeekSoFar < P.CON_004.impact_sessions_per_week_max && !c.heavyLegsNextDay && c.conditions.impact.allowsImpact
+
+    /** SAF-010 / FL-003: intervals only on the machines a condition allows (low-impact list, or the entry's own list). */
+    fun intervalModalityAllowed(m: Modality, c: ValidationContext): Boolean {
+        val list = c.conditions.hiitModalities
+        if (list != null && m !in list) return false
+        if (c.conditions.hiitLowImpactOnly && m !in LOW_IMPACT_INTERVALS) return false
+        return true
+    }
+
+    private val LOW_IMPACT_INTERVALS: Set<Modality> by lazy { P.FL_003.low_impact_modalities.mapNotNull { Modality.byKey(it) }.toSet() }
 
     /** Hard filters shared by validation and swaps: MOD-001, exclusions, pain limits, tags, impact. */
     fun exerciseAllowed(e: Exercise, c: ValidationContext): Boolean {
         if (e.equipment.any { it in Substitution.CARDIO_MACHINE_EQUIPMENT } || e.id in c.excludedIds) return false
-        if (e.limitationTags.any { it in c.blockedTags }) return false
+        if (e.limitationTags.any { it in c.allBlockedTags }) return false
         if (e.impact > 0 && !impactAllowed(c)) return false
-        for ((j, limit) in c.jointLimits) if (e.stress(j) > limit) return false
+        for ((j, limit) in c.allJointLimits) if (e.stress(j) > limit) return false
         for (r in c.regions) {
             val max = r.maxStress
             if (max != null && e.stress(r.region) > max) return false
@@ -433,7 +468,7 @@ object SessionValidator {
     /** A conditioning modality may be used only if the user hasn't excluded it (MOD-001) and it keeps every painful joint within its limit. */
     fun modalityAllowed(m: Modality, c: ValidationContext): Boolean {
         if (m in c.excludedModalities) return false
-        for ((j, limit) in c.jointLimits) if (ModalityJoints.stress(m, j) > limit) return false
+        for ((j, limit) in c.allJointLimits) if (ModalityJoints.stress(m, j) > limit) return false
         for (r in c.regions) { val max = r.maxStress; if (max != null && ModalityJoints.stress(m, r.region) > max) return false }
         return true
     }
@@ -442,7 +477,7 @@ object SessionValidator {
         val inSession = s.exercises.map { it.exercise.id }.toSet()
         val pool = c.library.filter { it.id !in inSession && exerciseAllowed(it, c) }
         if (pool.isEmpty()) return null
-        val ctx = SubContext(equipmentToday = c.equipmentToday, level = c.level, jointLimits = c.jointLimits, blockedTags = c.blockedTags, excludedIds = c.excludedIds)
+        val ctx = SubContext(equipmentToday = c.equipmentToday, level = c.level, jointLimits = c.allJointLimits, blockedTags = c.allBlockedTags, excludedIds = c.excludedIds)
         return Substitution.options(original, pool, ctx).value.autoPick?.exercise
     }
 
@@ -470,7 +505,7 @@ object SessionValidator {
         var m = 1.0 // INT-003: only the last set of a FailureSafe exercise may be RIR 0, via lastSetToFailure
         if (tier == Tier.LIGHT) m = maxOf(m, P.RDY_004.LIGHT.min_rir.toDouble())
         if (c.inDeload) m = maxOf(m, P.DEL_003.min_rir.toDouble())
-        if (c.screening == ScreeningMode.CONSERVATIVE) m = maxOf(m, P.SAF_001.conservative_mode.min_rir.toDouble())
+        if (c.effectiveScreening == ScreeningMode.CONSERVATIVE) m = maxOf(m, P.SAF_001.conservative_mode.min_rir.toDouble())
         return m
     }
 
@@ -478,7 +513,9 @@ object SessionValidator {
         val region = regionsFor(e.exercise, c).mapNotNull { it.minRir }.maxOrNull()?.toDouble() ?: 0.0
         // MODIFIED: FULL-plan RIR + 1; when the FULL plan is unknown, assume the lowest planned RIR (1) + 1 (fail-closed).
         val shift = if (tier == Tier.MODIFIED) (e.fullTierRir ?: 1.0) + P.RDY_004.MODIFIED.rir_offset else 0.0
-        return maxOf(minRir, region, shift)
+        // SAF-010: the condition entries' RIR floor (all exercises, or only tagged ones such as spinal loading for low back pain).
+        val condition = c.conditions.minRirFor(e.exercise.limitationTags) ?: 0.0
+        return maxOf(minRir, region, shift, condition)
     }
 
     /** RDY-004 caps main lifts on MODIFIED (95%) and LIGHT (85%); DEL-003 caps every exercise at 90% in a deload. */

@@ -46,7 +46,7 @@ object Streak {
     }
 }
 
-enum class Achievement { FIRST_SESSION, CALIBRATION_DONE, PERSONAL_RECORD, BLOCK_COMPLETED, SESSIONS_10, SESSIONS_25, SESSIONS_50, SESSIONS_100, WHO_FLOOR_WEEK }
+enum class Achievement { FIRST_SESSION, CALIBRATION_DONE, PERSONAL_RECORD, BLOCK_COMPLETED, SESSIONS_10, SESSIONS_25, SESSIONS_50, SESSIONS_100, WHO_FLOOR_WEEK, WELCOME_BACK }
 
 data class AchievementInput(
     val sessionsCompleted: Int,
@@ -54,6 +54,8 @@ data class AchievementInput(
     val newRecords: Int,
     val blocksCompleted: Int,
     val whoFloorMetThisWeek: Boolean,
+    /** ADH-002 1.1.0: this is the first completed session after a missed planned session. */
+    val firstAfterMiss: Boolean = false,
 )
 
 /** ADH-002 micro-achievements; nothing rewards sheer volume (sets, minutes or days beyond the plan). */
@@ -68,7 +70,50 @@ object Achievements {
         val badges = listOf(Achievement.SESSIONS_10, Achievement.SESSIONS_25, Achievement.SESSIONS_50, Achievement.SESSIONS_100)
         for ((m, a) in milestones.zip(badges)) if (i.sessionsCompleted >= m) out += a
         if (i.whoFloorMetThisWeek) out += Achievement.WHO_FLOOR_WEEK
+        if (i.firstAfterMiss && P.ADH_002.welcome_back) out += Achievement.WELCOME_BACK
         return out
+    }
+
+    /**
+     * ADH-002 1.1.0: after a missed planned session, one neutral nudge on the next planned day ("Ready when you are; today's
+     * plan is set") and no more; never penalty, guilt or streak-loss wording (COACH-001).
+     */
+    fun nudgeToday(missedSinceLastSession: Boolean, nudgesSentSinceMiss: Int, plannedToday: Boolean): EngineResult<Boolean> {
+        val send = missedSinceLastSession && plannedToday && nudgesSentSinceMiss < P.ADH_002.nudges_after_miss
+        return EngineResult(send, if (!send) emptyList() else listOf(Decision(DecisionKind.WORKLOAD_FLAG, listOf(RuleIds.ADH_002), ReasonKey.WELCOME_BACK,
+            inputs = mapOf("nudgesSent" to nudgesSentSinceMiss), outputs = mapOf("nudge" to true))))
+    }
+}
+
+/** ADH-005 if-then backups. */
+enum class Backup { EXPRESS_SESSION, NEXT_FREE_DAY }
+
+/** When the user plans to train on a day: a time and an optional "after what" cue. */
+data class DayIntention(val weekday: Int, val minuteOfDay: Int? = null, val afterCue: String? = null)
+
+/** ADH-005: the optional planning prompt (≤ 30 s, stored on the phone only, never nags). */
+data class PlanningPrompt(val days: List<DayIntention>, val backup: Backup? = null)
+
+object Planning {
+    val maxSeconds: Int get() = P.ADH_005.max_seconds
+    val backups: List<Backup> get() = P.ADH_005.backup_options.map { Backup.valueOf(it.uppercase()) }
+
+    /**
+     * Suggest this week's intentions: the planned training days, keeping last week's time and cue for the same weekday
+     * (same weekdays by default); the backup carries over.
+     */
+    fun suggest(trainingDays: List<Int>, last: PlanningPrompt?): EngineResult<PlanningPrompt> {
+        val byDay = last?.days?.associateBy { it.weekday }.orEmpty()
+        val p = PlanningPrompt(trainingDays.sorted().map { d -> byDay[d]?.copy(weekday = d) ?: DayIntention(d) }, last?.backup)
+        return EngineResult(p, listOf(Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.ADH_005), ReasonKey.PLANNING_PROMPT,
+            inputs = mapOf("days" to trainingDays.sorted(), "hadLastWeek" to (last != null)), outputs = mapOf("kept" to p.days.count { it.minuteOfDay != null }))))
+    }
+
+    /** What the backup means today: short on time → the express session (ADH-004); missed day → the next free day (REG-002). */
+    fun backupFor(prompt: PlanningPrompt, shortOnTime: Boolean, missedPlannedDay: Boolean): Backup? = when {
+        prompt.backup == Backup.EXPRESS_SESSION && shortOnTime -> Backup.EXPRESS_SESSION
+        prompt.backup == Backup.NEXT_FREE_DAY && missedPlannedDay -> Backup.NEXT_FREE_DAY
+        else -> null
     }
 }
 

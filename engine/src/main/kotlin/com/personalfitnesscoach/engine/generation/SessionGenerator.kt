@@ -3,7 +3,10 @@ package com.personalfitnesscoach.engine.generation
 import com.personalfitnesscoach.engine.calc.E1rm
 import com.personalfitnesscoach.engine.calc.Inventory
 import com.personalfitnesscoach.engine.calc.PlateMath
+import com.personalfitnesscoach.engine.conditioning.Circuits
 import com.personalfitnesscoach.engine.conditioning.Concurrent
+import com.personalfitnesscoach.engine.conditioning.ModalitySelection
+import com.personalfitnesscoach.engine.model.Modality
 import com.personalfitnesscoach.engine.core.Decision
 import com.personalfitnesscoach.engine.core.DecisionKind
 import com.personalfitnesscoach.engine.core.EngineResult
@@ -55,6 +58,7 @@ import com.personalfitnesscoach.engine.safety.Session
 import com.personalfitnesscoach.engine.safety.SessionExercise
 import com.personalfitnesscoach.engine.safety.SessionValidator
 import com.personalfitnesscoach.engine.safety.ValidationContext
+import com.personalfitnesscoach.engine.safety.ConditionLimits
 
 /** Everything GEN-001 needs for one session (step 1: load state). */
 data class GenerationRequest(
@@ -99,7 +103,14 @@ data class GenerationRequest(
     val inDeload: Boolean = false,
     /** Week-so-far state for SAF-008 (sets, SSU, HIIT, workload, spacing). Level, screening and limits are filled in here. */
     val week: ValidationContext = ValidationContext(Level.BEGINNER),
+    /** SAF-010 merged health-condition limits ([com.personalfitnesscoach.engine.safety.Conditions.resolve]). */
+    val conditions: ConditionLimits = ConditionLimits.NONE,
+    /** EQ-003: the user wants jumping moves in bodyweight circuits (used only where impact is allowed; no-jump by default). */
+    val circuitJumps: Boolean = false,
 )
+
+/** CON-004 1.1.0: the osteoporosis entry's short bone-loading block (not an impact session). */
+data class BoneLoadingBlock(val minutes: Double, val landings: Int, val description: String)
 
 /** One exercise of the generated workout. `load` is kg (assistance kg for assisted moves), null for bodyweight, holds and carries without load. */
 data class WorkoutItem(
@@ -145,6 +156,17 @@ data class Workout(
     val mobilityMinutes: Double = 0.0,
     /** FL-003 / AGE-001 balance drills (supported), after the main work. */
     val balanceDrills: List<DrillDose> = emptyList(),
+    /** SAF-010: the condition entries' prompts and stop signs for today (shown with the session). */
+    val conditionPrompts: List<String> = emptyList(),
+    val stopSigns: List<String> = emptyList(),
+    /** SAF-010: go by feel (talk test, CR10), not heart-rate numbers. */
+    val effortByFeel: Boolean = false,
+    /** CON-004 1.1.0 / SAF-010 osteoporosis: a bone-loading block on training days. */
+    val boneLoading: BoneLoadingBlock? = null,
+    /** SAF-010 `block_if`: these entries say to follow the care provider's advice instead of a training plan, so nothing is planned. */
+    val followCareProvider: Set<String> = emptySet(),
+    /** EQ-003: the moves for each bodyweight-circuit block (aligned with `conditioning`; null for other modalities). */
+    val circuits: List<com.personalfitnesscoach.engine.conditioning.CircuitPlan?> = emptyList(),
 )
 
 /**
@@ -156,8 +178,17 @@ object SessionGenerator {
     private val STEPS = listOf("load_state", "safety_readiness_gates", "slots", "exercise_per_slot", "dose", "tier_changes",
         "warmup", "time_fit", "safety_validator", "output")
 
-    fun generate(r: GenerationRequest): EngineResult<Workout> {
+    fun generate(request: GenerationRequest): EngineResult<Workout> {
         val d = ArrayList<Decision>()
+        // SAF-010: condition limits join the limitation tags, joint limits and screening mode, so every later step honours them.
+        val c = request.conditions
+        val r = if (!c.any) request else request.copy(blockedTags = request.blockedTags + c.avoidTags,
+            jointLimits = (request.jointLimits.keys + c.jointLimits.keys).associateWith { minOf(request.jointLimits[it] ?: 4, c.jointLimits[it] ?: 4) },
+            screening = if (c.conservative) ScreeningMode.CONSERVATIVE else request.screening)
+        if (c.blocked.isNotEmpty()) {
+            d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010), ReasonKey.CONDITION_BLOCKED, outputs = mapOf("entries" to c.blocked.sorted()))
+            return EngineResult(rest(null).copy(followCareProvider = c.blocked, conditionPrompts = c.prompts, stopSigns = c.stopSigns), d + done(r, Tier.RECOVERY, true))
+        }
         // 2) Safety and readiness gates.
         val stop = RedFlags.check(r.redFlags)
         d += stop.decisions
@@ -194,7 +225,7 @@ object SessionGenerator {
             if (p != null && s.unit == DoseUnit.REPS && (s.exercise.id !in r.e1rm || p.repRange.first == s.reps.first)) slots[k] = s.copy(reps = p.repRange)
         }
         // ORD-001/002: power, primary, secondary, accessories, core; conditioning first on conditioning-priority days.
-        val ordered = Order.sort(slots, { slotOf(it) }, r.day.conditioningPriority)
+        val ordered = Order.sort(slots, { slotOf(it) }, r.day.conditioningPriority && !c.strengthBeforeCardio)
 
         // 5) Dose (loads) and 6) tier changes (RDY-004, DEL-003, SAF-001 conservative mode).
         // The FULL-day reference for tier and deload cuts: the normal plan (before any DEL-003 cut the week planner applied).
@@ -214,22 +245,37 @@ object SessionGenerator {
             if (r.inDeload) rir = maxOf(rir, P.DEL_003.min_rir.toDouble())
             if (r.screening == ScreeningMode.CONSERVATIVE) rir = maxOf(rir, P.SAF_001.conservative_mode.min_rir.toDouble())
             r.regions.filter { reg -> s.exercise.stress(reg.region) > 0 }.mapNotNull { it.minRir }.maxOrNull()?.let { rir = maxOf(rir, it.toDouble()) }
+            // SAF-010: the entries' RIR floor and no training to failure.
+            c.minRirFor(s.exercise.limitationTags)?.let { if (it > rir) { rir = it; lastToFailure = false } }
+            if (!c.failureAllowed) lastToFailure = false
             if (tier != Tier.FULL || r.inDeload) lastToFailure = false
             item(s, r, tier, rir, lastToFailure, d)
         }.filterNotNull()
         items = trimForTier(items, tier, r.inDeload, fullSets, d)
         var conditioning = r.day.conditioning.map { adaptConditioning(it, tier, r) }.filterNotNull()
+        // EQ-003 / SUB-001: a cardio machine that isn't here today becomes a bodyweight circuit (no-jump unless the user wants jumps
+        // and impact is allowed; jumping circuits then count as impact work under CON-004).
+        conditioning = conditioning.map { b ->
+            if (ModalitySelection.available(b.modality, r.equipmentToday)) b else {
+                d += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.EQ_003, RuleIds.SUB_001), ReasonKey.AWAY_FROM_GYM,
+                    inputs = mapOf("modality" to b.modality.name), outputs = mapOf("to" to Modality.BODYWEIGHT_CIRCUIT.name))
+                b.copy(modality = Modality.BODYWEIGHT_CIRCUIT, impact = if (jumpsOk(r)) 1 else 0)
+            }
+        }
         if (tier == Tier.RECOVERY) conditioning = listOfNotNull(conditioning.firstOrNull()?.let {
             it.copy(zone = Zone.Z1, workMinutes = P.RDY_004.RECOVERY.optional_z1_minutes[0].toDouble(), restMinutes = 0.0, hiit = false, protocol = null) })
         if (tier != r.tier || r.inDeload) d += Decision(DecisionKind.TIER_CAP, listOf(RuleIds.RDY_004) + if (r.inDeload) listOf(RuleIds.DEL_003) else emptyList(),
             ReasonKey.TIER_CAPPED_BY_ITEM, inputs = mapOf("requested" to r.tier, "deload" to r.inDeload), outputs = mapOf("tier" to tier))
 
         // 7) Warm-up: RAMP minutes, dynamic drills for today's patterns (MOB-001), ramp-up sets for the first two main lifts (WU-002).
-        val wu = Warmup.minutes(10.0, compressed = false, age = r.age)
+        val wu0 = Warmup.minutes(10.0, compressed = false, age = r.age)
+        // SAF-010: extra warm-up minutes from the condition entries (the highest applies).
+        val wu = if (c.extraWarmupMin > 0) wu0.map { it + c.extraWarmupMin } + listOf(Decision(DecisionKind.WARMUP, listOf(RuleIds.SAF_010),
+            ReasonKey.CONDITION_LIMIT_APPLIED, outputs = mapOf("extraWarmupMin" to c.extraWarmupMin))) else wu0
         d += wu.decisions
         val patterns = items.map { it.exercise.pattern }.toSet()
         val drills = Mobility.warmupDrills(patterns, r.equipmentToday, restricted = mergedLimits(r).filterValues { it <= 1 }.keys, age = r.age,
-            jointLimits = mergedLimits(r))
+            jointLimits = mergedLimits(r), avoidTags = r.blockedTags)
         d += drills.decisions
         var mainSeen = 0
         items = items.map { it ->
@@ -250,7 +296,16 @@ object SessionGenerator {
         val mobilityMin = if (tier == Tier.LIGHT) maxOf(r.day.mobilityMinutes, P.RDY_004.LIGHT.mobility_minutes[0].toDouble()) else r.day.mobilityMinutes
         // FL-003 / AGE-001: the day's balance minutes stay on every tier except RECOVERY (balance work is low effort).
         val balanceMin = if (tier == Tier.RECOVERY) 0.0 else r.day.balanceMinutes
-        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble(), WeekPlanner.planItems(dayForFit), coreMobilityMin = mobilityMin + balanceMin)
+        // CON-004 1.1.0: the osteoporosis bone-loading block (≤ 5 min) on training days while impact stays "encouraged".
+        val bone = if (c.boneLoading && tier != Tier.RECOVERY && items.isNotEmpty()) {
+            val e = com.personalfitnesscoach.engine.safety.Conditions["osteoporosis"]
+            BoneLoadingBlock(P.CON_004.bone_loading_block_max_minutes.toDouble(), e?.boneLoadingImpactsMin ?: 50, e?.boneLoadingText ?: "bone-loading block")
+        } else null
+        if (bone != null) d += Decision(DecisionKind.WARMUP, listOf(RuleIds.CON_004, RuleIds.SAF_010), ReasonKey.BONE_LOADING_BLOCK,
+            outputs = mapOf("minutes" to bone.minutes, "landings" to bone.landings))
+        val extraMin = balanceMin + (bone?.minutes ?: 0.0)
+        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble() + c.extraCooldownMin, WeekPlanner.planItems(dayForFit),
+            coreMobilityMin = mobilityMin + extraMin)
         val fit = TimeBudget.fit(plan, r.minutes.toDouble(), r.age, r.personalFactor, r.crowded)
         d += fit.decisions
         val byId = fit.value.plan.items.associateBy { it.id }
@@ -261,7 +316,7 @@ object SessionGenerator {
             if (k.rounds > 1) c.copy(workMinutes = k.rounds * k.workSec / 60.0, restMinutes = k.rounds * k.restSec / 60.0) else c.copy(workMinutes = k.workSec / 60.0)
         }
         val warmupMin = fit.value.plan.warmupMin
-        val cooldown = Mobility.cooldown(trained, fit.value.plan.cooldownMin, r.equipmentToday, mergedLimits(r))
+        val cooldown = Mobility.cooldown(trained, fit.value.plan.cooldownMin, r.equipmentToday, mergedLimits(r), r.blockedTags)
         d += cooldown.decisions
         val balance = Mobility.balanceDrills(balanceMin, r.equipmentToday, mergedLimits(r), r.blockedTags, offset = r.day.weekday)
         d += balance.decisions
@@ -271,13 +326,13 @@ object SessionGenerator {
         val ctx = r.week.copy(level = r.level, weeksTraining = r.weeksTraining, screening = r.screening, jointLimits = mergedLimits(r), regions = r.regions,
             blockedTags = r.blockedTags, excludedIds = r.excludedIds, inDeload = r.inDeload, fullTierWorkingSets = fullSets,
             equipmentToday = r.equipmentToday, library = Library.all.filter { !it.userAddOnly },
-            excludedModalities = r.week.excludedModalities + r.excludedModalities)
+            excludedModalities = r.week.excludedModalities + r.excludedModalities, conditions = c)
         val v = SessionValidator.validate(session, ctx)
         d += v.decisions
         val final = rebuild(items, v.value.session, r)
         val minutes = TimeModel.minutes(SessionPlan(warmupMin, fit.value.plan.cooldownMin,
             WeekPlanner.planItems(r.day.copy(slots = final.map { toSlot(it) }, conditioning = v.value.session.conditioning.map { toPlanned(it) })),
-            coreMobilityMin = mobilityMin + balanceMin), r.personalFactor)
+            coreMobilityMin = mobilityMin + extraMin), r.personalFactor)
         // Interval structure for each validated block: kept when the validator left the block's zone and modality alone.
         val intervals = v.value.session.conditioning.mapIndexed { j, b ->
             val planned = conditioning.getOrNull(j)
@@ -286,9 +341,20 @@ object SessionGenerator {
             else iv.copy(reps = maxOf(1, Math.round(b.workMinutes * 60 / iv.workSec).toInt()))
         }
 
+        // EQ-003: the moves for each bodyweight-circuit block.
+        val circuits = v.value.session.conditioning.mapIndexed { j, b ->
+            if (b.modality != Modality.BODYWEIGHT_CIRCUIT) null else {
+                val res = Circuits.build(b.zone, b.workMinutes, intervals.getOrNull(j), r.level, jumping = b.impact > 0 && jumpsOk(r),
+                    jointLimits = mergedLimits(r), avoidTags = r.blockedTags, offset = r.day.weekday)
+                d += res.decisions
+                res.value
+            }
+        }
+
         // 10) Output.
         val w = Workout(v.value.session.tier, final, v.value.session.conditioning, warmupMin, drills.value, cooldown.value, Num.round1(minutes),
-            fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session, fullSets, intervals, r.day.conditioningPriority, mobilityMin, balance.value)
+            fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session, fullSets, intervals, r.day.conditioningPriority && !c.strengthBeforeCardio,
+            mobilityMin, balance.value, c.prompts, c.stopSigns, c.effortByFeel, bone, circuits = circuits)
         return EngineResult(w, d + done(r, w.tier, false))
     }
 
@@ -333,6 +399,10 @@ object SessionGenerator {
 
     private fun rest(stop: SafetyStop?) = Workout(Tier.RECOVERY, emptyList(), emptyList(), 0.0, emptyList(), emptyList(), 0.0, false, stop, false,
         Session(Tier.RECOVERY, emptyList()))
+
+    /** Jumping circuit moves: the user asked for them, impact is allowed by the conditions and the CON-004 week so far. */
+    private fun jumpsOk(r: GenerationRequest): Boolean = r.circuitJumps && r.conditions.impact.allowsImpact &&
+        r.week.impactSessionsThisWeekSoFar < P.CON_004.impact_sessions_per_week_max && !r.week.heavyLegsNextDay
 
     private fun mergedLimits(r: GenerationRequest): Map<Joint, Int> {
         val out = r.jointLimits.toMutableMap()
@@ -420,7 +490,8 @@ object SessionGenerator {
                 inputs = mapOf("exercise" to e.id, "normal" to normal, "lightest" to load, "cap" to factor), outputs = mapOf("regression" to alt?.exercise?.id))
             return alt
         }
-        val range = Mobility.rangeFor(painCaution = e.jointStress.keys.any { it in r.painCaution })
+        // MOB-004 1.1.0: pain caution or a SAF-010 range-limited tag (deep knee or hip bending with osteoarthritis) shortens the range.
+        val range = Mobility.rangeFor(painCaution = e.jointStress.keys.any { it in r.painCaution } || e.limitationTags.any { it in r.conditions.rangeLimitedTags })
         return WorkoutItem(e, s.spec.key, s.spec.role, s.priority, s.sets, s.reps, s.unit, s.perSide, rir, lastToFailure, load, Num.round2(minOf(lf, 1.0)),
             Rest.forSets(e, s.reps.last, r.e1rm[e.id]?.let { est -> load?.let { it / est * 100 } }), emptyList(), range, calibrating, s.main)
     }
@@ -512,5 +583,21 @@ object SessionGenerator {
             out += withRamp
         }
         return out
+    }
+}
+
+/**
+ * EQ-003: training away from the gym today. One tap sets today's equipment to the saved home kit (bodyweight only by default)
+ * and the generator substitutes as usual: bodyweight ladders for strength, no-jump circuits for conditioning, the full warm-up.
+ */
+object AwayFromGym {
+    /** The default home kit: bodyweight only ("bodyweight" in EQ-003 means no equipment). */
+    val defaultKit: Set<String> get() = P.EQ_003.default_home_kit.filter { it != "bodyweight" }.toSet()
+
+    fun generate(r: GenerationRequest, homeKit: Set<String> = defaultKit): EngineResult<Workout> {
+        val res = SessionGenerator.generate(r.copy(equipmentToday = homeKit, crowded = false))
+        return res + listOf(Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.EQ_003), ReasonKey.AWAY_FROM_GYM,
+            inputs = mapOf("homeKit" to homeKit.sorted()), outputs = mapOf("exercises" to res.value.items.map { it.exercise.id },
+                "conditioning" to res.value.conditioning.map { it.modality.name })))
     }
 }

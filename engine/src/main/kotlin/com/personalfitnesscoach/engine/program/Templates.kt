@@ -27,6 +27,8 @@ data class SlotSpec(
     val pattern: Pattern?,
     val exposure: Exposure = Exposure.MODERATE,
     val muscle: Muscle? = null,
+    /** Only these exercises fill the slot (SAF-010 required work such as back-extensor exercises); null = by role and pattern. */
+    val only: Set<String>? = null,
 )
 
 /** SCH-001 templates and SCH-002 day assignment. */
@@ -117,9 +119,15 @@ object Templates {
     private fun gap(a: Int, b: Int) = ((b - a) % 7 + 7) % 7
 
     /** Penalty of one candidate week; spacingOk = no hard SCH-002 violation. */
-    fun score(days: List<Int>, order: List<DayTemplate>, canonical: List<DayTemplate>, preferred: Set<Int>, level: Level): Pair<Double, Boolean> {
+    fun score(days: List<Int>, order: List<DayTemplate>, canonical: List<DayTemplate>, preferred: Set<Int>, level: Level,
+              noConsecutiveStrength: Boolean = false): Pair<Double, Boolean> {
         var pen = 0.0
         var ok = true
+        // SAF-010 (type 2 diabetes): strength sessions on non-consecutive days, also across the weekend.
+        if (noConsecutiveStrength) {
+            val strength = days.zip(order).filter { it.second.strength }.map { it.first }.toSet()
+            for (d in strength) if (((d + 1) % 7) in strength && strength.size < 7) pen += 500.0
+        }
         pen += days.count { it !in preferred } * 10.0
         // Heavy lower-body sessions ≥ 48 h apart, also across the weekend.
         val heavy = days.zip(order).filter { it.second.heavyLower }.map { it.first }
@@ -172,14 +180,14 @@ object Templates {
      * limits; `preferred` days are favoured. 2–4-day templates keep their order; 5–6-day
      * templates may be reordered so no more than 3 hard days run back to back.
      */
-    fun assign(templates: List<DayTemplate>, available: Set<Int>, preferred: Set<Int>, level: Level): EngineResult<Assignment> {
+    fun assign(templates: List<DayTemplate>, available: Set<Int>, preferred: Set<Int>, level: Level, noConsecutiveStrength: Boolean = false): EngineResult<Assignment> {
         val pool = available.filter { it in 0..6 }.sorted().ifEmpty { (0..6).toList() }
         val k = minOf(templates.size, pool.size)
         val canonical = templates.take(k)
         val orders = if (templates.size >= 5) permutations(canonical) else listOf(canonical)
         var best: Assignment? = null
         for (days in subsets(pool, k)) for (order in orders) {
-            val (pen, ok) = score(days, order, canonical, preferred, level)
+            val (pen, ok) = score(days, order, canonical, preferred, level, noConsecutiveStrength)
             if (best == null || pen < best.penalty - 1e-9) best = Assignment(days, order, pen, ok)
         }
         val a = best!!

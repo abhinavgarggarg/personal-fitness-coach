@@ -96,6 +96,13 @@ data class WeekInput(
 ) {
     /** FL-001: "Lose fat, keep muscle" is the #1 priority, so FL-003 shapes the week. */
     val fatLoss: Boolean get() = priorities.firstOrNull() == Goal.FAT_LOSS
+    /** Limitation tags plus SAF-010 condition tags. */
+    val allBlockedTags: Set<String> get() = blockedTags + conditions.avoidTags
+    /** Pain and condition joint limits, the lower per joint. */
+    val allJointLimits: Map<Joint, Int> get() =
+        (jointLimits.keys + conditions.jointLimits.keys).associateWith { minOf(jointLimits[it] ?: 4, conditions.jointLimits[it] ?: 4) }
+    /** SAF-001 conservative mode, also while a SAF-010 doctor's OK is outstanding. */
+    val effectiveScreening: ScreeningMode get() = if (conditions.conservative) ScreeningMode.CONSERVATIVE else screening
 }
 
 data class PlannedSlot(
@@ -159,6 +166,8 @@ data class WeekPlan(
     val issues: List<PatternIssue>,
     /** Fat-loss goal: the week's activity target, walks and balance (FL-002, FL-003, STEP-002, PH-001); null for other goals. */
     val activity: ActivityPlan? = null,
+    /** SAF-010 scheduling (type 2 diabetes): rest days that get a short brisk walk so no more than N days in a row are inactive. */
+    val walkDays: List<Int> = emptyList(),
 )
 
 /** SCH-001 to SCH-003 with volume allocation (VOL, FREQ, PAT, CORE-003) and the weekly conditioning plan (AER, HIIT, CON, PH-001). */
@@ -166,10 +175,14 @@ object WeekPlanner {
     private val TARGET_MUSCLES = listOf(Muscle.CHEST, Muscle.LATS, Muscle.UPPER_BACK, Muscle.SIDE_DELTS, Muscle.REAR_DELTS,
         Muscle.BICEPS, Muscle.TRICEPS, Muscle.QUADS, Muscle.HAMSTRINGS, Muscle.GLUTES)
 
+    /** SAF-010 required work (osteoporosis): exercises that train the back extensors. */
+    val BACK_EXTENSOR: Set<String> = setOf("back-extension", "bird-dog")
+    private const val BALANCE_SESSION_MIN = 10.0
+
     /** CORE-003 counts dedicated core work: anti-movement core, rotation and loaded carries (D-054). */
     fun isCoreWork(s: PlannedSlot): Boolean = s.spec.role == SlotRole.CORE || s.spec.role == SlotRole.ROTATION || s.spec.role == SlotRole.CARRY
 
-    private fun selection(i: WeekInput) = SelectionContext(i.level, i.weeksTraining, i.equipment, i.blockedTags, i.jointLimits, i.excludedIds,
+    private fun selection(i: WeekInput) = SelectionContext(i.level, i.weeksTraining, i.equipment, i.allBlockedTags, i.allJointLimits, i.excludedIds,
         i.preferences, i.favourites, i.crowded, i.ladderRungs, i.coreLifts, i.previousBlockChoices)
 
     /** The block whose dose applies this week (a pivot week previews the next block; flex weeks maintain). */
@@ -196,16 +209,18 @@ object WeekPlanner {
         val dose = Blueprint.dose(type, i.level, i.age)
         if (ageFloor && dose.setsStart > Blueprint.dose(type, i.level).setsStart) d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.AGE_001),
             ReasonKey.AGE_VOLUME_FLOOR, inputs = mapOf("age" to i.age, "block" to type.name), outputs = mapOf("setsStart" to dose.setsStart))
-        fun templatesFor(n: Int) = if (i.fatLoss) Templates.forFatLoss(n) else Templates.forDays(n)
+        // SAF-010 scheduling: strength on non-consecutive days means 3 strength days at most, the rest cardio (the fat-loss week shape).
+        val noConsecutiveStrength = !i.conditions.strengthOnConsecutiveDays
+        fun templatesFor(n: Int) = if (i.fatLoss || (noConsecutiveStrength && n >= 4)) Templates.forFatLoss(n) else Templates.forDays(n)
         // FREQ-001 days, never more than the days actually available; templates for the number that will be trained.
         val avail = i.availableDays.filter { it in 0..6 }.toSet().ifEmpty { (0..6).toSet() }
         var days = Frequency.trainingDays(i.daysPerWeek)
         if (avail.size >= P.FREQ_001.min_days) days = minOf(days, avail.size)
-        var assign = Templates.assign(templatesFor(days), avail, i.preferredDays, i.level)
+        var assign = Templates.assign(templatesFor(days), avail, i.preferredDays, i.level, noConsecutiveStrength)
         // SCH-002: if the available days force more than 3 hard days in a row, train one day fewer.
         while (Templates.maxHardRun(assign.value.days, assign.value.order) > P.SCH_002.max_consecutive_hard_days && days > P.FREQ_001.min_days) {
             days--
-            assign = Templates.assign(templatesFor(days), avail, i.preferredDays, i.level)
+            assign = Templates.assign(templatesFor(days), avail, i.preferredDays, i.level, noConsecutiveStrength)
             d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.SCH_002), ReasonKey.WEEK_DAYS_REDUCED, outputs = mapOf("days" to days, "reason" to "consecutive_hard_days"))
         }
         d += assign.decisions
@@ -219,7 +234,7 @@ object WeekPlanner {
         // FL-003: the fat-loss mix for this age (3 strength days by default, cardio days for the rest).
         val fl = if (i.fatLoss) FatLoss.mix(i.age, i.level, days, i.weeksTraining, type.isConditioning, i.hiitOptIn, i.conditions.obesity, i.injuries)
             .also { d += it.decisions }.value else null
-        val slotDays = fl?.strengthDays ?: days
+        val slotDays = fl?.strengthDays ?: if (noConsecutiveStrength && days >= 4) FatLoss.strengthDays(days) else days
         // Slots (power only outside calibration/deload; AGE-001 keeps power year-round from 50).
         val powerOk = !light && (dose.power || (i.age != null && i.age >= 50 && P.AGE_001.age_50.power_year_round))
         val secondPower = powerOk && type.isPower
@@ -262,20 +277,40 @@ object WeekPlanner {
             dayList += PlannedDay(weekdays[idx], t, slots, emptyList(), if (deload) 5.0 else 0.0, t.heavyLower && idx !in downgraded)
         }
         var week = dayList.sortedBy { it.weekday }
+        // SAF-010 required work (osteoporosis): back-extensor exercises on N strength days.
+        val needBack = i.conditions.backExtensorSessionsPerWeek - week.count { day -> day.slots.any { it.exercise.id in BACK_EXTENSOR } }
+        if (needBack > 0 && !light) {
+            // Required work is P3 (kept like a secondary lift when time is short), on the strength days with the fewest sets.
+            val targets = week.filter { it.template.strength && it.slots.none { s -> s.exercise.id in BACK_EXTENSOR } }
+                .sortedWith(compareBy({ it.workingSets }, { it.weekday })).take(needBack).map { it.weekday }.toSet()
+            week = week.map { day ->
+                if (day.weekday !in targets) day else {
+                    val spec = SlotSpec("${day.template.name}.backext", SlotRole.ACCESSORY, null, Exposure.MODERATE, only = BACK_EXTENSOR)
+                    val r = Selector.select(spec, ctx.copy(excludedIds = ctx.excludedIds + day.slots.map { it.exercise.id }), used)
+                    d += r.decisions
+                    val ex = r.value ?: return@map day
+                    day.copy(slots = day.slots + doseSlot(spec, ex, i, type, blockWeek, loadingWeeks, dose, deload, light, Priority.P3))
+                }
+            }
+            d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.SAF_010), ReasonKey.CONDITION_LIMIT_APPLIED,
+                inputs = mapOf("backExtensorPerWeek" to i.conditions.backExtensorSessionsPerWeek), outputs = mapOf("weekdays" to targets.sorted()))
+        }
 
         // Weekly conditioning plan (AER, HIIT, CON, MOD, FREQ-005; FL-003 for the fat-loss goal).
         val cond = conditioning(week, i, type, blockWeek, deload, light, fl)
         week = cond.value; d += cond.decisions
-        // FL-003 / AGE-001: balance work, 10 minutes on strength days first (65+: 3 multicomponent days).
+        // FL-003 / AGE-001 / SAF-010: balance work, 10 minutes on strength days first (65+: 3 multicomponent days; osteoporosis: 2 days).
         var homeBalance = 0
-        if (fl != null && fl.balanceMinutesWeek > 0 && fl.balanceDays > 0) {
-            val per = fl.balanceMinutesWeek.toDouble() / fl.balanceDays
+        val balanceDays = maxOf(fl?.balanceDays ?: 0, i.conditions.balanceSessionsPerWeek)
+        if (balanceDays > 0) {
+            val per = if (fl != null && fl.balanceDays > 0) fl.balanceMinutesWeek.toDouble() / fl.balanceDays else BALANCE_SESSION_MIN
             val chosen = week.filter { it.slots.isNotEmpty() || it.conditioning.isNotEmpty() }
-                .sortedWith(compareBy<PlannedDay>({ if (it.template.strength) 0 else 1 }, { it.weekday })).take(fl.balanceDays).map { it.weekday }.toSet()
+                .sortedWith(compareBy<PlannedDay>({ if (it.template.strength) 0 else 1 }, { it.weekday })).take(balanceDays).map { it.weekday }.toSet()
             week = week.map { if (it.weekday in chosen) it.copy(balanceMinutes = per) else it }
-            homeBalance = fl.balanceDays - chosen.size
-            d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.FL_003, RuleIds.AGE_001), ReasonKey.BALANCE_PLANNED,
-                inputs = mapOf("minutesWeek" to fl.balanceMinutesWeek, "days" to fl.balanceDays), outputs = mapOf("weekdays" to chosen.sorted(), "home" to homeBalance))
+            homeBalance = balanceDays - chosen.size
+            d += Decision(DecisionKind.VOLUME_CHANGE, listOfNotNull(RuleIds.FL_003.takeIf { fl != null }, RuleIds.AGE_001.takeIf { fl != null },
+                RuleIds.SAF_010.takeIf { i.conditions.balanceSessionsPerWeek > 0 }), ReasonKey.BALANCE_PLANNED,
+                inputs = mapOf("minutesWeek" to per * balanceDays, "days" to balanceDays), outputs = mapOf("weekdays" to chosen.sorted(), "home" to homeBalance))
         }
         // Fit each session to the usual session length, keeping weekly coverage (D-051).
         week = week.map { trimToTime(it, i, d) }
@@ -302,7 +337,30 @@ object WeekPlanner {
         d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.SCH_001, RuleIds.PER_001, RuleIds.FREQ_002), ReasonKey.WEEK_PLANNED,
             inputs = mapOf("block" to type.name, "blockWeek" to blockWeek, "deload" to deload, "days" to days),
             outputs = mapOf("weekdays" to week.map { "${it.weekday}:${it.template}" }, "underExposed" to Frequency.underExposed(sessions).map { it.name }.sorted()))
-        return EngineResult(WeekPlan(week, type, blockWeek, loadingWeeks, deload, coreLifts, weekly, aerobic, issues.value, activity), d)
+        val walkDays = walkDays(week, i, d)
+        return EngineResult(WeekPlan(week, type, blockWeek, loadingWeeks, deload, coreLifts, weekly, aerobic, issues.value, activity, walkDays), d)
+    }
+
+    /**
+     * SAF-010 scheduling (type 2 diabetes: no more than 2 days in a row without activity): rest days that get a short brisk walk
+     * (STEP-002). Walks are placed as late as possible in each long gap, so a gap of 3 rest days gets one walk on its third day.
+     */
+    private fun walkDays(week: List<PlannedDay>, i: WeekInput, d: MutableList<Decision>): List<Int> {
+        val max = i.conditions.maxConsecutiveInactiveDays ?: return emptyList()
+        val active = week.filter { it.slots.isNotEmpty() || it.conditioning.isNotEmpty() }.map { it.weekday }.toMutableSet()
+        if (active.isEmpty()) active += 0
+        val start = active.minOrNull()!!
+        val walks = ArrayList<Int>()
+        var run = 0
+        for (k in 1..7) {
+            val day = (start + k) % 7
+            if (day in active || day in walks) { run = 0; continue }
+            run++
+            if (run > max) { walks += day; run = 0 }
+        }
+        if (walks.isNotEmpty()) d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.SAF_010, RuleIds.STEP_002), ReasonKey.WALKS_PLANNED,
+            inputs = mapOf("maxInactiveDays" to max), outputs = mapOf("walkDays" to walks.sorted()))
+        return walks.sorted()
     }
 
     /** FL-002 target, the gym's aerobic work this week and the brisk walks that close the gap (Z1 total within FL-003's range). */
@@ -408,7 +466,10 @@ object WeekPlanner {
             }
         }
         if (light) rir = maxOf(rir, P.INT_002.deload_or_light_min_rir.toDouble())
-        if (i.screening == ScreeningMode.CONSERVATIVE) rir = maxOf(rir, P.SAF_001.conservative_mode.min_rir.toDouble())
+        if (i.effectiveScreening == ScreeningMode.CONSERVATIVE) rir = maxOf(rir, P.SAF_001.conservative_mode.min_rir.toDouble())
+        // SAF-010: the condition entries' RIR floor; no planned RIR 0 when training to failure is ruled out.
+        i.conditions.minRirFor(ex.limitationTags)?.let { rir = maxOf(rir, it) }
+        if (!i.conditions.failureAllowed) rir = maxOf(rir, 1.0)
         var sets = when (spec.role) {
             SlotRole.POWER -> minOf(3, Reps.maxPowerSets(reps.last))
             SlotRole.MAIN -> dose.mainSetsOverride ?: if (i.level != Level.BEGINNER && spec.exposure == Exposure.HEAVY &&
@@ -679,7 +740,7 @@ object WeekPlanner {
         val impactAllowed = (fl?.impactAllowed ?: true) && i.conditions.impact.allowsImpact && type != BlockType.ATHLETIC_LOW_IMPACT
         val intervalOnly: Set<Modality>? = listOfNotNull(fl?.intervalModalities, i.conditions.hiitModalities,
             if (i.conditions.hiitLowImpactOnly) FatLoss.LOW_IMPACT_MODALITIES else null).reduceOrNull { a, b -> a intersect b }
-        val limits = i.jointLimits.toMutableMap().also { m -> i.conditions.jointLimits.forEach { (j, v) -> m[j] = minOf(m[j] ?: 4, v) } }
+        val limits = i.allJointLimits
         fun pick(day: PlannedDay, purpose: ConditioningPurpose): Modality? {
             val legs = if (day.heavyLower || nextDayHeavyOrPower(day.weekday)) 1.0 else 0.3
             val impactOk = impactAllowed && (day.weekday in impactDays || impactDays.size < P.CON_004.impact_sessions_per_week_max) && !nextDayHeavyOrPower(day.weekday)
@@ -694,9 +755,9 @@ object WeekPlanner {
         // HIIT count: blueprint quota within HIIT-001/AGE-001/SAF-001/DEL-003 caps and only with a Z1 base (HIIT-003).
         // Fat-loss goal: FL-003's age-banded count (a third session only under HIIT-001, via the cap); SAF-010 may rule intervals out.
         val quota = if (fl != null) (if (type == BlockType.FOUNDATION && blockWeek < 3) 0 else fl.hiit) else Blueprint.hiitPerWeek(type, i.level, blockWeek, week.size)
-        val cap = Caps.hiitPerWeek(HiitContext(i.level, Tier.FULL, 0, false, type.isConditioning, i.screening, i.age, deload)).value
+        val cap = Caps.hiitPerWeek(HiitContext(i.level, Tier.FULL, 0, false, type.isConditioning, i.effectiveScreening, i.age, deload)).value
         val condOk = i.conditions.hiitAllowed(i.weeksTraining) && intervalOnly?.isEmpty() != true
-        val hiitCount = if (light || !i.hiitBaseReady || i.screening != ScreeningMode.STANDARD || !condOk) 0
+        val hiitCount = if (light || !i.hiitBaseReady || i.effectiveScreening != ScreeningMode.STANDARD || !condOk) 0
             else minOf(quota, cap, if (fl != null) P.HIIT_001.conditional_max else P.HIIT_001.default_max)
         val sprintsOk = (fl?.sprints ?: true) && i.conditions.maxZone >= Zone.Z4
         // Z1 block length after strength: AER-003 duration progression within the +15% weekly cap, 10–20 min, a sixth of the session at most.
@@ -744,7 +805,7 @@ object WeekPlanner {
         // only with standard screening — Z2 is vigorous (AER-001) and SAF-001 moderate-only users stay at Z1.
         val dose = Blueprint.dose(type, i.level, i.age)
         // FL-003: one tempo session sized to the band's Z2 minutes (none when the band starts at 0); SAF-010 may cap the zone below Z2.
-        val tempoOk = !light && i.hiitBaseReady && i.screening == ScreeningMode.STANDARD && i.conditions.maxZone >= Zone.Z2 && !i.conditions.conservative
+        val tempoOk = !light && i.hiitBaseReady && i.effectiveScreening == ScreeningMode.STANDARD && i.conditions.maxZone >= Zone.Z2
         var tempoLeft = if (!tempoOk) 0 else if (fl != null) (if (fl.z2Minutes > 0) 1 else 0) else dose.tempoPerWeek
         fun tempo(m: Modality): PlannedConditioning {
             val b = HiitMenu.band(null)

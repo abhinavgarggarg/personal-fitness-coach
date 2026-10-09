@@ -150,6 +150,51 @@ object Mobility {
     /** MOB-005: suggested off-day routines per week. */
     val offDayPerWeek: IntRange get() = P.MOB_005.per_week[0]..P.MOB_005.per_week[1]
 
+    /** MOB-006: one calm mobility session — what it holds, and the minutes that count as balance work (FL-003). */
+    data class CalmSession(val drills: List<DrillDose>, val minutes: Double, val balanceMinutes: Double) {
+        /** MOB-006: never Z1 minutes (PH-001, FL-002) and never a strength day. */
+        val countsAsZ1: Boolean get() = P.MOB_006.counts_as_z1
+        val countsAsStrengthDay: Boolean get() = P.MOB_006.counts_as_strength_day
+    }
+
+    /** MOB-006: offered (never imposed) on rest days, LIGHT and RECOVERY days, and when the check-in stress item is 1–2. */
+    fun calmSessionOffered(restDay: Boolean, tier: com.personalfitnesscoach.engine.model.Tier?, stressItem: Int?): Boolean =
+        restDay || tier == com.personalfitnesscoach.engine.model.Tier.LIGHT || tier == com.personalfitnesscoach.engine.model.Tier.RECOVERY ||
+            (stressItem != null && stressItem <= 2)
+
+    /**
+     * MOB-006 calm mobility session of 15–30 minutes: easy movement to start, slow mobility for hips, upper back, shoulders and
+     * ankles, standing balance holds, 30–60 s stretch holds, and 3–5 minutes of easy slow breathing to finish (no breath holds).
+     * Condition tags, joint limits and pain limits apply; balance holds count toward FL-003 balance minutes.
+     */
+    fun calmSession(minutes: Int, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int> = emptyMap(),
+                    avoidTags: Set<String> = emptySet()): EngineResult<CalmSession> {
+        val m = minutes.coerceIn(P.MOB_006.minutes[0], P.MOB_006.minutes[1])
+        val budget = m * 60
+        val breath = drills.first { it.kind == DrillKind.BREATHING }
+        val breathSec = (P.MOB_006.breathing_finish_minutes[0] + (if (m >= 25) 1 else 0)) * 60
+        val hold = P.MOB_006.hold_seconds[0]
+        val focus = listOf(Region.HIPS, Region.UPPER_BACK, Region.SHOULDERS, Region.ANKLES)
+        val out = ArrayList<DrillDose>()
+        fun used() = out.sumOf { it.seconds }
+        fun add(dd: DrillDose): Boolean { if (used() + dd.seconds + breathSec + 10 > budget) return false; out += dd; return true }
+        // Easy movement first (a walking or swinging drill), then flowing mobility for the four focus regions.
+        drills.filter { it.kind == DrillKind.MOBILISE && usable(it, equipment, jointLimits, avoidTags) && it.unit == DoseUnit.REPS &&
+            (Region.WHOLE_BODY in it.regions || it.id.contains("walk") || it.id.contains("swing")) }.minByOrNull { it.id }?.let { add(DrillDose(it, 1, it.amount)) }
+        for (r in focus) drills.filter { it.kind == DrillKind.MOBILISE && r in it.regions && usable(it, equipment, jointLimits, avoidTags) && out.none { o -> o.drill == it } }
+            .minByOrNull { it.id }?.let { add(DrillDose(it, 2, it.amount)) }
+        // Standing balance holds.
+        val balance = drills.filter { it.kind == DrillKind.BALANCE && usable(it, equipment, jointLimits, avoidTags) }.sortedBy { it.id }
+        for (bd in balance.take(2)) add(DrillDose(bd, 2, if (bd.unit == DoseUnit.SECONDS) maxOf(bd.amount, hold) else bd.amount))
+        // Stretch holds of 30–60 s.
+        for (s in drills.filter { it.kind == DrillKind.STRETCH && usable(it, equipment, jointLimits, avoidTags) }.sortedBy { it.id }) add(DrillDose(s, 1, hold))
+        out += DrillDose(breath, 1, maxOf(breathSec, budget - used() - 10).coerceAtMost(P.MOB_006.breathing_finish_minutes[1] * 60))
+        val balanceMin = out.filter { it.drill.kind == DrillKind.BALANCE }.sumOf { it.seconds } / 60.0
+        val s = CalmSession(out, Math.round(out.sumOf { it.seconds } / 6.0) / 10.0, Math.round(balanceMin * 10) / 10.0)
+        return EngineResult(s, listOf(Decision(DecisionKind.WARMUP, listOf(RuleIds.MOB_006), ReasonKey.CALM_MOBILITY_SESSION,
+            inputs = mapOf("minutes" to m), outputs = mapOf("drills" to out.map { it.drill.id }, "balanceMinutes" to s.balanceMinutes))))
+    }
+
     /**
      * FL-003 / AGE-001 balance work: supported balance drills filling `minutes`, 2 sets each, a third set round the
      * list if time is left. `offset` rotates the start (the weekday) so the week's sessions vary.
