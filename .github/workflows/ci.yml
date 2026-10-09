@@ -49,7 +49,8 @@ jobs:
 
       - name: Engine tests (rules, calculators, safety kernel)
         run: |
-          ./gradlew --no-daemon :engine:test
+          set -o pipefail
+          ./gradlew --no-daemon :engine:test 2>&1 | tee gradle-engine.log
           python3 -I tools/ci_summary.py "Engine tests=engine/build/test-results/test/*.xml"
 
       - name: Rule coverage report
@@ -59,9 +60,14 @@ jobs:
 
       - name: App unit tests and debug APK
         run: |
-          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+          set -o pipefail
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug 2>&1 | tee gradle-app.log
           python3 -I tools/ci_summary.py "App unit tests=app/build/test-results/testDebugUnitTest/*.xml"
           ls -l app/build/outputs/apk/debug/*.apk | awk '{print "::notice title=Debug APK::" $NF " (" $5 " bytes)"}'
+
+      - name: Report compile and test errors
+        if: failure()
+        run: python3 -I tools/ci_errors.py gradle-*.log
 
       - name: Permission allow-list (no INTERNET)
         run: |

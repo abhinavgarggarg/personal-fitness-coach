@@ -42,3 +42,46 @@ jobs:
           check "robolectric" "$C/org/robolectric/robolectric/maven-metadata.xml"
           check "androidx-test-core" "$G/androidx/test/core/maven-metadata.xml"
           check "lifecycle-runtime" "$G/androidx/lifecycle/lifecycle-runtime/maven-metadata.xml"
+
+      - name: Inspect Room 3 artifacts (annotation and API names)
+        shell: bash
+        run: |
+          set -u
+          G=https://dl.google.com/android/maven2
+          V=$(curl -fsSL $G/androidx/room3/room3-runtime/maven-metadata.xml | grep -o '<version>3\.0\.[0-9]*</version>' | sed 's:</\?version>::g' | sort -V | tail -1)
+          mkdir -p r && cd r
+          curl -fsSL -o common.jar "$G/androidx/room3/room3-common-jvm/$V/room3-common-jvm-$V.jar" || true
+          curl -fsSL -o runtime.aar "$G/androidx/room3/room3-runtime-android/$V/room3-runtime-android-$V.aar" || true
+          curl -fsSL -o testing.aar "$G/androidx/room3/room3-testing-android/$V/room3-testing-android-$V.aar" || true
+          SF=$(curl -fsSL $G/androidx/sqlite/sqlite-framework/maven-metadata.xml | grep -o '<release>[^<]*' | sed 's:<release>::')
+          curl -fsSL -o sf.aar "$G/androidx/sqlite/sqlite-framework-android/$SF/sqlite-framework-android-$SF.aar" || curl -fsSL -o sf.aar "$G/androidx/sqlite/sqlite-framework/$SF/sqlite-framework-$SF.aar" || true
+          ls -l
+          ann=$(unzip -l common.jar 2>/dev/null | grep -o 'androidx/room3/[A-Za-z]*\.class' | sed 's:androidx/room3/::; s:\.class::' | sort -u | tr '\n' ' ')
+          echo "::notice title=room3-common $V classes::$ann"
+          mkdir -p rt && (cd rt && unzip -o -q ../runtime.aar classes.jar && unzip -o -q classes.jar)
+          echo "::notice title=room3-runtime $V top classes::$(ls rt/androidx/room3/ | sed 's:\.class::' | grep -v '\$' | tr '\n' ' ' | cut -c1-900)"
+          echo "::notice title=room3-runtime RoomDatabaseKt::$(javap -public -cp rt rt/androidx/room3/RoomDatabaseKt.class 2>/dev/null | grep -o ' [a-zA-Z]*(' | sort -u | tr '\n' ' ')"
+          echo "::notice title=room3-runtime Builder::$(javap -public -cp rt 'androidx.room3.RoomDatabase$Builder' 2>/dev/null | grep -o ' [a-zA-Z]*(' | sort -u | tr '\n' ' ')"
+          echo "::notice title=room3-runtime Room::$(javap -public -cp rt androidx.room3.Room 2>/dev/null | tr '\n' ' ' | cut -c1-900)"
+          mkdir -p ts && (cd ts && unzip -o -q ../testing.aar classes.jar 2>/dev/null && unzip -o -q classes.jar 2>/dev/null)
+          echo "::notice title=room3-testing MigrationTestHelper::$(javap -public -cp ts androidx.room3.testing.MigrationTestHelper 2>/dev/null | tr '\n' ' ' | cut -c1-900)"
+          mkdir -p sf && (cd sf && unzip -o -q ../sf.aar classes.jar 2>/dev/null && unzip -o -q classes.jar 2>/dev/null)
+          echo "::notice title=sqlite-framework $SF drivers::$(find sf -name '*Driver*.class' | sed 's:^sf/::' | tr '\n' ' ')"
+          echo "::notice title=room3 gradle plugin::$(curl -fsSL $G/androidx/room3/room3-gradle-plugin/$V/room3-gradle-plugin-$V.pom | grep -o '<artifactId>[^<]*' | tr '\n' ' ' | cut -c1-400) marker=$(curl -fsSL -o /dev/null -w '%{http_code}' $G/androidx/room3/androidx.room3.gradle.plugin/$V/androidx.room3.gradle.plugin-$V.pom)"
+
+      - name: More versions
+        shell: bash
+        run: |
+          check() {
+            local name="$1" url="$2"
+            local xml; xml=$(curl -fsSL "$url" 2>/dev/null) || { echo "::warning title=$name::not found"; return; }
+            echo "::notice title=$name::release=$(echo "$xml" | sed -n 's:.*<release>\(.*\)</release>.*:\1:p' | head -1) recent=$(echo "$xml" | grep -o '<version>[^<]*</version>' | sed 's:</\?version>::g' | tail -8 | tr '\n' ' ')"
+          }
+          G=https://dl.google.com/android/maven2
+          C=https://repo.maven.apache.org/maven2
+          check "android-library plugin (AGP)" "$G/com/android/library/com.android.library.gradle.plugin/maven-metadata.xml"
+          check "robolectric" "$C/org/robolectric/robolectric/maven-metadata.xml"
+          check "androidx-test-core" "$G/androidx/test/core/maven-metadata.xml"
+          check "sqlite-framework" "$G/androidx/sqlite/sqlite-framework/maven-metadata.xml"
+          check "sqlite (driver API)" "$G/androidx/sqlite/sqlite/maven-metadata.xml"
+          check "kotlinx-coroutines-test" "$C/org/jetbrains/kotlinx/kotlinx-coroutines-test/maven-metadata.xml"
