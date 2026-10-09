@@ -5,6 +5,7 @@
 - Fix: a missing plyo box no longer turns a box jump into a slow tempo squat; power work swaps only to power work (346 tests).
 - Part 3 paused for Research Update 1.1. Change log: `docs/change_requests/README.md`.
 - Research Update 1.1 ready for sign-off: evidence reviews (fat loss without diet, age and muscle, HIIT, steps, progress measures; 11 health conditions plus 3 optional; medical-device boundaries), proposed Registry 1.1.0 (9 new rules FL-001–005, STEP-001–002, SAF-010, CAL-002; CON-004, CON-006, PH-001, DATA-001 changed; MOD-001 decision) and health-condition table v1.0 draft. Independently checked: 18 findings fixed before release.
+- Creator review (CR-006, D-064): six creators reviewed by the expert agents; used only as pointers to research or design ideas, never cited; Heather Robertson excluded. Added to the update: AGE-001 60+ strength-volume floor, MOB-004 reduced-range rule, ADH-002 "welcome back", ADH-004 habit-time range, new ADH-005 planning prompt, MOB-006 calm mobility session and EQ-003 away-from-gym preset; Pelland 2026 replaces the preprint; Lally 2010 link fixed. Now 12 new rules and 8 changed (152 rules).
 
 ## 2026-10-08 — Phase 3 Part 2: exercise library, 12-month programme, week planner, session generator
 - Exercise library v1.0.1 (`library/v1/*.json`, original wording): 152 exercises, 31 drills, 10 modality guides; generator with safety checks (`tools/gen_library_kotlin.py --check` in CI).

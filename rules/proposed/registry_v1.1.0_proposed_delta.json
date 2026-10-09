@@ -42,7 +42,9 @@
     "Bellicha2021",
     "Jakicic2024",
     "Viana2019",
-    "SancaValeriano2023"
+    "SancaValeriano2023",
+    "Murphy2022",
+    "LaForgia2006"
    ],
    "uncertainty": "Default goal and the age-30 threshold are product decisions (D-060). Weight and body-fat effects are GRADE moderate, waist high (Jayedi 2024); effects are trial totals over 8+ weeks, not weekly rates; no RCT shows exercise prevents regain. The weight-features opt-out protects people for whom weight focus is unhelpful without asking about eating disorders (Expert Practice).",
    "date_introduced": "2026-10-09",
@@ -395,7 +397,8 @@
     "TudorLocke2011b",
     "Bravata2007",
     "Adams2013",
-    "Richardson2008"
+    "Richardson2008",
+    "Samdal2017"
    ],
    "uncertainty": "Targets come from observational mortality plateaus (8,000–10,000 under 60, 6,000–8,000 from 60) measured with research devices, not phones. The progression rate is Expert Practice; adaptive goals have Limited Evidence. Steps alone barely change weight (~0.05 kg/week).",
    "date_introduced": "2026-10-09",
@@ -578,6 +581,141 @@
    ],
    "change_reason": "CR-002 / D-059: starting weights and personal records",
    "status": "proposed"
+  },
+  {
+   "rule_id": "ADH-005",
+   "version": "1.0.0",
+   "category": "adherence",
+   "title": "Planning prompt",
+   "statement": "Optional and under 30 seconds: when the week is planned (or once at onboarding, editable), each training day gets a 'when' (day and time) and an optional 'after what' cue (e.g. after dropping the kids), and the user picks one if-then backup from a short list — e.g. 'If I'm short on time → the express session (ADH-004)'; 'If I miss the planned day → the next free day (REG-002)'. Same weekdays are suggested by default. Never nags; stored on the phone only.",
+   "parameters": {
+    "optional": true,
+    "max_seconds": 30,
+    "fields": [
+     "when",
+     "after_what_cue_optional",
+     "if_then_backup"
+    ],
+    "backup_options": [
+     "express_session",
+     "next_free_day"
+    ],
+    "same_weekdays_default": true
+   },
+   "confidence": "Limited Evidence",
+   "evidence": [
+    "BelangerGravel2013",
+    "Peng2022",
+    "Buyalskaya2023",
+    "Singh2024"
+   ],
+   "uncertainty": "Planning helps physical activity in general (Moderate), but delivered online only the effect was not significant (Peng 2022: SMD 0.14, CI −0.02 to 0.31); low cost and no plausible harm.",
+   "date_introduced": "2026-10-09",
+   "date_reviewed": "2026-10-09",
+   "affected_algorithms": [
+    "onboarding",
+    "weekly_scheduling",
+    "adherence"
+   ],
+   "tests": [
+    "TC-ADH-005a",
+    "TC-ADH-005b"
+   ],
+   "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D)",
+   "status": "proposed"
+  },
+  {
+   "rule_id": "MOB-006",
+   "version": "1.0.0",
+   "category": "mobility",
+   "title": "Calm mobility session",
+   "statement": "An optional 15–30-minute calm mobility session with original content: 2–3 min easy movement, slow flowing mobility for hips, upper back, shoulders and ankles, standing balance holds, holds of 30–60 s, and 3–5 min of easy slow breathing to finish (no breath holds, no special ratios). Offered — never imposed — on rest days as an alternative to MOB-005, on LIGHT and RECOVERY days (RDY-004), and when the check-in stress item is 1–2 (RDY-001). It does not count as Z1 minutes (PH-001, FL-002) or as a strength day; its balance holds count toward FL-003 balance minutes. All SAF-010 tags, joint limits and the SAF-003 pain protocol apply; no heated rooms. Wording says 'for mobility, balance and winding down' and never claims treatment, detox, weight loss or faster recovery.",
+   "parameters": {
+    "minutes": [
+     15,
+     30
+    ],
+    "offered_on": [
+     "rest_day",
+     "LIGHT",
+     "RECOVERY",
+     "stress_item_lte_2"
+    ],
+    "hold_seconds": [
+     30,
+     60
+    ],
+    "breathing_finish_minutes": [
+     3,
+     5
+    ],
+    "counts_as_z1": false,
+    "counts_as_strength_day": false,
+    "balance_holds_count_for_FL003": true
+   },
+   "confidence": "Moderate Evidence",
+   "evidence": [
+    "Sivaramakrishnan2019",
+    "Wang2020",
+    "Pascoe2017",
+    "Cramer2018",
+    "Fincham2023",
+    "Fincham2023b",
+    "Cramer2015",
+    "Wieland2022",
+    "Hagins2007",
+    "Lauche2016",
+    "Afonso2021rec"
+   ],
+   "uncertainty": "Benefits (flexibility, balance, sleep quality, perceived stress) are moderate vs inactivity and small vs other exercise; trials are small and often unblinded. Format, triggers and dose are Expert Practice. Yoga is light activity (~2.5 METs), has no effect on weight, and stretching does not speed recovery — hence the wording limits.",
+   "date_introduced": "2026-10-09",
+   "date_reviewed": "2026-10-09",
+   "affected_algorithms": [
+    "workout_generation",
+    "readiness",
+    "mobility"
+   ],
+   "tests": [
+    "TC-MOB-006a",
+    "TC-MOB-006b"
+   ],
+   "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D)",
+   "status": "proposed"
+  },
+  {
+   "rule_id": "EQ-003",
+   "version": "1.0.0",
+   "category": "equipment",
+   "title": "Training away from the gym today",
+   "statement": "One tap sets today's equipment to the user's saved home kit (bodyweight only by default); the generator then substitutes as usual (SUB-001/002). Strength uses the BW-001 ladders at the plan's RIR. Conditioning defaults to no-jump bodyweight circuits; jumping only under the FL-003 / CON-004 conditions; beginners use 1:2 work:rest (HIIT-002); a circuit at CR10 ≥7 for ≥8 min counts as HIIT (HIIT-001). The warm-up floor applies even to short sessions (WU-003); 20–30-minute express versions are offered (ADH-004). If the home day cannot cover a movement pattern, the weekly check reports the shortfall (PAT-001).",
+   "parameters": {
+    "default_home_kit": [
+     "bodyweight"
+    ],
+    "conditioning_default": "no_jump",
+    "beginner_work_rest": "1:2"
+   },
+   "confidence": "Moderate Evidence",
+   "evidence": [
+    "Tsuji2023",
+    "Chaabene2021",
+    "Kikuchi2017",
+    "Archila2021",
+    "Vetrovsky2019"
+   ],
+   "uncertainty": "Home training improves fitness and strength (Moderate; home HIIT ≈ continuous training; older adults gain strength, power and balance). The preset itself is a Product Rule and its format Expert Practice. Jump-based home intervals were tested in young, lean adults, and plyometric safety data come from supervised programmes.",
+   "date_introduced": "2026-10-09",
+   "date_reviewed": "2026-10-09",
+   "affected_algorithms": [
+    "workout_generation",
+    "substitution"
+   ],
+   "tests": [
+    "TC-EQ-003a",
+    "TC-EQ-003b"
+   ],
+   "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D)",
+   "status": "proposed"
   }
  ],
  "changed_rules": [
@@ -591,6 +729,71 @@
     "walking_outside_cap_for_goal": "fat_loss"
    },
    "reason": "Fat-loss targets of 200–300 min/week (FL-002) would otherwise clash with the cap; walking adds little interference with strength gains (Research Update 1.1)."
+  },
+  {
+   "rule_id": "AGE-001",
+   "from_version": "1.0.0",
+   "to_version": "1.1.0",
+   "change": "MINOR",
+   "statement_add": "≥60: weekly strength volume never drops to the VOL-003 maintenance level; weeks that would plan maintenance (Conditioning and Review blocks, PER-005 holiday or maintenance weeks) use the block-start level instead (beginner 6, intermediate 8, advanced 10 sets per muscle), still over ≥2 exposures (FREQ-002). Deload weeks (DEL-003) are unchanged.",
+   "parameters_add": {
+    "age_60": {
+     "strength_volume_floor": "block_start"
+    }
+   },
+   "evidence_add": [
+    "Bickel2011"
+   ],
+   "confidence_note": "Direction Limited Evidence (one RCT: reduced doses kept muscle gains in 20–35-year-olds but not in 60–75-year-olds); the block-start value is Expert Practice.",
+   "reason": "Review C (P1). Protects the 'keep muscle' aim of FL-001; the fat-loss year has two Conditioning blocks."
+  },
+  {
+   "rule_id": "MOB-004",
+   "from_version": "1.0.0",
+   "to_version": "1.1.0",
+   "change": "MINOR",
+   "statement": "Lift through full range by default. When pain (SAF-003), a limitation tag or a SAF-010 entry restricts range, use the largest pain-free range; where either end could be kept, keep the part where the target muscle is lengthened. A reduced-range set still counts as a hard set (VOL-001).",
+   "evidence_add": [
+    "Wolf2023rom",
+    "Wolf2025lp",
+    "Larsen2025"
+   ],
+   "confidence_note": "'A reduced range costs little muscle growth': Moderate Evidence. 'Prefer the lengthened end': Limited Evidence. Full range stays the default.",
+   "reason": "Review C (P2). SAF-003 and SAF-010 limit range but no rule said which part to keep."
+  },
+  {
+   "rule_id": "ADH-002",
+   "from_version": "1.0.0",
+   "to_version": "1.1.0",
+   "change": "MINOR",
+   "statement_add": "A 'Welcome back' micro-achievement is earned by the first completed session after a missed planned session; one neutral nudge on the next planned day ('Ready when you are; today's plan is set'); no penalty, guilt or streak-loss wording (COACH-001); ADH-001 freeze logic unchanged.",
+   "parameters_add": {
+    "welcome_back": true,
+    "nudges_after_miss": 1
+   },
+   "evidence_add": [
+    "Milkman2021",
+    "Buyalskaya2023",
+    "Harkin2016",
+    "Michie2009"
+   ],
+   "confidence_note": "Limited Evidence: in a 61,293-person gym megastudy the best programme rewarded returning after a missed workout, but with incentives; a non-monetary badge is a weaker, untested analogue and effects fade.",
+   "reason": "Review D (P3, P6)."
+  },
+  {
+   "rule_id": "ADH-004",
+   "from_version": "1.0.0",
+   "to_version": "1.0.1",
+   "change": "PATCH",
+   "statement": "20–30-min express session always available. Habit messaging gives a range, never a fixed day count: for many people a routine starts to feel automatic after about two months, but it varies a lot (from a few weeks to most of a year) and exercise often takes longer; a missed day doesn't undo it.",
+   "evidence_add": [
+    "Singh2024",
+    "Gardner2012",
+    "Kaushal2015",
+    "Buyalskaya2023",
+    "Hermann2025"
+   ],
+   "reason": "Review D (P1): medians of 59–66 days with a range of 4–335 (Singh 2024); gym habits take months (Buyalskaya 2023). Review C (P6): single-set sessions still built muscle (Hermann 2025), supporting the express session."
   },
   {
    "rule_id": "CON-004",
@@ -641,6 +844,146 @@
   }
  ],
  "new_sources": {
+  "Murphy2022": {
+   "citation": "Murphy C, Koehler K. Energy deficiency impairs resistance training gains in lean mass but not strength: a meta-analysis and meta-regression. Scand J Med Sci Sports. 2022;32(1):125-137. doi:10.1111/sms.14075",
+   "verification": "checked (abstract)"
+  },
+  "LaForgia2006": {
+   "citation": "LaForgia J, Withers RT, Gore CJ. Effects of exercise intensity and duration on the excess post-exercise oxygen consumption. J Sports Sci. 2006;24(12):1247-1264.",
+   "verification": "checked (abstract; author names unverified)"
+  },
+  "Bickel2011": {
+   "citation": "Bickel CS, Cross JM, Bamman MM. Exercise dosing to retain resistance training adaptations in young and older adults. Med Sci Sports Exerc. 2011;43(7):1177-1187. doi:10.1249/MSS.0b013e318207c15d",
+   "verification": "checked (abstract)"
+  },
+  "Pelland2026": {
+   "citation": "Pelland JC, Remmert JF, Robinson ZP, Hinson SR, Zourdos MC. The resistance training dose response: meta-regressions exploring the effects of weekly volume and frequency on muscle hypertrophy and strength gains. Sports Med. 2026;56(2):481-505. doi:10.1007/s40279-025-02344-w",
+   "verification": "checked (abstract)"
+  },
+  "Wolf2023rom": {
+   "citation": "Wolf M, Androulakis-Korakakis P, Fisher J, Schoenfeld B, Steele J. Partial vs full range of motion resistance training: a systematic review and meta-analysis. Int J Strength Cond. 2023;3(1). doi:10.47206/ijsc.v3i1.182",
+   "verification": "checked (abstract)"
+  },
+  "Wolf2025lp": {
+   "citation": "Wolf M, Androulakis-Korakakis P, Piñero A, et al. (incl. Nippard J). Lengthened partial repetitions elicit similar muscular adaptations as full range of motion repetitions during resistance training in trained individuals. PeerJ. 2025;13:e18904. doi:10.7717/peerj.18904",
+   "verification": "checked (abstract)"
+  },
+  "Larsen2025": {
+   "citation": "Larsen S, Wolf M, Schoenfeld BJ, et al. Knee flexion range of motion does not influence muscle hypertrophy of the quadriceps femoris during leg press training in resistance-trained individuals. J Sports Sci. 2025;43(10):986-994. doi:10.1080/02640414.2025.2481534",
+   "verification": "checked (abstract)"
+  },
+  "Hermann2025": {
+   "citation": "Hermann T, Mohan AE, Enes A, et al. Without fail: muscular adaptations in single set resistance training performed to failure or with repetitions-in-reserve. Med Sci Sports Exerc. 2025. doi:10.1249/MSS.0000000000003728",
+   "verification": "checked (abstract)"
+  },
+  "Gardner2012": {
+   "citation": "Gardner B, Lally P, Wardle J. Making health habitual: the psychology of 'habit-formation' and general practice. Br J Gen Pract. 2012;62(605):664-666. doi:10.3399/bjgp12X659466",
+   "verification": "checked"
+  },
+  "Singh2024": {
+   "citation": "Singh B, Murphy A, Maher C, Smith AE. Time to form a habit: a systematic review and meta-analysis of health behaviour habit formation and its determinants. Healthcare (Basel). 2024;12(23):2488. doi:10.3390/healthcare12232488",
+   "verification": "checked"
+  },
+  "Kaushal2015": {
+   "citation": "Kaushal N, Rhodes RE. Exercise habit formation in new gym members: a longitudinal study. J Behav Med. 2015;38(4):652-663. doi:10.1007/s10865-015-9640-7",
+   "verification": "checked (abstract)"
+  },
+  "Buyalskaya2023": {
+   "citation": "Buyalskaya A, Ho H, Milkman KL, Li X, Duckworth AL, Camerer C. What can machine learning teach us about habit formation? Evidence from exercise and hygiene. Proc Natl Acad Sci USA. 2023;120(17):e2216115120. doi:10.1073/pnas.2216115120",
+   "verification": "checked (abstract)"
+  },
+  "Milkman2021": {
+   "citation": "Milkman KL, Gromet D, Ho H, et al. Megastudies improve the impact of applied behavioural science. Nature. 2021;600:478-483. doi:10.1038/s41586-021-04128-4",
+   "verification": "checked"
+  },
+  "BelangerGravel2013": {
+   "citation": "Bélanger-Gravel A, Godin G, Amireault S. A meta-analytic review of the effect of implementation intentions on physical activity. Health Psychol Rev. 2013;7(1):23-54.",
+   "verification": "checked (abstract via secondary)"
+  },
+  "Peng2022": {
+   "citation": "Peng S, Othman AT, Yuan F, Liang J. The effectiveness of planning interventions for improving physical activity in the general population: a systematic review and meta-analysis of randomized controlled trials. Int J Environ Res Public Health. 2022;19(12):7337. doi:10.3390/ijerph19127337",
+   "verification": "checked"
+  },
+  "Harkin2016": {
+   "citation": "Harkin B, Webb T, Chang B, et al. Does monitoring goal progress promote goal attainment? A meta-analysis of the experimental evidence. Psychol Bull. 2016;142(2):198-229. doi:10.1037/bul0000025",
+   "verification": "checked (abstract)"
+  },
+  "Michie2009": {
+   "citation": "Michie S, Abraham C, Whittington C, McAteer J, Gupta S. Effective techniques in healthy eating and physical activity interventions: a meta-regression. Health Psychol. 2009.",
+   "verification": "checked (abstract)"
+  },
+  "Michie2013": {
+   "citation": "Michie S, Richardson M, Johnston M, et al. The Behavior Change Technique Taxonomy (v1) of 93 hierarchically clustered techniques. Ann Behav Med. 2013;46(1):81-95. doi:10.1007/s12160-013-9486-6",
+   "verification": "checked (abstract)"
+  },
+  "Samdal2017": {
+   "citation": "Samdal GB, Eide GE, Barth T, Williams G, et al. Effective behaviour change techniques for physical activity and healthy eating in overweight and obese adults; systematic review and meta-regression analyses. Int J Behav Nutr Phys Act. 2017;14:42. doi:10.1186/s12966-017-0494-y",
+   "verification": "checked (abstract)"
+  },
+  "Wieland2022": {
+   "citation": "Wieland LS, Skoetz N, Pilkington K, et al. Yoga for chronic non-specific low back pain. Cochrane Database Syst Rev. 2022;(11):CD010671. doi:10.1002/14651858.CD010671.pub3",
+   "verification": "checked (summary of findings)"
+  },
+  "Sivaramakrishnan2019": {
+   "citation": "Sivaramakrishnan D, Fitzsimons C, Kelly P, et al. The effects of yoga compared to active and inactive controls on physical function and health related quality of life in older adults. Int J Behav Nutr Phys Act. 2019;16(1). doi:10.1186/s12966-019-0789-2",
+   "verification": "checked (abstract)"
+  },
+  "Wang2020": {
+   "citation": "Wang WL, Chen KH, Pan YC, Yang SN, Chan YY. The effect of yoga on sleep quality and insomnia in women with sleep problems: a systematic review and meta-analysis. BMC Psychiatry. 2020;20:195. doi:10.1186/s12888-020-02566-4",
+   "verification": "checked (abstract via secondary)"
+  },
+  "Pascoe2017": {
+   "citation": "Pascoe MC, Thompson DR, Ski CF. Yoga, mindfulness-based stress reduction and stress-related physiological measures: a meta-analysis. Psychoneuroendocrinology. 2017;86:152-168. doi:10.1016/j.psyneuen.2017.08.008",
+   "verification": "checked (abstract via secondary)"
+  },
+  "Cramer2018": {
+   "citation": "Cramer H, Lauche R, Anheyer D, et al. Yoga for anxiety: a systematic review and meta-analysis of randomized controlled trials. Depress Anxiety. 2018;35(9):830-843.",
+   "verification": "checked (abstract)"
+  },
+  "Cramer2015": {
+   "citation": "Cramer H, Ward L, Saper R, et al. The safety of yoga: a systematic review and meta-analysis of randomized controlled trials. Am J Epidemiol. 2015;182(4):281-293. doi:10.1093/aje/kwv071",
+   "verification": "checked (abstract)"
+  },
+  "Lauche2016": {
+   "citation": "Lauche R, Langhorst J, Lee MS, Dobos G, Cramer H. A systematic review and meta-analysis on the effects of yoga on weight-related outcomes. Prev Med. 2016;87:213-232.",
+   "verification": "checked (abstract via secondary)"
+  },
+  "Hagins2007": {
+   "citation": "Hagins M, Moore W, Rundle A. Does practicing hatha yoga satisfy recommendations for intensity of physical activity which improves and maintains health and cardiovascular fitness? BMC Complement Altern Med. 2007;7:40. doi:10.1186/1472-6882-7-40",
+   "verification": "checked (abstract)"
+  },
+  "Fincham2023": {
+   "citation": "Fincham GW, Strauss C, Montero-Marin J, Cavanagh K. Effect of breathwork on stress and mental health: a meta-analysis of randomised-controlled trials. Sci Rep. 2023;13:432.",
+   "verification": "checked (abstract); DOI unverified"
+  },
+  "Fincham2023b": {
+   "citation": "Fincham GW, Strauss C, Cavanagh K. Effect of coherent breathing on mental health and wellbeing: a randomised placebo-controlled trial. Sci Rep. 2023. doi:10.1038/s41598-023-49279-8",
+   "verification": "checked (abstract)"
+  },
+  "Afonso2021rec": {
+   "citation": "Afonso J, Clemente FM, Nakamura FY, et al. The effectiveness of post-exercise stretching in short-term and delayed recovery of strength, range of motion and delayed onset muscle soreness: a systematic review and meta-analysis of randomized controlled trials. Front Physiol. 2021;12:677581. doi:10.3389/fphys.2021.677581",
+   "verification": "checked"
+  },
+  "Tsuji2023": {
+   "citation": "Tsuji K, Tsuchiya Y, Ueda H, Ochi E. Home-based high-intensity interval training improves cardiorespiratory fitness: a systematic review and meta-analysis. BMC Sports Sci Med Rehabil. 2023;15(1). doi:10.1186/s13102-023-00777-2",
+   "verification": "checked (abstract)"
+  },
+  "Chaabene2021": {
+   "citation": "Chaabene H, Prieske O, Herz M, et al. Home-based exercise programmes improve physical fitness of healthy older adults: a PRISMA-compliant systematic review and meta-analysis. Ageing Res Rev. 2021;67:101265. doi:10.1016/j.arr.2021.101265",
+   "verification": "checked"
+  },
+  "Kikuchi2017": {
+   "citation": "Kikuchi N, Nakazato K. Low-load bench press and push-up induce similar muscle hypertrophy and strength gain. J Exerc Sci Fit. 2017;15(1):37-42. doi:10.1016/j.jesf.2017.06.003",
+   "verification": "checked (abstract)"
+  },
+  "Archila2021": {
+   "citation": "Archila LR, Bostad W, Joyner MJ, Gibala MJ. Simple bodyweight training improves cardiorespiratory fitness with minimal time commitment: a contemporary application of the 5BX approach. Int J Exerc Sci. 2021;14(3):93-100.",
+   "verification": "checked (abstract)"
+  },
+  "Vetrovsky2019": {
+   "citation": "Vetrovsky T, Steffl M, Stastny P, Tufano JJ, et al. The efficacy and safety of lower-limb plyometric training in older adults: a systematic review. Sports Med. 2019;49(1):113-131. doi:10.1007/s40279-018-1018-x",
+   "verification": "checked"
+  },
   "Jayedi2024": {
    "citation": "Jayedi A, Soltani S, Emadi A, Zargar MS, Najafi A. Aerobic exercise and weight loss in adults: a systematic review and dose-response meta-analysis. JAMA Netw Open. 2024;7(12):e2452185. doi:10.1001/jamanetworkopen.2024.52185",
    "verification": "checked"
@@ -870,7 +1213,7 @@
    "verification": "checked (abstract)"
   }
  },
- "rule_count_after": 149,
+ "rule_count_after": 152,
  "verification_needed_before_final_approval": [
   "Donnelly2009 dose bands (full text)",
   "Bull2020 (BJSM full text)",

@@ -43,9 +43,9 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 | CI | `.github/workflows/ci.yml` — registry check, Phase 1 checks, engine tests, rule coverage, app tests, debug APK, permission allow-list, 16 KB page check · `.github/workflows/devices.yml` — weekly emulator matrix (Android 10–16, small phone, tablet, 200% text) |
 | Local engine build | `tools/local_build.sh` (Gradle's bundled Kotlin 2.0.21 + JUnit 4; no network) |
 | Checks | `tools/check_phase1.py` (45 checks, 0 failures), `tools/rule_coverage.py`, `tools/check_permissions.py` |
-| Decisions | `DECISIONS.md` (D-001 … D-063) |
-| Change requests | `docs/change_requests/README.md` (CR-001 … CR-005) |
-| Research Update 1.1 | `docs/research_update_1_1/report.md` · evidence reviews A and B in the same folder · proposed rules `rules/proposed/registry_v1.1.0_proposed_delta.json` · condition table `rules/proposed/health_conditions_v1.0_draft.json` · builders `tools/proposed_build_*.py` |
+| Decisions | `DECISIONS.md` (D-001 … D-065) |
+| Change requests | `docs/change_requests/README.md` (CR-001 … CR-006) |
+| Research Update 1.1 | `docs/research_update_1_1/report.md` · evidence reviews A–D in the same folder · proposed rules `rules/proposed/registry_v1.1.0_proposed_delta.json` · condition table `rules/proposed/health_conditions_v1.0_draft.json` · builders `tools/proposed_build_*.py` |
 | Illustration sample (CR-004) | https://claude.ai/artifact/DYdTjK75unCNA4Rk3GoiBt (Form Guide Preview) |
 | Code (source of truth) | https://github.com/abhinavgarggarg/personal-fitness-coach (branch `main`); Actions: CI on every push, Devices weekly / on demand |
 
@@ -60,7 +60,7 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 - Phone: Motorola Edge 50, Android 16. Request: the app must work on any phone (→ D-044) and use the phone's Gemini instead of paid AI calls (→ D-045).
 
 ## Open items for the Product Owner
-1. **Research Update 1.1 sign-off:** `docs/research_update_1_1/report.md` — 9 new rules, 4 changed, health-condition table v1.0 draft (21 entries), and decision MOD-001 (treadmill walking and bikes as a per-person choice). Change log: `docs/change_requests/README.md`.
+1. **Research Update 1.1 sign-off:** `docs/research_update_1_1/report.md` — 12 new rules, 8 changed, health-condition table v1.0 draft (21 entries), creator review outcomes (D-064), and decision MOD-001 (treadmill walking and bikes as a per-person choice). Change log: `docs/change_requests/README.md`.
 2. D-036 adds one Android-12-only permission (SCHEDULE_EXACT_ALARM) — needed for any-phone support; no prompt is shown.
 3. Part 0 profile still blank — collected in onboarding.
 

@@ -9,7 +9,7 @@ You asked for weight loss for people over 30 as the main purpose of the app, wit
 - Strength training protects muscle, and muscle matters more each decade.
 - HIIT saves time but burns no more fat.
 
-What changes with age is the hard work. Tempo cardio and intervals shrink and become joint-friendly, light-and-fast "power" work is added from 50, and balance work grows. Strength stays at 3 days a week at every age. This becomes 9 new rules, 4 small changes to existing rules and a 21-entry health-condition table, all waiting for your approval.
+What changes with age is the hard work. Tempo cardio and intervals shrink and become joint-friendly, light-and-fast "power" work is added from 50, and balance work grows. Strength stays at 3 days a week at every age. This becomes 12 new rules, 8 changes to existing rules and a 21-entry health-condition table, all waiting for your approval. That count includes what the expert review of the creators you suggested added (see "The creators you suggested").
 
 ## What I need from you
 
@@ -89,6 +89,9 @@ These are the targets for the fat-loss goal. The planner fits them into the days
 | **STEP-001 Step target** | Starts from your own first week. Rises 10–15% a week: at least 250 steps, at most 1,000 below 50 (750 at 50–59, 500 at 60–64, 400 at 65+), and only if you met it on 5 of 7 days. Holds at 3–4 days and drops by one increment after 2 weak weeks. Never rises in a lighter week or with leg pain. | Moderate (targets) / Expert Practice (pace) |
 | **STEP-002 Walks count once** | Only brisk walks of 10+ minutes at 100+ steps a minute count as easy cardio; other steps count toward the step target only | Moderate (pace) / Expert Practice (10-minute rule) |
 | **CAL-002 Your own numbers** | You can enter a recent set or your best lift. The app estimates your max, starts at 90% of what that supports, and reduces it if you haven't done the lift for 2+ weeks. Your first session confirms it. | Expert Practice |
+| **ADH-005 Plan when you'll train** | Optional and under 30 seconds: give each training day a time and, if you like, an "after what" cue, and pick one backup ("short on time → express session", "missed it → next free day"). Never nags. | Limited (app-only planning) |
+| **MOB-006 Calm mobility session** | An optional 15–30-minute session: easy movement, slow mobility, balance holds and a few minutes of easy breathing. Offered on rest days, light days and high-stress days. It doesn't count as cardio or a strength day, and it's never sold as treatment, detox, weight loss or faster recovery. | Moderate (benefit) / Expert Practice (format) |
+| **EQ-003 Training away from the gym** | One tap switches today to your home kit (bodyweight by default). Strength uses bodyweight progressions; cardio defaults to no-jump circuits, with beginners on 1:2 work:rest; the warm-up is never dropped. | Moderate (home training works) / Expert Practice (format) |
 | **SAF-010 Health conditions** | The picker and the table below | Moderate (caps Expert Practice) |
 
 ## Health-condition table (draft v1.0)
@@ -139,6 +142,31 @@ The app never reads blood pressure or sugar numbers, never names medicines or do
 
   The arthritis pain rule (ease off a joint when pain stays above usual, unlock more load when it doesn't) is built as a training adjustment, never marketed as therapy, and flagged for that review.
 
+## The creators you suggested (expert review)
+
+You asked the fitness expert reviewers to decide on six creators. Their decisions are final, as you instructed, and I've applied them.
+
+| Creator | Decision | How the app uses it |
+|---|---|---|
+| **Jeff Nippard** | Include, as a pointer to studies and for design ideas | His research summaries are mostly accurate, and he names his studies and co-authors trials. The app cites the studies he points to, not him. His own methods (most sets to failure, drop sets) are for young trained lifters, not our users. One of his claims ("one set a week keeps all your gains") leaves out that the same study found 60–75-year-olds lost their gains. That finding became the new AGE-001 60+ volume floor. |
+| **Jeremy Ethier** | Include for design ideas only; **his workout plans are not used** | His general advice matches our rules. But some numbers drift from his sources, his rest advice is longer than newer evidence supports, and his exercise rankings use a method shown not to predict muscle growth. His terms also forbid using his material to build a competing app. |
+| **Nerd Fitness** | Include, for design ideas and the habit research behind it | Good habit ideas: one small habit at a time, visible tracking, and a missed day doesn't undo progress. The app cites the habit studies directly. These led to the habit-message fix, the planning prompt and the "welcome back" badge. |
+| **Yoga With Adriene** | Include for design ideas only | It shapes the format and tone of the new calm mobility session. Its claims about detox, weight loss, healing back pain and faster recovery are not supported, so the app makes none of them. Yoga may help mobility, balance, sleep and feeling less stressed. |
+| **Fitness Blender** | Include for design ideas only | Its no-jump, scale-it-yourself home cardio informs the away-from-gym preset. Its calorie and "afterburn" claims are not used. |
+| **Heather Robertson** | **Exclude** | Her signature fast jump-interval format (30 s on / 10 s off, no repeats, no warm-up on short sessions) conflicts with our interval, impact and warm-up rules for people 30+. Her terms forbid reuse, and the sound parts add nothing new. |
+
+**Rules for all creators:**
+- No creator is ever cited as evidence or named in the app.
+- The app never copies their text, routines, images or videos; it uses only general ideas, rewritten originally (licensing rule D7).
+- It never uses paid programmes or apps.
+
+**Things the reviewers rejected for our audience:**
+- training to failure on most sets
+- calorie and "afterburn" numbers
+- fixed 21- or 30-day habit claims
+- yoga counted as cardio
+- dense jump intervals as a default
+
 ## Changes to existing rules
 
 | Rule | Change | Why |
@@ -147,11 +175,25 @@ The app never reads blood pressure or sugar numbers, never names medicines or do
 | CON-004 1.0.0 → 1.1.0 | The osteoporosis entry's short bone-loading block (≤5 min of low landings) is not one of the week's impact sessions | The UK osteoporosis consensus advises moderate impact most days; the 1-a-week cap was written for jumping conditioning |
 | PH-001 1.0.0 → 1.1.0 | Easy minutes include the brisk walks of STEP-002; nothing else from steps is added | Steps are never counted twice |
 | DATA-001 1.0.0 → 1.1.0 | Optional data adds daily steps (this phone's own sensor), health conditions and clearance, and your starting weights and records. Waist is already covered as a body measurement. | CR-001, CR-002, CR-005. All of it stays on the phone, goes into the encrypted backup and can be deleted. Steps from other apps stay excluded. |
+| AGE-001 1.0.0 → 1.1.0 | From 60, weekly strength volume never drops to "maintenance": weeks that would plan it (conditioning and review blocks, holiday weeks) use the block-start level instead. Lighter weeks are unchanged. | In the study one creator cited (Bickel 2011), reduced doses kept muscle in 20–35-year-olds but not in 60–75-year-olds (Limited Evidence) |
+| MOB-004 1.0.0 → 1.1.0 | When pain or a condition limits range, use the largest pain-free range and keep the stretched end; a shorter-range set still counts | A shorter range costs little muscle growth (Moderate); preferring the stretched end is Limited Evidence |
+| ADH-002 1.0.0 → 1.1.0 | A "Welcome back" badge for the first session after a missed one, with one gentle reminder and no guilt wording | Rewarding a return after a missed workout was the best performer in a 61,000-person gym study (Limited Evidence for a badge) |
+| ADH-004 1.0.0 → 1.0.1 | Habit messages give a range ("about two months for many people, often longer for exercise"), never a fixed 21 or 30 days | Habit studies: medians around 2 months, range from days to most of a year; gym habits take months |
 | MOD-001 (your decision 2) | Excluded machines become a per-person choice | See "What I need from you" |
+
+**Evidence and source fixes (no rule wording changes):**
+- The volume study the rules cite is now peer-reviewed (Pelland 2026 replaces the 2024 preprint).
+- Self-monitoring and habit studies are added to LOAD-002 and ADH-001, and a failure-training study (Hermann 2025) to INT-003.
+- One source record had a wrong link (Lally 2010), and one is upgraded to "checked" (Schoenfeld 2017).
 
 ## Impact analysis (change control F7)
 
-- **Rules:** 140 → 149 rules, with 4 changed (5 with decision 2). The training rules for other goals are unchanged; the CON-004, PH-001 and DATA-001 changes (and MOD-001, if approved) apply to everyone. Every current test (346) must still pass, and each new rule gets at least 2 tests, named by rule ID as before.
+- **Rules:** 140 → 152 rules, with 8 changed (9 with decision 2). The training rules for other goals are unchanged, except these, which apply to everyone:
+  - the CON-004, PH-001, DATA-001, MOB-004 and habit changes
+  - the AGE-001 60+ volume floor
+  - MOD-001, if approved
+
+   Every current test (346) must still pass, and each new rule gets at least 2 tests, named by rule ID as before.
 - **Workouts:**
   - New users get the fat-loss programme by default. That means 3 strength days when they train 3+ days, more easy cardio (mostly walking), and fewer intervals as age rises: low-impact only from 50, and offered rather than planned from 60.
   - Users with conditions get stricter limits.
@@ -164,6 +206,8 @@ The app never reads blood pressure or sugar numbers, never names medicines or do
   - new exercise tags (breath-holding max, heavy holds, loaded twisting, head-down, lying on back or front, fall risk, contact, Olympic lifts)
   - starting from your own numbers
   - low-impact power exercises for dumbbell-only and bodyweight gyms, and "any of" equipment (D-063)
+  - planning prompt, "welcome back" badge, calm mobility session and away-from-gym preset
+  - the 60+ strength-volume floor and the reduced-range rule
   - the simulation gets one fat-loss user per age band, and the property tests get random condition combinations
 - **Data (Part 4):** new tables for conditions and clearance, steps, waist and weight entries, and starting numbers.
 - **Permissions:** step counting adds the "physical activity" permission, asked only when you turn steps on. There is still no internet permission. The CI permission check is updated.
@@ -207,9 +251,10 @@ The app never reads blood pressure or sugar numbers, never names medicines or do
 
 ## Files
 
-- `rules/proposed/registry_v1.1.0_proposed_delta.json`: the 9 new rules, 4 changes, the MOD-001 question and 57 new sources, in registry format (status "proposed")
+- `rules/proposed/registry_v1.1.0_proposed_delta.json`: the 12 new rules, 8 changes, evidence and source fixes, the creator decisions, the MOD-001 question and 92 new sources, in registry format (status "proposed")
 - `rules/proposed/health_conditions_v1.0_draft.json`: the 21-entry condition table
 - `docs/research_update_1_1/evidence_A_fat_loss_age_mix.md` and `evidence_B_health_conditions.md`: the full evidence reviews, with every source labelled
+- `docs/research_update_1_1/evidence_C_creators_nippard_ethier.md` and `evidence_D_creators_habit_yoga_home.md`: the expert reviews of the creators you suggested
 - `tools/proposed_build_registry_delta.py` and `tools/proposed_build_conditions.py`: the scripts that write the two JSON files
 
 ```
