@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-09 — Product Owner change requests CR-001 to CR-005
+- Health-condition picker driven by a data table (D-058); starting weights and personal records (D-059); default goal "Lose fat, keep muscle (30+)" with an age-banded training mix and no food features (D-060); original animated exercise illustrations (D-061, sample published); phone step counter (D-062); no-box gyms (D-063).
+- Fix: a missing plyo box no longer turns a box jump into a slow tempo squat; power work swaps only to power work (346 tests).
+- Part 3 paused for Research Update 1.1. Change log: `docs/change_requests/README.md`.
+
 ## 2026-10-08 — Phase 3 Part 2: exercise library, 12-month programme, week planner, session generator
 - Exercise library v1.0.1 (`library/v1/*.json`, original wording): 152 exercises, 31 drills, 10 modality guides; generator with safety checks (`tools/gen_library_kotlin.py --check` in CI).
 - Engine: reps, rest, effort, order and supersets; cardio zones, progression and interval menus; bodyweight and core ladders; mobility; frequency and experience; 12-month blueprint with block clock; week planner (days, exercise choice, volume within caps, balance, core minimum, cardio, time shaping); session generator (GEN-001, 10 steps ending in the validator; tiers, deload, swaps, illness rest day, express session); streak, milestones and session-RPE prompt.

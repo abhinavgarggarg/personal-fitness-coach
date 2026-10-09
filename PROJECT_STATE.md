@@ -1,15 +1,15 @@
 # PROJECT STATE — Personal Fitness Coach
 
-Last updated: 2026-10-08 (Part 2 complete) · Master prompt: v3.0 (7 Oct 2026)
+Last updated: 2026-10-09 (change requests CR-001–CR-005) · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
-**Phase 3 — Application Development: IN PROGRESS. Parts 1 and 2 of 6 complete; waiting for the Product Owner to reply CONTINUE (and to confirm D-056).**
+**Phase 3 — Application Development: IN PROGRESS. Parts 1 and 2 of 6 complete. Part 3 is paused for Research Update 1.1 (change requests CR-001, CR-003, CR-005: health-condition picker, "Lose fat, keep muscle (30+)" default goal with an age-banded training mix, phone step counter), which goes to the Product Owner for sign-off before the data layer is built.**
 
 | Phase | Status | Date |
 |---|---|---|
 | 1 Fitness research & evidence engine | APPROVED | 2026-10-07 |
 | 2 Product requirements, UX & architecture | APPROVED (D-028) | 2026-10-07 |
-| 3 Application development | IN PROGRESS — Parts 1–2 of 6 complete | 2026-10-08 |
+| 3 Application development | IN PROGRESS — Parts 1–2 of 6 complete; Research Update 1.1 in progress | 2026-10-09 |
 | 4 Testing, validation & UAT | NOT STARTED | — |
 | 5 Production build & APK delivery | NOT STARTED | — |
 
@@ -43,7 +43,9 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 | CI | `.github/workflows/ci.yml` — registry check, Phase 1 checks, engine tests, rule coverage, app tests, debug APK, permission allow-list, 16 KB page check · `.github/workflows/devices.yml` — weekly emulator matrix (Android 10–16, small phone, tablet, 200% text) |
 | Local engine build | `tools/local_build.sh` (Gradle's bundled Kotlin 2.0.21 + JUnit 4; no network) |
 | Checks | `tools/check_phase1.py` (45 checks, 0 failures), `tools/rule_coverage.py`, `tools/check_permissions.py` |
-| Decisions | `DECISIONS.md` (D-001 … D-057) |
+| Decisions | `DECISIONS.md` (D-001 … D-063) |
+| Change requests | `docs/change_requests/README.md` (CR-001 … CR-005) |
+| Illustration sample (CR-004) | https://claude.ai/artifact/DYdTjK75unCNA4Rk3GoiBt (Form Guide Preview) |
 | Code (source of truth) | https://github.com/abhinavgarggarg/personal-fitness-coach (branch `main`); Actions: CI on every push, Devices weekly / on demand |
 
 ## Environment (re-audited 2026-10-08)
@@ -57,11 +59,11 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 - Phone: Motorola Edge 50, Android 16. Request: the app must work on any phone (→ D-044) and use the phone's Gemini instead of paid AI calls (→ D-045).
 
 ## Open items for the Product Owner
-1. **D-056 to confirm:** "moderate only" screening plans Z1 cardio only (no Z2 tempo) until clearance.
+1. **Research Update 1.1 sign-off** (when ready): new and changed rules for the default fat-loss goal, age bands, steps and the health-condition table. Change log: `docs/change_requests/README.md`.
 2. D-036 adds one Android-12-only permission (SCHEDULE_EXACT_ALARM) — needed for any-phone support; no prompt is shown.
 3. Part 0 profile still blank — collected in onboarding.
 
 ## Next actions
-1. On "CONTINUE": Phase 3 Part 3 — Room data layer seeded from `library/v1`, repositories feeding the engine (history → e1RM, progression prescriptions per FS-5/D-055, weekly totals), DATA-001, backup/restore.
+1. Research Update 1.1 (evidence, proposed registry 1.1, impact analysis) → PO sign-off → engine changes with regression tests → Phase 3 Part 3: Room data layer seeded from `library/v1` and the condition table, repositories feeding the engine (history → e1RM, progression prescriptions per FS-5/D-055, weekly totals, bodyweight/waist trend, steps, starting weights and PRs per D-059), DATA-001, backup/restore.
 2. Every part ends with a push and green CI; run the Devices workflow for anything touching screens, alarms or permissions. Logs and artifacts are not downloadable from this environment — results are read through CI annotations (`tools/ci_summary.py`).
 3. Keep the independent-review step for safety-relevant parts (Part 1: 14 defects; Part 2: 20 findings — all fixed with regression tests).
