@@ -10,8 +10,11 @@ import com.personalfitnesscoach.engine.model.Level
 import com.personalfitnesscoach.engine.registry.P
 import com.personalfitnesscoach.engine.registry.RuleIds
 
-/** The user's training priorities (onboarding ranks them; first = #1). */
-enum class Goal { STRENGTH, MUSCLE, CARDIO, POWER, MOBILITY, BODY_COMPOSITION, GENERAL_FITNESS }
+/**
+ * The user's training priorities (onboarding ranks them; first = #1). FAT_LOSS is "Lose fat, keep muscle",
+ * the default #1 for adults 30+ (FL-001); with it the year follows FL-004 and the week FL-003.
+ */
+enum class Goal { STRENGTH, MUSCLE, CARDIO, POWER, MOBILITY, BODY_COMPOSITION, GENERAL_FITNESS, FAT_LOSS }
 
 /** PER-003 block sequence. */
 enum class BlockType(val kind: BlockKind, val goal: Goal?) {
@@ -24,9 +27,17 @@ enum class BlockType(val kind: BlockKind, val goal: Goal?) {
     STRENGTH_2(BlockKind.STRENGTH, Goal.STRENGTH),
     POWER_ATHLETICISM(BlockKind.POWER, Goal.POWER),
     CONSOLIDATION(BlockKind.CONSOLIDATION, Goal.GENERAL_FITNESS),
-    REVIEW(BlockKind.REVIEW, null);
+    REVIEW(BlockKind.REVIEW, null),
+    /** FL-004: the fat-loss year's second conditioning block and its low-impact athletic block. */
+    CONDITIONING_2(BlockKind.CONDITIONING, Goal.CARDIO),
+    ATHLETIC_LOW_IMPACT(BlockKind.POWER, Goal.POWER);
 
     val isStrengthEmphasis: Boolean get() = this == STRENGTH || this == STRENGTH_2
+    val isConditioning: Boolean get() = kind == BlockKind.CONDITIONING
+    val isPower: Boolean get() = kind == BlockKind.POWER
+
+    /** PER-006: the goal a block serves; for the fat-loss goal that is the conditioning blocks. */
+    fun serves(g: Goal?): Boolean = g != null && (goal == g || (g == Goal.FAT_LOSS && isConditioning))
 }
 
 /** What a calendar week of the program is. DELOAD_OR_PIVOT is decided at run time by DEL-002. */
@@ -69,11 +80,18 @@ object Blueprint {
     private val DEFAULT_SEQUENCE = listOf(BlockType.FOUNDATION, BlockType.BUILD, BlockType.STRENGTH, BlockType.CONDITIONING,
         BlockType.BUILD_2, BlockType.STRENGTH_2, BlockType.POWER_ATHLETICISM, BlockType.CONSOLIDATION)
 
+    /** FL-004: the fat-loss year (calibrate and review are added around it as in PER-003). */
+    val FAT_LOSS_SEQUENCE: List<BlockType> = P.FL_004.sequence.filter { it != "calibrate" && it != "review" }.map { BlockType.valueOf(it.uppercase()) }
+
+    /** The block order for these priorities: FL-004 when fat loss is #1, otherwise PER-003. */
+    fun sequenceFor(priorities: List<Goal>): List<BlockType> = if (priorities.firstOrNull() == Goal.FAT_LOSS) FAT_LOSS_SEQUENCE else DEFAULT_SEQUENCE
+
     /**
      * PER-003 with PER-002 lengths and PER-006 priority weighting: calibrate 2 weeks, eight
      * 5-week blocks each followed by a deload-or-pivot week (weeks 8, 14 … 44 by default),
      * consolidation, then review plus 2 flex weeks. The #1 priority's blocks gain a week and
      * the lowest priority's lose one (never below 4); the flex weeks absorb the difference.
+     * With fat loss as #1 the blocks follow FL-004 and its conditioning blocks gain the week.
      */
     fun plan(priorities: List<Goal>): EngineResult<Program> {
         val top = priorities.firstOrNull()
@@ -82,10 +100,11 @@ object Blueprint {
         var week = 1
         blocks += Block(BlockType.CALIBRATE, week, P.PER_003.calibrate_weeks, followedByDeloadOrPivot = false)
         week += P.PER_003.calibrate_weeks
-        for (t in DEFAULT_SEQUENCE) {
+        val sequence = sequenceFor(priorities)
+        for (t in sequence) {
             var len = P.PER_002.default_weeks
-            if (t.goal != null && t.goal == top) len += P.PER_006.top_priority_weeks
-            if (t.goal != null && t.goal == low) len += P.PER_006.low_priority_weeks
+            if (t.serves(top)) len += P.PER_006.top_priority_weeks
+            if (t.serves(low)) len += P.PER_006.low_priority_weeks
             len = len.coerceIn(maxOf(P.PER_002.min_weeks, P.PER_006.min_block_weeks), P.PER_002.max_weeks)
             val deload = t != BlockType.CONSOLIDATION
             blocks += Block(t, week, len, deload)
@@ -95,7 +114,8 @@ object Blueprint {
         val used = week
         val flex = maxOf(0, 52 - used)
         val program = Program(blocks, flex, priorities)
-        return EngineResult(program, listOf(Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.PER_002, RuleIds.PER_003, RuleIds.PER_006),
+        return EngineResult(program, listOf(Decision(DecisionKind.VOLUME_CHANGE,
+            listOf(RuleIds.PER_002, RuleIds.PER_003, RuleIds.PER_006) + (if (sequence === FAT_LOSS_SEQUENCE) listOf(RuleIds.FL_004) else emptyList()),
             ReasonKey.PROGRAM_PLANNED, inputs = mapOf("priorities" to priorities.map { it.name }),
             outputs = mapOf("blocks" to blocks.map { "${it.type}:${it.startWeek}+${it.loadingWeeks}" }, "flex" to flex))))
     }
@@ -119,8 +139,18 @@ object Blueprint {
     /** PER-006: the #1 priority's focus muscles start the block at block-start + 2 sets. */
     fun prioritySetBonus(isTopPriorityFocus: Boolean): Int = if (isTopPriorityFocus) P.PER_006.top_priority_extra_sets else 0
 
-    /** Block doses from the Phase 1 blueprint (section 25), with VOL-003 landmarks for the level. */
-    fun dose(type: BlockType, level: Level): BlockDose {
+    /**
+     * Block doses from the Phase 1 blueprint (section 25), with VOL-003 landmarks for the level. AGE-001 (≥ 60): weeks that
+     * would plan maintenance volume (Conditioning and Review blocks) use the block-start level instead.
+     */
+    fun dose(type: BlockType, level: Level, age: Int? = null): BlockDose {
+        val d = baseDose(type, level)
+        if (age == null || age < 60 || P.AGE_001.age_60.strength_volume_floor != "block_start") return d
+        val floor = Volume.blockStart(level)
+        return d.copy(setsStart = maxOf(d.setsStart, floor), setsTop = maxOf(d.setsTop, floor))
+    }
+
+    private fun baseDose(type: BlockType, level: Level): BlockDose {
         val start = Volume.blockStart(level)
         val maint = Volume.maintenance(level)
         val work = level.pick(P.VOL_003.working_range.beginner, P.VOL_003.working_range.intermediate, P.VOL_003.working_range.advanced)
@@ -131,10 +161,10 @@ object Blueprint {
             BlockType.FOUNDATION -> BlockDose(8..10, 10..12, r(2.0, 3.0), 10..15, r(2.0, 2.0), start, start + 3, 0, 0, true)
             BlockType.BUILD -> BlockDose(6..8, 8..10, r(1.0, 3.0), 8..15, r(1.0, 2.0), work[0], work[1], 1, 1, true)
             BlockType.STRENGTH -> BlockDose(3..4, 5..6, r(1.0, 3.0), 8..15, r(1.0, 2.0), work[0], mid, 1, 0, true)
-            BlockType.CONDITIONING -> BlockDose(4..6, 4..6, r(1.0, 3.0), 10..15, r(2.0, 3.0), maint, start, 2, 1, true, mainSetsOverride = 2)
+            BlockType.CONDITIONING, BlockType.CONDITIONING_2 -> BlockDose(4..6, 4..6, r(1.0, 3.0), 10..15, r(2.0, 3.0), maint, start, 2, 1, true, mainSetsOverride = 2)
             BlockType.BUILD_2 -> BlockDose(6..8, 8..10, r(1.0, 2.0), 8..20, r(0.0, 2.0), mid, work[1], 1, 1, true)
             BlockType.STRENGTH_2 -> BlockDose(3..4, 5..6, r(1.0, 2.0), 8..12, r(1.0, 2.0), work[0], mid, 1, 0, true)
-            BlockType.POWER_ATHLETICISM -> BlockDose(4..6, 4..6, r(1.0, 3.0), 8..12, r(1.0, 2.0), start, mid, 2, 0, true)
+            BlockType.POWER_ATHLETICISM, BlockType.ATHLETIC_LOW_IMPACT -> BlockDose(4..6, 4..6, r(1.0, 3.0), 8..12, r(1.0, 2.0), start, mid, 2, 0, true)
             BlockType.CONSOLIDATION -> BlockDose(4..6, 8..12, r(1.0, 3.0), 8..15, r(1.0, 2.0), work[0], work[1], 2, 1, true)
             BlockType.REVIEW -> BlockDose(6..10, 6..10, r(3.0, 4.0), 10..15, r(3.0, 3.0), maint, maint, 0, 0, false)
         }
@@ -160,7 +190,7 @@ object Blueprint {
         val d = dose(type, level)
         return when {
             type == BlockType.FOUNDATION -> if (weekInBlock >= 3) 1 else 0 // "0 → 1 (short 1:2)"
-            (type == BlockType.POWER_ATHLETICISM || type == BlockType.CONSOLIDATION) && (level == Level.BEGINNER || daysPerWeek < 4) -> 1
+            (type.isPower || type == BlockType.CONSOLIDATION) && (level == Level.BEGINNER || daysPerWeek < 4) -> 1
             else -> d.hiitPerWeek
         }
     }

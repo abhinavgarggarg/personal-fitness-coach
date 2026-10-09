@@ -151,6 +151,8 @@ enum class Modality(val registryKey: String? = null) {
 
     companion object {
         fun byRegistryKey(key: String): Modality? = entries.firstOrNull { it.registryKey == key }
+        /** By MOD-002 matrix key (`rower`, `stationary_bike`, `air_fan_bike` …): the registry key, else the lower-case name. */
+        fun byKey(key: String): Modality? = entries.firstOrNull { (it.registryKey ?: it.name.lowercase()) == key }
     }
 }
 

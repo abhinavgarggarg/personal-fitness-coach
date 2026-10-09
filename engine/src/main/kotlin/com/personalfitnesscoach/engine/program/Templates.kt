@@ -50,6 +50,19 @@ object Templates {
     }
 
     /**
+     * FL-003 / FL-004: the fat-loss week — 3 full-body strength days by default (2 with 2 training days), the other days
+     * cardio: one conditioning day (tempo or intervals when planned, otherwise steady Z1), then easy aerobic and mobility days.
+     */
+    fun forFatLoss(days: Int): List<DayTemplate> = when (days) {
+        2 -> listOf(DayTemplate.FB_A, DayTemplate.FB_B)
+        3 -> listOf(DayTemplate.FB_A, DayTemplate.FB_B, DayTemplate.FB_C)
+        4 -> listOf(DayTemplate.FB_A, DayTemplate.FB_B, DayTemplate.FB_C, DayTemplate.COND)
+        5 -> listOf(DayTemplate.FB_A, DayTemplate.FB_B, DayTemplate.FB_C, DayTemplate.COND, DayTemplate.EASY_AEROBIC_MOBILITY)
+        6 -> listOf(DayTemplate.FB_A, DayTemplate.FB_B, DayTemplate.FB_C, DayTemplate.COND, DayTemplate.EASY_AEROBIC_MOBILITY, DayTemplate.EASY_AEROBIC_MOBILITY)
+        else -> throw IllegalArgumentException("2–6 training days (FREQ-001)")
+    }
+
+    /**
      * Slots per session type. With 2 days both sessions are full body and cover all seven lifting
      * patterns and three core categories; carry and rotation alternate weeks (PAT-001). From 3 days
      * squat, hinge and horizontal push/pull appear at least twice (heavier and lighter exposures).

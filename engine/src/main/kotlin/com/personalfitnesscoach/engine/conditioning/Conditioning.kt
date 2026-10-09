@@ -142,6 +142,8 @@ data class ModalityContext(
     val impactAllowed: Boolean = true,
     /** MOD-001 2.0.0: modalities this user doesn't use. */
     val excluded: Set<Modality> = emptySet(),
+    /** Only these modalities (FL-003 low-impact intervals, SAF-010 interval lists); null = any. */
+    val allowed: Set<Modality>? = null,
 )
 
 data class ModalityScore(val modality: Modality, val score: Double)
@@ -185,7 +187,7 @@ object ModalitySelection {
     /** Ranked candidates after hard filters (excluded, equipment, joint limits, impact limit); ties by name. */
     fun rank(ctx: ModalityContext): EngineResult<List<ModalityScore>> {
         val ranked = Modality.entries.asSequence()
-            .filter { it !in ctx.excluded && row(it) != null && available(it, ctx.equipment) }
+            .filter { it !in ctx.excluded && row(it) != null && available(it, ctx.equipment) && (ctx.allowed == null || it in ctx.allowed) }
             .filter { m -> ctx.jointLimits.all { (j, lim) -> ModalityJoints.stress(m, j) <= lim } }
             .filter { ctx.impactAllowed || !isImpact(it) }
             .map { ModalityScore(it, score(it, ctx)) }
@@ -237,12 +239,13 @@ object HiitMenu {
      * SHORT. The very first HIIT is always SHORT at 1:2 (HIIT-003). `sessionIndex` is 0 for the
      * week's first HIIT session, 1 for the second.
      */
-    fun choose(block: BlockKind, level: Level, hiitDoneEver: Int, sprintsThisWeek: Int, sessionIndex: Int): EngineResult<HiitProtocol> {
+    fun choose(block: BlockKind, level: Level, hiitDoneEver: Int, sprintsThisWeek: Int, sessionIndex: Int, sprintsAllowed: Boolean = true): EngineResult<HiitProtocol> {
         val p = when {
             hiitDoneEver == 0 -> HiitProtocol.SHORT
             block == BlockKind.BUILD -> HiitProtocol.LONG
             block == BlockKind.CONDITIONING -> if (sessionIndex == 0) HiitProtocol.LONG else HiitProtocol.SHORT
-            block == BlockKind.POWER && level == Level.ADVANCED && sprintsThisWeek < P.HIIT_002.sprint.per_week_max -> HiitProtocol.SPRINT
+            // FL-003: no sprint intervals from 50 or with low-impact-only intervals; SAF-010 zone caps below Z4 rule them out too.
+            block == BlockKind.POWER && level == Level.ADVANCED && sprintsAllowed && sprintsThisWeek < P.HIIT_002.sprint.per_week_max -> HiitProtocol.SPRINT
             block == BlockKind.CONSOLIDATION -> if (sessionIndex == 0) HiitProtocol.MEDIUM else HiitProtocol.SHORT
             else -> HiitProtocol.SHORT
         }

@@ -143,6 +143,8 @@ data class Workout(
     val conditioningFirst: Boolean = false,
     /** Mobility minutes in the session (deload extra mobility, RDY-004 LIGHT 5–10 min). */
     val mobilityMinutes: Double = 0.0,
+    /** FL-003 / AGE-001 balance drills (supported), after the main work. */
+    val balanceDrills: List<DrillDose> = emptyList(),
 )
 
 /**
@@ -246,7 +248,9 @@ object SessionGenerator {
         val dayForFit = r.day.copy(slots = items.map { toSlot(it) }, conditioning = conditioning.map { toPlanned(it) })
         // RDY-004: LIGHT days add 5–10 minutes of mobility.
         val mobilityMin = if (tier == Tier.LIGHT) maxOf(r.day.mobilityMinutes, P.RDY_004.LIGHT.mobility_minutes[0].toDouble()) else r.day.mobilityMinutes
-        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble(), WeekPlanner.planItems(dayForFit), coreMobilityMin = mobilityMin)
+        // FL-003 / AGE-001: the day's balance minutes stay on every tier except RECOVERY (balance work is low effort).
+        val balanceMin = if (tier == Tier.RECOVERY) 0.0 else r.day.balanceMinutes
+        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble(), WeekPlanner.planItems(dayForFit), coreMobilityMin = mobilityMin + balanceMin)
         val fit = TimeBudget.fit(plan, r.minutes.toDouble(), r.age, r.personalFactor, r.crowded)
         d += fit.decisions
         val byId = fit.value.plan.items.associateBy { it.id }
@@ -259,6 +263,8 @@ object SessionGenerator {
         val warmupMin = fit.value.plan.warmupMin
         val cooldown = Mobility.cooldown(trained, fit.value.plan.cooldownMin, r.equipmentToday, mergedLimits(r))
         d += cooldown.decisions
+        val balance = Mobility.balanceDrills(balanceMin, r.equipmentToday, mergedLimits(r), r.blockedTags, offset = r.day.weekday)
+        d += balance.decisions
 
         // 9) Safety validator (SAF-008): corrected or replaced, never shown unvalidated.
         val session = Session(tier, items.map { SessionExercise(it.exercise, it.sets, it.reps.last, it.targetRir, it.loadFactor, it.main, it.lastSetToFailure, fullTierRir = slotRir(it, r)) }, conditioning)
@@ -271,7 +277,7 @@ object SessionGenerator {
         val final = rebuild(items, v.value.session, r)
         val minutes = TimeModel.minutes(SessionPlan(warmupMin, fit.value.plan.cooldownMin,
             WeekPlanner.planItems(r.day.copy(slots = final.map { toSlot(it) }, conditioning = v.value.session.conditioning.map { toPlanned(it) })),
-            coreMobilityMin = mobilityMin), r.personalFactor)
+            coreMobilityMin = mobilityMin + balanceMin), r.personalFactor)
         // Interval structure for each validated block: kept when the validator left the block's zone and modality alone.
         val intervals = v.value.session.conditioning.mapIndexed { j, b ->
             val planned = conditioning.getOrNull(j)
@@ -282,7 +288,7 @@ object SessionGenerator {
 
         // 10) Output.
         val w = Workout(v.value.session.tier, final, v.value.session.conditioning, warmupMin, drills.value, cooldown.value, Num.round1(minutes),
-            fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session, fullSets, intervals, r.day.conditioningPriority, mobilityMin)
+            fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session, fullSets, intervals, r.day.conditioningPriority, mobilityMin, balance.value)
         return EngineResult(w, d + done(r, w.tier, false))
     }
 
@@ -311,7 +317,7 @@ object SessionGenerator {
         for ((a, b, c) in variants) {
             keep = listOfNotNull(p1?.let { it.copy(sets = maxOf(1, a)) }, second?.takeIf { b > 0 }?.let { it.copy(sets = minOf(it.sets, b)) },
                 core?.takeIf { c > 0 }?.let { it.copy(sets = minOf(it.sets, c)) })
-            out = generate(r.copy(day = r.day.copy(slots = keep, conditioning = emptyList(), mobilityMinutes = 0.0, conditioningPriority = false), minutes = minutes))
+            out = generate(r.copy(day = r.day.copy(slots = keep, conditioning = emptyList(), mobilityMinutes = 0.0, conditioningPriority = false, balanceMinutes = 0.0), minutes = minutes))
             if (out.value.plannedMinutes <= minutes + 1e-9) break
         }
         val res = out!!
