@@ -205,13 +205,22 @@ object Conditions {
         )
     }
 
-    /** An ID the table does not know: SAF-001 conservative mode with a doctor's-OK prompt (review R3-07) — limits never silently disappear. */
-    private fun unknownResolved(): Resolved = Resolved(
-        id = "?", maxZone = Zone.Z1, hiit = HiitPermission.NO, hiitBaseWeeks = 0, hiitLowImpactOnly = false, hiitModalities = null, impact = ImpactLevel.LOW,
-        minRir = P.SAF_001.conservative_mode.min_rir.toDouble(), minRirByTag = emptyMap(), failureAllowed = false, avoidTags = emptySet(),
-        rangeLimitedTags = emptySet(), jointLimits = emptyMap(), warmup = 0, cooldown = 0, maxInactive = null, strengthConsecutive = true,
-        conservative = true, effortByFeel = false, strengthFirst = false, balance = 0, backExt = 0, fatLossOffered = true, weightFeatures = true,
-        prompts = emptyList(), stopSigns = emptyList(), clearancePrompt = true, blocked = false)
+    /**
+     * An ID the table does not know (review R3-07): SAF-001 conservative mode with a doctor's-OK prompt, so limits never silently disappear;
+     * the app asks the user to pick the condition again. A doctor's OK the user confirms for it lifts conservative mode up to that scope only
+     * (as "always" clearance does; re-review N4), with no failure and low impact until the condition is picked again.
+     */
+    private fun unknownResolved(u: UserCondition): Resolved {
+        val ok = u.clearance.isNotEmpty()
+        val zone = u.clearance.maxOfOrNull { it.zone } ?: Zone.Z1
+        return Resolved(
+            id = "?", maxZone = zone, hiit = if (ClearanceScope.INTERVALS in u.clearance) HiitPermission.AFTER_BASE else HiitPermission.NO, hiitBaseWeeks = 0,
+            hiitLowImpactOnly = false, hiitModalities = null, impact = ImpactLevel.LOW,
+            minRir = if (ok) 2.0 else P.SAF_001.conservative_mode.min_rir.toDouble(), minRirByTag = emptyMap(), failureAllowed = false, avoidTags = emptySet(),
+            rangeLimitedTags = emptySet(), jointLimits = emptyMap(), warmup = 0, cooldown = 0, maxInactive = null, strengthConsecutive = true,
+            conservative = !ok, effortByFeel = false, strengthFirst = false, balance = 0, backExt = 0, fatLossOffered = true, weightFeatures = true,
+            prompts = emptyList(), stopSigns = emptyList(), clearancePrompt = !ok, blocked = false)
+    }
 
     private fun ConditionEntry.impactKeyIsLow(): Boolean = impact == "low"
 
@@ -224,7 +233,7 @@ object Conditions {
         if (picked.isEmpty()) return EngineResult(ConditionLimits.NONE)
         val d = ArrayList<Decision>()
         val all = LinkedHashMap<String, UserCondition>()
-        val unknown = LinkedHashSet<String>()
+        val unknown = LinkedHashMap<String, UserCondition>()
         for (u0 in picked) {
             // High blood pressure (review R3-08): the status answer decides the entry, whichever ID was stored ("not sure" counts as "no").
             val u = if (u0.id == "hbp_controlled" && u0.controlled != null && u0.controlled != ControlStatus.YES) {
@@ -233,8 +242,9 @@ object Conditions {
                 u0.copy(id = "hbp_not_controlled")
             } else u0
             if (u.id !in entries) {
-                unknown += u.id
-                d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010, RuleIds.SAF_001), ReasonKey.CONDITION_UNKNOWN, inputs = mapOf("unknown" to u.id))
+                unknown[u.id] = u
+                d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010, RuleIds.SAF_001), ReasonKey.CONDITION_UNKNOWN, inputs = mapOf("unknown" to u.id),
+                    outputs = mapOf("repick" to true, "doctorsOk" to u.clearance.map { it.key }.sorted()))
                 continue
             }
             all[u.id] = u
@@ -242,17 +252,18 @@ object Conditions {
         for (u in all.values.toList()) {
             val parent = entries.getValue(u.id).parent ?: continue
             if (parent in entries) { if (parent !in all) all[parent] = u.copy(id = parent); continue }
-            // A parent group (diabetes add-ons, review R3-04): without any member picked, every member comes along (most restrictive).
+            // A parent group (diabetes add-ons, review R3-04): without any member picked, every member comes along (most restrictive). A
+            // doctor's OK stored on the add-on is not copied (re-review N5): the base entries ask for their own until the type is picked.
             val members = GeneratedConditions.parentGroups[parent] ?: continue
             if (members.none { it in all }) {
-                for (m in members) all[m] = u.copy(id = m)
+                for (m in members) all[m] = u.copy(id = m, clearance = emptySet())
                 d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010), ReasonKey.CONDITION_PARENT_ASSUMED,
                     inputs = mapOf("entry" to u.id, "group" to parent), outputs = mapOf("added" to members))
             }
         }
         val known = all.values.map { resolveEntry(entries.getValue(it.id), it) }
         if (known.isEmpty() && unknown.isEmpty()) return EngineResult(ConditionLimits.NONE, d)
-        val r = known + if (unknown.isEmpty()) emptyList() else listOf(unknownResolved())
+        val r = known + unknown.values.map { unknownResolved(it) }
         val impact = r.minOf { it.impact }
         val joints = HashMap<Joint, Int>()
         for (x in r) for ((j, v) in x.jointLimits) joints[j] = minOf(joints[j] ?: 4, v)
@@ -261,7 +272,7 @@ object Conditions {
         val hiitLists = r.mapNotNull { it.hiitModalities }
         val limits = ConditionLimits(
             entries = known.map { it.id }.toSet(),
-            unknown = unknown,
+            unknown = unknown.keys,
             maxZone = r.minOf { it.maxZone },
             hiit = r.minOf { it.hiit },
             hiitBaseWeeks = r.maxOf { it.hiitBaseWeeks },
@@ -290,7 +301,7 @@ object Conditions {
             weightFeatures = r.all { it.weightFeatures },
             prompts = r.flatMap { it.prompts }.distinct(),
             stopSigns = r.flatMap { it.stopSigns }.distinct(),
-            clearancePrompts = known.filter { it.clearancePrompt }.map { it.id }.toSet() + unknown,
+            clearancePrompts = known.filter { it.clearancePrompt }.map { it.id }.toSet() + unknown.values.filter { it.clearance.isEmpty() }.map { it.id },
             blocked = known.filter { it.blocked }.map { it.id }.toSet(),
             avoidModalities = r.flatMap { it.avoidModalities }.toSet(),
         )

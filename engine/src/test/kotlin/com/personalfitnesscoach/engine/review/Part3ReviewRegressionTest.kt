@@ -405,4 +405,52 @@ class Part3ReviewRegressionTest {
             }
         }
     }
+    // ---------------------------------------------------------------- re-review of the fixes (N1 … N5)
+
+    @Test fun `R3-16 re-review N1 - after breastbone surgery no drill puts weight on the arms or uses a band`() {
+        val c = resolve(UserCondition("heart", clearance = setOf(ClearanceScope.VIGOROUS), subFlags = setOf("recent_breastbone_surgery")))
+        val calm = Mobility.calmSession(25, jointLimits = c.jointLimits, avoidTags = c.avoidTags).value.drills.map { it.drill }
+        val off = Mobility.offDayRoutine(20, gym, c.jointLimits, c.avoidTags).value.map { it.drill }
+        val warm = Mobility.warmupDrills(setOf(com.personalfitnesscoach.engine.model.Pattern.HORIZONTAL_PUSH, com.personalfitnesscoach.engine.model.Pattern.VERTICAL_PULL,
+            com.personalfitnesscoach.engine.model.Pattern.SQUAT), gym, jointLimits = c.jointLimits, avoidTags = c.avoidTags).value.map { it.drill }
+        val cool = Mobility.cooldown(setOf(com.personalfitnesscoach.engine.model.Muscle.CHEST, com.personalfitnesscoach.engine.model.Muscle.LATS), 6.0, gym,
+            c.jointLimits, c.avoidTags).value.map { it.drill }
+        for (d in calm + off + warm + cool) assertFalse(d.id, "upper_body_loaded" in d.tags)
+        for (id in listOf("drill-inchworm", "drill-scap-push-up", "drill-band-pull-apart", "stretch-chest-doorway"))
+            assertTrue(id, "upper_body_loaded" in GeneratedLibrary.drills.first { it.id == id }.tags)
+        val plan = WeekPlanner.plan(input(c, type = BlockType.BUILD, days = 3), general).value
+        for (w in generateAll(plan, c)) assertTrue((w.value.warmupDrills + w.value.cooldown).none { "upper_body_loaded" in it.drill.tags })
+    }
+
+    @Test fun `R3-17 re-review N2 - a RECOVERY day's easy block is not padded with the condition's extra warm-up`() {
+        val c = resolve(UserCondition("heart", clearance = setOf(ClearanceScope.VIGOROUS)))
+        val day = WeekPlanner.plan(input(c, days = 3), general).value.days.first { it.conditioning.isNotEmpty() }
+        val w = SessionGenerator.generate(GenerationRequest(day, Level.INTERMEDIATE, 40, 60, gym, Tier.RECOVERY, age = 50,
+            week = ValidationContext(Level.INTERMEDIATE, weeksTraining = 40), conditions = c)).value
+        assertTrue(w.items.isEmpty())
+        assertTrue("planned ${w.plannedMinutes}", w.plannedMinutes <= 30.0)
+        assertTrue(SessionValidator.violations(w.validated, ValidationContext(Level.INTERMEDIATE, weeksTraining = 40, age = 50, conditions = c)).isEmpty())
+    }
+
+    @Test fun `R3-18 re-review N3 - with only consecutive days the plan asks for a day with a gap`() {
+        val t2d = resolve(UserCondition("t2d", clearance = setOf(ClearanceScope.VIGOROUS)))
+        val r = WeekPlanner.plan(input(t2d, general, days = 2, available = setOf(5, 6)), general)
+        assertTrue(r.decisions.any { it.reason == ReasonKey.ADD_DAY_WITH_GAP && it.outputs["addDayWithGap"] == true })
+        assertFalse(WeekPlanner.plan(input(t2d, general, days = 3, available = setOf(0, 1, 2)), general).decisions.any { it.reason == ReasonKey.ADD_DAY_WITH_GAP })
+    }
+
+    @Test fun `R3-19 re-review N4 - an unknown ID asks to re-pick, and a confirmed doctor's OK lifts conservative mode to that scope only`() {
+        val r = Conditions.resolve(listOf(UserCondition("old_condition_id")))
+        assertTrue(r.decisions.any { it.reason == ReasonKey.CONDITION_UNKNOWN && it.outputs["repick"] == true })
+        val ok = resolve(UserCondition("old_condition_id", clearance = setOf(ClearanceScope.VIGOROUS)))
+        assertFalse(ok.conservative)
+        assertEquals(Zone.Z2, ok.maxZone); assertEquals(HiitPermission.NO, ok.hiit); assertFalse(ok.failureAllowed)
+        assertTrue(ok.unknown == setOf("old_condition_id") && "old_condition_id" !in ok.clearancePrompts)
+    }
+
+    @Test fun `R3-20 re-review N5 - a doctor's OK stored on a diabetes add-on is not copied to the base entries`() {
+        val c = resolve(UserCondition("diabetes_feet", weeks = 20, clearance = setOf(ClearanceScope.VIGOROUS, ClearanceScope.INTERVALS)))
+        assertEquals(Zone.Z1, c.maxZone); assertEquals(HiitPermission.NO, c.hiit)
+        assertTrue(c.clearancePrompts.containsAll(setOf("t1d", "t2d")))
+    }
 }

@@ -276,8 +276,12 @@ object SessionGenerator {
         // 7) Warm-up: RAMP minutes, dynamic drills for today's patterns (MOB-001), ramp-up sets for the first two main lifts (WU-002).
         val wu0 = Warmup.minutes(10.0, compressed = false, age = r.age)
         // SAF-010: extra warm-up minutes from the condition entries (the highest applies).
-        val wu = if (c.extraWarmupMin > 0) wu0.map { it + c.extraWarmupMin } + listOf(Decision(DecisionKind.WARMUP, listOf(RuleIds.SAF_010),
-            ReasonKey.CONDITION_LIMIT_APPLIED, outputs = mapOf("extraWarmupMin" to c.extraWarmupMin))) else wu0
+        // A RECOVERY day's optional easy Z1 block starts gently by itself, so the condition extras apply to training sessions only (re-review N2).
+        val extrasApply = tier != Tier.RECOVERY
+        val extraWarm = if (extrasApply) c.extraWarmupMin else 0
+        val extraCool = if (extrasApply) c.extraCooldownMin else 0
+        val wu = if (extraWarm > 0) wu0.map { it + extraWarm } + listOf(Decision(DecisionKind.WARMUP, listOf(RuleIds.SAF_010),
+            ReasonKey.CONDITION_LIMIT_APPLIED, outputs = mapOf("extraWarmupMin" to extraWarm))) else wu0
         d += wu.decisions
         val patterns = items.map { it.exercise.pattern }.toSet()
         val drills = Mobility.warmupDrills(patterns, r.equipmentToday, restricted = mergedLimits(r).filterValues { it <= 1 }.keys, age = r.age,
@@ -315,10 +319,10 @@ object SessionGenerator {
         else if (c.boneLoading && tier != Tier.RECOVERY && items.isNotEmpty()) d += Decision(DecisionKind.WARMUP, listOf(RuleIds.CON_004, RuleIds.SAF_010),
             ReasonKey.BONE_LOADING_VARIANT, outputs = mapOf("variant" to null, "reason" to "pain_limits"))
         val extraMin = balanceMin + (bone?.minutes ?: 0.0)
-        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble() + c.extraCooldownMin, WeekPlanner.planItems(dayForFit),
+        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble() + extraCool, WeekPlanner.planItems(dayForFit),
             coreMobilityMin = mobilityMin + extraMin)
         val fit = TimeBudget.fit(plan, r.minutes.toDouble(), r.age, r.personalFactor, r.crowded,
-            extraWarmupMin = c.extraWarmupMin.toDouble(), extraCooldownMin = c.extraCooldownMin.toDouble())
+            extraWarmupMin = extraWarm.toDouble(), extraCooldownMin = extraCool.toDouble())
         d += fit.decisions
         val byId = fit.value.plan.items.associateBy { it.id }
         items = items.mapIndexedNotNull { idx, it -> byId["$idx:${it.exercise.id}"]?.let { p -> it.copy(sets = p.sets) } }

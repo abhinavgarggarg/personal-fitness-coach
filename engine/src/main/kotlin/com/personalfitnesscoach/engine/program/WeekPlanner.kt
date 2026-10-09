@@ -242,6 +242,9 @@ object WeekPlanner {
                     inputs = mapOf("available" to avail.sorted()), outputs = mapOf("strengthDays" to strength, "days" to assign.value.days,
                         "order" to assign.value.order.map { it.name }))
             }
+            // Fewer than FL-003's 2 strength days because the only available days touch: the plan says to add a day with a gap (re-review N3).
+            if (strength < P.FL_003.strength_days.min && days >= 2) d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.SAF_010, RuleIds.FL_003),
+                ReasonKey.ADD_DAY_WITH_GAP, inputs = mapOf("available" to avail.sorted()), outputs = mapOf("strengthDays" to strength, "addDayWithGap" to true))
         }
         d += assign.decisions
         val order = assign.value.order

@@ -362,6 +362,13 @@ def main():
             if t not in tags:
                 err(f"{owner}: unknown tag {t}")
         drill_ids.add(d.get("id"))
+        # Library 1.1.1 (re-review N1): drills that put weight on the hands, use bands or a bar, or load the shoulder carry upper_body_loaded.
+        dj = d.get("joints", {})
+        if (dj.get("WRIST", 0) >= 1 or dj.get("SHOULDER", 0) >= 2 or set(d.get("equipment", [])) & {"bands", "pullup_bar"}) \
+                and "upper_body_loaded" not in d.get("tags", []):
+            err(f"{owner}: puts weight on the arms or uses a band or bar, so it needs the upper_body_loaded tag")
+        if "unsupported_single_leg" in d.get("tags", []) and "high_fall_risk" not in d.get("tags", []):
+            err(f"{owner}: unsupported single-leg work is also high_fall_risk")
         if d.get("kind") not in DRILL_KINDS:
             err(f"{owner}: unknown kind {d.get('kind')}")
         for r in d.get("regions", []):

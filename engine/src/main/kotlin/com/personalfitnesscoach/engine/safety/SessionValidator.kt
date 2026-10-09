@@ -201,7 +201,8 @@ object SessionValidator {
             else if (b.countsAsHiit && !intervalModalityAllowed(b.modality, c)) v += Violation(RuleIds.SAF_010, "INTERVAL_MODALITY", i)
         }
         // WU-003 / TIME-001 / SAF-010: the warm-up and cool-down never go below their floors, condition extras included (review R3-02).
-        if (s.exercises.isNotEmpty() || s.conditioning.isNotEmpty()) {
+        // RECOVERY days hold only the optional easy Z1 block, which starts gently by itself (re-review N2).
+        if (s.tier != Tier.RECOVERY && (s.exercises.isNotEmpty() || s.conditioning.isNotEmpty())) {
             val wFloor = com.personalfitnesscoach.engine.planning.TimeBudget.warmupFloor(c.age, c.conditions.extraWarmupMin.toDouble())
             if (s.warmupMinutes != null && s.warmupMinutes < wFloor - 1e-9)
                 v += Violation(if (c.conditions.extraWarmupMin > 0) RuleIds.SAF_010 else RuleIds.WU_003, "WARMUP_SHORT", detail = "${s.warmupMinutes}<$wFloor")
