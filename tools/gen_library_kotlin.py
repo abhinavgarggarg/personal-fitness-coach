@@ -39,7 +39,9 @@ DRILL_KINDS = ["ACTIVATE", "MOBILISE", "BALANCE", "STRETCH", "BREATHING"]
 REGIONS = ["HIPS", "ANKLES", "KNEES", "SPINE", "UPPER_BACK", "SHOULDERS", "WRISTS", "CHEST", "LATS", "QUADS",
            "HAMSTRINGS", "GLUTES", "CALVES", "ADDUCTORS", "HIP_FLEXORS", "WHOLE_BODY"]
 MODALITIES = ["ROWER", "SKIERG", "ELLIPTICAL", "SLED", "BATTLE_ROPES", "KETTLEBELL", "CARRIES", "MEDBALL",
-              "BODYWEIGHT_CIRCUIT", "JUMP_ROPE"]
+              "BODYWEIGHT_CIRCUIT", "JUMP_ROPE",
+              # MOD-001 2.0.0: per-person choices (decision 2, Research Update 1.1)
+              "TREADMILL_WALK", "STATIONARY_BIKE", "AIR_BIKE", "STAIR_MACHINE", "TREADMILL_RUN"]
 MOD_UNITS = ["MINUTES", "METRES", "WATTS", "CALORIES", "REPS"]
 # Equipment that fixes you to one spot in the gym (EQ-002 station kind).
 FIXED_EXTRA = {"rack", "bench", "incline_bench", "pullup_bar", "dip_station", "landmine", "plyo_box"}

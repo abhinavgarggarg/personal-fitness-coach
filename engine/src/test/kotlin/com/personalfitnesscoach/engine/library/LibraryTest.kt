@@ -45,7 +45,7 @@ class LibraryTest {
             assertTrue(e.id, t!!.setup.isNotBlank() && t.cues.isNotEmpty() && t.mistakes.isNotEmpty())
         }
         for (d in GeneratedLibrary.drills) assertTrue(d.id, Library.text(d.id)!!.cues.isNotEmpty())
-        val allowed = Modality.entries.filter { !it.excluded }
+        val allowed = Modality.entries
         assertEquals(allowed.toSet(), GeneratedLibraryText.modalities.keys)
         assertEquals(allowed.toSet(), GeneratedLibrary.modalities.map { it.modality }.toSet())
         assertTrue(GeneratedLibrary.LICENSE.contains("ORIGINAL"))
@@ -58,7 +58,7 @@ class LibraryTest {
             assertTrue(e.id, e.limitationTags.all { it in GeneratedLibrary.tags })
             e.progressionId?.let { assertNotNull(it, Library[it]) }
             e.regressionId?.let { assertNotNull(it, Library[it]) }
-            assertTrue(e.id, e.equipment.none { it in Substitution.MOD001_EQUIPMENT })
+            assertTrue(e.id, e.equipment.none { it in Substitution.CARDIO_MACHINE_EQUIPMENT })
             if (e.trackE1rm) assertTrue(e.id, e.loadType in setOf(LoadType.BARBELL, LoadType.DUMBBELL, LoadType.STACK, LoadType.KETTLEBELL))
         }
     }

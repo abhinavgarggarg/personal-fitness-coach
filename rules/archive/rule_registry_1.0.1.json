@@ -1,7 +1,7 @@
 {
-  "registry_version": "1.1.0",
-  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09",
-  "generated": "2026-10-09",
+  "registry_version": "1.0.1",
+  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07",
+  "generated": "2026-10-07",
   "confidence_scale": [
     "High Evidence",
     "Moderate Evidence",
@@ -32,7 +32,7 @@
     },
     "Schoenfeld2017vol": {
       "citation": "Schoenfeld BJ, Ogborn D, Krieger JW. Dose-response relationship between weekly resistance training volume and increases in muscle mass: a systematic review and meta-analysis. J Sports Sci. 2017;35(11):1073-1082.",
-      "verification": "checked",
+      "verification": "located",
       "url": "https://paulogentil.com/pdf/Dose-response%20relationship%20between%20weekly%20resistance%20training%20volume%20and%20increases%20in%20muscle%20mass%20-%20A%20systematic%20review%20and%20metaanalysis.pdf"
     },
     "Schoenfeld2016freq": {
@@ -313,8 +313,7 @@
     "Lally2010": {
       "citation": "Lally P, van Jaarsveld CHM, Potts HWW, Wardle J. How are habits formed: modelling habit formation in the real world. Eur J Soc Psychol. 2010;40(6):998-1009.",
       "verification": "located",
-      "url": "",
-      "note": "The earlier URL opened a different paper (Gardner, Rebar & Lally 2022). Publisher DOI 10.1002/ejsp.674 not yet confirmed."
+      "url": "https://discovery.ucl.ac.uk/id/eprint/10144814/"
     },
     "Mazeas2022": {
       "citation": "Mazeas A, Duclos M, Pereira B, Chalabaev A. Evaluating the effectiveness of gamification on physical activity: systematic review and meta-analysis of randomized controlled trials. J Med Internet Res. 2022;24(1):e26779.",
@@ -335,466 +334,6 @@
       "citation": "Israetel M, Hoffmann J, Smith CW. Scientific Principles of Hypertrophy Training. Renaissance Periodization; 2021. (source of MV/MEV/MAV/MRV vocabulary; book, expert practice)",
       "verification": "located",
       "url": "https://rpstrength.com/the-scientific-principles-of-hypertrophy-training"
-    },
-    "Murphy2022": {
-      "citation": "Murphy C, Koehler K. Energy deficiency impairs resistance training gains in lean mass but not strength: a meta-analysis and meta-regression. Scand J Med Sci Sports. 2022;32(1):125-137. doi:10.1111/sms.14075",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1111/sms.14075"
-    },
-    "LaForgia2006": {
-      "citation": "LaForgia J, Withers RT, Gore CJ. Effects of exercise intensity and duration on the excess post-exercise oxygen consumption. J Sports Sci. 2006;24(12):1247-1264.",
-      "verification": "checked (abstract; author names unverified)",
-      "url": ""
-    },
-    "Bickel2011": {
-      "citation": "Bickel CS, Cross JM, Bamman MM. Exercise dosing to retain resistance training adaptations in young and older adults. Med Sci Sports Exerc. 2011;43(7):1177-1187. doi:10.1249/MSS.0b013e318207c15d",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1249/MSS.0b013e318207c15d"
-    },
-    "Pelland2026": {
-      "citation": "Pelland JC, Remmert JF, Robinson ZP, Hinson SR, Zourdos MC. The resistance training dose response: meta-regressions exploring the effects of weekly volume and frequency on muscle hypertrophy and strength gains. Sports Med. 2026;56(2):481-505. doi:10.1007/s40279-025-02344-w",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1007/s40279-025-02344-w"
-    },
-    "Wolf2023rom": {
-      "citation": "Wolf M, Androulakis-Korakakis P, Fisher J, Schoenfeld B, Steele J. Partial vs full range of motion resistance training: a systematic review and meta-analysis. Int J Strength Cond. 2023;3(1). doi:10.47206/ijsc.v3i1.182",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.47206/ijsc.v3i1.182"
-    },
-    "Wolf2025lp": {
-      "citation": "Wolf M, Androulakis-Korakakis P, Piñero A, et al. (incl. Nippard J). Lengthened partial repetitions elicit similar muscular adaptations as full range of motion repetitions during resistance training in trained individuals. PeerJ. 2025;13:e18904. doi:10.7717/peerj.18904",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.7717/peerj.18904"
-    },
-    "Larsen2025": {
-      "citation": "Larsen S, Wolf M, Schoenfeld BJ, et al. Knee flexion range of motion does not influence muscle hypertrophy of the quadriceps femoris during leg press training in resistance-trained individuals. J Sports Sci. 2025;43(10):986-994. doi:10.1080/02640414.2025.2481534",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1080/02640414.2025.2481534"
-    },
-    "Hermann2025": {
-      "citation": "Hermann T, Mohan AE, Enes A, et al. Without fail: muscular adaptations in single set resistance training performed to failure or with repetitions-in-reserve. Med Sci Sports Exerc. 2025. doi:10.1249/MSS.0000000000003728",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1249/MSS.0000000000003728"
-    },
-    "Gardner2012": {
-      "citation": "Gardner B, Lally P, Wardle J. Making health habitual: the psychology of 'habit-formation' and general practice. Br J Gen Pract. 2012;62(605):664-666. doi:10.3399/bjgp12X659466",
-      "verification": "checked",
-      "url": "https://doi.org/10.3399/bjgp12X659466"
-    },
-    "Singh2024": {
-      "citation": "Singh B, Murphy A, Maher C, Smith AE. Time to form a habit: a systematic review and meta-analysis of health behaviour habit formation and its determinants. Healthcare (Basel). 2024;12(23):2488. doi:10.3390/healthcare12232488",
-      "verification": "checked",
-      "url": "https://doi.org/10.3390/healthcare12232488"
-    },
-    "Kaushal2015": {
-      "citation": "Kaushal N, Rhodes RE. Exercise habit formation in new gym members: a longitudinal study. J Behav Med. 2015;38(4):652-663. doi:10.1007/s10865-015-9640-7",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1007/s10865-015-9640-7"
-    },
-    "Buyalskaya2023": {
-      "citation": "Buyalskaya A, Ho H, Milkman KL, Li X, Duckworth AL, Camerer C. What can machine learning teach us about habit formation? Evidence from exercise and hygiene. Proc Natl Acad Sci USA. 2023;120(17):e2216115120. doi:10.1073/pnas.2216115120",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1073/pnas.2216115120"
-    },
-    "Milkman2021": {
-      "citation": "Milkman KL, Gromet D, Ho H, et al. Megastudies improve the impact of applied behavioural science. Nature. 2021;600:478-483. doi:10.1038/s41586-021-04128-4",
-      "verification": "checked",
-      "url": "https://doi.org/10.1038/s41586-021-04128-4"
-    },
-    "BelangerGravel2013": {
-      "citation": "Bélanger-Gravel A, Godin G, Amireault S. A meta-analytic review of the effect of implementation intentions on physical activity. Health Psychol Rev. 2013;7(1):23-54.",
-      "verification": "checked (abstract via secondary)",
-      "url": ""
-    },
-    "Peng2022": {
-      "citation": "Peng S, Othman AT, Yuan F, Liang J. The effectiveness of planning interventions for improving physical activity in the general population: a systematic review and meta-analysis of randomized controlled trials. Int J Environ Res Public Health. 2022;19(12):7337. doi:10.3390/ijerph19127337",
-      "verification": "checked",
-      "url": "https://doi.org/10.3390/ijerph19127337"
-    },
-    "Harkin2016": {
-      "citation": "Harkin B, Webb T, Chang B, et al. Does monitoring goal progress promote goal attainment? A meta-analysis of the experimental evidence. Psychol Bull. 2016;142(2):198-229. doi:10.1037/bul0000025",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1037/bul0000025"
-    },
-    "Michie2009": {
-      "citation": "Michie S, Abraham C, Whittington C, McAteer J, Gupta S. Effective techniques in healthy eating and physical activity interventions: a meta-regression. Health Psychol. 2009.",
-      "verification": "checked (abstract)",
-      "url": ""
-    },
-    "Michie2013": {
-      "citation": "Michie S, Richardson M, Johnston M, et al. The Behavior Change Technique Taxonomy (v1) of 93 hierarchically clustered techniques. Ann Behav Med. 2013;46(1):81-95. doi:10.1007/s12160-013-9486-6",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1007/s12160-013-9486-6"
-    },
-    "Samdal2017": {
-      "citation": "Samdal GB, Eide GE, Barth T, Williams G, et al. Effective behaviour change techniques for physical activity and healthy eating in overweight and obese adults; systematic review and meta-regression analyses. Int J Behav Nutr Phys Act. 2017;14:42. doi:10.1186/s12966-017-0494-y",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1186/s12966-017-0494-y"
-    },
-    "Wieland2022": {
-      "citation": "Wieland LS, Skoetz N, Pilkington K, et al. Yoga for chronic non-specific low back pain. Cochrane Database Syst Rev. 2022;(11):CD010671. doi:10.1002/14651858.CD010671.pub3",
-      "verification": "checked (summary of findings)",
-      "url": "https://doi.org/10.1002/14651858.CD010671.pub3"
-    },
-    "Sivaramakrishnan2019": {
-      "citation": "Sivaramakrishnan D, Fitzsimons C, Kelly P, et al. The effects of yoga compared to active and inactive controls on physical function and health related quality of life in older adults. Int J Behav Nutr Phys Act. 2019;16(1). doi:10.1186/s12966-019-0789-2",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1186/s12966-019-0789-2"
-    },
-    "Wang2020": {
-      "citation": "Wang WL, Chen KH, Pan YC, Yang SN, Chan YY. The effect of yoga on sleep quality and insomnia in women with sleep problems: a systematic review and meta-analysis. BMC Psychiatry. 2020;20:195. doi:10.1186/s12888-020-02566-4",
-      "verification": "checked (abstract via secondary)",
-      "url": "https://doi.org/10.1186/s12888-020-02566-4"
-    },
-    "Pascoe2017": {
-      "citation": "Pascoe MC, Thompson DR, Ski CF. Yoga, mindfulness-based stress reduction and stress-related physiological measures: a meta-analysis. Psychoneuroendocrinology. 2017;86:152-168. doi:10.1016/j.psyneuen.2017.08.008",
-      "verification": "checked (abstract via secondary)",
-      "url": "https://doi.org/10.1016/j.psyneuen.2017.08.008"
-    },
-    "Cramer2018": {
-      "citation": "Cramer H, Lauche R, Anheyer D, et al. Yoga for anxiety: a systematic review and meta-analysis of randomized controlled trials. Depress Anxiety. 2018;35(9):830-843.",
-      "verification": "checked (abstract)",
-      "url": ""
-    },
-    "Cramer2015": {
-      "citation": "Cramer H, Ward L, Saper R, et al. The safety of yoga: a systematic review and meta-analysis of randomized controlled trials. Am J Epidemiol. 2015;182(4):281-293. doi:10.1093/aje/kwv071",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1093/aje/kwv071"
-    },
-    "Lauche2016": {
-      "citation": "Lauche R, Langhorst J, Lee MS, Dobos G, Cramer H. A systematic review and meta-analysis on the effects of yoga on weight-related outcomes. Prev Med. 2016;87:213-232.",
-      "verification": "checked (abstract via secondary)",
-      "url": ""
-    },
-    "Hagins2007": {
-      "citation": "Hagins M, Moore W, Rundle A. Does practicing hatha yoga satisfy recommendations for intensity of physical activity which improves and maintains health and cardiovascular fitness? BMC Complement Altern Med. 2007;7:40. doi:10.1186/1472-6882-7-40",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1186/1472-6882-7-40"
-    },
-    "Fincham2023": {
-      "citation": "Fincham GW, Strauss C, Montero-Marin J, Cavanagh K. Effect of breathwork on stress and mental health: a meta-analysis of randomised-controlled trials. Sci Rep. 2023;13:432.",
-      "verification": "checked (abstract); DOI unverified",
-      "url": ""
-    },
-    "Fincham2023b": {
-      "citation": "Fincham GW, Strauss C, Cavanagh K. Effect of coherent breathing on mental health and wellbeing: a randomised placebo-controlled trial. Sci Rep. 2023. doi:10.1038/s41598-023-49279-8",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1038/s41598-023-49279-8"
-    },
-    "Afonso2021rec": {
-      "citation": "Afonso J, Clemente FM, Nakamura FY, et al. The effectiveness of post-exercise stretching in short-term and delayed recovery of strength, range of motion and delayed onset muscle soreness: a systematic review and meta-analysis of randomized controlled trials. Front Physiol. 2021;12:677581. doi:10.3389/fphys.2021.677581",
-      "verification": "checked",
-      "url": "https://doi.org/10.3389/fphys.2021.677581"
-    },
-    "Tsuji2023": {
-      "citation": "Tsuji K, Tsuchiya Y, Ueda H, Ochi E. Home-based high-intensity interval training improves cardiorespiratory fitness: a systematic review and meta-analysis. BMC Sports Sci Med Rehabil. 2023;15(1). doi:10.1186/s13102-023-00777-2",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1186/s13102-023-00777-2"
-    },
-    "Chaabene2021": {
-      "citation": "Chaabene H, Prieske O, Herz M, et al. Home-based exercise programmes improve physical fitness of healthy older adults: a PRISMA-compliant systematic review and meta-analysis. Ageing Res Rev. 2021;67:101265. doi:10.1016/j.arr.2021.101265",
-      "verification": "checked",
-      "url": "https://doi.org/10.1016/j.arr.2021.101265"
-    },
-    "Kikuchi2017": {
-      "citation": "Kikuchi N, Nakazato K. Low-load bench press and push-up induce similar muscle hypertrophy and strength gain. J Exerc Sci Fit. 2017;15(1):37-42. doi:10.1016/j.jesf.2017.06.003",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1016/j.jesf.2017.06.003"
-    },
-    "Archila2021": {
-      "citation": "Archila LR, Bostad W, Joyner MJ, Gibala MJ. Simple bodyweight training improves cardiorespiratory fitness with minimal time commitment: a contemporary application of the 5BX approach. Int J Exerc Sci. 2021;14(3):93-100.",
-      "verification": "checked (abstract)",
-      "url": ""
-    },
-    "Vetrovsky2019": {
-      "citation": "Vetrovsky T, Steffl M, Stastny P, Tufano JJ, et al. The efficacy and safety of lower-limb plyometric training in older adults: a systematic review. Sports Med. 2019;49(1):113-131. doi:10.1007/s40279-018-1018-x",
-      "verification": "checked",
-      "url": "https://doi.org/10.1007/s40279-018-1018-x"
-    },
-    "Jayedi2024": {
-      "citation": "Jayedi A, Soltani S, Emadi A, Zargar MS, Najafi A. Aerobic exercise and weight loss in adults: a systematic review and dose-response meta-analysis. JAMA Netw Open. 2024;7(12):e2452185. doi:10.1001/jamanetworkopen.2024.52185",
-      "verification": "checked",
-      "url": "https://doi.org/10.1001/jamanetworkopen.2024.52185"
-    },
-    "Bellicha2021": {
-      "citation": "Bellicha A, van Baak MA, Battista F, et al. Effect of exercise training on weight loss, body composition changes, and weight maintenance in adults with overweight or obesity: an overview of 12 systematic reviews and 149 studies. Obes Rev. 2021;22(Suppl 4):e13256. doi:10.1111/obr.13256",
-      "verification": "checked",
-      "url": "https://doi.org/10.1111/obr.13256"
-    },
-    "Oppert2021": {
-      "citation": "Oppert J-M, Bellicha A, van Baak MA, et al. Exercise training in the management of overweight and obesity in adults: synthesis of the evidence and recommendations from the EASO Physical Activity Working Group. Obes Rev. 2021;22(Suppl 4):e13273. doi:10.1111/obr.13273",
-      "verification": "checked",
-      "url": "https://doi.org/10.1111/obr.13273"
-    },
-    "Donnelly2009": {
-      "citation": "Donnelly JE, Blair SN, Jakicic JM, Manore MM, Rankin JW, Smith BK. ACSM Position Stand. Appropriate physical activity intervention strategies for weight loss and prevention of weight regain for adults. Med Sci Sports Exerc. 2009;41(2):459-471. doi:10.1249/MSS.0b013e3181949333",
-      "verification": "checked (abstract); dose bands located",
-      "url": "https://doi.org/10.1249/MSS.0b013e3181949333"
-    },
-    "Jakicic2024": {
-      "citation": "Jakicic JM, Apovian CM, Barr-Anderson DJ, et al. Physical activity and excess body weight and adiposity for adults. ACSM consensus statement. Transl J Am Coll Sports Med. 2024;9(4):e000266. doi:10.1249/TJX.0000000000000266",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1249/TJX.0000000000000266"
-    },
-    "Viana2019": {
-      "citation": "Viana RB, Naves JPA, Coswig VS, et al. Is interval training the magic bullet for fat loss? A systematic review and meta-analysis comparing moderate-intensity continuous training with high-intensity interval training (HIIT). Br J Sports Med. 2019;53:655-664. doi:10.1136/bjsports-2018-099928",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1136/bjsports-2018-099928"
-    },
-    "SancaValeriano2023": {
-      "citation": "Sanca-Valeriano S, Espinola-Sánchez M, Caballero-Alvarado J, Canelo-Aybar C. Effect of HIIT compared to MICT on body composition and insulin sensitivity in overweight and obese adults: a systematic review and meta-analysis. Heliyon. 2023;9(10):e20402. doi:10.1016/j.heliyon.2023.e20402",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1016/j.heliyon.2023.e20402"
-    },
-    "Lopez2022": {
-      "citation": "Lopez P, Taaffe DR, Galvão DA, et al. Resistance training effectiveness on body composition and body weight outcomes in individuals with overweight and obesity across the lifespan: a systematic review and meta-analysis. Obes Rev. 2022;23(5):e13428. doi:10.1111/obr.13428",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1111/obr.13428"
-    },
-    "Sardeli2018": {
-      "citation": "Sardeli AV, Komatsu TR, Mori MA, Gáspari AF, Chacon-Mikahil MPT. Resistance training prevents muscle loss induced by caloric restriction in obese elderly individuals: a systematic review and meta-analysis. Nutrients. 2018;10(4):423. doi:10.3390/nu10040423",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.3390/nu10040423"
-    },
-    "Villareal2017": {
-      "citation": "Villareal DT, Aguirre L, Gurney AB, et al. Aerobic or resistance exercise, or both, in dieting obese older adults. N Engl J Med. 2017;376:1943-1955. doi:10.1056/NEJMoa1616338",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1056/NEJMoa1616338"
-    },
-    "Willis2012": {
-      "citation": "Willis LH, Slentz CA, Bateman LA, et al. Effects of aerobic and/or resistance training on body mass and fat mass in overweight or obese adults. J Appl Physiol. 2012;113(12):1831-1837. doi:10.1152/japplphysiol.01370.2011",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1152/japplphysiol.01370.2011"
-    },
-    "Peterson2011": {
-      "citation": "Peterson MD, Sen A, Gordon PM. Influence of resistance exercise on lean body mass in aging adults: a meta-analysis. Med Sci Sports Exerc. 2011;43(2):249-258.",
-      "verification": "located",
-      "url": ""
-    },
-    "Mitchell2012": {
-      "citation": "Mitchell WK, Williams J, Atherton P, Larvin M, Lund J, Narici M. Sarcopenia, dynapenia, and the impact of advancing age on human skeletal muscle size and strength; a quantitative review. Front Physiol. 2012;3:260. doi:10.3389/fphys.2012.00260",
-      "verification": "checked",
-      "url": "https://doi.org/10.3389/fphys.2012.00260"
-    },
-    "Stensvold2020": {
-      "citation": "Stensvold D, Viken H, et al. Effect of exercise training for five years on all cause mortality in older adults—the Generation 100 study: randomised controlled trial. BMJ. 2020;371:m3485. doi:10.1136/bmj.m3485",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1136/bmj.m3485"
-    },
-    "Men2025": {
-      "citation": "Men J, Zhao C, Xiang C, et al. Effects of high-intensity interval training on physical morphology, cardiopulmonary function, and metabolic indicators in older adults: a systematic review and meta-analysis. Front Endocrinol. 2025;16:1526991. doi:10.3389/fendo.2025.1526991",
-      "verification": "checked",
-      "url": "https://doi.org/10.3389/fendo.2025.1526991"
-    },
-    "Paluch2022": {
-      "citation": "Paluch AE, Bajpai S, Bassett DR, et al. Daily steps and all-cause mortality: a meta-analysis of 15 international cohorts. Lancet Public Health. 2022;7(3):e219-e228. doi:10.1016/S2468-2667(21)00302-9",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1016/S2468-2667(21)00302-9"
-    },
-    "Ding2025": {
-      "citation": "Ding D, Nguyen B, Nau T, et al. Daily steps and health outcomes in adults: a systematic review and dose-response meta-analysis. Lancet Public Health. 2025 (online 23 Jul 2025). doi:10.1016/S2468-2667(25)00164-1",
-      "verification": "located",
-      "url": "https://doi.org/10.1016/S2468-2667(25)00164-1"
-    },
-    "TudorLocke2011a": {
-      "citation": "Tudor-Locke C, Craig CL, Brown WJ, et al. How many steps/day are enough? For adults. Int J Behav Nutr Phys Act. 2011;8:79. doi:10.1186/1479-5868-8-79",
-      "verification": "checked",
-      "url": "https://doi.org/10.1186/1479-5868-8-79"
-    },
-    "TudorLocke2011b": {
-      "citation": "Tudor-Locke C, Craig CL, Aoyagi Y, et al. How many steps/day are enough? For older adults and special populations. Int J Behav Nutr Phys Act. 2011;8:80. doi:10.1186/1479-5868-8-80",
-      "verification": "checked",
-      "url": "https://doi.org/10.1186/1479-5868-8-80"
-    },
-    "Bravata2007": {
-      "citation": "Bravata DM, Smith-Spangler C, Sundaram V, et al. Using pedometers to increase physical activity and improve health: a systematic review. JAMA. 2007;298(19):2296-2304.",
-      "verification": "checked (abstract)",
-      "url": ""
-    },
-    "Adams2013": {
-      "citation": "Adams MA, Sallis JF, Norman GJ, Hovell MF, Hekler EB, Perata E. An adaptive physical activity intervention for overweight adults: a randomized controlled trial. PLoS One. 2013;8(12):e82901. doi:10.1371/journal.pone.0082901",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1371/journal.pone.0082901"
-    },
-    "Richardson2008": {
-      "citation": "Richardson CR, Newton TL, Abraham JJ, Sen A, Jimbo M, Swartz AM. A meta-analysis of pedometer-based walking interventions and weight loss. Ann Fam Med. 2008;6(1):69-77. doi:10.1370/afm.761",
-      "verification": "checked",
-      "url": "https://doi.org/10.1370/afm.761"
-    },
-    "Madigan2015": {
-      "citation": "Madigan CD, Daley AJ, Lewis AL, Aveyard P, Jolly K. Is self-weighing an effective tool for weight loss: a systematic literature review and meta-analysis. Int J Behav Nutr Phys Act. 2015;12:104. doi:10.1186/s12966-015-0267-4",
-      "verification": "checked",
-      "url": "https://doi.org/10.1186/s12966-015-0267-4"
-    },
-    "Misra2025": {
-      "citation": "Misra A, Vikram NK, Ghosh A, Ranjan P, Gulati S; India Obesity Commission. Revised definition of obesity in Asian Indians living in India. Diabetes Metab Syndr. 2025;19:102989. doi:10.1016/j.dsx.2024.102989",
-      "verification": "checked",
-      "url": "https://doi.org/10.1016/j.dsx.2024.102989"
-    },
-    "IDF2006": {
-      "citation": "International Diabetes Federation. The IDF consensus worldwide definition of the metabolic syndrome (ethnic-specific waist cut-offs). 2006.",
-      "verification": "located",
-      "url": ""
-    },
-    "WHOSTEPS": {
-      "citation": "WHO STEPwise approach (STEPS) waist-circumference protocol, as summarised by the MRC Epidemiology Unit / NIHR Cambridge BRC Measurement Toolkit.",
-      "verification": "located",
-      "url": ""
-    },
-    "Greendale2019": {
-      "citation": "Greendale GA, Sternfeld B, Huang M, et al. Changes in body composition and weight during the menopause transition. JCI Insight. 2019;4(5):e124865. doi:10.1172/jci.insight.124865",
-      "verification": "checked",
-      "url": "https://doi.org/10.1172/jci.insight.124865"
-    },
-    "KAN22": {
-      "citation": "Kanaley JA, Colberg SR, Corcoran MH, et al. Exercise/Physical Activity in Individuals with Type 2 Diabetes: A Consensus Statement from the American College of Sports Medicine. Med Sci Sports Exerc. 2022;54(2):353-368. doi:10.1249/MSS.0000000000002800",
-      "verification": "checked",
-      "url": "https://doi.org/10.1249/MSS.0000000000002800"
-    },
-    "RID17": {
-      "citation": "Riddell MC, Gallen IW, Smart CE, et al. Exercise management in type 1 diabetes: a consensus statement. Lancet Diabetes Endocrinol. 2017;5(5):377-390. doi:10.1016/S2213-8587(17)30014-1",
-      "verification": "checked",
-      "url": "https://doi.org/10.1016/S2213-8587(17)30014-1"
-    },
-    "PES19": {
-      "citation": "Pescatello LS, Buchner DM, Jakicic JM, et al. Physical Activity to Prevent and Treat Hypertension: A Systematic Review. Med Sci Sports Exerc. 2019;51(6):1314-1323. doi:10.1249/MSS.0000000000001943",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1249/MSS.0000000000001943"
-    },
-    "ESC20": {
-      "citation": "Pelliccia A, Sharma S, Gati S, et al. 2020 ESC Guidelines on sports cardiology and exercise in patients with cardiovascular disease. Eur Heart J. 2021;42(1):17-96. doi:10.1093/eurheartj/ehaa605",
-      "verification": "checked",
-      "url": "https://doi.org/10.1093/eurheartj/ehaa605"
-    },
-    "AAESS09": {
-      "citation": "Sharman JE, Stowasser M. Australian Association for Exercise and Sports Science position statement on exercise and hypertension. J Sci Med Sport. 2009;12:252-257.",
-      "verification": "checked",
-      "url": ""
-    },
-    "AHA13": {
-      "citation": "Fletcher GF, Ades PA, Kligfield P, et al. Exercise Standards for Testing and Training: A Scientific Statement From the American Heart Association. Circulation. 2013;128. doi:10.1161/CIR.0b013e31829b5b44",
-      "verification": "checked",
-      "url": "https://doi.org/10.1161/CIR.0b013e31829b5b44"
-    },
-    "EDW23": {
-      "citation": "Edwards JJ, et al. Exercise training and resting blood pressure: a large-scale pairwise and network meta-analysis of randomised controlled trials. Br J Sports Med. 2023;57(20):1317-. doi:10.1136/bjsports-2022-106503",
-      "verification": "checked",
-      "url": "https://doi.org/10.1136/bjsports-2022-106503"
-    },
-    "EDW24": {
-      "citation": "Edwards JJ, Coleman DA, Ritti-Dias RM, et al. Isometric Exercise Training and Arterial Hypertension: An Updated Review. Sports Med. 2024. doi:10.1007/s40279-024-02036-x",
-      "verification": "checked",
-      "url": "https://doi.org/10.1007/s40279-024-02036-x"
-    },
-    "AHA24RT": {
-      "citation": "Paluch AE, Boyer WR, Franklin BA, et al. Resistance Exercise Training in Individuals With and Without Cardiovascular Disease: 2023 Update: A Scientific Statement From the AHA. Circulation. 2024;149:e217-e231. doi:10.1161/CIR.0000000000001189",
-      "verification": "checked",
-      "url": "https://doi.org/10.1161/CIR.0000000000001189"
-    },
-    "CCD23": {
-      "citation": "Virani SS, Newby LK, Arnold SV, et al. 2023 AHA/ACC/ACCP/ASPC/NLA/PCNA Guideline for the Management of Patients With Chronic Coronary Disease. J Am Coll Cardiol. 2023. doi:10.1016/j.jacc.2023.04.003",
-      "verification": "checked (secondary)",
-      "url": "https://doi.org/10.1016/j.jacc.2023.04.003"
-    },
-    "ATS13": {
-      "citation": "Parsons JP, Hallstrand TS, Mastronarde JG, et al. An Official American Thoracic Society Clinical Practice Guideline: Exercise-induced Bronchoconstriction. Am J Respir Crit Care Med. 2013;187(9):1016-1027. doi:10.1164/rccm.201303-0437ST",
-      "verification": "checked",
-      "url": "https://doi.org/10.1164/rccm.201303-0437ST"
-    },
-    "AAAAI22": {
-      "citation": "Nyenhuis SM, Kahwash B, Cooke A, et al. Recommendations for Physical Activity in Asthma: A Work Group Report of the AAAAI Sports, Exercise, and Fitness Committee. J Allergy Clin Immunol Pract. 2022;10(2):433-443. doi:10.1016/j.jaip.2021.10.056",
-      "verification": "checked",
-      "url": "https://doi.org/10.1016/j.jaip.2021.10.056"
-    },
-    "OARSI19": {
-      "citation": "Bannuru RR, Osani MC, Vaysbrot EE, et al. OARSI guidelines for the non-surgical management of knee, hip, and polyarticular osteoarthritis. Osteoarthritis Cartilage. 2019;27:1578-1589. doi:10.1016/j.joca.2019.06.011",
-      "verification": "checked",
-      "url": "https://doi.org/10.1016/j.joca.2019.06.011"
-    },
-    "ACR20": {
-      "citation": "Kolasinski SL, Neogi T, Hochberg MC, et al. 2019 ACR/Arthritis Foundation Guideline for the Management of Osteoarthritis of the Hand, Hip, and Knee. Arthritis Rheumatol. 2020;72(2):220-233. doi:10.1002/art.41142",
-      "verification": "checked",
-      "url": "https://doi.org/10.1002/art.41142"
-    },
-    "NG226": {
-      "citation": "National Institute for Health and Care Excellence. Osteoarthritis in over 16s: diagnosis and management (NG226). 2022.",
-      "verification": "checked",
-      "url": ""
-    },
-    "GLAD12": {
-      "citation": "Skou ST, Odgaard A, Rasmussen JO, Roos EM. Group education and exercise is feasible in knee and hip osteoarthritis. Dan Med J. 2012;59(12):A4554.",
-      "verification": "checked",
-      "url": ""
-    },
-    "NG59": {
-      "citation": "National Institute for Health and Care Excellence. Low back pain and sciatica in over 16s: assessment and management (NG59). 2016, updated 2026.",
-      "verification": "checked",
-      "url": ""
-    },
-    "WHO23": {
-      "citation": "World Health Organization. WHO guideline for non-surgical management of chronic primary low back pain in adults in primary and community care settings. 2023.",
-      "verification": "checked (secondary)",
-      "url": ""
-    },
-    "NHSBP": {
-      "citation": "NHS. Back pain. https://www.nhs.uk/conditions/back-pain/ (reviewed 5 Mar 2026).",
-      "verification": "checked",
-      "url": ""
-    },
-    "ROS22": {
-      "citation": "Brooke-Wavell K, Skelton DA, Barker KL, et al. Strong, steady and straight: UK consensus statement on physical activity and exercise for osteoporosis. Br J Sports Med. 2022;56(15):837-846. doi:10.1136/bjsports-2021-104634",
-      "verification": "checked",
-      "url": "https://doi.org/10.1136/bjsports-2021-104634"
-    },
-    "ESSA17": {
-      "citation": "Beck BR, Daly RM, Singh MAF, Taaffe DR. ESSA position statement on exercise prescription for the prevention and management of osteoporosis. J Sci Med Sport. 2017;20:438-445. doi:10.1016/j.jsams.2016.10.001",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1016/j.jsams.2016.10.001"
-    },
-    "IOF": {
-      "citation": "International Osteoporosis Foundation. Exercise for individuals with osteoporosis.",
-      "verification": "checked",
-      "url": ""
-    },
-    "CAN19": {
-      "citation": "Mottola MF, Davenport MH, Ruchat S-M, et al. 2019 Canadian guideline for physical activity throughout pregnancy. Br J Sports Med. 2018;52(21):1339-. / J Obstet Gynaecol Can. 2018;40(11):1549-1559.",
-      "verification": "checked",
-      "url": ""
-    },
-    "ACOG20": {
-      "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 804. Obstet Gynecol. 2020;135(4). doi:10.1097/AOG.0000000000003772",
-      "verification": "located",
-      "url": "https://doi.org/10.1097/AOG.0000000000003772"
-    },
-    "CAN25": {
-      "citation": "Davenport MH, Ruchat S-M, Jaramillo Garcia A, et al. 2025 Canadian guideline for physical activity, sedentary behaviour and sleep throughout the first year post partum. Br J Sports Med. 2025;59(8):515-.",
-      "verification": "checked",
-      "url": ""
-    },
-    "GOOM19": {
-      "citation": "Goom T, Donnelly G, Brockwell E. Returning to running postnatal – guidelines for medical, health and fitness professionals managing this population. 2019.",
-      "verification": "checked",
-      "url": ""
-    },
-    "WHO04": {
-      "citation": "WHO Expert Consultation. Appropriate body-mass index for Asian populations and its implications for policy and intervention strategies. Lancet. 2004;363(9403):157-163. doi:10.1016/S0140-6736(03)15268-3",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1016/S0140-6736(03)15268-3"
-    },
-    "AHA14ST": {
-      "citation": "Billinger SA, Arena R, Bernhardt J, et al. Physical activity and exercise recommendations for stroke survivors: AHA/ASA statement. Stroke. 2014;45:2532-2553. doi:10.1161/STR.0000000000000022",
-      "verification": "checked",
-      "url": "https://doi.org/10.1161/STR.0000000000000022"
-    },
-    "GOLD26": {
-      "citation": "Global Initiative for Chronic Obstructive Lung Disease. 2026 Report.",
-      "verification": "checked (secondary)",
-      "url": ""
-    },
-    "CAM19": {
-      "citation": "Campbell KL, Winters-Stone KM, Wiskemann J, et al. Exercise Guidelines for Cancer Survivors: Consensus Statement from International Multidisciplinary Roundtable. Med Sci Sports Exerc. 2019;51(11):2375-2390. doi:10.1249/MSS.0000000000002116",
-      "verification": "checked (abstract)",
-      "url": "https://doi.org/10.1249/MSS.0000000000002116"
     }
   },
   "rules": [
@@ -964,7 +503,7 @@
     },
     {
       "rule_id": "SAF-005",
-      "version": "1.0.1",
+      "version": "1.0.0",
       "category": "safety",
       "title": "Hard workload caps",
       "statement": "The engine never prescribes beyond these caps; neither the AI coach nor repeated taps can bypass them.",
@@ -1010,13 +549,13 @@
       },
       "confidence": "Expert Practice",
       "evidence": [
-        "Pelland2026",
+        "Pelland2024",
         "Schoenfeld2017vol",
         "Bell2023"
       ],
       "uncertainty": "Cap values are expert practice set below volumes tolerated in studies because conditioning is concurrent.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "all"
       ],
@@ -1024,7 +563,7 @@
         "TC-SAF-005a",
         "TC-SAF-005b"
       ],
-      "change_reason": "PATCH: peer-reviewed Pelland 2026 replaces the 2024 preprint (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -1199,16 +738,15 @@
     },
     {
       "rule_id": "PH-001",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "category": "public_health",
       "title": "WHO floor accounting",
-      "statement": "Equivalent minutes = Z1 (including STEP-002 brisk walks) + 2 × (Z2 + Z3 work); target ≥150/week; muscle-strengthening ≥2 days.",
+      "statement": "Equivalent minutes = Z1 + 2 x (Z2 + Z3 work) + optional logged walking; target >=150/week; muscle-strengthening >=2 days. If the schedule cannot meet the floor in the gym, the weekly plan says so and suggests walking.",
       "parameters": {
         "target_equivalent_minutes": 150,
         "upper_range_minutes": 300,
         "vigorous_multiplier": 2,
-        "strength_days_min": 2,
-        "walking_source": "STEP-002"
+        "strength_days_min": 2
       },
       "confidence": "High Evidence",
       "evidence": [
@@ -1217,7 +755,7 @@
       ],
       "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "weekly_scheduling",
         "progress_summary"
@@ -1226,7 +764,7 @@
         "TC-PH-001a",
         "TC-PH-001b"
       ],
-      "change_reason": "MINOR: Defines 'optional logged walking' so steps are never counted twice. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -1261,7 +799,7 @@
     },
     {
       "rule_id": "FREQ-002",
-      "version": "1.0.2",
+      "version": "1.0.1",
       "category": "frequency",
       "title": "Per-muscle exposures",
       "statement": "Each major muscle gets >=2 exposures/week; an exposure is >=2 fractional hard sets in one session.",
@@ -1273,12 +811,12 @@
       "evidence": [
         "Schoenfeld2016freq",
         "Schoenfeld2019freq",
-        "Pelland2026",
+        "Pelland2024",
         "ACSM2026"
       ],
       "uncertainty": "With volume equated frequency matters little for hypertrophy; it is a volume-distribution tool.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "volume_allocation",
         "weekly_scheduling"
@@ -1287,7 +825,7 @@
         "TC-FREQ-002a",
         "TC-FREQ-002b"
       ],
-      "change_reason": "PATCH: peer-reviewed Pelland 2026 replaces the 2024 preprint (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -1319,7 +857,7 @@
     },
     {
       "rule_id": "FREQ-004",
-      "version": "1.0.1",
+      "version": "1.0.0",
       "category": "frequency",
       "title": "Main-pattern frequency in strength blocks",
       "statement": "Squat, hinge, horizontal push and horizontal pull loaded 2-3 x/week in strength blocks.",
@@ -1335,13 +873,13 @@
       },
       "confidence": "Moderate Evidence",
       "evidence": [
-        "Pelland2026",
+        "Pelland2024",
         "Currier2023",
         "Grgic2018freq"
       ],
       "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "weekly_scheduling",
         "periodization"
@@ -1350,7 +888,7 @@
         "TC-FREQ-004a",
         "TC-FREQ-004b"
       ],
-      "change_reason": "PATCH: peer-reviewed Pelland 2026 replaces the 2024 preprint (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -1411,7 +949,7 @@
     },
     {
       "rule_id": "VOL-002",
-      "version": "1.0.1",
+      "version": "1.0.0",
       "category": "volume",
       "title": "Fractional set counting",
       "statement": "1.0 set to each primary muscle, 0.5 to each secondary, 0 to stabilisers.",
@@ -1422,11 +960,11 @@
       },
       "confidence": "Moderate Evidence",
       "evidence": [
-        "Pelland2026"
+        "Pelland2024"
       ],
-      "uncertainty": "Peer-reviewed meta-regression (Pelland 2026): fractional set counting fitted best. Participants' mean age was about 25, so transfer to adults 30+ is assumed.",
+      "uncertainty": "Preprint evidence; per-exercise credits are judgement calls.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "volume_accounting"
       ],
@@ -1434,12 +972,12 @@
         "TC-VOL-002a",
         "TC-VOL-002b"
       ],
-      "change_reason": "PATCH: peer-reviewed Pelland 2026 replaces the 2024 preprint (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
       "rule_id": "VOL-003",
-      "version": "1.0.2",
+      "version": "1.0.1",
       "category": "volume",
       "title": "Volume landmarks (fractional sets/muscle/week)",
       "statement": "Blocks start at 'start'; usual working range; the engine never plans above 'cap'. Landmark names are coaching vocabulary.",
@@ -1477,13 +1015,13 @@
       "confidence": "Expert Practice",
       "evidence": [
         "Israetel2021",
-        "Pelland2026",
+        "Pelland2024",
         "Schoenfeld2017vol",
         "ACSM2026"
       ],
       "uncertainty": "Individual response varies widely; values for small muscles may differ.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "volume_allocation",
         "periodization"
@@ -1492,7 +1030,7 @@
         "TC-VOL-003a",
         "TC-VOL-003b"
       ],
-      "change_reason": "PATCH: peer-reviewed Pelland 2026 replaces the 2024 preprint (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -1527,7 +1065,7 @@
     },
     {
       "rule_id": "VOL-005",
-      "version": "1.0.1",
+      "version": "1.0.0",
       "category": "volume",
       "title": "Per-session per-muscle cap",
       "statement": "Direct hard sets per muscle per session <= cap by level.",
@@ -1540,11 +1078,11 @@
       },
       "confidence": "Limited Evidence",
       "evidence": [
-        "Pelland2026"
+        "Pelland2024"
       ],
       "uncertainty": "Per-session dose ceiling poorly studied.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "volume_allocation",
         "safety_validator"
@@ -1553,7 +1091,7 @@
         "TC-VOL-005a",
         "TC-VOL-005b"
       ],
-      "change_reason": "PATCH: peer-reviewed Pelland 2026 replaces the 2024 preprint (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -1778,7 +1316,7 @@
     },
     {
       "rule_id": "INT-003",
-      "version": "1.0.2",
+      "version": "1.0.1",
       "category": "intensity",
       "title": "Failure policy",
       "statement": "RIR 0 only on the last set of FailureSafe exercises (machine, cable, isolation dumbbell, safe bodyweight), <=2 exercises/session, FULL tier, not in deload, not beginners' first 8 weeks, never on failure-unsafe lifts.",
@@ -1801,12 +1339,11 @@
       "evidence": [
         "Robinson2024",
         "Grgic2022fail",
-        "ACSM2026",
-        "Hermann2025"
+        "ACSM2026"
       ],
       "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "workout_generation",
         "safety_validator"
@@ -1815,7 +1352,7 @@
         "TC-INT-003a",
         "TC-INT-003b"
       ],
-      "change_reason": "PATCH: evidence added (single set to failure vs 2 RIR; Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "PATCH: ACSM 2026 full text checked (first author, volume, pages, DOI corrected); no parameter changes",
       "status": "approved"
     },
     {
@@ -2534,14 +2071,12 @@
     },
     {
       "rule_id": "CON-004",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "category": "concurrent",
       "title": "Low-impact modality preference",
-      "statement": "Low-impact, concentric-dominant modalities first; impact work <=1/week and not the day before heavy legs. A short bone-loading block from the osteoporosis condition entry (≤5 min, low-level landings such as heel drops or small hops, ≥50 landings) is not an impact session under this rule.",
+      "statement": "Low-impact, concentric-dominant modalities first; impact work <=1/week and not the day before heavy legs.",
       "parameters": {
-        "impact_sessions_per_week_max": 1,
-        "bone_loading_block_exempt": true,
-        "bone_loading_block_max_minutes": 5
+        "impact_sessions_per_week_max": 1
       },
       "confidence": "Moderate Evidence",
       "evidence": [
@@ -2549,7 +2084,7 @@
       ],
       "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "conditioning_selection"
       ],
@@ -2557,7 +2092,7 @@
         "TC-CON-004a",
         "TC-CON-004b"
       ],
-      "change_reason": "MINOR: SAF-010 osteoporosis entry: the UK consensus advises moderate impact most days; the weekly impact-session cap was written for jumping conditioning work. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -2586,13 +2121,12 @@
     },
     {
       "rule_id": "CON-006",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "category": "concurrent",
       "title": "Aerobic dose in strength blocks",
-      "statement": "Mostly Z1 and ≤150 prescribed gym minutes/week in strength-emphasis blocks. For the fat-loss goal, brisk walks (STEP-002) are outside this cap.",
+      "statement": "Mostly Z1 and <=150 prescribed min/week in strength-emphasis blocks.",
       "parameters": {
-        "max_prescribed_minutes": 150,
-        "walking_outside_cap_for_goal": "fat_loss"
+        "max_prescribed_minutes": 150
       },
       "confidence": "Limited Evidence",
       "evidence": [
@@ -2600,7 +2134,7 @@
       ],
       "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "periodization"
       ],
@@ -2608,7 +2142,7 @@
         "TC-CON-006a",
         "TC-CON-006b"
       ],
-      "change_reason": "MINOR: Fat-loss targets of 200–300 min/week (FL-002) would otherwise clash with the cap; walking adds little interference with strength gains (Research Update 1.1). (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -2978,29 +2512,26 @@
     },
     {
       "rule_id": "MOD-001",
-      "version": "2.0.0",
+      "version": "1.0.0",
       "category": "modality",
       "title": "Excluded modalities",
-      "statement": "Cardio machines are a per-person choice: each user keeps a list of modalities they don't use (set at onboarding, editable). Treadmill running is off by default for the fat-loss goal (impact) and can be turned on; treadmill walking (including incline walking), stationary and air bikes and stair machines are available when the gym has them and the user hasn't excluded them. The Product Owner's own profile keeps treadmill running, stationary bikes and stair machines excluded (Part 0).",
+      "statement": "Treadmill running, all stationary bikes and stair machines are never prescribed; air/fan bikes and treadmill walking excluded until the Product Owner says otherwise.",
       "parameters": {
-        "user_selectable": [
+        "excluded": [
           "treadmill_running",
-          "treadmill_walking",
           "stationary_bike",
-          "air_fan_bike",
           "stair_machine"
         ],
-        "default_excluded_by_goal": {
-          "fat_loss": [
-            "treadmill_running"
-          ]
-        }
+        "excluded_pending_confirmation": [
+          "air_fan_bike",
+          "treadmill_walking"
+        ]
       },
       "confidence": "Product Rule (not an evidence claim)",
       "evidence": [],
       "uncertainty": "User constraint.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "conditioning",
         "substitution",
@@ -3010,12 +2541,12 @@
         "TC-MOD-001a",
         "TC-MOD-001b"
       ],
-      "change_reason": "MAJOR: Research Update 1.1 decision 2 (approved 2026-10-09 with the recommended option): a market-ready weight-loss app for 30+ needs the common joint-friendly machines; the exclusions came from the Product Owner's personal equipment list. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
       "rule_id": "MOD-002",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "category": "modality",
       "title": "Modality matrix and selection score",
       "statement": "Score = 0.35 stimulus fit + 0.25 (1-interference/5) x leg priority + 0.20 (1-impact/5) x joint sensitivity + 0.10 variety + 0.10 preference.",
@@ -3137,61 +2668,6 @@
             3,
             4,
             2
-          ],
-          "treadmill_walking": [
-            3,
-            1,
-            2,
-            1,
-            1,
-            1,
-            5,
-            2,
-            5
-          ],
-          "stationary_bike": [
-            4,
-            2,
-            1,
-            1,
-            1,
-            2,
-            5,
-            5,
-            5
-          ],
-          "air_fan_bike": [
-            5,
-            3,
-            1,
-            1,
-            2,
-            2,
-            3,
-            5,
-            5
-          ],
-          "stair_machine": [
-            4,
-            3,
-            2,
-            1,
-            2,
-            2,
-            4,
-            3,
-            4
-          ],
-          "treadmill_running": [
-            5,
-            3,
-            4,
-            2,
-            3,
-            3,
-            5,
-            5,
-            5
           ]
         },
         "matrix_columns": [
@@ -3210,9 +2686,9 @@
       "evidence": [
         "Wilson2012"
       ],
-      "uncertainty": "Ratings are expert judgement. Matrix rows for the five machines made selectable by MOD-001 2.0.0 are Expert Practice values, in the same 0–5 style as the existing rows; running scores impact 4, so it counts toward CON-004.",
+      "uncertainty": "Ratings are expert judgement.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "conditioning_selection"
       ],
@@ -3220,7 +2696,7 @@
         "TC-MOD-002a",
         "TC-MOD-002b"
       ],
-      "change_reason": "MINOR: Direct consequence of decision 2 (MOD-001 2.0.0): the newly selectable machines need scores to be ranked; added during implementation (D-066). (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -3577,21 +3053,18 @@
     },
     {
       "rule_id": "MOB-004",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "category": "mobility",
       "title": "Full range of motion default",
-      "statement": "Lift through full range by default. When pain (SAF-003), a limitation tag or a SAF-010 entry restricts range, use the largest pain-free range; where either end could be kept, keep the part where the target muscle is lengthened. A reduced-range set still counts as a hard set (VOL-001).",
+      "statement": "Lift through full range by default.",
       "parameters": {},
       "confidence": "Moderate Evidence",
       "evidence": [
-        "Afonso2021",
-        "Wolf2023rom",
-        "Wolf2025lp",
-        "Larsen2025"
+        "Afonso2021"
       ],
-      "uncertainty": "'A reduced range costs little muscle growth': Moderate Evidence. 'Prefer the lengthened end': Limited Evidence. Full range stays the default.",
+      "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "workout_generation"
       ],
@@ -3599,7 +3072,7 @@
         "TC-MOB-004a",
         "TC-MOB-004b"
       ],
-      "change_reason": "MINOR: Review C (P2). SAF-003 and SAF-010 limit range but no rule said which part to keep. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -4059,7 +3532,7 @@
     },
     {
       "rule_id": "LOAD-002",
-      "version": "1.0.1",
+      "version": "1.0.0",
       "category": "workload",
       "title": "sRPE collection timing",
       "statement": "Asked on the summary after cool-down, ideally >=10 min after last hard effort; one prompt within 24 h if skipped.",
@@ -4069,13 +3542,11 @@
       },
       "confidence": "Moderate Evidence",
       "evidence": [
-        "Foster2001",
-        "Harkin2016",
-        "Michie2009"
+        "Foster2001"
       ],
       "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "summary_ui"
       ],
@@ -4083,7 +3554,7 @@
         "TC-LOAD-002a",
         "TC-LOAD-002b"
       ],
-      "change_reason": "PATCH: evidence added (self-monitoring; Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -5381,10 +4852,10 @@
     },
     {
       "rule_id": "AGE-001",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "category": "individual",
       "title": "Age adjustments",
-      "statement": ">=50: longer warm-up, HIIT ceiling 2, deload at 2 signals, year-round power work; >=60: longer return band; >=65: balance >=3 days/week and progression caps x0.8. ≥60: weekly strength volume never drops to the VOL-003 maintenance level; weeks that would plan maintenance (Conditioning and Review blocks, PER-005 holiday or maintenance weeks) use the block-start level instead (beginner 6, intermediate 8, advanced 10 sets per muscle), still over ≥2 exposures (FREQ-002). Deload weeks (DEL-003) are unchanged.",
+      "statement": ">=50: longer warm-up, HIIT ceiling 2, deload at 2 signals, year-round power work; >=60: longer return band; >=65: balance >=3 days/week and progression caps x0.8.",
       "parameters": {
         "age_50": {
           "hiit_max": 2,
@@ -5392,8 +4863,7 @@
           "power_year_round": true
         },
         "age_60": {
-          "return_band_shift": 1,
-          "strength_volume_floor": "block_start"
+          "return_band_shift": 1
         },
         "age_65": {
           "balance_days": 3,
@@ -5403,12 +4873,11 @@
       "confidence": "High Evidence",
       "evidence": [
         "Fragala2019",
-        "Bull2020",
-        "Bickel2011"
+        "Bull2020"
       ],
-      "uncertainty": "Direction high; numbers expert practice. Direction Limited Evidence (one RCT: reduced doses kept muscle gains in 20–35-year-olds but not in 60–75-year-olds); the block-start value is Expert Practice.",
+      "uncertainty": "Direction high; numbers expert practice.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "all"
       ],
@@ -5416,7 +4885,7 @@
         "TC-AGE-001a",
         "TC-AGE-001b"
       ],
-      "change_reason": "MINOR: Review C (P1). Protects the 'keep muscle' aim of FL-001; the fat-loss year has two Conditioning blocks. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -5498,7 +4967,7 @@
     },
     {
       "rule_id": "ADH-001",
-      "version": "1.0.1",
+      "version": "1.0.0",
       "category": "adherence",
       "title": "Forgiving weekly streak",
       "statement": "Week counts at >= planned-1 sessions (min 2, or 1 if planning 2); one freeze per 4 weeks; never resets to zero.",
@@ -5507,13 +4976,11 @@
       },
       "confidence": "Expert Practice",
       "evidence": [
-        "Lally2010",
-        "Gardner2012",
-        "Singh2024"
+        "Lally2010"
       ],
       "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "gamification"
       ],
@@ -5521,36 +4988,30 @@
         "TC-ADH-001a",
         "TC-ADH-001b"
       ],
-      "change_reason": "PATCH: evidence added (a missed day does not derail habit formation; Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
       "rule_id": "ADH-002",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "category": "adherence",
       "title": "Micro-achievements",
-      "statement": "First session, calibration, PRs, block completed, session milestones, WHO-floor weeks; never for extreme volume. A 'Welcome back' micro-achievement is earned by the first completed session after a missed planned session; one neutral nudge on the next planned day ('Ready when you are; today's plan is set'); no penalty, guilt or streak-loss wording (COACH-001); ADH-001 freeze logic unchanged.",
+      "statement": "First session, calibration, PRs, block completed, session milestones, WHO-floor weeks; never for extreme volume.",
       "parameters": {
         "session_milestones": [
           10,
           25,
           50,
           100
-        ],
-        "welcome_back": true,
-        "nudges_after_miss": 1
+        ]
       },
       "confidence": "Moderate Evidence",
       "evidence": [
-        "Mazeas2022",
-        "Milkman2021",
-        "Buyalskaya2023",
-        "Harkin2016",
-        "Michie2009"
+        "Mazeas2022"
       ],
-      "uncertainty": "Limited Evidence: in a 61,293-person gym megastudy the best programme rewarded returning after a missed workout, but with incentives; a non-monetary badge is a weaker, untested analogue and effects fade.",
+      "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "gamification"
       ],
@@ -5558,7 +5019,7 @@
         "TC-ADH-002a",
         "TC-ADH-002b"
       ],
-      "change_reason": "MINOR: Review D (P3, P6). (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
@@ -5585,10 +5046,10 @@
     },
     {
       "rule_id": "ADH-004",
-      "version": "1.0.1",
+      "version": "1.0.0",
       "category": "adherence",
       "title": "Time-efficient option",
-      "statement": "20–30-min express session always available. Habit messaging gives a range, never a fixed day count: for many people a routine starts to feel automatic after about two months, but it varies a lot (from a few weeks to most of a year) and exercise often takes longer; a missed day doesn't undo it.",
+      "statement": "20-30-min express session always available; habit messaging expects ~2-3 months.",
       "parameters": {
         "express_minutes": [
           20,
@@ -5599,16 +5060,11 @@
       "confidence": "Moderate Evidence",
       "evidence": [
         "Lally2010",
-        "Iversen2021",
-        "Singh2024",
-        "Gardner2012",
-        "Kaushal2015",
-        "Buyalskaya2023",
-        "Hermann2025"
+        "Iversen2021"
       ],
       "uncertainty": "",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "ui",
         "time_budget"
@@ -5617,15 +5073,15 @@
         "TC-ADH-004a",
         "TC-ADH-004b"
       ],
-      "change_reason": "PATCH: Review D (P1): medians of 59–66 days with a range of 4–335 (Singh 2024); gym habits take months (Buyalskaya 2023). Review C (P6): single-set sessions still built muscle (Hermann 2025), supporting the express session. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     },
     {
       "rule_id": "DATA-001",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "category": "data",
       "title": "Data taxonomy",
-      "statement": "11 required, 9 optional items; listed exclusions never collected; all data on-device.",
+      "statement": "11 required, 6 optional items; listed exclusions never collected; all data on-device.",
       "parameters": {
         "required": [
           "age",
@@ -5658,18 +5114,13 @@
           "third_party_steps_v1",
           "calorie_intake",
           "vanity_metrics"
-        ],
-        "optional_add": [
-          "daily_steps_phone_sensor",
-          "health_conditions_and_clearance",
-          "known_loads_and_records"
         ]
       },
       "confidence": "Product Rule (not an evidence claim)",
       "evidence": [],
       "uncertainty": "Product rule.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-07",
       "affected_algorithms": [
         "onboarding",
         "privacy"
@@ -5678,742 +5129,8 @@
         "TC-DATA-001a",
         "TC-DATA-001b"
       ],
-      "change_reason": "MINOR: CR-001, CR-002, CR-005. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
-      "status": "approved"
-    },
-    {
-      "rule_id": "FL-001",
-      "version": "1.0.0",
-      "category": "fat_loss",
-      "title": "Default goal: lose fat, keep muscle",
-      "statement": "For adults 30+ the default goal is 'Lose fat, keep muscle'; every other goal stays selectable. Aerobic minutes are the main fat-loss lever and strength training protects muscle; HIIT counts as aerobic minutes but is never presented as a fat-loss accelerator. The app shows a realistic expectation: without changing what you eat, about 2–3 kg and a 2–5 cm smaller waist over a few months at 150–300 min/week, and it never promises faster loss. No food or calorie features. Anyone can turn weight features off (no weight or waist tracking, expectations or rate check-in; the default goal becomes general fitness). With pregnancy, or cancer in active treatment, the fat-loss goal is not offered and weight features are off; after giving birth it is not the default and can be chosen from 12 weeks.",
-      "parameters": {
-        "default_for_age_gte": 30,
-        "expected_weight_change_kg": [
-          -3,
-          -2
-        ],
-        "expected_waist_change_cm": [
-          -5,
-          -2
-        ],
-        "aerobic_minutes_range": [
-          150,
-          300
-        ],
-        "hiit_presented_as_accelerator": false,
-        "nutrition_features": false,
-        "weight_features_opt_out": true,
-        "not_offered_and_weight_features_off_with": [
-          "pregnancy",
-          "cancer_in_active_treatment"
-        ],
-        "not_default_with_postpartum_until_week": 12
-      },
-      "confidence": "Moderate Evidence",
-      "evidence": [
-        "Jayedi2024",
-        "Oppert2021",
-        "Bellicha2021",
-        "Jakicic2024",
-        "Viana2019",
-        "SancaValeriano2023",
-        "Murphy2022",
-        "LaForgia2006"
-      ],
-      "uncertainty": "Default goal and the age-30 threshold are product decisions (D-060). Weight and body-fat effects are GRADE moderate, waist high (Jayedi 2024); effects are trial totals over 8+ weeks, not weekly rates; no RCT shows exercise prevents regain. The weight-features opt-out protects people for whom weight focus is unhelpful without asking about eating disorders (Expert Practice).",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "onboarding",
-        "periodization",
-        "progress_summary",
-        "coach"
-      ],
-      "tests": [
-        "TC-FL-001a",
-        "TC-FL-001b"
-      ],
-      "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved"
-    },
-    {
-      "rule_id": "FL-002",
-      "version": "1.0.0",
-      "category": "fat_loss",
-      "title": "Weekly activity target",
-      "statement": "Weekly target in equivalent minutes (PH-001 accounting: Z1 + 2 × Z2/Z3 work, brisk walks per STEP-002): 200–300 for ages 30–59, 180–250 for 60–64, 150–250 for 65+, never below 150. The target is approached from last week's minutes at ≤ +15%/week (AER-003), ≤ +12%/week at 65+ (AGE-001 × 0.8); steady Z1 work, mostly walking, is the base.",
-      "parameters": {
-        "equivalent_minutes": {
-          "age_30_59": [
-            200,
-            300
-          ],
-          "age_60_64": [
-            180,
-            250
-          ],
-          "age_65_plus": [
-            150,
-            250
-          ]
-        },
-        "floor": 150,
-        "growth_max_pct_week": 15,
-        "growth_max_pct_week_65_plus": 12
-      },
-      "confidence": "Moderate Evidence",
-      "evidence": [
-        "Jayedi2024",
-        "Bull2020",
-        "Oppert2021",
-        "Donnelly2009"
-      ],
-      "uncertainty": "Linear benefit to 300 min/week is from trials of 8+ weeks; the lower ceilings from 60 are Expert Practice (recovery and time), not evidence that older adults need less.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "weekly_scheduling",
-        "aerobic_planning",
-        "progress_summary"
-      ],
-      "tests": [
-        "TC-FL-002a",
-        "TC-FL-002b"
-      ],
-      "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved",
-      "verification_pending": [
-        "Bull2020"
-      ]
-    },
-    {
-      "rule_id": "FL-003",
-      "version": "1.0.0",
-      "category": "fat_loss",
-      "title": "Training mix by age band",
-      "statement": "The weekly mix for the fat-loss goal changes with age: strength stays at 3 days by default (2 minimum) in every band; steady Z1 cardio stays at 150–200 min; tempo (Z2) and intervals shrink with age and become low-impact only from 50; a power-emphasis slot (light load lifted fast, low impact) is added from 50; balance work starts at 50 and becomes ≥3 multicomponent days at 65+. Interval sessions need a base of regular training first, longer with age.",
-      "parameters": {
-        "strength_days": {
-          "default": 3,
-          "min": 2,
-          "default_needs_training_days_gte": 3
-        },
-        "bands": {
-          "age_30_39": {
-            "z1_minutes": [
-              150,
-              200
-            ],
-            "z2_minutes": [
-              20,
-              40
-            ],
-            "hiit_default": 2,
-            "hiit_max": 3,
-            "hiit_base_weeks": 4,
-            "low_impact_only": false,
-            "impact_needs": "BMI < 30 and no lower-limb pain; ≤1 impact session/week (CON-004)",
-            "power_slot": false,
-            "balance_minutes_week": 0
-          },
-          "age_40_49": {
-            "z1_minutes": [
-              150,
-              200
-            ],
-            "z2_minutes": [
-              20,
-              40
-            ],
-            "hiit_default": 1,
-            "hiit_max": 3,
-            "hiit_base_weeks": 4,
-            "low_impact_only": false,
-            "low_impact_preferred": true,
-            "impact_needs": "BMI < 30 and no lower-limb pain; ≤1 impact session/week (CON-004)",
-            "power_slot": false,
-            "balance_minutes_week": 0
-          },
-          "age_50_59": {
-            "z1_minutes": [
-              150,
-              200
-            ],
-            "z2_minutes": [
-              15,
-              30
-            ],
-            "hiit_default": 1,
-            "hiit_max": 2,
-            "hiit_base_weeks": 4,
-            "low_impact_only": true,
-            "sprint_intervals": false,
-            "power_slot": true,
-            "balance_minutes_week": 10
-          },
-          "age_60_64": {
-            "z1_minutes": [
-              150,
-              200
-            ],
-            "z2_minutes": [
-              0,
-              20
-            ],
-            "hiit_default": 0,
-            "hiit_offer_after_base_weeks": 6,
-            "hiit_max": 2,
-            "low_impact_only": true,
-            "sprint_intervals": false,
-            "power_slot": true,
-            "balance_minutes_week": 20
-          },
-          "age_65_plus": {
-            "z1_minutes": [
-              150,
-              200
-            ],
-            "z2_minutes": [
-              0,
-              15
-            ],
-            "hiit_default": 0,
-            "hiit_offer_after_base_weeks": 8,
-            "hiit_offer_needs": "previously active and standard screening",
-            "hiit_max": 2,
-            "low_impact_only": true,
-            "sprint_intervals": false,
-            "power_slot": true,
-            "multicomponent_days": 3,
-            "balance_minutes_week": 30
-          }
-        },
-        "third_hiit_session_only_under": "HIIT-001 (intermediate or advanced, FULL day, no fatigue signal or workload flag, conditioning block)",
-        "hiit_gate_bmi_gte_30_or_age_gte_60": "standard screening and low-impact modalities only",
-        "low_impact_modalities": [
-          "rower",
-          "skierg",
-          "elliptical",
-          "sled",
-          "stationary_bike",
-          "air_fan_bike"
-        ]
-      },
-      "confidence": "Expert Practice",
-      "evidence": [
-        "Bull2020",
-        "ACSM2026",
-        "Fragala2019",
-        "Mitchell2012",
-        "Peterson2011",
-        "Stensvold2020",
-        "Men2025",
-        "Oppert2021",
-        "Viana2019",
-        "Jayedi2024"
-      ],
-      "uncertainty": "No trial compares age-banded exercise mixes. Floors (≥2 strength days, ≥3 multicomponent days at 65+, 150 min) are High Evidence; the band cut-points, tempo and HIIT tapers and base lengths are Expert Practice. HIIT safety data come from supervised settings.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "weekly_scheduling",
-        "workout_generation",
-        "aerobic_planning",
-        "hiit_planning"
-      ],
-      "tests": [
-        "TC-FL-003a",
-        "TC-FL-003b"
-      ],
-      "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved",
-      "verification_pending": [
-        "Bull2020",
-        "Fragala2019",
-        "Peterson2011"
-      ]
-    },
-    {
-      "rule_id": "FL-004",
-      "version": "1.0.0",
-      "category": "fat_loss",
-      "title": "Fat-loss year",
-      "statement": "For the fat-loss goal the 12-month sequence is Calibrate(2) → Foundation → Build → Conditioning → Strength → Build II → Conditioning II → Athletic (low-impact power and conditioning) → Consolidation → Review(+2 flex). Every block keeps the FL-003 strength days and aerobic minutes; conditioning blocks shift gym time toward aerobic work without dropping below 2 strength days.",
-      "parameters": {
-        "sequence": [
-          "calibrate",
-          "foundation",
-          "build",
-          "conditioning",
-          "strength",
-          "build_2",
-          "conditioning_2",
-          "athletic_low_impact",
-          "consolidation",
-          "review"
-        ],
-        "min_strength_days_every_block": 2
-      },
-      "confidence": "Expert Practice",
-      "evidence": [
-        "Willis2012",
-        "Villareal2017",
-        "Lopez2022",
-        "Sardeli2018",
-        "Bellicha2021"
-      ],
-      "uncertainty": "Sequence is a coaching design; combined aerobic + resistance training gives the best body-composition result in trials, but block order is untested.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "periodization"
-      ],
-      "tests": [
-        "TC-FL-004a",
-        "TC-FL-004b"
-      ],
-      "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved"
-    },
-    {
-      "rule_id": "FL-005",
-      "version": "1.0.0",
-      "category": "fat_loss",
-      "title": "Progress measures without food tracking",
-      "statement": "Waist and strength are the main progress measures; weight is secondary. Waist (optional): every 2–4 weeks, midway between the lowest rib and the top of the hip bone, standing, after a normal breath out, three readings averaged; South Asian reference lines (≥90 cm men, ≥80 cm women) shown as information only. Weight (optional): daily or weekly under the same conditions; the app shows a 7-day mean and judges only 4-week trends. If the 7-day mean falls more than 1 kg/week for 3 weeks in a row, a neutral check-in suggests checking with a doctor if the user isn't trying to diet or feels unwell. No food advice.",
-      "parameters": {
-        "waist_every_weeks": [
-          2,
-          4
-        ],
-        "waist_site": "midpoint lowest rib – top of iliac crest (WHO STEPS)",
-        "waist_readings": 3,
-        "reference_lines_cm": {
-          "men": 90,
-          "women": 80
-        },
-        "weight_mean_days": 7,
-        "trend_weeks": 4,
-        "rate_flag_kg_week": 1.0,
-        "rate_flag_weeks": 3
-      },
-      "confidence": "Moderate Evidence",
-      "evidence": [
-        "Madigan2015",
-        "Misra2025",
-        "IDF2006",
-        "WHOSTEPS",
-        "Lopez2022",
-        "Greendale2019"
-      ],
-      "uncertainty": "Daily vs weekly weighing is equivalent (Moderate); averaging, the rate flag and the measuring site are Expert Practice. The Indian consensus measures just above the hip bone, not at the WHO midpoint; readings differ between sites.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "progress_summary",
-        "coach"
-      ],
-      "tests": [
-        "TC-FL-005a",
-        "TC-FL-005b"
-      ],
-      "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved",
-      "verification_pending": [
-        "IDF2006",
-        "WHOSTEPS"
-      ]
-    },
-    {
-      "rule_id": "STEP-001",
-      "version": "1.0.0",
-      "category": "steps",
-      "title": "Daily step target",
-      "statement": "Daily step target by age band — 9,000 (30–49), 8,000 (50–59), 7,500 (60–64), 7,000 (65+) — reached gradually: baseline = median of the first 7 valid days (≥500 steps recorded); each week the target rises by p × last week's mean (p = 0.15 under 50, 0.10 from 50), rounded to 50 steps, between 250 and a cap (1,000 under 50, 750 at 50–59, 500 at 60–64, 400 at 65+), only if the target was met on ≥5 of 7 days; held at 3–4 days; lowered by one step after 2 weeks with ≤2 days met; no rise in a deload week or with a lower-limb pain flag; never above the band target.",
-      "parameters": {
-        "targets": {
-          "age_30_49": 9000,
-          "age_50_59": 8000,
-          "age_60_64": 7500,
-          "age_65_plus": 7000
-        },
-        "ranges": {
-          "age_30_49": [
-            8000,
-            10000
-          ],
-          "age_50_59": [
-            7000,
-            9000
-          ],
-          "age_60_64": [
-            6000,
-            8000
-          ],
-          "age_65_plus": [
-            6000,
-            8000
-          ]
-        },
-        "baseline_days": 7,
-        "valid_day_min_steps": 500,
-        "p": {
-          "under_50": 0.15,
-          "from_50": 0.1
-        },
-        "round_to": 50,
-        "increment_min": 250,
-        "increment_cap": {
-          "under_50": 1000,
-          "age_50_59": 750,
-          "age_60_64": 500,
-          "age_65_plus": 400
-        },
-        "advance_days_met": 5,
-        "hold_days_met": [
-          3,
-          4
-        ],
-        "lower_after_weeks": 2,
-        "lower_if_days_met_lte": 2
-      },
-      "confidence": "Moderate Evidence",
-      "evidence": [
-        "Paluch2022",
-        "Ding2025",
-        "TudorLocke2011a",
-        "TudorLocke2011b",
-        "Bravata2007",
-        "Adams2013",
-        "Richardson2008",
-        "Samdal2017"
-      ],
-      "uncertainty": "Targets come from observational mortality plateaus (8,000–10,000 under 60, 6,000–8,000 from 60) measured with research devices, not phones. The progression rate is Expert Practice; adaptive goals have Limited Evidence. Steps alone barely change weight (~0.05 kg/week).",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "daily_activity",
-        "progress_summary"
-      ],
-      "tests": [
-        "TC-STEP-001a",
-        "TC-STEP-001b"
-      ],
-      "change_reason": "CR-005 / D-062: phone step counter (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved",
-      "verification_pending": [
-        "Ding2025"
-      ]
-    },
-    {
-      "rule_id": "STEP-002",
-      "version": "1.0.0",
-      "category": "steps",
-      "title": "Brisk walks count as easy cardio",
-      "statement": "Only brisk-walk bouts — at least 10 minutes in a row at 100 steps/min or more, from the phone's step counter or logged by the user — count as Z1 minutes for PH-001, FL-002 and the AER-003 growth limit. All other steps count only toward the step target, so walking is never counted twice.",
-      "parameters": {
-        "bout_min_minutes": 10,
-        "cadence_min_steps_per_min": 100,
-        "counts_as": "Z1",
-        "logged_walks_allowed": true
-      },
-      "confidence": "Moderate Evidence",
-      "evidence": [
-        "TudorLocke2011a",
-        "Paluch2022"
-      ],
-      "uncertainty": "Cadence threshold Moderate (Tudor-Locke 2011); the 10-minute bout rule is Expert Practice. Whether the phone sensor gives per-minute cadence offline is an engineering check for Part 3.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "daily_activity",
-        "weekly_scheduling",
-        "aerobic_planning"
-      ],
-      "tests": [
-        "TC-STEP-002a",
-        "TC-STEP-002b"
-      ],
-      "change_reason": "CR-005 / D-062 (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved"
-    },
-    {
-      "rule_id": "SAF-010",
-      "version": "1.0.0",
-      "category": "safety",
-      "title": "Health-condition profiles",
-      "statement": "Users may select health conditions from a versioned table (health_conditions v1.0). Each entry sets conservative limits on general fitness training: doctor's OK advice, highest zone, intervals, minimum reps in reserve, no training to failure, impact, exercise tags to avoid, joint limits, extra warm-up and cool-down, positions, prompts and condition-specific stop signs. With several conditions each control takes its most restrictive value. Control status is self-reported (not sure = not under control); the app never reads or thresholds clinical values (blood pressure, glucose, ketones). A doctor's OK is the user's statement of scope (light–moderate, vigorous, intervals) and unlocks only that scope. Prompts never name a medicine, dose, value target or diagnosis, and never claim to treat a condition. A clinician and a regulatory adviser review the table before any public release.",
-      "parameters": {
-        "table": "health_conditions",
-        "table_version": "1.0.0",
-        "combine": "most_restrictive",
-        "status_values": [
-          "yes",
-          "no",
-          "not_sure"
-        ],
-        "not_sure_counts_as": "no",
-        "clearance_scopes": [
-          "light_moderate",
-          "vigorous",
-          "intervals"
-        ],
-        "clinical_value_gates": false,
-        "entries": [
-          "hbp_controlled",
-          "hbp_not_controlled",
-          "t2d",
-          "diabetes_eye",
-          "diabetes_feet",
-          "diabetes_autonomic",
-          "t1d",
-          "heart",
-          "asthma",
-          "oa_knee",
-          "oa_hip",
-          "low_back_pain",
-          "osteoporosis",
-          "osteoporosis_spine_fracture",
-          "pregnancy",
-          "postpartum",
-          "obesity",
-          "obesity_severe",
-          "stroke",
-          "copd",
-          "cancer"
-        ]
-      },
-      "confidence": "Moderate Evidence",
-      "evidence": [
-        "Riebe2015",
-        "KAN22",
-        "PES19",
-        "ESC20",
-        "AHA24RT",
-        "ATS13",
-        "OARSI19",
-        "ACR20",
-        "NG59",
-        "ROS22",
-        "CAN19",
-        "CAN25",
-        "GOOM19",
-        "WHO04",
-        "Misra2025"
-      ],
-      "uncertainty": "Benefit of exercise is High Evidence for type 2 diabetes, knee/hip osteoarthritis, high blood pressure and pregnancy; nearly every numeric cap is an Expert Practice translation of guideline intensity into app controls. Stroke, COPD and cancer entries rest on less-verified sources. Not a medical device feature: no diagnosis, no clinical values, no treatment claims (D-058).",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "onboarding",
-        "safety_validator",
-        "workout_generation",
-        "weekly_scheduling",
-        "coach"
-      ],
-      "tests": [
-        "TC-SAF-010a",
-        "TC-SAF-010b"
-      ],
-      "change_reason": "CR-001 / D-058: health-condition picker driven by data (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved",
-      "verification_pending": [
-        "Riebe2015"
-      ]
-    },
-    {
-      "rule_id": "CAL-002",
-      "version": "1.0.0",
-      "category": "calibration",
-      "title": "Starting from your own numbers",
-      "statement": "A user may enter, per exercise, a recent set (weight × reps and reps in reserve) or a best lift (counted as 0 reps in reserve). An estimated 1RM comes from INT-004 only when the entry is valid (reps + RIR ≤ 12, RIR ≤ 3); the first working load is the INT-005 load from 90% of that estimate (CAL-001 known-weights start). If the user last did the exercise 14–27 days ago the estimate is reduced 10%, 28–55 days 20%, and from 56 days the entry is used only as a ceiling for a normal CAL-001 ramp (age 60+ or a flagged screen moves one band longer, as REG-004). The first session confirms it with the CAL-001 rules.",
-      "parameters": {
-        "best_lift_rir": 0,
-        "valid_reps_plus_rir_max": 12,
-        "start_pct_of_e1rm": 90,
-        "entry_age_days": {
-          "full_below": 14,
-          "minus10_below": 28,
-          "minus20_below": 56
-        },
-        "reduction_pct": {
-          "minus10": 10,
-          "minus20": 20
-        },
-        "older_or_flagged_shift": 1
-      },
-      "confidence": "Expert Practice",
-      "evidence": [
-        "LeSuer1997",
-        "Halperin2022"
-      ],
-      "uncertainty": "e1RM formula accuracy is Moderate (INT-004); the 90% start and the age reductions follow existing CAL-001/REG-004 values rather than direct evidence for self-reported numbers, which may be optimistic.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "calibration",
-        "load_selection",
-        "onboarding"
-      ],
-      "tests": [
-        "TC-CAL-002a",
-        "TC-CAL-002b"
-      ],
-      "change_reason": "CR-002 / D-059: starting weights and personal records — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved",
-      "verification_pending": [
-        "LeSuer1997",
-        "Halperin2022"
-      ]
-    },
-    {
-      "rule_id": "ADH-005",
-      "version": "1.0.0",
-      "category": "adherence",
-      "title": "Planning prompt",
-      "statement": "Optional and under 30 seconds: when the week is planned (or once at onboarding, editable), each training day gets a 'when' (day and time) and an optional 'after what' cue (e.g. after dropping the kids), and the user picks one if-then backup from a short list — e.g. 'If I'm short on time → the express session (ADH-004)'; 'If I miss the planned day → the next free day (REG-002)'. Same weekdays are suggested by default. Never nags; stored on the phone only.",
-      "parameters": {
-        "optional": true,
-        "max_seconds": 30,
-        "fields": [
-          "when",
-          "after_what_cue_optional",
-          "if_then_backup"
-        ],
-        "backup_options": [
-          "express_session",
-          "next_free_day"
-        ],
-        "same_weekdays_default": true
-      },
-      "confidence": "Limited Evidence",
-      "evidence": [
-        "BelangerGravel2013",
-        "Peng2022",
-        "Buyalskaya2023",
-        "Singh2024"
-      ],
-      "uncertainty": "Planning helps physical activity in general (Moderate), but delivered online only the effect was not significant (Peng 2022: SMD 0.14, CI −0.02 to 0.31); low cost and no plausible harm.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "onboarding",
-        "weekly_scheduling",
-        "adherence"
-      ],
-      "tests": [
-        "TC-ADH-005a",
-        "TC-ADH-005b"
-      ],
-      "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved"
-    },
-    {
-      "rule_id": "MOB-006",
-      "version": "1.0.0",
-      "category": "mobility",
-      "title": "Calm mobility session",
-      "statement": "An optional 15–30-minute calm mobility session with original content: 2–3 min easy movement, slow flowing mobility for hips, upper back, shoulders and ankles, standing balance holds, holds of 30–60 s, and 3–5 min of easy slow breathing to finish (no breath holds, no special ratios). Offered — never imposed — on rest days as an alternative to MOB-005, on LIGHT and RECOVERY days (RDY-004), and when the check-in stress item is 1–2 (RDY-001). It does not count as Z1 minutes (PH-001, FL-002) or as a strength day; its balance holds count toward FL-003 balance minutes. All SAF-010 tags, joint limits and the SAF-003 pain protocol apply; no heated rooms. Wording says 'for mobility, balance and winding down' and never claims treatment, detox, weight loss or faster recovery.",
-      "parameters": {
-        "minutes": [
-          15,
-          30
-        ],
-        "offered_on": [
-          "rest_day",
-          "LIGHT",
-          "RECOVERY",
-          "stress_item_lte_2"
-        ],
-        "hold_seconds": [
-          30,
-          60
-        ],
-        "breathing_finish_minutes": [
-          3,
-          5
-        ],
-        "counts_as_z1": false,
-        "counts_as_strength_day": false,
-        "balance_holds_count_for_FL003": true
-      },
-      "confidence": "Moderate Evidence",
-      "evidence": [
-        "Sivaramakrishnan2019",
-        "Wang2020",
-        "Pascoe2017",
-        "Cramer2018",
-        "Fincham2023",
-        "Fincham2023b",
-        "Cramer2015",
-        "Wieland2022",
-        "Hagins2007",
-        "Lauche2016",
-        "Afonso2021rec"
-      ],
-      "uncertainty": "Benefits (flexibility, balance, sleep quality, perceived stress) are moderate vs inactivity and small vs other exercise; trials are small and often unblinded. Format, triggers and dose are Expert Practice. Yoga is light activity (~2.5 METs), has no effect on weight, and stretching does not speed recovery — hence the wording limits.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "workout_generation",
-        "readiness",
-        "mobility"
-      ],
-      "tests": [
-        "TC-MOB-006a",
-        "TC-MOB-006b"
-      ],
-      "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved"
-    },
-    {
-      "rule_id": "EQ-003",
-      "version": "1.0.0",
-      "category": "equipment",
-      "title": "Training away from the gym today",
-      "statement": "One tap sets today's equipment to the user's saved home kit (bodyweight only by default); the generator then substitutes as usual (SUB-001/002). Strength uses the BW-001 ladders at the plan's RIR. Conditioning defaults to no-jump bodyweight circuits; jumping only under the FL-003 / CON-004 conditions; beginners use 1:2 work:rest (HIIT-002); a circuit at CR10 ≥7 for ≥8 min counts as HIIT (HIIT-001). The warm-up floor applies even to short sessions (WU-003); 20–30-minute express versions are offered (ADH-004). If the home day cannot cover a movement pattern, the weekly check reports the shortfall (PAT-001).",
-      "parameters": {
-        "default_home_kit": [
-          "bodyweight"
-        ],
-        "conditioning_default": "no_jump",
-        "beginner_work_rest": "1:2"
-      },
-      "confidence": "Moderate Evidence",
-      "evidence": [
-        "Tsuji2023",
-        "Chaabene2021",
-        "Kikuchi2017",
-        "Archila2021",
-        "Vetrovsky2019"
-      ],
-      "uncertainty": "Home training improves fitness and strength (Moderate; home HIIT ≈ continuous training; older adults gain strength, power and balance). The preset itself is a Product Rule and its format Expert Practice. Jump-based home intervals were tested in young, lean adults, and plyometric safety data come from supervised programmes.",
-      "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
-      "affected_algorithms": [
-        "workout_generation",
-        "substitution"
-      ],
-      "tests": [
-        "TC-EQ-003a",
-        "TC-EQ-003b"
-      ],
-      "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
+      "change_reason": "Initial version; approved at Phase 1 sign-off",
       "status": "approved"
     }
-  ],
-  "verification_pending": [
-    "Donnelly2009 dose bands (full text)",
-    "Bull2020 (BJSM full text)",
-    "Ding2025 (Lancet full text)",
-    "ACOG20 (CO 804 full text)",
-    "ADA Standards of Care 2026, section 5 (not opened: unverified)",
-    "GINA 2026 exercise section",
-    "FDA General Wellness 2026 and MDCG 2019-11 rev.1 primary texts",
-    "Campbell 2019 (CAM19) full text for the cancer entry's cautions",
-    "Peterson2011",
-    "IDF2006",
-    "WHOSTEPS"
   ]
 }

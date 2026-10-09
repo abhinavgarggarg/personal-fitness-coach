@@ -1,9 +1,10 @@
-"""Phase 1 checks: registry integrity, doc<->registry parameter agreement, worked-example arithmetic.
+"""Phase 1 checks against the registry as approved at Phase 1 (rules/archive/rule_registry_1.0.1.json):
+registry integrity, doc<->registry parameter agreement, worked-example arithmetic. Later versions: tools/check_registry.py.
 Run: python3 -I tools/check_phase1.py"""
 import json, math, re, statistics
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
-reg = json.loads((ROOT/"rules/rule_registry_v1.0.json").read_text())
+reg = json.loads((ROOT/"rules/archive/rule_registry_1.0.1.json").read_text())  # the registry as approved at Phase 1
 md = (ROOT/"docs/phase1/phase1_report.md").read_text()
 R = {r["rule_id"]: r for r in reg["rules"]}
 P = lambda rid: R[rid]["parameters"]

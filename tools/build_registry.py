@@ -503,9 +503,114 @@ for r in registry["rules"]:
         r["confidence"] = PR
 ids = [r["rule_id"] for r in registry["rules"]]
 assert len(ids) == len(set(ids)), "duplicate rule IDs"
-out = Path(__file__).resolve().parent.parent / "rules" / "rule_registry_v1.0.json"  # 1.x line; registry_version field carries the patch level
+ROOTDIR = Path(__file__).resolve().parent.parent
+# Snapshot of the registry as approved at Phase 1 (1.0.1); tools/check_phase1.py checks the Phase 1 report against it.
+import copy
+(ROOTDIR / "rules" / "archive").mkdir(parents=True, exist_ok=True)
+(ROOTDIR / "rules" / "archive" / "rule_registry_1.0.1.json").write_text(json.dumps(registry, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+# ---- CHANGE SET 1.1.0 (2026-10-09): Research Update 1.1, approved by the Product Owner (rules/changes/registry_1.1.0.json).
+CHANGE = json.loads((ROOTDIR / "rules" / "changes" / "registry_1.1.0.json").read_text(encoding="utf-8"))
+APPROVED_11 = CHANGE["approved_on"]
+NOTE_11 = "Research Update 1.1, approved by the Product Owner on " + APPROVED_11
+BY_ID = {r["rule_id"]: r for r in registry["rules"]}
+
+def bump(r, to=None, kind="PATCH"):
+    if to is None:
+        a, b, c = (int(x) for x in r["version"].split("."))
+        to = f"{a}.{b}.{c + 1}" if kind == "PATCH" else f"{a}.{b + 1}.0"
+    r["version"] = to
+    r["date_reviewed"] = APPROVED_11
+
+def deep_merge(dst, add):
+    for k, v in add.items():
+        if isinstance(v, dict) and isinstance(dst.get(k), dict):
+            deep_merge(dst[k], v)
+        else:
+            dst[k] = v
+
+import re as _re
+for k, v in CHANGE["new_sources"].items():
+    assert k not in registry["sources"], k
+    m = _re.search(r"doi:\s*(10\.[^\s,;]+)", v["citation"])
+    registry["sources"][k] = {"citation": v["citation"], "verification": v["verification"],
+                              "url": ("https://doi.org/" + m.group(1).rstrip(".")) if m else ""}
+
+def pending(evidence):
+    return [k for k in evidence if not registry["sources"][k]["verification"].startswith("checked")]
+
+for nr in CHANGE["new_rules"]:
+    r = copy.deepcopy(nr)
+    assert r["rule_id"] not in BY_ID, r["rule_id"]
+    for ev in r["evidence"]:
+        assert ev in registry["sources"], (r["rule_id"], ev)
+    r["status"] = "approved"
+    r["change_reason"] = r["change_reason"] + " — " + NOTE_11
+    if pending(r["evidence"]):
+        r["verification_pending"] = pending(r["evidence"])
+    registry["rules"].append(r)
+    BY_ID[r["rule_id"]] = r
+
+for c in CHANGE["changed_rules"]:
+    r = BY_ID[c["rule_id"]]
+    assert r["version"] == c["from_version"], (c["rule_id"], r["version"], c["from_version"])
+    if "statement" in c:
+        r["statement"] = c["statement"]
+    if "statement_add" in c:
+        r["statement"] = r["statement"].rstrip() + " " + c["statement_add"]
+    if "parameters_replace" in c:
+        r["parameters"] = c["parameters_replace"]
+    if "parameters_add" in c:
+        deep_merge(r["parameters"], c["parameters_add"])
+    for ev in c.get("evidence_add", []):
+        assert ev in registry["sources"], (c["rule_id"], ev)
+        if ev not in r["evidence"]:
+            r["evidence"].append(ev)
+    if c.get("confidence_note"):
+        r["uncertainty"] = (r["uncertainty"] + " " if r["uncertainty"] else "") + c["confidence_note"]
+    bump(r, to=c["to_version"])
+    r["change_reason"] = f"{c['change']}: {c['reason']} ({NOTE_11})"
+    pend = [k for k in c.get("evidence_add", []) if not registry["sources"][k]["verification"].startswith("checked")]
+    if pend:
+        r["verification_pending"] = pend
+
+# Evidence and source patches (no wording or parameter changes).
+def add_evidence(rid, keys, reason):
+    r = BY_ID[rid]
+    for k in keys:
+        if k not in r["evidence"]:
+            r["evidence"].append(k)
+    if r["date_reviewed"] != APPROVED_11:
+        bump(r)
+    r["change_reason"] = f"PATCH: evidence added ({reason}; {NOTE_11})" if r["change_reason"].startswith("Initial") or r["change_reason"].startswith("PATCH") else r["change_reason"]
+
+for r in registry["rules"]:
+    if "Pelland2024" in r["evidence"]:
+        r["evidence"] = ["Pelland2026" if k == "Pelland2024" else k for k in r["evidence"]]
+        if r["date_reviewed"] != APPROVED_11:
+            bump(r)
+        r["change_reason"] = f"PATCH: peer-reviewed Pelland 2026 replaces the 2024 preprint ({NOTE_11})"
+        if r["rule_id"] == "VOL-002":
+            r["uncertainty"] = "Peer-reviewed meta-regression (Pelland 2026): fractional set counting fitted best. Participants' mean age was about 25, so transfer to adults 30+ is assumed."
+add_evidence("INT-003", ["Hermann2025"], "single set to failure vs 2 RIR")
+add_evidence("LOAD-002", ["Harkin2016", "Michie2009"], "self-monitoring")
+add_evidence("ADH-001", ["Gardner2012", "Singh2024"], "a missed day does not derail habit formation")
+registry["sources"]["Schoenfeld2017vol"]["verification"] = "checked"
+registry["sources"]["Lally2010"]["url"] = ""
+registry["sources"]["Lally2010"]["note"] = "The earlier URL opened a different paper (Gardner, Rebar & Lally 2022). Publisher DOI 10.1002/ejsp.674 not yet confirmed."
+registry["registry_version"] = CHANGE["registry_version"]
+registry["status"] = "APPROVED — Product Owner Phase 1 sign-off on " + APPROVED_ON + "; Research Update 1.1 sign-off on " + APPROVED_11
+registry["generated"] = APPROVED_11
+registry["verification_pending"] = CHANGE["verification_pending"]
+ids = [r["rule_id"] for r in registry["rules"]]
+assert len(ids) == len(set(ids)), "duplicate rule IDs"
+assert len(ids) == CHANGE["rule_count_after"], len(ids)
+for r in registry["rules"]:
+    for ev in r["evidence"]:
+        assert ev in registry["sources"], (r["rule_id"], ev)
+out = ROOTDIR / "rules" / "rule_registry_v1.0.json"  # 1.x line; registry_version field carries the minor/patch level
 out.write_text(json.dumps(registry, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-print(f"wrote {out} — {len(ids)} rules, {len(SOURCES)} sources")
+print(f"wrote {out} — registry {registry['registry_version']}, {len(ids)} rules, {len(registry['sources'])} sources")
 from collections import Counter
 print(Counter(r["confidence"] for r in registry["rules"]))
-print(Counter(v[1] for v in SOURCES.values()))
+print(Counter(v["verification"].split(" ")[0] for v in registry["sources"].values()))

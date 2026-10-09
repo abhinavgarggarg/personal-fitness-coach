@@ -1,24 +1,26 @@
-"""Proposed Rule Registry 1.1.0 delta (Research Update 1.1, CR-001/002/003/005). Status: PROPOSED."""
+"""Rule Registry change set 1.1.0 (Research Update 1.1: CR-001/002/003/005/006).
+Approved by the Product Owner on 2026-10-09. tools/build_registry.py applies this change set
+on top of registry 1.0.1. Run: python3 -I tools/build_change_1_1_0.py rules/changes/registry_1.1.0.json rules/archive/rule_registry_1.0.1.json"""
 import json, sys
 TODAY = "2026-10-09"
 
 def rule(rid, cat, title, statement, params, conf, evidence, uncertainty, algos, change, version="1.0.0"):
     return {"rule_id": rid, "version": version, "category": cat, "title": title, "statement": statement, "parameters": params,
             "confidence": conf, "evidence": evidence, "uncertainty": uncertainty, "date_introduced": TODAY, "date_reviewed": TODAY,
-            "affected_algorithms": algos, "tests": [f"TC-{rid}a", f"TC-{rid}b"], "change_reason": change, "status": "proposed"}
+            "affected_algorithms": algos, "tests": [f"TC-{rid}a", f"TC-{rid}b"], "change_reason": change, "status": "approved"}
 
 CR3 = "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1)"
 new = [
  rule("FL-001", "fat_loss", "Default goal: lose fat, keep muscle",
   "For adults 30+ the default goal is 'Lose fat, keep muscle'; every other goal stays selectable. Aerobic minutes are the main fat-loss lever and strength training protects muscle; HIIT counts as aerobic minutes but is never presented as a fat-loss accelerator. The app shows a realistic expectation: without changing what you eat, about 2–3 kg and a 2–5 cm smaller waist over a few months at 150–300 min/week, and it never promises faster loss. No food or calorie features. Anyone can turn weight features off (no weight or waist tracking, expectations or rate check-in; the default goal becomes general fitness). With pregnancy, or cancer in active treatment, the fat-loss goal is not offered and weight features are off; after giving birth it is not the default and can be chosen from 12 weeks.",
   {"default_for_age_gte": 30, "expected_weight_change_kg": [-3, -2], "expected_waist_change_cm": [-5, -2], "aerobic_minutes_range": [150, 300], "hiit_presented_as_accelerator": False, "nutrition_features": False,
-   "weight_features_opt_out": True, "not_offered_and_weight_features_off_with": ["pregnancy", "cancer_in_active_treatment"], "not_default_with": {"postpartum": "selectable from 12 weeks"}},
+   "weight_features_opt_out": True, "not_offered_and_weight_features_off_with": ["pregnancy", "cancer_in_active_treatment"], "not_default_with_postpartum_until_week": 12},
   "Moderate Evidence", ["Jayedi2024", "Oppert2021", "Bellicha2021", "Jakicic2024", "Viana2019", "SancaValeriano2023", "Murphy2022", "LaForgia2006"],
   "Default goal and the age-30 threshold are product decisions (D-060). Weight and body-fat effects are GRADE moderate, waist high (Jayedi 2024); effects are trial totals over 8+ weeks, not weekly rates; no RCT shows exercise prevents regain. The weight-features opt-out protects people for whom weight focus is unhelpful without asking about eating disorders (Expert Practice).",
   ["onboarding", "periodization", "progress_summary", "coach"], CR3),
  rule("FL-002", "fat_loss", "Weekly activity target",
   "Weekly target in equivalent minutes (PH-001 accounting: Z1 + 2 × Z2/Z3 work, brisk walks per STEP-002): 200–300 for ages 30–59, 180–250 for 60–64, 150–250 for 65+, never below 150. The target is approached from last week's minutes at ≤ +15%/week (AER-003), ≤ +12%/week at 65+ (AGE-001 × 0.8); steady Z1 work, mostly walking, is the base.",
-  {"equivalent_minutes": {"30-59": [200, 300], "60-64": [180, 250], "65+": [150, 250]}, "floor": 150, "growth_max_pct_week": 15, "growth_max_pct_week_65_plus": 12},
+  {"equivalent_minutes": {"age_30_59": [200, 300], "age_60_64": [180, 250], "age_65_plus": [150, 250]}, "floor": 150, "growth_max_pct_week": 15, "growth_max_pct_week_65_plus": 12},
   "Moderate Evidence", ["Jayedi2024", "Bull2020", "Oppert2021", "Donnelly2009"],
   "Linear benefit to 300 min/week is from trials of 8+ weeks; the lower ceilings from 60 are Expert Practice (recovery and time), not evidence that older adults need less.",
   ["weekly_scheduling", "aerobic_planning", "progress_summary"], CR3),
@@ -26,14 +28,14 @@ new = [
   "The weekly mix for the fat-loss goal changes with age: strength stays at 3 days by default (2 minimum) in every band; steady Z1 cardio stays at 150–200 min; tempo (Z2) and intervals shrink with age and become low-impact only from 50; a power-emphasis slot (light load lifted fast, low impact) is added from 50; balance work starts at 50 and becomes ≥3 multicomponent days at 65+. Interval sessions need a base of regular training first, longer with age.",
   {"strength_days": {"default": 3, "min": 2, "default_needs_training_days_gte": 3},
    "bands": {
-    "30-39": {"z1_minutes": [150, 200], "z2_minutes": [20, 40], "hiit_default": 2, "hiit_max": 3, "hiit_base_weeks": 4, "low_impact_only": False, "impact_needs": "BMI < 30 and no lower-limb pain; ≤1 impact session/week (CON-004)", "power_slot": False, "balance_minutes_week": 0},
-    "40-49": {"z1_minutes": [150, 200], "z2_minutes": [20, 40], "hiit_default": 1, "hiit_max": 3, "hiit_base_weeks": 4, "low_impact_only": False, "low_impact_preferred": True, "impact_needs": "BMI < 30 and no lower-limb pain; ≤1 impact session/week (CON-004)", "power_slot": False, "balance_minutes_week": 0},
-    "50-59": {"z1_minutes": [150, 200], "z2_minutes": [15, 30], "hiit_default": 1, "hiit_max": 2, "hiit_base_weeks": 4, "low_impact_only": True, "sprint_intervals": False, "power_slot": True, "balance_minutes_week": 10},
-    "60-64": {"z1_minutes": [150, 200], "z2_minutes": [0, 20], "hiit_default": 0, "hiit_offer_after_base_weeks": 6, "hiit_max": 2, "low_impact_only": True, "sprint_intervals": False, "power_slot": True, "balance_minutes_week": 20},
-    "65+":   {"z1_minutes": [150, 200], "z2_minutes": [0, 15], "hiit_default": 0, "hiit_offer_after_base_weeks": 8, "hiit_offer_needs": "previously active and standard screening", "hiit_max": 2, "low_impact_only": True, "sprint_intervals": False, "power_slot": True, "multicomponent_days": 3, "balance_minutes_week": 30}},
+    "age_30_39": {"z1_minutes": [150, 200], "z2_minutes": [20, 40], "hiit_default": 2, "hiit_max": 3, "hiit_base_weeks": 4, "low_impact_only": False, "impact_needs": "BMI < 30 and no lower-limb pain; ≤1 impact session/week (CON-004)", "power_slot": False, "balance_minutes_week": 0},
+    "age_40_49": {"z1_minutes": [150, 200], "z2_minutes": [20, 40], "hiit_default": 1, "hiit_max": 3, "hiit_base_weeks": 4, "low_impact_only": False, "low_impact_preferred": True, "impact_needs": "BMI < 30 and no lower-limb pain; ≤1 impact session/week (CON-004)", "power_slot": False, "balance_minutes_week": 0},
+    "age_50_59": {"z1_minutes": [150, 200], "z2_minutes": [15, 30], "hiit_default": 1, "hiit_max": 2, "hiit_base_weeks": 4, "low_impact_only": True, "sprint_intervals": False, "power_slot": True, "balance_minutes_week": 10},
+    "age_60_64": {"z1_minutes": [150, 200], "z2_minutes": [0, 20], "hiit_default": 0, "hiit_offer_after_base_weeks": 6, "hiit_max": 2, "low_impact_only": True, "sprint_intervals": False, "power_slot": True, "balance_minutes_week": 20},
+    "age_65_plus": {"z1_minutes": [150, 200], "z2_minutes": [0, 15], "hiit_default": 0, "hiit_offer_after_base_weeks": 8, "hiit_offer_needs": "previously active and standard screening", "hiit_max": 2, "low_impact_only": True, "sprint_intervals": False, "power_slot": True, "multicomponent_days": 3, "balance_minutes_week": 30}},
    "third_hiit_session_only_under": "HIIT-001 (intermediate or advanced, FULL day, no fatigue signal or workload flag, conditioning block)",
    "hiit_gate_bmi_gte_30_or_age_gte_60": "standard screening and low-impact modalities only",
-   "low_impact_modalities": ["rower", "skierg", "elliptical", "sled"]},
+   "low_impact_modalities": ["rower", "skierg", "elliptical", "sled", "stationary_bike", "air_fan_bike"]},
   "Expert Practice", ["Bull2020", "ACSM2026", "Fragala2019", "Mitchell2012", "Peterson2011", "Stensvold2020", "Men2025", "Oppert2021", "Viana2019", "Jayedi2024"],
   "No trial compares age-banded exercise mixes. Floors (≥2 strength days, ≥3 multicomponent days at 65+, 150 min) are High Evidence; the band cut-points, tempo and HIIT tapers and base lengths are Expert Practice. HIIT safety data come from supervised settings.",
   ["weekly_scheduling", "workout_generation", "aerobic_planning", "hiit_planning"], CR3),
@@ -51,9 +53,9 @@ new = [
   ["progress_summary", "coach"], CR3),
  rule("STEP-001", "steps", "Daily step target",
   "Daily step target by age band — 9,000 (30–49), 8,000 (50–59), 7,500 (60–64), 7,000 (65+) — reached gradually: baseline = median of the first 7 valid days (≥500 steps recorded); each week the target rises by p × last week's mean (p = 0.15 under 50, 0.10 from 50), rounded to 50 steps, between 250 and a cap (1,000 under 50, 750 at 50–59, 500 at 60–64, 400 at 65+), only if the target was met on ≥5 of 7 days; held at 3–4 days; lowered by one step after 2 weeks with ≤2 days met; no rise in a deload week or with a lower-limb pain flag; never above the band target.",
-  {"targets": {"30-49": 9000, "50-59": 8000, "60-64": 7500, "65+": 7000}, "ranges": {"30-49": [8000, 10000], "50-59": [7000, 9000], "60-64": [6000, 8000], "65+": [6000, 8000]},
+  {"targets": {"age_30_49": 9000, "age_50_59": 8000, "age_60_64": 7500, "age_65_plus": 7000}, "ranges": {"age_30_49": [8000, 10000], "age_50_59": [7000, 9000], "age_60_64": [6000, 8000], "age_65_plus": [6000, 8000]},
    "baseline_days": 7, "valid_day_min_steps": 500, "p": {"under_50": 0.15, "from_50": 0.10}, "round_to": 50, "increment_min": 250,
-   "increment_cap": {"under_50": 1000, "50-59": 750, "60-64": 500, "65+": 400}, "advance_days_met": 5, "hold_days_met": [3, 4], "lower_after_weeks": 2, "lower_if_days_met_lte": 2},
+   "increment_cap": {"under_50": 1000, "age_50_59": 750, "age_60_64": 500, "age_65_plus": 400}, "advance_days_met": 5, "hold_days_met": [3, 4], "lower_after_weeks": 2, "lower_if_days_met_lte": 2},
   "Moderate Evidence", ["Paluch2022", "Ding2025", "TudorLocke2011a", "TudorLocke2011b", "Bravata2007", "Adams2013", "Richardson2008", "Samdal2017"],
   "Targets come from observational mortality plateaus (8,000–10,000 under 60, 6,000–8,000 from 60) measured with research devices, not phones. The progression rate is Expert Practice; adaptive goals have Limited Evidence. Steps alone barely change weight (~0.05 kg/week).",
   ["daily_activity", "progress_summary"], "CR-005 / D-062: phone step counter (Research Update 1.1)"),
@@ -73,7 +75,7 @@ new = [
   ["onboarding", "safety_validator", "workout_generation", "weekly_scheduling", "coach"], "CR-001 / D-058: health-condition picker driven by data (Research Update 1.1)"),
  rule("CAL-002", "calibration", "Starting from your own numbers",
   "A user may enter, per exercise, a recent set (weight × reps and reps in reserve) or a best lift (counted as 0 reps in reserve). An estimated 1RM comes from INT-004 only when the entry is valid (reps + RIR ≤ 12, RIR ≤ 3); the first working load is the INT-005 load from 90% of that estimate (CAL-001 known-weights start). If the user last did the exercise 14–27 days ago the estimate is reduced 10%, 28–55 days 20%, and from 56 days the entry is used only as a ceiling for a normal CAL-001 ramp (age 60+ or a flagged screen moves one band longer, as REG-004). The first session confirms it with the CAL-001 rules.",
-  {"best_lift_rir": 0, "valid_reps_plus_rir_max": 12, "start_pct_of_e1rm": 90, "age_reduction": [{"days": [14, 27], "pct": 10}, {"days": [28, 55], "pct": 20}, {"days": [56, None], "action": "ramp_with_ceiling"}], "older_or_flagged_shift": 1},
+  {"best_lift_rir": 0, "valid_reps_plus_rir_max": 12, "start_pct_of_e1rm": 90, "entry_age_days": {"full_below": 14, "minus10_below": 28, "minus20_below": 56}, "reduction_pct": {"minus10": 10, "minus20": 20}, "older_or_flagged_shift": 1},
   "Expert Practice", ["LeSuer1997", "Halperin2022"],
   "e1RM formula accuracy is Moderate (INT-004); the 90% start and the age reductions follow existing CAL-001/REG-004 values rather than direct evidence for self-reported numbers, which may be optimistic.",
   ["calibration", "load_selection", "onboarding"], "CR-002 / D-059: starting weights and personal records"),
@@ -120,6 +122,16 @@ changed = [
   "statement": "20–30-min express session always available. Habit messaging gives a range, never a fixed day count: for many people a routine starts to feel automatic after about two months, but it varies a lot (from a few weeks to most of a year) and exercise often takes longer; a missed day doesn't undo it.",
   "evidence_add": ["Singh2024", "Gardner2012", "Kaushal2015", "Buyalskaya2023", "Hermann2025"],
   "reason": "Review D (P1): medians of 59–66 days with a range of 4–335 (Singh 2024); gym habits take months (Buyalskaya 2023). Review C (P6): single-set sessions still built muscle (Hermann 2025), supporting the express session."},
+ {"rule_id": "MOD-001", "from_version": "1.0.0", "to_version": "2.0.0", "change": "MAJOR",
+  "statement": "Cardio machines are a per-person choice: each user keeps a list of modalities they don't use (set at onboarding, editable). Treadmill running is off by default for the fat-loss goal (impact) and can be turned on; treadmill walking (including incline walking), stationary and air bikes and stair machines are available when the gym has them and the user hasn't excluded them. The Product Owner's own profile keeps treadmill running, stationary bikes and stair machines excluded (Part 0).",
+  "parameters_replace": {"user_selectable": ["treadmill_running", "treadmill_walking", "stationary_bike", "air_fan_bike", "stair_machine"], "default_excluded_by_goal": {"fat_loss": ["treadmill_running"]}},
+  "reason": "Research Update 1.1 decision 2 (approved 2026-10-09 with the recommended option): a market-ready weight-loss app for 30+ needs the common joint-friendly machines; the exclusions came from the Product Owner's personal equipment list."},
+ {"rule_id": "MOD-002", "from_version": "1.0.0", "to_version": "1.1.0", "change": "MINOR",
+  "parameters_add": {"matrix": {"treadmill_walking": [3, 1, 2, 1, 1, 1, 5, 2, 5], "stationary_bike": [4, 2, 1, 1, 1, 2, 5, 5, 5],
+                                "air_fan_bike": [5, 3, 1, 1, 2, 2, 3, 5, 5], "stair_machine": [4, 3, 2, 1, 2, 2, 4, 3, 4],
+                                "treadmill_running": [5, 3, 4, 2, 3, 3, 5, 5, 5]}},
+  "confidence_note": "Matrix rows for the five machines made selectable by MOD-001 2.0.0 are Expert Practice values, in the same 0–5 style as the existing rows; running scores impact 4, so it counts toward CON-004.",
+  "reason": "Direct consequence of decision 2 (MOD-001 2.0.0): the newly selectable machines need scores to be ranked; added during implementation (D-066)."},
  {"rule_id": "CON-004", "from_version": "1.0.0", "to_version": "1.1.0", "change": "MINOR",
   "statement_add": "A short bone-loading block from the osteoporosis condition entry (≤5 min, low-level landings such as heel drops or small hops, ≥50 landings) is not an impact session under this rule.",
   "parameters_add": {"bone_loading_block_exempt": True, "bone_loading_block_max_minutes": 5},
@@ -134,7 +146,8 @@ changed = [
   "reason": "CR-001, CR-002, CR-005."},
 ]
 
-pending = [
+pending = []
+_mod001_question = [
  {"rule_id": "MOD-001", "question": "Make the excluded cardio machines a per-user choice?",
   "proposal": "MOD-001 2.0.0: treadmill walking (including incline walking), stationary and air bikes, and stair machines become user-selectable exclusions instead of global ones. Your own profile keeps today's exclusions (treadmill running, stationary bikes, stair machines). Treadmill running stays excluded by default for the fat-loss goal (impact).",
   "why": "The exclusions came from your personal equipment list (Part 0). For a market-ready weight-loss app for 30+, incline treadmill walking and bikes are the most common joint-friendly cardio; without them, low-impact intervals rely on rower, SkiErg, elliptical and sled only."},
@@ -259,11 +272,12 @@ new_sources = {
  "CAM19": ("Campbell KL, Winters-Stone KM, Wiskemann J, et al. Exercise Guidelines for Cancer Survivors: Consensus Statement from International Multidisciplinary Roundtable. Med Sci Sports Exerc. 2019;51(11):2375-2390. doi:10.1249/MSS.0000000000002116", "checked (abstract)"),
 }
 
-out = {"proposed_registry_version": "1.1.0", "base_registry_version": "1.0.1", "status": "PROPOSED — awaiting Product Owner sign-off (Research Update 1.1)",
-       "date": TODAY, "new_rules": new, "changed_rules": changed, "pending_product_owner_decision": pending,
+out = {"registry_version": "1.1.0", "base_registry_version": "1.0.1", "status": "APPROVED — Product Owner sign-off of Research Update 1.1 on 2026-10-09 (decision 2: MOD-001 per-person choice, as recommended)",
+       "date": TODAY, "approved_on": "2026-10-09", "new_rules": new, "changed_rules": changed,
+       "evidence_and_source_patches": patches, "creator_review": creator_review,
        "new_sources": {k: {"citation": c, "verification": v} for k, (c, v) in new_sources.items()},
        "rule_count_after": 140 + len(new),
-       "verification_needed_before_final_approval": ["Donnelly2009 dose bands (full text)", "Bull2020 (BJSM full text)", "Ding2025 (Lancet full text)", "ACOG20 (CO 804 full text)", "ADA Standards of Care 2026, section 5 (not opened: unverified)", "GINA 2026 exercise section", "FDA General Wellness 2026 and MDCG 2019-11 rev.1 primary texts", "Campbell 2019 (CAM19) full text for the cancer entry's cautions", "Peterson2011", "IDF2006", "WHOSTEPS"]}
+       "verification_pending": ["Donnelly2009 dose bands (full text)", "Bull2020 (BJSM full text)", "Ding2025 (Lancet full text)", "ACOG20 (CO 804 full text)", "ADA Standards of Care 2026, section 5 (not opened: unverified)", "GINA 2026 exercise section", "FDA General Wellness 2026 and MDCG 2019-11 rev.1 primary texts", "Campbell 2019 (CAM19) full text for the cancer entry's cautions", "Peterson2011", "IDF2006", "WHOSTEPS"]}
 json.dump(out, open(sys.argv[1], "w"), indent=1, ensure_ascii=False)
 # Sanity: every evidence key resolves to a new or an existing source.
 base = json.load(open(sys.argv[2]))["sources"]

@@ -92,6 +92,8 @@ data class GenerationRequest(
     val jointLimits: Map<Joint, Int> = emptyMap(),
     val regions: List<RegionConstraint> = emptyList(),
     val blockedTags: Set<String> = emptySet(),
+    /** MOD-001 2.0.0: conditioning modalities this user doesn't use. */
+    val excludedModalities: Set<com.personalfitnesscoach.engine.model.Modality> = emptySet(),
     val excludedIds: Set<String> = emptySet(),
     val preferences: Map<String, Double> = emptyMap(),
     val inDeload: Boolean = false,
@@ -262,7 +264,8 @@ object SessionGenerator {
         val session = Session(tier, items.map { SessionExercise(it.exercise, it.sets, it.reps.last, it.targetRir, it.loadFactor, it.main, it.lastSetToFailure, fullTierRir = slotRir(it, r)) }, conditioning)
         val ctx = r.week.copy(level = r.level, weeksTraining = r.weeksTraining, screening = r.screening, jointLimits = mergedLimits(r), regions = r.regions,
             blockedTags = r.blockedTags, excludedIds = r.excludedIds, inDeload = r.inDeload, fullTierWorkingSets = fullSets,
-            equipmentToday = r.equipmentToday, library = Library.all.filter { !it.userAddOnly })
+            equipmentToday = r.equipmentToday, library = Library.all.filter { !it.userAddOnly },
+            excludedModalities = r.week.excludedModalities + r.excludedModalities)
         val v = SessionValidator.validate(session, ctx)
         d += v.decisions
         val final = rebuild(items, v.value.session, r)
@@ -333,7 +336,7 @@ object SessionGenerator {
 
     private fun allowedToday(e: Exercise, r: GenerationRequest, sub: SubContext): Boolean =
         r.equipmentToday.containsAll(e.equipment) && e.id !in r.excludedIds && e.limitationTags.none { it in r.blockedTags } &&
-            sub.jointLimits.all { (j, lim) -> e.stress(j) <= lim } && e.equipment.none { it in Substitution.MOD001_EQUIPMENT }
+            sub.jointLimits.all { (j, lim) -> e.stress(j) <= lim } && e.equipment.none { it in Substitution.CARDIO_MACHINE_EQUIPMENT }
 
     private fun slotOf(s: PlannedSlot): OrderSlot = when (s.spec.role) {
         SlotRole.POWER -> OrderSlot.POWER

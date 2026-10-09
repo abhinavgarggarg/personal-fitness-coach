@@ -1,8 +1,9 @@
 {
- "proposed_registry_version": "1.1.0",
+ "registry_version": "1.1.0",
  "base_registry_version": "1.0.1",
- "status": "PROPOSED — awaiting Product Owner sign-off (Research Update 1.1)",
+ "status": "APPROVED — Product Owner sign-off of Research Update 1.1 on 2026-10-09 (decision 2: MOD-001 per-person choice, as recommended)",
  "date": "2026-10-09",
+ "approved_on": "2026-10-09",
  "new_rules": [
   {
    "rule_id": "FL-001",
@@ -31,9 +32,7 @@
      "pregnancy",
      "cancer_in_active_treatment"
     ],
-    "not_default_with": {
-     "postpartum": "selectable from 12 weeks"
-    }
+    "not_default_with_postpartum_until_week": 12
    },
    "confidence": "Moderate Evidence",
    "evidence": [
@@ -60,7 +59,7 @@
     "TC-FL-001b"
    ],
    "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "FL-002",
@@ -70,15 +69,15 @@
    "statement": "Weekly target in equivalent minutes (PH-001 accounting: Z1 + 2 × Z2/Z3 work, brisk walks per STEP-002): 200–300 for ages 30–59, 180–250 for 60–64, 150–250 for 65+, never below 150. The target is approached from last week's minutes at ≤ +15%/week (AER-003), ≤ +12%/week at 65+ (AGE-001 × 0.8); steady Z1 work, mostly walking, is the base.",
    "parameters": {
     "equivalent_minutes": {
-     "30-59": [
+     "age_30_59": [
       200,
       300
      ],
-     "60-64": [
+     "age_60_64": [
       180,
       250
      ],
-     "65+": [
+     "age_65_plus": [
       150,
       250
      ]
@@ -107,7 +106,7 @@
     "TC-FL-002b"
    ],
    "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "FL-003",
@@ -122,7 +121,7 @@
      "default_needs_training_days_gte": 3
     },
     "bands": {
-     "30-39": {
+     "age_30_39": {
       "z1_minutes": [
        150,
        200
@@ -139,7 +138,7 @@
       "power_slot": false,
       "balance_minutes_week": 0
      },
-     "40-49": {
+     "age_40_49": {
       "z1_minutes": [
        150,
        200
@@ -157,7 +156,7 @@
       "power_slot": false,
       "balance_minutes_week": 0
      },
-     "50-59": {
+     "age_50_59": {
       "z1_minutes": [
        150,
        200
@@ -174,7 +173,7 @@
       "power_slot": true,
       "balance_minutes_week": 10
      },
-     "60-64": {
+     "age_60_64": {
       "z1_minutes": [
        150,
        200
@@ -191,7 +190,7 @@
       "power_slot": true,
       "balance_minutes_week": 20
      },
-     "65+": {
+     "age_65_plus": {
       "z1_minutes": [
        150,
        200
@@ -217,7 +216,9 @@
      "rower",
      "skierg",
      "elliptical",
-     "sled"
+     "sled",
+     "stationary_bike",
+     "air_fan_bike"
     ]
    },
    "confidence": "Expert Practice",
@@ -247,7 +248,7 @@
     "TC-FL-003b"
    ],
    "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "FL-004",
@@ -289,7 +290,7 @@
     "TC-FL-004b"
    ],
    "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "FL-005",
@@ -334,7 +335,7 @@
     "TC-FL-005b"
    ],
    "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "STEP-001",
@@ -344,25 +345,25 @@
    "statement": "Daily step target by age band — 9,000 (30–49), 8,000 (50–59), 7,500 (60–64), 7,000 (65+) — reached gradually: baseline = median of the first 7 valid days (≥500 steps recorded); each week the target rises by p × last week's mean (p = 0.15 under 50, 0.10 from 50), rounded to 50 steps, between 250 and a cap (1,000 under 50, 750 at 50–59, 500 at 60–64, 400 at 65+), only if the target was met on ≥5 of 7 days; held at 3–4 days; lowered by one step after 2 weeks with ≤2 days met; no rise in a deload week or with a lower-limb pain flag; never above the band target.",
    "parameters": {
     "targets": {
-     "30-49": 9000,
-     "50-59": 8000,
-     "60-64": 7500,
-     "65+": 7000
+     "age_30_49": 9000,
+     "age_50_59": 8000,
+     "age_60_64": 7500,
+     "age_65_plus": 7000
     },
     "ranges": {
-     "30-49": [
+     "age_30_49": [
       8000,
       10000
      ],
-     "50-59": [
+     "age_50_59": [
       7000,
       9000
      ],
-     "60-64": [
+     "age_60_64": [
       6000,
       8000
      ],
-     "65+": [
+     "age_65_plus": [
       6000,
       8000
      ]
@@ -377,9 +378,9 @@
     "increment_min": 250,
     "increment_cap": {
      "under_50": 1000,
-     "50-59": 750,
-     "60-64": 500,
-     "65+": 400
+     "age_50_59": 750,
+     "age_60_64": 500,
+     "age_65_plus": 400
     },
     "advance_days_met": 5,
     "hold_days_met": [
@@ -412,7 +413,7 @@
     "TC-STEP-001b"
    ],
    "change_reason": "CR-005 / D-062: phone step counter (Research Update 1.1)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "STEP-002",
@@ -444,7 +445,7 @@
     "TC-STEP-002b"
    ],
    "change_reason": "CR-005 / D-062 (Research Update 1.1)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "SAF-010",
@@ -525,7 +526,7 @@
     "TC-SAF-010b"
    ],
    "change_reason": "CR-001 / D-058: health-condition picker driven by data (Research Update 1.1)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "CAL-002",
@@ -537,29 +538,15 @@
     "best_lift_rir": 0,
     "valid_reps_plus_rir_max": 12,
     "start_pct_of_e1rm": 90,
-    "age_reduction": [
-     {
-      "days": [
-       14,
-       27
-      ],
-      "pct": 10
-     },
-     {
-      "days": [
-       28,
-       55
-      ],
-      "pct": 20
-     },
-     {
-      "days": [
-       56,
-       null
-      ],
-      "action": "ramp_with_ceiling"
-     }
-    ],
+    "entry_age_days": {
+     "full_below": 14,
+     "minus10_below": 28,
+     "minus20_below": 56
+    },
+    "reduction_pct": {
+     "minus10": 10,
+     "minus20": 20
+    },
     "older_or_flagged_shift": 1
    },
    "confidence": "Expert Practice",
@@ -580,7 +567,7 @@
     "TC-CAL-002b"
    ],
    "change_reason": "CR-002 / D-059: starting weights and personal records",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "ADH-005",
@@ -622,7 +609,7 @@
     "TC-ADH-005b"
    ],
    "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "MOB-006",
@@ -680,7 +667,7 @@
     "TC-MOB-006b"
    ],
    "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D)",
-   "status": "proposed"
+   "status": "approved"
   },
   {
    "rule_id": "EQ-003",
@@ -715,7 +702,7 @@
     "TC-EQ-003b"
    ],
    "change_reason": "CR-006 / D-064: expert review of creator resources suggested by the Product Owner (Research Update 1.1, reviews C and D)",
-   "status": "proposed"
+   "status": "approved"
   }
  ],
  "changed_rules": [
@@ -796,6 +783,95 @@
    "reason": "Review D (P1): medians of 59–66 days with a range of 4–335 (Singh 2024); gym habits take months (Buyalskaya 2023). Review C (P6): single-set sessions still built muscle (Hermann 2025), supporting the express session."
   },
   {
+   "rule_id": "MOD-001",
+   "from_version": "1.0.0",
+   "to_version": "2.0.0",
+   "change": "MAJOR",
+   "statement": "Cardio machines are a per-person choice: each user keeps a list of modalities they don't use (set at onboarding, editable). Treadmill running is off by default for the fat-loss goal (impact) and can be turned on; treadmill walking (including incline walking), stationary and air bikes and stair machines are available when the gym has them and the user hasn't excluded them. The Product Owner's own profile keeps treadmill running, stationary bikes and stair machines excluded (Part 0).",
+   "parameters_replace": {
+    "user_selectable": [
+     "treadmill_running",
+     "treadmill_walking",
+     "stationary_bike",
+     "air_fan_bike",
+     "stair_machine"
+    ],
+    "default_excluded_by_goal": {
+     "fat_loss": [
+      "treadmill_running"
+     ]
+    }
+   },
+   "reason": "Research Update 1.1 decision 2 (approved 2026-10-09 with the recommended option): a market-ready weight-loss app for 30+ needs the common joint-friendly machines; the exclusions came from the Product Owner's personal equipment list."
+  },
+  {
+   "rule_id": "MOD-002",
+   "from_version": "1.0.0",
+   "to_version": "1.1.0",
+   "change": "MINOR",
+   "parameters_add": {
+    "matrix": {
+     "treadmill_walking": [
+      3,
+      1,
+      2,
+      1,
+      1,
+      1,
+      5,
+      2,
+      5
+     ],
+     "stationary_bike": [
+      4,
+      2,
+      1,
+      1,
+      1,
+      2,
+      5,
+      5,
+      5
+     ],
+     "air_fan_bike": [
+      5,
+      3,
+      1,
+      1,
+      2,
+      2,
+      3,
+      5,
+      5
+     ],
+     "stair_machine": [
+      4,
+      3,
+      2,
+      1,
+      2,
+      2,
+      4,
+      3,
+      4
+     ],
+     "treadmill_running": [
+      5,
+      3,
+      4,
+      2,
+      3,
+      3,
+      5,
+      5,
+      5
+     ]
+    }
+   },
+   "confidence_note": "Matrix rows for the five machines made selectable by MOD-001 2.0.0 are Expert Practice values, in the same 0–5 style as the existing rows; running scores impact 4, so it counts toward CON-004.",
+   "reason": "Direct consequence of decision 2 (MOD-001 2.0.0): the newly selectable machines need scores to be ranked; added during implementation (D-066)."
+  },
+  {
    "rule_id": "CON-004",
    "from_version": "1.0.0",
    "to_version": "1.1.0",
@@ -835,14 +911,85 @@
    "reason": "CR-001, CR-002, CR-005."
   }
  ],
- "pending_product_owner_decision": [
+ "evidence_and_source_patches": [
   {
-   "rule_id": "MOD-001",
-   "question": "Make the excluded cardio machines a per-user choice?",
-   "proposal": "MOD-001 2.0.0: treadmill walking (including incline walking), stationary and air bikes, and stair machines become user-selectable exclusions instead of global ones. Your own profile keeps today's exclusions (treadmill running, stationary bikes, stair machines). Treadmill running stays excluded by default for the fat-loss goal (impact).",
-   "why": "The exclusions came from your personal equipment list (Part 0). For a market-ready weight-loss app for 30+, incline treadmill walking and bikes are the most common joint-friendly cardio; without them, low-impact intervals rely on rower, SkiErg, elliptical and sled only."
+   "what": "evidence lists",
+   "rules": [
+    "VOL-002",
+    "VOL-003",
+    "VOL-005",
+    "FREQ-002",
+    "FREQ-004"
+   ],
+   "change": "replace preprint Pelland2024 with the peer-reviewed Pelland2026 wherever it is cited; VOL-002 uncertainty: peer-reviewed meta-regression, participants' mean age about 25, so transfer to 30+ is assumed",
+   "reason": "Review C (P3)"
+  },
+  {
+   "what": "evidence list",
+   "rules": [
+    "INT-003"
+   ],
+   "change": "add Hermann2025 (a single set to failure gives at most a modest hypertrophy edge over 2 RIR, similar strength)",
+   "reason": "Review C (P6)"
+  },
+  {
+   "what": "evidence list",
+   "rules": [
+    "LOAD-002"
+   ],
+   "change": "add Harkin2016 and Michie2009 (self-monitoring)",
+   "reason": "Review D (P6)"
+  },
+  {
+   "what": "evidence list",
+   "rules": [
+    "ADH-001"
+   ],
+   "change": "add Gardner2012 and Singh2024 (one missed opportunity does not derail habit formation)",
+   "reason": "Review D (§8)"
+  },
+  {
+   "what": "source record",
+   "source": "Schoenfeld2017vol",
+   "change": "verification located → checked (full text opened at the recorded URL)",
+   "reason": "Review C (P4)"
+  },
+  {
+   "what": "source record",
+   "source": "Lally2010",
+   "change": "the recorded URL opens a different paper (Gardner, Rebar & Lally 2022); replace it with the publisher DOI 10.1002/ejsp.674 once confirmed; keep 'located'",
+   "reason": "Review D (§8)"
+  },
+  {
+   "what": "vocabulary",
+   "change": "label adherence features with the BCT Taxonomy v1 (Michie2013)",
+   "reason": "Review D (P6)"
   }
  ],
+ "creator_review": {
+  "request": "CR-006: Product Owner suggested Jeff Nippard, Jeremy Ethier, Nerd Fitness, Yoga With Adriene, Fitness Blender and Heather Robertson as references; the expert reviewers' decision is final (PO instruction, 9 Oct 2026)",
+  "policy": "Creators are never evidence sources and are not added to registry sources. A creator may be used as a pointer (the primary study they cite is read, labelled and cited directly) or as design input (general, non-copyrightable ideas from free public content, rewritten in our own words, with no names, brands, text, images, video, routines or programme structures). Paid programmes and subscription apps are never used. Never named in the app.",
+  "decisions": {
+   "Jeff Nippard": "INCLUDE — pointer to primary evidence + design input (not cited)",
+   "Jeremy Ethier": "INCLUDE — design input only (narrow); EXCLUDED as a source of workout plans, evidence or exercise rankings",
+   "Nerd Fitness": "INCLUDE — design input + pointer to primary evidence (not cited)",
+   "Yoga With Adriene": "INCLUDE — design input only (format and tone of the calm mobility session, MOB-006)",
+   "Fitness Blender": "INCLUDE — design input only (low-impact, no-jump home cardio formats, EQ-003)",
+   "Heather Robertson": "EXCLUDE (no citations, terms forbid reuse, default format conflicts with HIIT-002/003, CON-004, FL-003, WU-003, ADH-003)"
+  },
+  "not_adopted": [
+   "most sets to failure, drop sets, myo-reps and partials past failure",
+   "lengthened partials as a default technique",
+   "'one weekly set keeps all gains' (false for 60–75-year-olds)",
+   "counting indirect sets as full sets",
+   "fixed 3-min rests for growth",
+   "exercise rankings from EMG (library stimulus scores never derived from EMG)",
+   "nutrition, protein, calorie-burn and afterburn claims",
+   "detox, weight-loss or 'speeds recovery' yoga claims; yoga counted as cardio",
+   "fixed 21/30-day habit claims; penalty accountability",
+   "dense 30:10 jump HIIT, 'no repeats' sessions and standalone sessions without a warm-up"
+  ]
+ },
  "new_sources": {
   "Murphy2022": {
    "citation": "Murphy C, Koehler K. Energy deficiency impairs resistance training gains in lean mass but not strength: a meta-analysis and meta-regression. Scand J Med Sci Sports. 2022;32(1):125-137. doi:10.1111/sms.14075",
@@ -1214,7 +1361,7 @@
   }
  },
  "rule_count_after": 152,
- "verification_needed_before_final_approval": [
+ "verification_pending": [
   "Donnelly2009 dose bands (full text)",
   "Bull2020 (BJSM full text)",
   "Ding2025 (Lancet full text)",

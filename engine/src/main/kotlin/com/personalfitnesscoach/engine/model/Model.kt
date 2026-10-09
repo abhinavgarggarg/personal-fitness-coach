@@ -127,10 +127,20 @@ data class Exercise(
 enum class Station { SINGLE_STATION, MULTI_STATION, FLOOR }
 
 /** Conditioning modalities (MOD-001, MOD-002). Excluded ones exist only so they can be rejected. */
-enum class Modality(val excluded: Boolean = false, val pendingConfirmation: Boolean = false) {
+/**
+ * Conditioning modalities. Machines with a [registryKey] are per-person choices (MOD-001 2.0.0): each user keeps a
+ * list of modalities they don't use; nothing is excluded globally.
+ */
+enum class Modality(val registryKey: String? = null) {
     ROWER, SKIERG, ELLIPTICAL, SLED, BATTLE_ROPES, KETTLEBELL, CARRIES, MEDBALL, BODYWEIGHT_CIRCUIT, JUMP_ROPE,
-    TREADMILL_RUN(excluded = true), STATIONARY_BIKE(excluded = true), STAIR_MACHINE(excluded = true),
-    AIR_BIKE(excluded = true, pendingConfirmation = true), TREADMILL_WALK(excluded = true, pendingConfirmation = true),
+    TREADMILL_RUN("treadmill_running"), STATIONARY_BIKE("stationary_bike"), STAIR_MACHINE("stair_machine"),
+    AIR_BIKE("air_fan_bike"), TREADMILL_WALK("treadmill_walking");
+
+    val userSelectable: Boolean get() = registryKey != null
+
+    companion object {
+        fun byRegistryKey(key: String): Modality? = entries.firstOrNull { it.registryKey == key }
+    }
 }
 
 /** Aerobic intensity zones (AER-001). */

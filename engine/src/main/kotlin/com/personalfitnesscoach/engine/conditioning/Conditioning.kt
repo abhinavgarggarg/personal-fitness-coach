@@ -140,6 +140,8 @@ data class ModalityContext(
     val jointLimits: Map<Joint, Int> = emptyMap(),
     /** CON-004: impact work is ≤ 1/week and never the day before heavy legs. */
     val impactAllowed: Boolean = true,
+    /** MOD-001 2.0.0: modalities this user doesn't use. */
+    val excluded: Set<Modality> = emptySet(),
 )
 
 data class ModalityScore(val modality: Modality, val score: Double)
@@ -152,7 +154,9 @@ object ModalitySelection {
         Modality.BATTLE_ROPES -> P.MOD_002.matrix.battle_ropes; Modality.KETTLEBELL -> P.MOD_002.matrix.kettlebell
         Modality.CARRIES -> P.MOD_002.matrix.carries; Modality.MEDBALL -> P.MOD_002.matrix.medball
         Modality.BODYWEIGHT_CIRCUIT -> P.MOD_002.matrix.bodyweight_circuit; Modality.JUMP_ROPE -> P.MOD_002.matrix.jump_rope
-        else -> null
+        Modality.TREADMILL_WALK -> P.MOD_002.matrix.treadmill_walking; Modality.STATIONARY_BIKE -> P.MOD_002.matrix.stationary_bike
+        Modality.AIR_BIKE -> P.MOD_002.matrix.air_fan_bike; Modality.STAIR_MACHINE -> P.MOD_002.matrix.stair_machine
+        Modality.TREADMILL_RUN -> P.MOD_002.matrix.treadmill_running
     }
 
     private fun col(name: String) = P.MOD_002.matrix_columns.indexOf(name)
@@ -181,7 +185,7 @@ object ModalitySelection {
     /** Ranked candidates after hard filters (excluded, equipment, joint limits, impact limit); ties by name. */
     fun rank(ctx: ModalityContext): EngineResult<List<ModalityScore>> {
         val ranked = Modality.entries.asSequence()
-            .filter { !it.excluded && row(it) != null && available(it, ctx.equipment) }
+            .filter { it !in ctx.excluded && row(it) != null && available(it, ctx.equipment) }
             .filter { m -> ctx.jointLimits.all { (j, lim) -> ModalityJoints.stress(m, j) <= lim } }
             .filter { ctx.impactAllowed || !isImpact(it) }
             .map { ModalityScore(it, score(it, ctx)) }
@@ -190,6 +194,16 @@ object ModalitySelection {
         return EngineResult(ranked, listOf(Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.MOD_001, RuleIds.MOD_002), ReasonKey.MODALITY_CHOSEN,
             inputs = mapOf("purpose" to ctx.purpose.name), outputs = mapOf("ranked" to ranked.map { "${it.modality}:${it.score}" }))))
     }
+}
+
+/** MOD-001 2.0.0: which cardio machines a user doesn't use. Nothing is excluded globally. */
+object ModalityExclusions {
+    /** Every machine a user can switch on or off. */
+    val selectable: List<Modality> = P.MOD_001.user_selectable.mapNotNull { Modality.byRegistryKey(it) }
+
+    /** Defaults for a new user: treadmill running is off for the fat-loss goal (impact); everything else is on. */
+    fun defaults(fatLossGoal: Boolean): Set<Modality> =
+        if (fatLossGoal) P.MOD_001.default_excluded_by_goal.fat_loss.mapNotNull { Modality.byRegistryKey(it) }.toSet() else emptySet()
 }
 
 /** An interval prescription: `reps` × (`workSec` at CR10 `cr10`, then `restSec` easy). */

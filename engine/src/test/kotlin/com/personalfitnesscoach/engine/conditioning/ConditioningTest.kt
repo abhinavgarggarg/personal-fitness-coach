@@ -137,8 +137,9 @@ class ModalityTest {
 
     @Test fun `TC-MOD-002b hard filters remove excluded, unavailable, painful and impact modalities`() {
         val eq = setOf("rower", "skierg", "jump_rope", "treadmill", "spin_bike")
-        val ranked = ModalitySelection.rank(ModalityContext(eq, ConditioningPurpose.STEADY, impactAllowed = false)).value.map { it.modality }
-        assertTrue(ranked.none { it.excluded })
+        val excluded = setOf(Modality.TREADMILL_RUN, Modality.TREADMILL_WALK, Modality.STATIONARY_BIKE)
+        val ranked = ModalitySelection.rank(ModalityContext(eq, ConditioningPurpose.STEADY, impactAllowed = false, excluded = excluded)).value.map { it.modality }
+        assertTrue(ranked.none { it in excluded })
         assertFalse(Modality.JUMP_ROPE in ranked)
         assertEquals(Modality.ROWER, ranked.first())
         val knee = ModalitySelection.rank(ModalityContext(eq, ConditioningPurpose.STEADY, jointLimits = mapOf(Joint.KNEE to 1))).value.map { it.modality }

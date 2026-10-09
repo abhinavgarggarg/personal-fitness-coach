@@ -1,7 +1,7 @@
 {
  "table": "health_conditions",
- "version": "1.0.0-draft",
- "status": "PROPOSED — Research Update 1.1, awaiting Product Owner sign-off; clinician and regulatory review required before any public release",
+ "version": "1.0.0",
+ "status": "APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release",
  "rule": "SAF-010",
  "zone_mapping": "App zones per AER-001: Z1 easy/moderate (full sentences), Z2 tempo (vigorous), Z3 intervals. 'Moderate only' guidance maps to Z1.",
  "combine": "First resolve each entry for today (its phase, unlocks, control status and the user's clearance scope); then each control takes its most restrictive value using merge_orders. Prompts, stop signs, avoid-tags and positions are unions; joint limits take the lowest value per joint; warm-up and cool-down extras take the highest; scheduling limits take the strictest value; HIIT modality lists intersect (empty = no HIIT); impact_dose is kept only if the merged impact is 'encouraged'.",
@@ -243,9 +243,7 @@
    "parent": "any_diabetes",
    "hiit_base_weeks": 4,
    "hiit_modalities": [
-    "rower"
-   ],
-   "hiit_modalities_if_mod001_allows": [
+    "rower",
     "stationary_bike"
    ],
    "avoid_tags": [
@@ -850,9 +848,7 @@
    },
    "hiit_base_weeks": 8,
    "hiit_modalities": [
-    "rower"
-   ],
-   "hiit_modalities_if_mod001_allows": [
+    "rower",
     "stationary_bike"
    ],
    "impact_unlock": {

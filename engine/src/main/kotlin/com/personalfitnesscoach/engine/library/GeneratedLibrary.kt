@@ -51,6 +51,14 @@ object GeneratedLibrary {
         "sled" to EquipmentInfo("sled", "Sled (Prowler) for pushing and pulling", EquipmentClass.CONDITIONING),
         "battle_ropes" to EquipmentInfo("battle_ropes", "Battle ropes", EquipmentClass.CONDITIONING),
         "jump_rope" to EquipmentInfo("jump_rope", "Jump rope", EquipmentClass.CONDITIONING),
+        "treadmill" to EquipmentInfo("treadmill", "Treadmill", EquipmentClass.CONDITIONING),
+        "stationary_bike" to EquipmentInfo("stationary_bike", "Stationary bike (any type)", EquipmentClass.CONDITIONING),
+        "upright_bike" to EquipmentInfo("upright_bike", "Upright exercise bike", EquipmentClass.CONDITIONING),
+        "recumbent_bike" to EquipmentInfo("recumbent_bike", "Recumbent exercise bike", EquipmentClass.CONDITIONING),
+        "spin_bike" to EquipmentInfo("spin_bike", "Spin bike", EquipmentClass.CONDITIONING),
+        "air_bike" to EquipmentInfo("air_bike", "Air bike", EquipmentClass.CONDITIONING),
+        "fan_bike" to EquipmentInfo("fan_bike", "Fan bike", EquipmentClass.CONDITIONING),
+        "stair_climber" to EquipmentInfo("stair_climber", "Stair climber or stepper", EquipmentClass.CONDITIONING),
     )
 
     val tags: Map<String, String> = mapOf(
@@ -5919,5 +5927,10 @@ object GeneratedLibrary {
         ModalityInfo(Modality.MEDBALL, "Medicine ball circuit", setOf("medicine_ball"), emptySet(), listOf(ConditioningUnit.REPS, ConditioningUnit.MINUTES)),
         ModalityInfo(Modality.BODYWEIGHT_CIRCUIT, "Bodyweight circuit", emptySet(), emptySet(), listOf(ConditioningUnit.REPS, ConditioningUnit.MINUTES)),
         ModalityInfo(Modality.JUMP_ROPE, "Jump rope", setOf("jump_rope"), emptySet(), listOf(ConditioningUnit.MINUTES, ConditioningUnit.REPS)),
+        ModalityInfo(Modality.TREADMILL_WALK, "Treadmill walking (flat or incline)", setOf("treadmill"), emptySet(), listOf(ConditioningUnit.MINUTES, ConditioningUnit.METRES)),
+        ModalityInfo(Modality.STATIONARY_BIKE, "Stationary bike", setOf("stationary_bike"), setOf("upright_bike", "recumbent_bike", "spin_bike"), listOf(ConditioningUnit.MINUTES, ConditioningUnit.WATTS, ConditioningUnit.CALORIES)),
+        ModalityInfo(Modality.AIR_BIKE, "Air bike", setOf("air_bike"), setOf("fan_bike"), listOf(ConditioningUnit.MINUTES, ConditioningUnit.WATTS, ConditioningUnit.CALORIES)),
+        ModalityInfo(Modality.STAIR_MACHINE, "Stair machine", setOf("stair_climber"), emptySet(), listOf(ConditioningUnit.MINUTES)),
+        ModalityInfo(Modality.TREADMILL_RUN, "Treadmill running", setOf("treadmill"), emptySet(), listOf(ConditioningUnit.MINUTES, ConditioningUnit.METRES)),
     )
 }

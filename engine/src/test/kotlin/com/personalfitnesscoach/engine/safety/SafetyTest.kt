@@ -199,17 +199,24 @@ class CapsTest {
         assertEquals(1, SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, hoursToNextHeavyLower = 48.0, hiitBaseReady = true)).value.session.hiitBlocks)
     }
 
-    @Test fun `TC-MOD-001a excluded modalities are never prescribed`() {
-        for (m in Modality.entries.filter { it.excluded }) {
+    @Test fun `TC-MOD-001a a machine the user has excluded is never prescribed`() {
+        for (m in com.personalfitnesscoach.engine.conditioning.ModalityExclusions.selectable) {
             val s = Session(Tier.FULL, emptyList(), listOf(ConditioningBlock(m, Zone.Z2, 20.0)))
-            assertTrue(SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE)).value.session.conditioning.none { it.modality.excluded })
+            val ctx = ValidationContext(Level.INTERMEDIATE, excludedModalities = setOf(m))
+            assertTrue(m.name, SessionValidator.violations(s, ctx).any { it.ruleId == RuleIds.MOD_001 })
+            assertTrue(m.name, SessionValidator.validate(s, ctx).value.session.conditioning.none { it.modality == m })
         }
     }
 
-    @Test fun `TC-MOD-001b treadmill running, bikes and stair machines are excluded, air bike and walking pending`() {
-        assertTrue(Modality.TREADMILL_RUN.excluded && Modality.STATIONARY_BIKE.excluded && Modality.STAIR_MACHINE.excluded)
-        assertTrue(Modality.AIR_BIKE.pendingConfirmation && Modality.TREADMILL_WALK.pendingConfirmation)
-        assertFalse(Modality.ROWER.excluded || Modality.SKIERG.excluded || Modality.ELLIPTICAL.excluded)
+    @Test fun `TC-MOD-001b machines are per-person choices - nothing excluded by default, running off for fat loss`() {
+        val excl = com.personalfitnesscoach.engine.conditioning.ModalityExclusions
+        assertEquals(setOf(Modality.TREADMILL_RUN, Modality.TREADMILL_WALK, Modality.STATIONARY_BIKE, Modality.AIR_BIKE, Modality.STAIR_MACHINE), excl.selectable.toSet())
+        assertTrue(excl.defaults(fatLossGoal = false).isEmpty())
+        assertEquals(setOf(Modality.TREADMILL_RUN), excl.defaults(fatLossGoal = true))
+        // Without an exclusion a bike block is kept.
+        val bike = Session(Tier.FULL, emptyList(), listOf(ConditioningBlock(Modality.STATIONARY_BIKE, Zone.Z1, 20.0)))
+        assertTrue(SessionValidator.violations(bike, ValidationContext(Level.INTERMEDIATE)).none { it.ruleId == RuleIds.MOD_001 })
+        // Cardio machines are never strength exercises.
         assertFalse(SessionValidator.exerciseAllowed(BIKE_EX, ValidationContext(Level.ADVANCED)))
     }
 }
@@ -238,12 +245,13 @@ class ValidatorTest {
             SessionExercise(BIKE_EX, 3, 1, 2.0),
             SessionExercise(LEG_EXT, 6, 12, 1.0),
         ), listOf(ConditioningBlock(Modality.STAIR_MACHINE, Zone.Z2, 15.0), ConditioningBlock(Modality.ROWER, Zone.Z4, 4.0, 4.0, hiit = true)))
-        val r = SessionValidator.validate(s, ValidationContext(Level.BEGINNER, weeksTraining = 3))
+        val ctx = ValidationContext(Level.BEGINNER, weeksTraining = 3, excludedModalities = setOf(Modality.STAIR_MACHINE))
+        val r = SessionValidator.validate(s, ctx)
         val out = r.value.session
-        assertTrue(SessionValidator.violations(out, ValidationContext(Level.BEGINNER, weeksTraining = 3)).isEmpty())
+        assertTrue(SessionValidator.violations(out, ctx).isEmpty())
         assertFalse(r.value.fallbackUsed)
         assertTrue(out.exercises.none { it.exercise.id == "bike" })
-        assertTrue(out.conditioning.none { it.modality.excluded || it.hiit })
+        assertTrue(out.conditioning.none { it.modality == Modality.STAIR_MACHINE || it.hiit })
         val squat = out.exercises.first { it.exercise.id == "squat" }
         assertTrue(squat.loadFactor <= 0.95 && squat.targetRir >= 1.0 && !squat.lastSetToFailure)
         assertTrue(r.decisions.size >= 5)

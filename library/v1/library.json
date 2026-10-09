@@ -52,7 +52,15 @@
     "elliptical":             {"name": "Elliptical / cross-trainer", "class": "CONDITIONING"},
     "sled":                   {"name": "Sled (Prowler) for pushing and pulling", "class": "CONDITIONING"},
     "battle_ropes":           {"name": "Battle ropes", "class": "CONDITIONING"},
-    "jump_rope":              {"name": "Jump rope", "class": "CONDITIONING"}
+    "jump_rope":              {"name": "Jump rope", "class": "CONDITIONING"},
+    "treadmill":            {"name": "Treadmill", "class": "CONDITIONING"},
+    "stationary_bike":      {"name": "Stationary bike (any type)", "class": "CONDITIONING"},
+    "upright_bike":         {"name": "Upright exercise bike", "class": "CONDITIONING"},
+    "recumbent_bike":       {"name": "Recumbent exercise bike", "class": "CONDITIONING"},
+    "spin_bike":            {"name": "Spin bike", "class": "CONDITIONING"},
+    "air_bike":             {"name": "Air bike", "class": "CONDITIONING"},
+    "fan_bike":             {"name": "Fan bike", "class": "CONDITIONING"},
+    "stair_climber":        {"name": "Stair climber or stepper", "class": "CONDITIONING"}
   },
   "tags": {
     "deep_knee_flexion":     "Loads the knee in deep bending (deep squats, lunges)",

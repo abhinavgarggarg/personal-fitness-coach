@@ -1,4 +1,5 @@
-"""Draft health-condition table v1.0 (CR-001, D-058, proposed rule SAF-010). Status: PROPOSED.
+"""Health-condition table v1.0 (CR-001, D-058, rule SAF-010). Approved by the Product Owner on 2026-10-09.
+Run: python3 -I tools/build_health_conditions.py rules/health_conditions_v1.0.json
 
 Zone mapping to the app's AER-001 zones: Z1 = easy/moderate (talk in full sentences),
 Z2 = tempo (counts as vigorous), Z3 = intervals. Guidance that says "moderate only" maps to Z1.
@@ -51,7 +52,7 @@ E = [
    stop_signs=["Sudden floaters, flashes, a 'curtain' or loss of vision: stop and get urgent eye care"],
    confidence="Moderate Evidence / Expert Practice", sources=["KAN22"]),
  entry("diabetes_feet", "Diabetes (type 1 or 2) with numbness or nerve damage in the feet", "metabolic", parent="any_diabetes",
-   clearance="none", max_zone="Z3", hiit="after_base", hiit_base_weeks=4, hiit_modalities=["rower"], hiit_modalities_if_mod001_allows=["stationary_bike"], min_rir=2, impact="none",
+   clearance="none", max_zone="Z3", hiit="after_base", hiit_base_weeks=4, hiit_modalities=["rower", "stationary_bike"], min_rir=2, impact="none",
    avoid_tags=["jumping", "uneven_surface_running", "high_fall_risk"], joint_limits={"ANKLE": 2}, extra_warmup_min=5,
    prompts=["Check your feet every day, wear well-fitting shoes and dry socks.", "No swimming or water workouts with an open sore on your foot."],
    stop_signs=["A new blister, wound or redness on the foot: pause standing work and get it checked"],
@@ -162,7 +163,7 @@ E = [
    stop_signs=["Signs of heat illness (dizziness, nausea, headache, confusion): stop, cool down and drink water"],
    confidence="Moderate Evidence / Expert Practice (caps)", sources=["Donnelly2009", "Oppert2021", "WHO04", "Misra2025", "Riebe2015"]),
  entry("obesity_severe", "Living with severe obesity (BMI 35+, or 32.5+ for South Asian people)", "body_weight", parent="obesity",
-   clearance="suggest", max_zone="Z1", max_zone_after_weeks={"weeks": 8, "zone": "Z3"}, hiit="after_base", hiit_base_weeks=8, hiit_modalities=["rower"], hiit_modalities_if_mod001_allows=["stationary_bike"],
+   clearance="suggest", max_zone="Z1", max_zone_after_weeks={"weeks": 8, "zone": "Z3"}, hiit="after_base", hiit_base_weeks=8, hiit_modalities=["rower", "stationary_bike"],
    min_rir=2, impact="none_at_start", impact_unlock={"after_weeks": 8, "opt_in": True}, joint_limits={"KNEE": 2}, joint_limit_unlock={"KNEE": 3, "after_weeks": 8},
    positions_note="Offer alternatives to getting up and down from the floor and to long lying on the back if uncomfortable", extra_warmup_min=5,
    prompts=["Build up gradually; fitness gains count even when the scale doesn't move."],
@@ -188,7 +189,7 @@ E = [
 ]
 
 doc = {
-  "table": "health_conditions", "version": "1.0.0-draft", "status": "PROPOSED — Research Update 1.1, awaiting Product Owner sign-off; clinician and regulatory review required before any public release",
+  "table": "health_conditions", "version": "1.0.0", "status": "APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release",
   "rule": "SAF-010",
   "zone_mapping": "App zones per AER-001: Z1 easy/moderate (full sentences), Z2 tempo (vigorous), Z3 intervals. 'Moderate only' guidance maps to Z1.",
   "combine": "First resolve each entry for today (its phase, unlocks, control status and the user's clearance scope); then each control takes its most restrictive value using merge_orders. Prompts, stop signs, avoid-tags and positions are unions; joint limits take the lowest value per joint; warm-up and cool-down extras take the highest; scheduling limits take the strictest value; HIIT modality lists intersect (empty = no HIIT); impact_dose is kept only if the merged impact is 'encouraged'.",

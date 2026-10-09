@@ -84,6 +84,8 @@ data class WeekInput(
     val coreLifts: Map<String, String> = emptyMap(),
     val previousBlockChoices: Map<String, String> = emptyMap(),
     val modalityPreferences: Map<Modality, Double> = emptyMap(),
+    /** MOD-001 2.0.0: conditioning modalities this user doesn't use (see [ModalityExclusions]). */
+    val excludedModalities: Set<Modality> = emptySet(),
 )
 
 data class PlannedSlot(
@@ -611,7 +613,7 @@ object WeekPlanner {
         fun pick(day: PlannedDay, purpose: ConditioningPurpose): Modality? {
             val legs = if (day.heavyLower || nextDayHeavyOrPower(day.weekday)) 1.0 else 0.3
             val impactOk = (day.weekday in impactDays || impactDays.size < P.CON_004.impact_sessions_per_week_max) && !nextDayHeavyOrPower(day.weekday)
-            val r = ModalitySelection.rank(ModalityContext(i.equipment, purpose, legs, jointSensitivity, recent.toList(), i.modalityPreferences, i.jointLimits, impactOk))
+            val r = ModalitySelection.rank(ModalityContext(i.equipment, purpose, legs, jointSensitivity, recent.toList(), i.modalityPreferences, i.jointLimits, impactOk, i.excludedModalities))
             val m = r.value.firstOrNull()?.modality ?: return null
             recent += m
             if (ModalitySelection.isImpact(m)) impactDays += day.weekday

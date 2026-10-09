@@ -70,6 +70,8 @@ data class ValidationContext(
     val regions: List<RegionConstraint> = emptyList(),
     val blockedTags: Set<String> = emptySet(),
     val excludedIds: Set<String> = emptySet(),
+    /** MOD-001 2.0.0: conditioning modalities this user doesn't use. */
+    val excludedModalities: Set<Modality> = emptySet(),
     val weekSetsSoFar: Map<Muscle, Double> = emptyMap(),
     val weekSsuSoFar: Double = 0.0,
     /** Ssu.weeklyLimit for this user; null = level ceiling. */
@@ -126,6 +128,12 @@ object ModalityJoints {
         Modality.MEDBALL to mapOf(Joint.SHOULDER to 2, Joint.SPINE to 2, Joint.ELBOW to 1, Joint.WRIST to 1),
         Modality.BODYWEIGHT_CIRCUIT to mapOf(Joint.KNEE to 2, Joint.SHOULDER to 2, Joint.WRIST to 2, Joint.ANKLE to 2, Joint.HIP to 1),
         Modality.JUMP_ROPE to mapOf(Joint.ANKLE to 3, Joint.KNEE to 2),
+        // MOD-001 2.0.0 machines (Expert Practice, D-066).
+        Modality.TREADMILL_WALK to mapOf(Joint.KNEE to 1, Joint.HIP to 1, Joint.ANKLE to 1),
+        Modality.STATIONARY_BIKE to mapOf(Joint.KNEE to 1, Joint.HIP to 1),
+        Modality.AIR_BIKE to mapOf(Joint.KNEE to 1, Joint.HIP to 1, Joint.SHOULDER to 1, Joint.ELBOW to 1),
+        Modality.STAIR_MACHINE to mapOf(Joint.KNEE to 2, Joint.HIP to 2, Joint.ANKLE to 1),
+        Modality.TREADMILL_RUN to mapOf(Joint.KNEE to 3, Joint.ANKLE to 3, Joint.HIP to 2),
     )
 
     fun stress(m: Modality, j: Joint): Int = TABLE[m]?.get(j) ?: 0
@@ -149,7 +157,7 @@ object SessionValidator {
         val strength = s.exercises
         // MOD-001, pain limits, CON-004 impact for conditioning.
         s.conditioning.forEachIndexed { i, b ->
-            if (b.modality.excluded) v += Violation(RuleIds.MOD_001, "MODALITY", i)
+            if (b.modality in c.excludedModalities) v += Violation(RuleIds.MOD_001, "MODALITY", i)
             else if (!modalityAllowed(b.modality, c)) v += Violation(RuleIds.SAF_003, "CONDITIONING_JOINT", i)
             if (b.impact > 0 && !impactAllowed(c)) v += Violation(RuleIds.CON_004, "IMPACT_NOT_ALLOWED", i)
             if (b.impact > 0 && c.regions.any { it.noJumping && it.region in IMPACT_JOINTS }) v += Violation(RuleIds.SAF_004, "IMPACT_NOT_ALLOWED", i)
@@ -410,7 +418,7 @@ object SessionValidator {
 
     /** Hard filters shared by validation and swaps: MOD-001, exclusions, pain limits, tags, impact. */
     fun exerciseAllowed(e: Exercise, c: ValidationContext): Boolean {
-        if (e.equipment.any { it in Substitution.MOD001_EQUIPMENT } || e.id in c.excludedIds) return false
+        if (e.equipment.any { it in Substitution.CARDIO_MACHINE_EQUIPMENT } || e.id in c.excludedIds) return false
         if (e.limitationTags.any { it in c.blockedTags }) return false
         if (e.impact > 0 && !impactAllowed(c)) return false
         for ((j, limit) in c.jointLimits) if (e.stress(j) > limit) return false
@@ -422,9 +430,9 @@ object SessionValidator {
         return true
     }
 
-    /** A conditioning modality may be used only if it is not excluded and keeps every painful joint within its limit. */
+    /** A conditioning modality may be used only if the user hasn't excluded it (MOD-001) and it keeps every painful joint within its limit. */
     fun modalityAllowed(m: Modality, c: ValidationContext): Boolean {
-        if (m.excluded) return false
+        if (m in c.excludedModalities) return false
         for ((j, limit) in c.jointLimits) if (ModalityJoints.stress(m, j) > limit) return false
         for (r in c.regions) { val max = r.maxStress; if (max != null && ModalityJoints.stress(m, r.region) > max) return false }
         return true

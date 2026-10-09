@@ -53,9 +53,9 @@ data class OccupiedOptions(val swaps: SwapOptions, val canDoLater: Boolean)
  * reproduced from its component values in the tests.
  */
 object Substitution {
-    /** Equipment IDs that belong to MOD-001 excluded modalities. */
-    val MOD001_EQUIPMENT: Set<String> = (P.MOD_001.excluded + P.MOD_001.excluded_pending_confirmation +
-        listOf("treadmill", "upright_bike", "recumbent_bike", "spin_bike", "stair_climber", "air_bike", "fan_bike")).toSet()
+    /** Cardio-machine equipment: used only by conditioning modalities, never by strength exercises. */
+    val CARDIO_MACHINE_EQUIPMENT: Set<String> =
+        setOf("treadmill", "stationary_bike", "upright_bike", "recumbent_bike", "spin_bike", "stair_climber", "air_bike", "fan_bike")
 
     fun levelNumber(level: Level): Int = level.pick(1, 2, 3)
 
@@ -63,7 +63,7 @@ object Substitution {
     fun passesFilters(c: Exercise, original: Exercise, ctx: SubContext): Boolean =
         c.id != original.id &&
             ctx.equipmentToday.containsAll(c.equipment) &&
-            c.equipment.none { it in MOD001_EQUIPMENT } &&
+            c.equipment.none { it in CARDIO_MACHINE_EQUIPMENT } &&
             c.id !in ctx.excludedIds &&
             c.limitationTags.none { it in ctx.blockedTags } &&
             ctx.jointLimits.all { (j, limit) -> c.stress(j) <= limit } &&

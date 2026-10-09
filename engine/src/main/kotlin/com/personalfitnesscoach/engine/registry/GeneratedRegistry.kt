@@ -5,9 +5,9 @@
 package com.personalfitnesscoach.engine.registry
 
 object Registry {
-    const val VERSION: String = "1.0.1"
-    const val SHA256: String = "ed96e4ad0200f46315b15af986b81c5aff59b6d6ca3a16939e46221df122d9ad"
-    const val RULE_COUNT: Int = 140
+    const val VERSION: String = "1.1.0"
+    const val SHA256: String = "e6bbfa7d5741342f8cd19764039043d44200745477ae9d0223249af45ffa3586"
+    const val RULE_COUNT: Int = 152
 
     /** Every rule ID with its confidence label, for the coach's "Why?" detail. */
     val confidence: Map<String, String> = mapOf(
@@ -151,6 +151,18 @@ object Registry {
         "ADH-003" to "Expert Practice",
         "ADH-004" to "Moderate Evidence",
         "DATA-001" to "Product Rule (not an evidence claim)",
+        "FL-001" to "Moderate Evidence",
+        "FL-002" to "Moderate Evidence",
+        "FL-003" to "Expert Practice",
+        "FL-004" to "Expert Practice",
+        "FL-005" to "Moderate Evidence",
+        "STEP-001" to "Moderate Evidence",
+        "STEP-002" to "Moderate Evidence",
+        "SAF-010" to "Moderate Evidence",
+        "CAL-002" to "Expert Practice",
+        "ADH-005" to "Limited Evidence",
+        "MOB-006" to "Moderate Evidence",
+        "EQ-003" to "Moderate Evidence",
     )
 
     val titles: Map<String, String> = mapOf(
@@ -294,6 +306,18 @@ object Registry {
         "ADH-003" to "Stable core, rotating edges",
         "ADH-004" to "Time-efficient option",
         "DATA-001" to "Data taxonomy",
+        "FL-001" to "Default goal: lose fat, keep muscle",
+        "FL-002" to "Weekly activity target",
+        "FL-003" to "Training mix by age band",
+        "FL-004" to "Fat-loss year",
+        "FL-005" to "Progress measures without food tracking",
+        "STEP-001" to "Daily step target",
+        "STEP-002" to "Brisk walks count as easy cardio",
+        "SAF-010" to "Health-condition profiles",
+        "CAL-002" to "Starting from your own numbers",
+        "ADH-005" to "Planning prompt",
+        "MOB-006" to "Calm mobility session",
+        "EQ-003" to "Training away from the gym today",
     )
 }
 
@@ -439,6 +463,18 @@ object RuleIds {
     const val ADH_003: String = "ADH-003"
     const val ADH_004: String = "ADH-004"
     const val DATA_001: String = "DATA-001"
+    const val FL_001: String = "FL-001"
+    const val FL_002: String = "FL-002"
+    const val FL_003: String = "FL-003"
+    const val FL_004: String = "FL-004"
+    const val FL_005: String = "FL-005"
+    const val STEP_001: String = "STEP-001"
+    const val STEP_002: String = "STEP-002"
+    const val SAF_010: String = "SAF-010"
+    const val CAL_002: String = "CAL-002"
+    const val ADH_005: String = "ADH-005"
+    const val MOB_006: String = "MOB-006"
+    const val EQ_003: String = "EQ-003"
 }
 
 /** Typed parameters, one object per rule. */
@@ -556,6 +592,7 @@ object P {
         const val upper_range_minutes: Int = 300
         const val vigorous_multiplier: Int = 2
         const val strength_days_min: Int = 2
+        const val walking_source: String = "STEP-002"
     }
     object FREQ_001 {
         const val min_days: Int = 2
@@ -809,11 +846,14 @@ object P {
     }
     object CON_004 {
         const val impact_sessions_per_week_max: Int = 1
+        const val bone_loading_block_exempt: Boolean = true
+        const val bone_loading_block_max_minutes: Int = 5
     }
     object CON_005 {
     }
     object CON_006 {
         const val max_prescribed_minutes: Int = 150
+        const val walking_outside_cap_for_goal: String = "fat_loss"
     }
     object AER_001 {
         object Z1 {
@@ -902,8 +942,10 @@ object P {
         const val post_strength_conditioning_min_max: Int = 35
     }
     object MOD_001 {
-        val excluded: List<String> = listOf("treadmill_running", "stationary_bike", "stair_machine")
-        val excluded_pending_confirmation: List<String> = listOf("air_fan_bike", "treadmill_walking")
+        val user_selectable: List<String> = listOf("treadmill_running", "treadmill_walking", "stationary_bike", "air_fan_bike", "stair_machine")
+        object default_excluded_by_goal {
+            val fat_loss: List<String> = listOf("treadmill_running")
+        }
     }
     object MOD_002 {
         object weights {
@@ -924,6 +966,11 @@ object P {
             val medball: List<Int> = listOf(3, 2, 2, 2, 2, 1, 1, 4, 2)
             val bodyweight_circuit: List<Int> = listOf(3, 3, 2, 1, 2, 2, 2, 4, 3)
             val jump_rope: List<Int> = listOf(4, 2, 3, 3, 2, 2, 3, 4, 2)
+            val treadmill_walking: List<Int> = listOf(3, 1, 2, 1, 1, 1, 5, 2, 5)
+            val stationary_bike: List<Int> = listOf(4, 2, 1, 1, 1, 2, 5, 5, 5)
+            val air_fan_bike: List<Int> = listOf(5, 3, 1, 1, 2, 2, 3, 5, 5)
+            val stair_machine: List<Int> = listOf(4, 3, 2, 1, 2, 2, 4, 3, 4)
+            val treadmill_running: List<Int> = listOf(5, 3, 4, 2, 3, 3, 5, 5, 5)
         }
         val matrix_columns: List<String> = listOf("cardio", "local_fatigue", "impact", "skill", "recovery_cost", "interference", "steady_state", "intervals", "measurable")
     }
@@ -1327,6 +1374,7 @@ object P {
         }
         object age_60 {
             const val return_band_shift: Int = 1
+            const val strength_volume_floor: String = "block_start"
         }
         object age_65 {
             const val balance_days: Int = 3
@@ -1346,6 +1394,8 @@ object P {
     }
     object ADH_002 {
         val session_milestones: List<Int> = listOf(10, 25, 50, 100)
+        const val welcome_back: Boolean = true
+        const val nudges_after_miss: Int = 1
     }
     object ADH_003 {
     }
@@ -1357,5 +1407,198 @@ object P {
         val required: List<String> = listOf("age", "experience", "days", "session_length", "equipment_inventory", "screening", "priorities", "logged_sets", "session_rpe_duration", "readiness", "pain_reports")
         val optional: List<String> = listOf("sleep_hours", "bodyweight", "body_measurements", "heart_rate", "sex", "exercise_preferences")
         val never: List<String> = listOf("location", "contacts", "photos_camera", "microphone", "advertising_id", "social_profiles", "third_party_steps_v1", "calorie_intake", "vanity_metrics")
+        val optional_add: List<String> = listOf("daily_steps_phone_sensor", "health_conditions_and_clearance", "known_loads_and_records")
+    }
+    object FL_001 {
+        const val default_for_age_gte: Int = 30
+        val expected_weight_change_kg: List<Int> = listOf(-3, -2)
+        val expected_waist_change_cm: List<Int> = listOf(-5, -2)
+        val aerobic_minutes_range: List<Int> = listOf(150, 300)
+        const val hiit_presented_as_accelerator: Boolean = false
+        const val nutrition_features: Boolean = false
+        const val weight_features_opt_out: Boolean = true
+        val not_offered_and_weight_features_off_with: List<String> = listOf("pregnancy", "cancer_in_active_treatment")
+        const val not_default_with_postpartum_until_week: Int = 12
+    }
+    object FL_002 {
+        object equivalent_minutes {
+            val age_30_59: List<Int> = listOf(200, 300)
+            val age_60_64: List<Int> = listOf(180, 250)
+            val age_65_plus: List<Int> = listOf(150, 250)
+        }
+        const val floor: Int = 150
+        const val growth_max_pct_week: Int = 15
+        const val growth_max_pct_week_65_plus: Int = 12
+    }
+    object FL_003 {
+        object strength_days {
+            const val default: Int = 3
+            const val min: Int = 2
+            const val default_needs_training_days_gte: Int = 3
+        }
+        object bands {
+            object age_30_39 {
+                val z1_minutes: List<Int> = listOf(150, 200)
+                val z2_minutes: List<Int> = listOf(20, 40)
+                const val hiit_default: Int = 2
+                const val hiit_max: Int = 3
+                const val hiit_base_weeks: Int = 4
+                const val low_impact_only: Boolean = false
+                const val impact_needs: String = "BMI < 30 and no lower-limb pain; ≤1 impact session/week (CON-004)"
+                const val power_slot: Boolean = false
+                const val balance_minutes_week: Int = 0
+            }
+            object age_40_49 {
+                val z1_minutes: List<Int> = listOf(150, 200)
+                val z2_minutes: List<Int> = listOf(20, 40)
+                const val hiit_default: Int = 1
+                const val hiit_max: Int = 3
+                const val hiit_base_weeks: Int = 4
+                const val low_impact_only: Boolean = false
+                const val low_impact_preferred: Boolean = true
+                const val impact_needs: String = "BMI < 30 and no lower-limb pain; ≤1 impact session/week (CON-004)"
+                const val power_slot: Boolean = false
+                const val balance_minutes_week: Int = 0
+            }
+            object age_50_59 {
+                val z1_minutes: List<Int> = listOf(150, 200)
+                val z2_minutes: List<Int> = listOf(15, 30)
+                const val hiit_default: Int = 1
+                const val hiit_max: Int = 2
+                const val hiit_base_weeks: Int = 4
+                const val low_impact_only: Boolean = true
+                const val sprint_intervals: Boolean = false
+                const val power_slot: Boolean = true
+                const val balance_minutes_week: Int = 10
+            }
+            object age_60_64 {
+                val z1_minutes: List<Int> = listOf(150, 200)
+                val z2_minutes: List<Int> = listOf(0, 20)
+                const val hiit_default: Int = 0
+                const val hiit_offer_after_base_weeks: Int = 6
+                const val hiit_max: Int = 2
+                const val low_impact_only: Boolean = true
+                const val sprint_intervals: Boolean = false
+                const val power_slot: Boolean = true
+                const val balance_minutes_week: Int = 20
+            }
+            object age_65_plus {
+                val z1_minutes: List<Int> = listOf(150, 200)
+                val z2_minutes: List<Int> = listOf(0, 15)
+                const val hiit_default: Int = 0
+                const val hiit_offer_after_base_weeks: Int = 8
+                const val hiit_offer_needs: String = "previously active and standard screening"
+                const val hiit_max: Int = 2
+                const val low_impact_only: Boolean = true
+                const val sprint_intervals: Boolean = false
+                const val power_slot: Boolean = true
+                const val multicomponent_days: Int = 3
+                const val balance_minutes_week: Int = 30
+            }
+        }
+        const val third_hiit_session_only_under: String = "HIIT-001 (intermediate or advanced, FULL day, no fatigue signal or workload flag, conditioning block)"
+        const val hiit_gate_bmi_gte_30_or_age_gte_60: String = "standard screening and low-impact modalities only"
+        val low_impact_modalities: List<String> = listOf("rower", "skierg", "elliptical", "sled", "stationary_bike", "air_fan_bike")
+    }
+    object FL_004 {
+        val sequence: List<String> = listOf("calibrate", "foundation", "build", "conditioning", "strength", "build_2", "conditioning_2", "athletic_low_impact", "consolidation", "review")
+        const val min_strength_days_every_block: Int = 2
+    }
+    object FL_005 {
+        val waist_every_weeks: List<Int> = listOf(2, 4)
+        const val waist_site: String = "midpoint lowest rib – top of iliac crest (WHO STEPS)"
+        const val waist_readings: Int = 3
+        object reference_lines_cm {
+            const val men: Int = 90
+            const val women: Int = 80
+        }
+        const val weight_mean_days: Int = 7
+        const val trend_weeks: Int = 4
+        const val rate_flag_kg_week: Double = 1.0
+        const val rate_flag_weeks: Int = 3
+    }
+    object STEP_001 {
+        object targets {
+            const val age_30_49: Int = 9000
+            const val age_50_59: Int = 8000
+            const val age_60_64: Int = 7500
+            const val age_65_plus: Int = 7000
+        }
+        object ranges {
+            val age_30_49: List<Int> = listOf(8000, 10000)
+            val age_50_59: List<Int> = listOf(7000, 9000)
+            val age_60_64: List<Int> = listOf(6000, 8000)
+            val age_65_plus: List<Int> = listOf(6000, 8000)
+        }
+        const val baseline_days: Int = 7
+        const val valid_day_min_steps: Int = 500
+        object p {
+            const val under_50: Double = 0.15
+            const val from_50: Double = 0.1
+        }
+        const val round_to: Int = 50
+        const val increment_min: Int = 250
+        object increment_cap {
+            const val under_50: Int = 1000
+            const val age_50_59: Int = 750
+            const val age_60_64: Int = 500
+            const val age_65_plus: Int = 400
+        }
+        const val advance_days_met: Int = 5
+        val hold_days_met: List<Int> = listOf(3, 4)
+        const val lower_after_weeks: Int = 2
+        const val lower_if_days_met_lte: Int = 2
+    }
+    object STEP_002 {
+        const val bout_min_minutes: Int = 10
+        const val cadence_min_steps_per_min: Int = 100
+        const val counts_as: String = "Z1"
+        const val logged_walks_allowed: Boolean = true
+    }
+    object SAF_010 {
+        const val table: String = "health_conditions"
+        const val table_version: String = "1.0.0"
+        const val combine: String = "most_restrictive"
+        val status_values: List<String> = listOf("yes", "no", "not_sure")
+        const val not_sure_counts_as: String = "no"
+        val clearance_scopes: List<String> = listOf("light_moderate", "vigorous", "intervals")
+        const val clinical_value_gates: Boolean = false
+        val entries: List<String> = listOf("hbp_controlled", "hbp_not_controlled", "t2d", "diabetes_eye", "diabetes_feet", "diabetes_autonomic", "t1d", "heart", "asthma", "oa_knee", "oa_hip", "low_back_pain", "osteoporosis", "osteoporosis_spine_fracture", "pregnancy", "postpartum", "obesity", "obesity_severe", "stroke", "copd", "cancer")
+    }
+    object CAL_002 {
+        const val best_lift_rir: Int = 0
+        const val valid_reps_plus_rir_max: Int = 12
+        const val start_pct_of_e1rm: Int = 90
+        object entry_age_days {
+            const val full_below: Int = 14
+            const val minus10_below: Int = 28
+            const val minus20_below: Int = 56
+        }
+        object reduction_pct {
+            const val minus10: Int = 10
+            const val minus20: Int = 20
+        }
+        const val older_or_flagged_shift: Int = 1
+    }
+    object ADH_005 {
+        const val optional: Boolean = true
+        const val max_seconds: Int = 30
+        val fields: List<String> = listOf("when", "after_what_cue_optional", "if_then_backup")
+        val backup_options: List<String> = listOf("express_session", "next_free_day")
+        const val same_weekdays_default: Boolean = true
+    }
+    object MOB_006 {
+        val minutes: List<Int> = listOf(15, 30)
+        val offered_on: List<String> = listOf("rest_day", "LIGHT", "RECOVERY", "stress_item_lte_2")
+        val hold_seconds: List<Int> = listOf(30, 60)
+        val breathing_finish_minutes: List<Int> = listOf(3, 5)
+        const val counts_as_z1: Boolean = false
+        const val counts_as_strength_day: Boolean = false
+        const val balance_holds_count_for_FL003: Boolean = true
+    }
+    object EQ_003 {
+        val default_home_kit: List<String> = listOf("bodyweight")
+        const val conditioning_default: String = "no_jump"
+        const val beginner_work_rest: String = "1:2"
     }
 }

@@ -44,7 +44,7 @@ object Selector {
     fun allowed(e: Exercise, ctx: SelectionContext): Boolean =
         !e.userAddOnly &&
             ctx.equipment.containsAll(e.equipment) &&
-            e.equipment.none { it in Substitution.MOD001_EQUIPMENT } &&
+            e.equipment.none { it in Substitution.CARDIO_MACHINE_EQUIPMENT } &&
             e.id !in ctx.excludedIds &&
             e.limitationTags.none { it in ctx.blockedTags } &&
             ctx.jointLimits.all { (j, lim) -> e.stress(j) <= lim } &&

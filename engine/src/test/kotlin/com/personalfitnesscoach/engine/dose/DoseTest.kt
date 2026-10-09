@@ -96,12 +96,13 @@ class RepsTest {
 
     @Test fun `TC-REP-006b every allowed modality has registry units`() {
         val allowed = P.REP_006.units.map { ConditioningUnit.valueOf(it.uppercase()) }.toSet()
-        for (m in Modality.entries.filter { !it.excluded }) {
+        for (m in Modality.entries) {
             val u = Reps.conditioningUnits(m)
             assertTrue(m.name, u.isNotEmpty() && allowed.containsAll(u))
         }
         assertEquals(listOf(ConditioningUnit.METRES), Reps.conditioningUnits(Modality.SLED))
-        assertTrue(Reps.conditioningUnits(Modality.TREADMILL_RUN).isEmpty())
+        // MOD-001 2.0.0: per-person machines have units too.
+        assertEquals(listOf(ConditioningUnit.MINUTES, ConditioningUnit.METRES), Reps.conditioningUnits(Modality.TREADMILL_WALK))
     }
 }
 

@@ -162,7 +162,7 @@ class SubstitutionTest {
     private val ctx = SubContext(GYM, Level.INTERMEDIATE)
 
     @Test fun `TC-SUB-001a unavailable, excluded, too-skilled, painful and MOD-001 options are filtered out`() {
-        assertFalse(Substitution.passesFilters(BIKE, CABLE_ROW, ctx))                                        // MOD-001
+        assertFalse(Substitution.passesFilters(BIKE, CABLE_ROW, ctx))                                        // cardio machines are never strength exercises
         assertFalse(Substitution.passesFilters(MACHINE_ROW, CABLE_ROW, ctx.copy(equipmentToday = GYM - "machine_row")))
         assertFalse(Substitution.passesFilters(MACHINE_ROW, CABLE_ROW, ctx.copy(excludedIds = setOf("machine-row"))))
         assertFalse(Substitution.passesFilters(BB_ROW, CABLE_ROW, ctx.copy(jointLimits = mapOf(Joint.SPINE to 2))))
@@ -218,7 +218,7 @@ class SubstitutionTest {
             for (cand in r.ranked) {
                 assertTrue(Substitution.passesFilters(cand.exercise, orig, c))
                 assertTrue(cand.score in 0.0..1.0)
-                assertFalse(cand.exercise.equipment.any { it in Substitution.MOD001_EQUIPMENT })
+                assertFalse(cand.exercise.equipment.any { it in Substitution.CARDIO_MACHINE_EQUIPMENT })
             }
             r.autoPick?.let { assertTrue(it.fits.pattern >= 0.5) }
         }
