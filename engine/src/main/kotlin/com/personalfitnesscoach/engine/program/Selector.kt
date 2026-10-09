@@ -114,7 +114,7 @@ object Selector {
         var adjacent = false
         // Nothing for this pattern today (kit, pain, limitation tags): an adjacent pattern keeps the slot (SUB-002 scores adjacency 0.5).
         if (pool.isEmpty() && spec.pattern != null && spec.pattern != Pattern.ISOLATION && spec.role in setOf(SlotRole.MAIN, SlotRole.SECONDARY, SlotRole.ACCESSORY)) {
-            pool = ctx.library.filter { it.pattern.isAdjacentTo(spec.pattern) && it.pattern != Pattern.ISOLATION && allowed(it, ctx) && rungOk(it, ctx) &&
+            pool = ctx.library.filter { it.pattern.isAdjacentTo(spec.pattern) && it.pattern != Pattern.ISOLATION && !it.powerOnly && allowed(it, ctx) && rungOk(it, ctx) &&
                 (it.pattern != Pattern.LUNGE || it.unilateral) }
             adjacent = pool.isNotEmpty()
         }

@@ -184,7 +184,8 @@ object Templates {
         val pool = available.filter { it in 0..6 }.sorted().ifEmpty { (0..6).toList() }
         val k = minOf(templates.size, pool.size)
         val canonical = templates.take(k)
-        val orders = if (templates.size >= 5) permutations(canonical) else listOf(canonical)
+        // 5–6-day weeks, and weeks that must keep strength days apart (SAF-010 scheduling), may reorder the sessions.
+        val orders = if (templates.size >= 5 || noConsecutiveStrength) permutations(canonical) else listOf(canonical)
         var best: Assignment? = null
         for (days in subsets(pool, k)) for (order in orders) {
             val (pen, ok) = score(days, order, canonical, preferred, level, noConsecutiveStrength)

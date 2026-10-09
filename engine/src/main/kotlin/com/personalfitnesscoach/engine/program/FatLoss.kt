@@ -206,6 +206,7 @@ object FatLoss {
         val minBout = P.STEP_002.bout_min_minutes
         val walks = Math.ceil(minutes / 20.0).toInt().coerceIn(1, 7)
         val each = (Math.ceil(minutes / walks / 5.0).toInt() * 5).coerceIn(minBout, 45)
-        return WalkPlan(Num.round1(minutes), walks, each)
+        // Rounded down to 0.1 min so the walks never push the week past the Z1 range or the target.
+        return WalkPlan(Math.floor(minutes * 10 + 1e-9) / 10.0, walks, each)
     }
 }

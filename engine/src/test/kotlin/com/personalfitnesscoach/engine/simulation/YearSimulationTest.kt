@@ -20,8 +20,12 @@ import com.personalfitnesscoach.engine.program.WeekKind
 import com.personalfitnesscoach.engine.program.WeekPlanner
 import com.personalfitnesscoach.engine.progression.ProgressionCaps
 import com.personalfitnesscoach.engine.safety.Caps
+import com.personalfitnesscoach.engine.safety.ClearanceScope
+import com.personalfitnesscoach.engine.safety.Conditions
+import com.personalfitnesscoach.engine.safety.UserCondition
 import com.personalfitnesscoach.engine.safety.SessionValidator
 import com.personalfitnesscoach.engine.safety.ValidationContext
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Random
@@ -34,15 +38,21 @@ import java.util.Random
 class YearSimulationTest {
     data class Persona(
         val name: String, val level: Level, val days: Int, val minutes: Int, val age: Int, val gym: Set<String>,
-        val priorities: List<Goal>, val adherence: (Int) -> Double,
+        val priorities: List<Goal>, val conditions: List<UserCondition> = emptyList(), val adherence: (Int) -> Double,
     )
 
     data class YearResult(val clockWeek: Int, val sessions: Int, val fallbacks: Int, val startE1rm: Map<String, Double>, val endE1rm: Map<String, Double>, val deloads: Int,
-        val progressionLoads: Map<String, Double> = emptyMap(), val startWeek: Map<String, Int> = emptyMap())
+        val progressionLoads: Map<String, Double> = emptyMap(), val startWeek: Map<String, Int> = emptyMap(),
+        /** Fat-loss goal: this week's FL-002 target, week by week. */
+        val activityTargets: List<Double> = emptyList(), val hiitSessions: Int = 0)
 
     private fun simulate(p: Persona, seed: Long): YearResult {
         val rnd = Random(seed)
         val program = Blueprint.plan(p.priorities).value
+        val limits = Conditions.resolve(p.conditions).value
+        var lastEq = 0.0
+        val targets = ArrayList<Double>()
+        var hiitTotal = 0
         val inv = Inventory()
         var clock = 1
         val e1rm = HashMap<String, Double>()
@@ -72,11 +82,22 @@ class YearSimulationTest {
                 justFinishedLighterWeek = false).value.let { it == DeloadAction.DELOAD_NOW || it == DeloadAction.DELOAD_AT_BLOCK_END }
             if (deload) deloads++
             val input = WeekInput(p.level, week, p.days, p.gym, ctx, age = p.age, sessionMinutes = p.minutes, deload = deload, priorities = p.priorities,
-                hiitBaseReady = week > 3 && clock > 2, hiitDoneEver = hiitDoneEver, coreLifts = coreLifts, carryOrRotationLastWeek = carryRotLast)
+                hiitBaseReady = week > 3 && clock > 2, hiitDoneEver = hiitDoneEver, coreLifts = coreLifts, carryOrRotationLastWeek = carryRotLast,
+                lastWeekEquivalentMinutes = lastEq, conditions = limits)
             val plan = WeekPlanner.plan(input, program).value
+            // Registry 1.1: the plan honours the condition limits and, for the fat-loss goal, keeps ≥ 2 strength days and an activity plan.
+            val planned = plan.days.flatMap { it.slots }
+            assertTrue("${p.name} week $week tags", planned.none { s -> s.exercise.limitationTags.any { it in limits.avoidTags } })
+            assertTrue("${p.name} week $week zone", plan.days.flatMap { it.conditioning }.all { it.zone <= limits.maxZone })
+            if (input.fatLoss) {
+                assertTrue("${p.name} week $week strength days", plan.days.count { it.template.strength } >= minOf(2, plan.days.size))
+                targets += plan.activity!!.target.thisWeek
+            }
             coreLifts = coreLifts + plan.coreLifts
             carryRotLast = plan.days.flatMap { it.slots }.map { it.exercise.pattern }.filter { it == Pattern.LOADED_CARRY || it == Pattern.ROTATION }.toSet()
             val toDo = Math.round(plan.days.size * p.adherence(week)).toInt()
+            // The user walks as planned in the weeks they train as planned (part of it otherwise).
+            lastEq = (plan.activity?.plannedEquivalent ?: 0.0) * (if (plan.days.isEmpty()) 1.0 else toDo.toDouble() / plan.days.size)
             val weekSets = HashMap<Muscle, Double>()
             var weekSsu = 0.0
             var hiitThisWeek = 0
@@ -88,9 +109,10 @@ class YearSimulationTest {
                 val vctx = ValidationContext(p.level, weeksTraining = week, weekSetsSoFar = weekSets.toMap(), weekSsuSoFar = weekSsu,
                     hiitThisWeekSoFar = hiitThisWeek, hiitBaseReady = input.hiitBaseReady,
                     hoursSinceLastHiit = lastHiitDay?.let { (day.weekday - it) * 24.0 }, hoursToNextHeavyLower = nextHeavy?.let { (it - day.weekday) * 24.0 },
-                    inDeload = plan.deload)
+                    inDeload = plan.deload, conditions = limits)
                 val req = GenerationRequest(day, p.level, week, p.minutes, p.gym, tier, p.age, inventory = inv, e1rm = e1rm.toMap(),
-                    progression = nextLoads.toMap(), calibrationLoads = calLoads.toMap(), lastWeekLoads = lastWeekLoads, inDeload = plan.deload, week = vctx)
+                    progression = nextLoads.toMap(), calibrationLoads = calLoads.toMap(), lastWeekLoads = lastWeekLoads, inDeload = plan.deload, week = vctx,
+                    conditions = limits)
                 val w = SessionGenerator.generate(req).value
                 sessions++
                 if (w.fallbackUsed) fallbacks++
@@ -153,7 +175,9 @@ class YearSimulationTest {
                 }
                 Volume.weekly(w.validated.exercises.map { it.exercise to it.sets.toDouble() }).forEach { (m, s) -> weekSets[m] = (weekSets[m] ?: 0.0) + s }
                 weekSsu += SessionValidator.sessionSsu(w.validated)
-                if (w.validated.hiitBlocks > 0) { hiitThisWeek++; lastHiitDay = day.weekday; hiitDoneEver++ }
+                if (w.validated.hiitBlocks > 0) { hiitThisWeek++; lastHiitDay = day.weekday; hiitDoneEver++; hiitTotal++ }
+                assertTrue("${p.name} week $week items", w.items.none { it.exercise.limitationTags.any { t -> t in limits.avoidTags } })
+                if (!limits.failureAllowed) assertTrue("${p.name} week $week failure", w.items.none { it.lastSetToFailure })
             }
             // Week-level hard caps.
             assertTrue("${p.name} week $week sets $weekSets", weekSets.values.all { it <= Caps.weeklySetsPerMuscle(p.level) + 1e-9 })
@@ -162,7 +186,7 @@ class YearSimulationTest {
             lastWeekLoads = HashMap(lastWeekLoads + thisWeekLoads)
             clock = Blueprint.advanceClock(program, clock, plan.days.size, toDo).value.nextClockWeek
         }
-        return YearResult(clock, sessions, fallbacks, startE1rm, e1rm, deloads, nextLoads.mapValues { it.value.load }, startWeek.toMap())
+        return YearResult(clock, sessions, fallbacks, startE1rm, e1rm, deloads, nextLoads.mapValues { it.value.load }, startWeek.toMap(), targets, hiitTotal)
     }
 
     private val full = Library.all.flatMap { it.allEquipment }.toSet() + setOf("rower", "skierg", "elliptical", "sled", "battle_ropes", "jump_rope", "medicine_ball")
@@ -197,5 +221,44 @@ class YearSimulationTest {
         }
         // Light dumbbells and machine stacks do not stay at the lightest load all year (D-052).
         for ((name, r) in results) assertTrue("$name ${r.progressionLoads}", r.progressionLoads.values.count { it > 10.0 } * 2 >= r.progressionLoads.size)
+    }
+
+    @Test fun `a fat-loss year for one user per age band keeps every rule and reaches the weekly activity target`() {
+        val machines = Gyms.MACHINES + setOf("stationary_bike", "treadmill")
+        val personas = listOf(
+            Persona("fl-35", Level.INTERMEDIATE, 3, 60, 35, full + setOf("stationary_bike"), listOf(Goal.FAT_LOSS)) { 1.0 },
+            Persona("fl-45-hbp", Level.BEGINNER, 4, 45, 45, Gyms.HOME_DUMBBELLS + setOf("rower"), listOf(Goal.FAT_LOSS),
+                listOf(UserCondition("hbp_controlled"))) { if (it % 8 == 0) 0.5 else 1.0 },
+            Persona("fl-55-oa-knee", Level.INTERMEDIATE, 4, 60, 55, full + machines, listOf(Goal.FAT_LOSS), listOf(UserCondition("oa_knee"))) { 1.0 },
+            Persona("fl-62-t2d-obesity", Level.BEGINNER, 3, 45, 62, machines, listOf(Goal.FAT_LOSS),
+                listOf(UserCondition("t2d", clearance = setOf(ClearanceScope.VIGOROUS)), UserCondition("obesity"))) { 1.0 },
+            Persona("fl-70-osteoporosis", Level.BEGINNER, 2, 45, 70, machines, listOf(Goal.FAT_LOSS), listOf(UserCondition("osteoporosis"))) { 1.0 },
+        )
+        val results = personas.mapIndexed { i, p -> p.name to simulate(p, 500L + i) }.toMap()
+        for ((name, r) in results) {
+            val tracked = r.endE1rm.filterKeys { it in r.startE1rm }
+            println("SIM $name: sessions=${r.sessions} fallbacks=${r.fallbacks} hiit=${r.hiitSessions} targets=${r.activityTargets.take(5)}…${r.activityTargets.takeLast(1)} " +
+                "e1RM improved=${tracked.count { (k, v) -> v > r.startE1rm.getValue(k) * 1.02 }}/${tracked.size}")
+            assertTrue("$name ran sessions", r.sessions > 50)
+            assertTrue("$name fallbacks ${r.fallbacks}/${r.sessions}", r.fallbacks <= r.sessions / 10)
+            // FL-002: starts at the 150 floor, grows ≤ 15% (12% at 65+) a week, and reaches the band's lower bound.
+            val p = personas.first { it.name == name }
+            val band = com.personalfitnesscoach.engine.program.FatLoss.targetRange(p.age)
+            assertEquals(150.0, r.activityTargets.first(), 1e-9)
+            // A week trained only in part lowers next week's target (growth is from what was done); it climbs back within 4 weeks.
+            var below = 0; var worst = 0
+            for (x in r.activityTargets) { below = if (x < band.first - 1e-9) below + 1 else 0; worst = maxOf(worst, below) }
+            assertTrue("$name ${r.activityTargets}", r.activityTargets.any { it >= band.first - 1e-9 } && worst <= 4)
+        }
+        // Strength still improves on the fat-loss programme.
+        for (name in listOf("fl-35", "fl-55-oa-knee")) {
+            val b = results.getValue(name)
+            val tracked = b.endE1rm.filterKeys { (b.startWeek[it] ?: 99) <= 20 }
+            val improved = tracked.count { (k, v) -> v > b.startE1rm.getValue(k) * 1.02 }
+            assertTrue("$name improved $improved of ${tracked.size}", tracked.isNotEmpty() && improved * 2 >= tracked.size)
+        }
+        // 60+: no intervals unless accepted.
+        assertEquals(0, results.getValue("fl-62-t2d-obesity").hiitSessions)
+        assertEquals(0, results.getValue("fl-70-osteoporosis").hiitSessions)
     }
 }
