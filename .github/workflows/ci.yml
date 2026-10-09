@@ -41,6 +41,13 @@ jobs:
           python3 -I tools/check_phase1.py
           python3 -I tools/check_registry.py
 
+      - name: No destructive database migration (Phase 2 data rule 2)
+        run: |
+          if grep -rn "fallbackToDestructiveMigration\|DestructiveMigration" --include=*.kt --include=*.kts app data engine; then
+            echo "::error title=Destructive migration::destructive-migration fallback found (Phase 2 data rule 2)"; exit 1
+          fi
+          echo "No destructive-migration fallback"
+
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
@@ -57,6 +64,20 @@ jobs:
         run: |
           python3 -I tools/rule_coverage.py --markdown rule-coverage.md | tee coverage.txt
           echo "::notice title=Rule coverage::$(head -n 1 coverage.txt)"
+
+      - name: Data layer tests (storage contract on Room, backup, engine bridge)
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :data:testDebugUnitTest 2>&1 | tee gradle-data.log
+          python3 -I tools/ci_summary.py "Data tests=data/build/test-results/testDebugUnitTest/*.xml"
+
+      - name: Room schema is committed and current (Phase 2 data rule 1)
+        run: |
+          if [ -n "$(git status --porcelain -- data/schemas)" ]; then
+            git status --porcelain -- data/schemas
+            echo "::error title=Room schema::data/schemas differs from the build; run the 'Room schema' workflow to commit it"; exit 1
+          fi
+          echo "Room schema files match the build"
 
       - name: App unit tests and debug APK
         run: |
@@ -99,6 +120,7 @@ jobs:
             rule-coverage.md
             permissions.txt
             engine/build/reports/tests/
+            data/build/reports/tests/
             app/build/reports/tests/
           retention-days: 30
           if-no-files-found: ignore

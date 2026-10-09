@@ -23,4 +23,5 @@ rootProject.name = "PersonalFitnessCoach"
 
 // Modules are added as they are built (Phase 2 architecture: :engine, :coach, :data, :app, :simulator).
 include(":engine")
+include(":data")
 include(":app")

@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The data library declares no permissions of its own; the app's manifest holds the allow-list (tools/check_permissions.py). -->
+<manifest />
