@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-09 — Phase 3 Part 3: Research Update 1.1 in the engine
+- Research Update 1.1 approved by the Product Owner (decision 2 as recommended: cardio machines are per-person choices). Registry 1.1.0 (12 new rules, 10 changed), then 1.1.1 (SAF-010 table reference only); health-condition table 1.0.1; library 1.1.0 → 1.1.1.
+- Engine: fat-loss goal and age-banded mix, weekly activity target (never below 150), steps and brisk-walk counting, progress trends (weight, waist, strength), health-condition profiles applied by planner, generator and validator, starting from your own numbers, 60+ volume floor, reduced-range rule, habit features, calm mobility session, away-from-gym day.
+- Independent review: 6 high, 7 medium, 2 low findings, all fixed (R3-01–R3-15); re-check of the fixes found 1 medium and 4 low more, fixed (R3-16–R3-20). Decisions D-068 to D-072.
+- 406 tests pass locally and on GitHub; property tests across seeds; 52-week simulation for five fat-loss users aged 35–70 with conditions: no rule broken, all got stronger. Report `docs/phase3/part3_report.md`.
+
 ## 2026-10-09 — Product Owner change requests CR-001 to CR-005
 - Health-condition picker driven by a data table (D-058); starting weights and personal records (D-059); default goal "Lose fat, keep muscle (30+)" with an age-banded training mix and no food features (D-060); original animated exercise illustrations (D-061, sample published); phone step counter (D-062); no-box gyms (D-063).
 - Fix: a missing plyo box no longer turns a box jump into a slow tempo squat; power work swaps only to power work (346 tests).
