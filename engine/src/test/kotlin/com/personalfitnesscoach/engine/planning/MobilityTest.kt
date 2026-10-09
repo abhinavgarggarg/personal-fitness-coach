@@ -21,19 +21,19 @@ class MobilityTest {
     private val gym = setOf("bands", "pullup_bar", "bench", "mat")
 
     @Test fun `TC-MOB-001a 3-5 minutes of dynamic drills for the session's patterns`() {
-        val d = Mobility.warmupDrills(setOf(Pattern.SQUAT, Pattern.HORIZONTAL_PUSH), gym).value
+        val d = Mobility.warmupDrills(setOf(Pattern.SQUAT, Pattern.HORIZONTAL_PUSH), gym, jointLimits = emptyMap(), avoidTags = emptySet()).value
         val sec = d.sumOf { it.seconds }
         assertTrue("$sec s", sec in 180..300)
         assertTrue(d.any { Pattern.SQUAT in it.drill.prepares }); assertTrue(d.any { Pattern.HORIZONTAL_PUSH in it.drill.prepares })
     }
 
     @Test fun `TC-MOB-001b warm-up drills are dynamic only, 65+ adds a balance drill`() {
-        val d = Mobility.warmupDrills(setOf(Pattern.HINGE), gym).value
+        val d = Mobility.warmupDrills(setOf(Pattern.HINGE), gym, jointLimits = emptyMap(), avoidTags = emptySet()).value
         assertTrue(d.all { it.drill.kind == DrillKind.MOBILISE || it.drill.kind == DrillKind.ACTIVATE })
-        val older = Mobility.warmupDrills(setOf(Pattern.HINGE), gym, age = 67).value
+        val older = Mobility.warmupDrills(setOf(Pattern.HINGE), gym, age = 67, jointLimits = emptyMap(), avoidTags = emptySet()).value
         assertTrue(older.any { it.drill.kind == DrillKind.BALANCE })
         // ORD-002: a restricted joint's mobility moves into the warm-up, first.
-        val shoulder = Mobility.warmupDrills(setOf(Pattern.SQUAT), gym, restricted = setOf(Joint.SHOULDER)).value
+        val shoulder = Mobility.warmupDrills(setOf(Pattern.SQUAT), gym, restricted = setOf(Joint.SHOULDER), jointLimits = emptyMap(), avoidTags = emptySet()).value
         assertTrue(Region.SHOULDERS in shoulder.first().drill.regions)
     }
 
@@ -42,7 +42,7 @@ class MobilityTest {
     }
 
     @Test fun `TC-MOB-002b cool-down stretches the muscles trained, then 1-2 minutes of slow breathing`() {
-        val c = Mobility.cooldown(setOf(Muscle.QUADS, Muscle.CHEST), minutes = 4.0).value
+        val c = Mobility.cooldown(setOf(Muscle.QUADS, Muscle.CHEST), minutes = 4.0, jointLimits = emptyMap(), avoidTags = emptySet()).value
         assertEquals(DrillKind.BREATHING, c.last().drill.kind)
         assertTrue(c.last().amount in 60..120)
         val stretches = c.dropLast(1)
@@ -52,14 +52,14 @@ class MobilityTest {
     }
 
     @Test fun `TC-MOB-003a an optional drill for the next exercise during rests`() {
-        val d = Mobility.betweenSets(Library.require("back-squat"), Library.require("bench-press"), gym)
+        val d = Mobility.betweenSets(Library.require("back-squat"), Library.require("bench-press"), gym, emptyMap(), emptySet())
         assertNotNull(d)
         assertTrue(Pattern.HORIZONTAL_PUSH in d!!.prepares)
         assertTrue(d.regions.none { it in setOf(Region.QUADS, Region.GLUTES, Region.HIPS, Region.ADDUCTORS, Region.SPINE) })
     }
 
     @Test fun `TC-MOB-003b never one that works the muscles of the current exercise`() {
-        assertNull(Mobility.betweenSets(Library.require("bench-press"), Library.require("overhead-press"), gym))
+        assertNull(Mobility.betweenSets(Library.require("bench-press"), Library.require("overhead-press"), gym, emptyMap(), emptySet()))
     }
 
     @Test fun `TC-MOB-004a lifts run through full range by default`() {
@@ -73,7 +73,7 @@ class MobilityTest {
     }
 
     @Test fun `TC-MOB-005a off-day routine of 10-20 minutes, 2 x 30-60 s per position`() {
-        val r = Mobility.offDayRoutine(15, gym).value
+        val r = Mobility.offDayRoutine(15, gym, emptyMap(), emptySet()).value
         assertTrue(r.sumOf { it.seconds } <= 15 * 60)
         assertTrue(r.all { it.sets == 2 })
         assertTrue(r.filter { it.drill.unit == DoseUnit.SECONDS }.all { it.amount in 30..60 })
@@ -82,7 +82,7 @@ class MobilityTest {
     }
 
     @Test fun `TC-MOB-005b the routine never exceeds 20 minutes and is offered 2-3 times a week`() {
-        assertTrue(Mobility.offDayRoutine(40, gym).value.sumOf { it.seconds } <= 20 * 60)
+        assertTrue(Mobility.offDayRoutine(40, gym, emptyMap(), emptySet()).value.sumOf { it.seconds } <= 20 * 60)
         assertEquals(2..3, Mobility.offDayPerWeek)
     }
 }

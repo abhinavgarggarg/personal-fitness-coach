@@ -131,7 +131,8 @@ class YearSimulationTest {
                         val max = maxOf(ProgressionCaps.maxLoadThisWeek(last, p.level, avail, p.age), avail.filter { a -> a > last + 1e-9 }.minOrNull() ?: last)
                         assertTrue("${p.name} week $week ${it.exercise.id}: $last → $load (max $max)", load <= maxOf(max, last) + 1e-9)
                     }
-                    if (it.loadFactor >= 1.0 - 1e-9) thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, load)
+                    // Calibration records the load the ramp found, not where it started (review R3-13: the start load throttled PROG-007).
+                    if (it.loadFactor >= 1.0 - 1e-9 && !it.calibrating) thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, load)
                     // "Perform" the sets against the user's true strength.
                     if (it.exercise.trackE1rm && it.unit == com.personalfitnesscoach.engine.model.DoseUnit.REPS) {
                         val ex = it.exercise
@@ -142,9 +143,11 @@ class YearSimulationTest {
                             var cur = load
                             for (set in 1..5) {
                                 val rir = minOf(6, possible(ex, cur) - target).coerceAtLeast(0).toDouble()
-                                when (val step = com.personalfitnesscoach.engine.progression.Calibration.next(cur, target, rir, set, avail).value) {
+                                when (val step = com.personalfitnesscoach.engine.progression.Calibration.next(cur, target, rir, set, avail,
+                                    coarseStepsAllowed = com.personalfitnesscoach.engine.progression.Calibration.coarseStepsAllowed(ex.loadType)).value) {
                                     is com.personalfitnesscoach.engine.progression.CalibrationStep.Continue -> cur = step.nextLoad
                                     is com.personalfitnesscoach.engine.progression.CalibrationStep.Found -> {
+                                        thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, step.workingLoad)
                                         val est = step.startE1rm
                                         if (est != null) { e1rm[ex.id] = est; startE1rm.putIfAbsent(ex.id, est); startWeek.putIfAbsent(ex.id, week); calLoads.remove(ex.id) }
                                         else if ((calSessions.merge(ex.id, 1, Int::plus) ?: 1) < 4) calLoads[ex.id] = step.workingLoad // CAL-001 runs over sessions 1–4
@@ -241,21 +244,23 @@ class YearSimulationTest {
                 "e1RM improved=${tracked.count { (k, v) -> v > r.startE1rm.getValue(k) * 1.02 }}/${tracked.size}")
             assertTrue("$name ran sessions", r.sessions > 50)
             assertTrue("$name fallbacks ${r.fallbacks}/${r.sessions}", r.fallbacks <= r.sessions / 10)
-            // FL-002: starts at the 150 floor, grows ≤ 15% (12% at 65+) a week, and reaches the band's lower bound.
+            // FL-002: starts at the 150 floor, grows ≤ 15% (12% at 65+) a week, reaches the band's lower bound and never drops below
+            // the floor after a short week (review R3-12); a short week holds growth back only above the floor.
             val p = personas.first { it.name == name }
             val band = com.personalfitnesscoach.engine.program.FatLoss.targetRange(p.age)
             assertEquals(150.0, r.activityTargets.first(), 1e-9)
-            // A week trained only in part lowers next week's target (growth is from what was done); it climbs back within 4 weeks.
+            assertTrue("$name ${r.activityTargets}", r.activityTargets.all { it >= 150.0 - 1e-9 })
             var below = 0; var worst = 0
             for (x in r.activityTargets) { below = if (x < band.first - 1e-9) below + 1 else 0; worst = maxOf(worst, below) }
             assertTrue("$name ${r.activityTargets}", r.activityTargets.any { it >= band.first - 1e-9 } && worst <= 4)
         }
-        // Strength still improves on the fat-loss programme.
-        for (name in listOf("fl-35", "fl-55-oa-knee")) {
-            val b = results.getValue(name)
+        // Strength still improves on the fat-loss programme, for every age band (review R3-13): most lifts with an e1RM from the
+        // first 20 weeks improved, and machine stacks left the lightest plate.
+        for ((name, b) in results) {
             val tracked = b.endE1rm.filterKeys { (b.startWeek[it] ?: 99) <= 20 }
             val improved = tracked.count { (k, v) -> v > b.startE1rm.getValue(k) * 1.02 }
             assertTrue("$name improved $improved of ${tracked.size}", tracked.isNotEmpty() && improved * 2 >= tracked.size)
+            assertTrue("$name ${b.progressionLoads}", b.progressionLoads.values.count { it > 10.0 } * 2 >= b.progressionLoads.size)
         }
         // 60+: no intervals unless accepted.
         assertEquals(0, results.getValue("fl-62-t2d-obesity").hiitSessions)

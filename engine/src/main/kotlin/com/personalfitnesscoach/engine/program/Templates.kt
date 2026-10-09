@@ -97,6 +97,23 @@ object Templates {
         }
     }
 
+    /**
+     * SAF-010 scheduling: a week of `days` sessions with only `strength` full-body strength days (1–3), the rest cardio (one
+     * conditioning day, then easy aerobic days) — used when strength days must not touch.
+     */
+    fun withStrength(days: Int, strength: Int): List<DayTemplate> {
+        val s = strength.coerceIn(1, minOf(3, days))
+        val st = listOf(DayTemplate.FB_A, DayTemplate.FB_B, DayTemplate.FB_C).take(s)
+        val cardio = listOf(DayTemplate.COND) + List(days) { DayTemplate.EASY_AEROBIC_MOBILITY }
+        return st + cardio.take(days - s)
+    }
+
+    /** True when two strength sessions fall on consecutive days, also across the weekend (Sunday → Monday). */
+    fun strengthAdjacent(days: List<Int>, order: List<DayTemplate>): Boolean {
+        val strength = days.zip(order).filter { it.second.strength }.map { it.first }.toSet()
+        return strength.size in 2..6 && strength.any { ((it + 1) % 7) in strength }
+    }
+
     // ------------------------------------------------------------------ SCH-002 day assignment
 
     data class Assignment(val days: List<Int>, val order: List<DayTemplate>, val penalty: Double, val spacingOk: Boolean)

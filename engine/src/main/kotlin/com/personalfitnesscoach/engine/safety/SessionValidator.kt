@@ -13,6 +13,7 @@ import com.personalfitnesscoach.engine.model.Modality
 import com.personalfitnesscoach.engine.model.Muscle
 import com.personalfitnesscoach.engine.model.Tier
 import com.personalfitnesscoach.engine.model.Zone
+import com.personalfitnesscoach.engine.conditioning.ModalitySelection
 import com.personalfitnesscoach.engine.planning.SubContext
 import com.personalfitnesscoach.engine.planning.Substitution
 import com.personalfitnesscoach.engine.registry.P
@@ -52,7 +53,16 @@ data class ConditioningBlock(
     val totalMinutes get() = workMinutes + restMinutes
 }
 
-data class Session(val tier: Tier, val exercises: List<SessionExercise>, val conditioning: List<ConditioningBlock> = emptyList()) {
+data class Session(
+    val tier: Tier,
+    val exercises: List<SessionExercise>,
+    val conditioning: List<ConditioningBlock> = emptyList(),
+    /** Planned warm-up and cool-down minutes; null = not given (a bare test session). Checked against WU-003/TIME-001 + SAF-010 extras. */
+    val warmupMinutes: Double? = null,
+    val cooldownMinutes: Double? = null,
+    /** CON-004 1.1.0 / SAF-010: the bone-loading block's variant, or null for none. */
+    val boneLoading: BoneLoadingVariant? = null,
+) {
     val workingSets get() = exercises.sumOf { it.sets }
     /** Z3 work in blocks that do not count as HIIT on their own; ≥ 6 min in total counts as one HIIT (HIIT-001). */
     val shortZ3Minutes get() = conditioning.filter { !it.countsAsHiit && it.zone == Zone.Z3 }.sumOf { it.workMinutes }
@@ -62,7 +72,10 @@ data class Session(val tier: Tier, val exercises: List<SessionExercise>, val con
 /** Everything the validator checks a session against. */
 data class ValidationContext(
     val level: Level,
-    val weeksTraining: Int = 52,
+    /** Weeks of training; 0 when unknown (fail-closed for base periods and the beginner failure ban; review R3-14). */
+    val weeksTraining: Int = 0,
+    /** Age for the warm-up floor (WU-004) and age caps. */
+    val age: Int? = null,
     val screening: ScreeningMode = ScreeningMode.STANDARD,
     /** SAF-003 joint limits for today (0 = no loading of that joint). */
     val jointLimits: Map<Joint, Int> = emptyMap(),
@@ -104,8 +117,15 @@ data class ValidationContext(
      * When unknown, the cut is applied to the level's session cap instead (fail-closed).
      */
     val fullTierWorkingSets: Int? = null,
-    val equipmentToday: Set<String> = emptySet(),
+    /** Equipment here today; null = unknown (bare test sessions). An empty set means bodyweight only (EQ-003; review R3-10). */
+    val equipmentToday: Set<String>? = null,
     val library: List<Exercise> = emptyList(),
+    /**
+     * FL-003 day gates from the week plan (review R3-09): impact work allowed at all (under 50, no obesity, no lower-limb pain for the
+     * fat-loss goal), and the machines intervals may use (null = any).
+     */
+    val planImpactAllowed: Boolean = true,
+    val planIntervalModalities: Set<Modality>? = null,
     /** SAF-010 merged health-condition limits: tags, joints, zone, intervals, impact, effort and failure. */
     val conditions: ConditionLimits = ConditionLimits.NONE,
 ) {
@@ -159,7 +179,9 @@ object ModalityJoints {
 object SessionValidator {
     private const val MAX_STEPS = 500
     private val IMPACT_JOINTS = setOf(Joint.KNEE, Joint.ANKLE, Joint.HIP, Joint.SPINE)
-    private val SWAP_ORDER = listOf(Modality.ELLIPTICAL, Modality.ROWER, Modality.SKIERG)
+    /** Replacement order for conditioning; a no-jump bodyweight circuit is last because it needs no equipment (review R3-10). */
+    private val SWAP_ORDER = listOf(Modality.ELLIPTICAL, Modality.ROWER, Modality.SKIERG, Modality.STATIONARY_BIKE, Modality.TREADMILL_WALK,
+        Modality.BODYWEIGHT_CIRCUIT)
 
     // ---------------------------------------------------------------- checks
 
@@ -169,12 +191,28 @@ object SessionValidator {
         // MOD-001, pain limits, CON-004 impact for conditioning.
         s.conditioning.forEachIndexed { i, b ->
             if (b.modality in c.excludedModalities) v += Violation(RuleIds.MOD_001, "MODALITY", i)
+            else if (b.modality in c.conditions.avoidModalities) v += Violation(RuleIds.SAF_010, "MODALITY", i)
+            else if (c.equipmentToday != null && !ModalitySelection.available(b.modality, c.equipmentToday)) v += Violation(RuleIds.SUB_001, "MODALITY", i)
             else if (!modalityAllowed(b.modality, c)) v += Violation(RuleIds.SAF_003, "CONDITIONING_JOINT", i)
             if (b.impact > 0 && !impactAllowed(c)) v += Violation(RuleIds.CON_004, "IMPACT_NOT_ALLOWED", i)
             if (b.impact > 0 && c.regions.any { it.noJumping && it.region in IMPACT_JOINTS }) v += Violation(RuleIds.SAF_004, "IMPACT_NOT_ALLOWED", i)
             // SAF-010: the highest zone and which machines intervals may use.
             if (b.zone > c.conditions.maxZone) v += Violation(RuleIds.SAF_010, "ZONE_ABOVE_LIMIT", i)
             else if (b.countsAsHiit && !intervalModalityAllowed(b.modality, c)) v += Violation(RuleIds.SAF_010, "INTERVAL_MODALITY", i)
+        }
+        // WU-003 / TIME-001 / SAF-010: the warm-up and cool-down never go below their floors, condition extras included (review R3-02).
+        if (s.exercises.isNotEmpty() || s.conditioning.isNotEmpty()) {
+            val wFloor = com.personalfitnesscoach.engine.planning.TimeBudget.warmupFloor(c.age, c.conditions.extraWarmupMin.toDouble())
+            if (s.warmupMinutes != null && s.warmupMinutes < wFloor - 1e-9)
+                v += Violation(if (c.conditions.extraWarmupMin > 0) RuleIds.SAF_010 else RuleIds.WU_003, "WARMUP_SHORT", detail = "${s.warmupMinutes}<$wFloor")
+            val cFloor = P.TIME_001.cooldown_min_minutes + c.conditions.extraCooldownMin.toDouble()
+            if (s.cooldownMinutes != null && s.cooldownMinutes < cFloor - 1e-9)
+                v += Violation(if (c.conditions.extraCooldownMin > 0) RuleIds.SAF_010 else RuleIds.TIME_001, "COOLDOWN_SHORT", detail = "${s.cooldownMinutes}<$cFloor")
+        }
+        // CON-004 1.1.0 / SAF-010: a bone-loading block only with the osteoporosis entry and within pain limits and blocked tags (review R3-11).
+        s.boneLoading?.let { bl ->
+            if (!c.conditions.boneLoading || !BoneLoading.allowed(bl, c.allJointLimits, c.allBlockedTags, c.regions))
+                v += Violation(RuleIds.SAF_010, "BONE_LOADING_NOT_ALLOWED", detail = bl.name)
         }
         // Exclusions, pain limits, tags (limitation and SAF-010), impact for exercises.
         strength.forEachIndexed { i, e -> if (!exerciseAllowed(e.exercise, c)) v += Violation(RuleIds.SAF_003, "EXERCISE_NOT_ALLOWED", i, e.exercise.id) }
@@ -295,9 +333,11 @@ object SessionValidator {
                     loadFactor = minOf(it.loadFactor, P.RDY_004.LIGHT.max_main_load_pct / 100.0, P.DEL_003.load_pct[1] / 100.0),
                     lastSetToFailure = false)
             }
-            candidates += Session(tier, kept, listOfNotNull(z1))
+            candidates += input.copy(tier = tier, exercises = kept, conditioning = listOfNotNull(z1), boneLoading = null, warmupMinutes = floorWarmup(input, c),
+                cooldownMinutes = floorCooldown(input, c))
         }
-        if (z1 != null) candidates += Session(tier, emptyList(), listOf(z1))
+        if (z1 != null) candidates += input.copy(tier = tier, exercises = emptyList(), conditioning = listOf(z1), boneLoading = null,
+            warmupMinutes = floorWarmup(input, c), cooldownMinutes = floorCooldown(input, c))
         candidates += Session(Tier.RECOVERY, emptyList(), emptyList())
         for (s in candidates) {
             val ok = try { violations(s, c).isEmpty() } catch (e: Exception) { false }
@@ -310,6 +350,12 @@ object SessionValidator {
         // Rest is always valid; this line exists so the function cannot return an unvalidated session.
         return EngineResult(ValidatedSession(Session(Tier.RECOVERY, emptyList()), true, log.size), log)
     }
+
+    private fun floorWarmup(s: Session, c: ValidationContext): Double? =
+        s.warmupMinutes?.let { maxOf(it, com.personalfitnesscoach.engine.planning.TimeBudget.warmupFloor(c.age, c.conditions.extraWarmupMin.toDouble())) }
+
+    private fun floorCooldown(s: Session, c: ValidationContext): Double? =
+        s.cooldownMinutes?.let { maxOf(it, P.TIME_001.cooldown_min_minutes + c.conditions.extraCooldownMin.toDouble()) }
 
     private fun easyZ1(input: Session, c: ValidationContext, minutes: Double): ConditioningBlock? {
         val preferred = input.conditioning.map { it.modality }.firstOrNull { it in SWAP_ORDER && modalityAllowed(it, c) }
@@ -330,6 +376,13 @@ object SessionValidator {
                 workMinutes = b.totalMinutes.coerceIn(r[0].toDouble(), r[1].toDouble()))
         }
         return when (v.code) {
+            "WARMUP_SHORT" -> s.copy(warmupMinutes = com.personalfitnesscoach.engine.planning.TimeBudget.warmupFloor(c.age, c.conditions.extraWarmupMin.toDouble())) to
+                d(ReasonKey.VALIDATOR_WARMUP_RESTORED)
+            "COOLDOWN_SHORT" -> s.copy(cooldownMinutes = P.TIME_001.cooldown_min_minutes + c.conditions.extraCooldownMin.toDouble()) to d(ReasonKey.VALIDATOR_WARMUP_RESTORED)
+            "BONE_LOADING_NOT_ALLOWED" -> {
+                val alt = if (c.conditions.boneLoading) BoneLoading.choose(c.allJointLimits, c.allBlockedTags, c.regions) else null
+                s.copy(boneLoading = alt) to d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, mapOf("boneLoading" to alt?.name))
+            }
             "MODALITY", "CONDITIONING_JOINT" -> {
                 val b = s.conditioning[v.index]
                 val alt = SWAP_ORDER.firstOrNull { it != b.modality && modalityAllowed(it, c) && (b.impact == 0 || impactAllowed(c)) }
@@ -391,7 +444,7 @@ object SessionValidator {
             "INTERVAL_MODALITY" -> {
                 val b = s.conditioning[v.index]
                 val alt = (c.conditions.hiitModalities?.sortedBy { it.name } ?: SWAP_ORDER).firstOrNull { modalityAllowed(it, c) && intervalModalityAllowed(it, c) &&
-                    (c.equipmentToday.isEmpty() || com.personalfitnesscoach.engine.conditioning.ModalitySelection.available(it, c.equipmentToday)) }
+                    (c.equipmentToday == null || ModalitySelection.available(it, c.equipmentToday)) }
                 if (alt != null) setBlock(v.index, b.copy(modality = alt, impact = 0)) to d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, mapOf("from" to b.modality, "to" to alt))
                 else setBlock(v.index, steady(b)) to d(ReasonKey.VALIDATOR_REMOVED_HIIT)
             }
@@ -439,12 +492,13 @@ object SessionValidator {
 
     /** CON-004: impact work at most once a week and never the day before heavy legs; SAF-010 may rule impact out entirely. */
     fun impactAllowed(c: ValidationContext): Boolean =
-        c.impactSessionsThisWeekSoFar < P.CON_004.impact_sessions_per_week_max && !c.heavyLegsNextDay && c.conditions.impact.allowsImpact
+        c.impactSessionsThisWeekSoFar < P.CON_004.impact_sessions_per_week_max && !c.heavyLegsNextDay && c.conditions.impact.allowsImpact && c.planImpactAllowed
 
     /** SAF-010 / FL-003: intervals only on the machines a condition allows (low-impact list, or the entry's own list). */
     fun intervalModalityAllowed(m: Modality, c: ValidationContext): Boolean {
         val list = c.conditions.hiitModalities
         if (list != null && m !in list) return false
+        c.planIntervalModalities?.let { if (m !in it) return false }
         if (c.conditions.hiitLowImpactOnly && m !in LOW_IMPACT_INTERVALS) return false
         return true
     }
@@ -467,7 +521,9 @@ object SessionValidator {
 
     /** A conditioning modality may be used only if the user hasn't excluded it (MOD-001) and it keeps every painful joint within its limit. */
     fun modalityAllowed(m: Modality, c: ValidationContext): Boolean {
-        if (m in c.excludedModalities) return false
+        if (m in c.excludedModalities || m in c.conditions.avoidModalities) return false
+        // Equipment here today (review R3-10): every conditioning correction only picks a machine that is actually here.
+        if (c.equipmentToday != null && !ModalitySelection.available(m, c.equipmentToday)) return false
         for ((j, limit) in c.allJointLimits) if (ModalityJoints.stress(m, j) > limit) return false
         for (r in c.regions) { val max = r.maxStress; if (max != null && ModalityJoints.stress(m, r.region) > max) return false }
         return true
@@ -477,7 +533,7 @@ object SessionValidator {
         val inSession = s.exercises.map { it.exercise.id }.toSet()
         val pool = c.library.filter { it.id !in inSession && exerciseAllowed(it, c) }
         if (pool.isEmpty()) return null
-        val ctx = SubContext(equipmentToday = c.equipmentToday, level = c.level, jointLimits = c.allJointLimits, blockedTags = c.allBlockedTags, excludedIds = c.excludedIds)
+        val ctx = SubContext(equipmentToday = c.equipmentToday ?: emptySet(), level = c.level, jointLimits = c.allJointLimits, blockedTags = c.allBlockedTags, excludedIds = c.excludedIds)
         return Substitution.options(original, pool, ctx).value.autoPick?.exercise
     }
 

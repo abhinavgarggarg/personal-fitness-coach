@@ -290,6 +290,16 @@ def main():
             err(f"{owner}: a loaded overhead press needs the overhead_heavy tag")
         if "unsupported_single_leg" in ex["tags"] and "high_fall_risk" not in ex["tags"]:
             err(f"{owner}: unsupported single-leg work is also high_fall_risk")
+        # Library 1.1.1 (review R3-01): anything that loads the arms, shoulders or chest carries upper_body_loaded, so the
+        # "recent breastbone surgery" heart sub-flag can rule it out (push, pull, carry, upper-body muscles, shoulder stress ≥ 2,
+        # free weights, cables, bands, medicine balls and the Smith bar).
+        arms = (ex["pattern"] in ("HORIZONTAL_PUSH", "VERTICAL_PUSH", "HORIZONTAL_PULL", "VERTICAL_PULL", "LOADED_CARRY")
+                or ex.get("pattern2") in ("HORIZONTAL_PUSH", "VERTICAL_PUSH", "HORIZONTAL_PULL", "VERTICAL_PULL", "LOADED_CARRY")
+                or set(ex["primary"]) & {"CHEST", "LATS", "UPPER_BACK", "FRONT_DELTS", "SIDE_DELTS", "REAR_DELTS", "TRICEPS", "BICEPS", "FOREARMS"}
+                or ex["joints"].get("SHOULDER", 0) >= 2 or ex["load"] in ("BARBELL", "DUMBBELL", "KETTLEBELL")
+                or ex["class"] in ("CABLE", "BAND") or set(ex["equipment"]) & {"medicine_ball", "smith_machine"})
+        if arms and "upper_body_loaded" not in ex["tags"]:
+            err(f"{owner}: loads the arms, shoulders or chest, so it needs the upper_body_loaded tag")
         if ex.get("power") and ex["load"] == "BODYWEIGHT":
             ex["power_only"] = True  # jumps and throws never fill lifting slots (D-057)
         if ex.get("power_only") and not ex.get("power"):

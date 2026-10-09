@@ -115,7 +115,9 @@ class ConditionPropertyTest {
             // Fat-loss shape (FL-003, FL-004): ≥ 2 strength days, at most 3 on weekly plans with ≥ 3 days; activity accounted.
             if (fl) {
                 val strength = plan.days.count { it.template.strength }
-                if (plan.days.size >= 2) assertTrue(tag, strength >= 2)
+                // FL-003 keeps 2 strength days, except when type 2 diabetes forbids consecutive strength days and the only days
+                // available are consecutive (then 1 strength day and a decision asking for a day with a gap; review R3-06).
+                if (plan.days.size >= 2 && (c.strengthOnConsecutiveDays || spreadPossible(i.availableDays, 2))) assertTrue(tag, strength >= 2)
                 assertTrue(tag, strength <= P.FL_003.strength_days.default)
                 val a = plan.activity!!
                 assertTrue(tag, a.walk.minutesPerWeek >= 0.0 && a.gymZ1Minutes + a.walk.minutesPerWeek <= maxOf(200.0, a.gymZ1Minutes) + 1e-9)
@@ -126,7 +128,8 @@ class ConditionPropertyTest {
             // Type 2 diabetes: strength on non-consecutive days whenever the available days allow it.
             if (!c.strengthOnConsecutiveDays) {
                 val s = plan.days.filter { it.template.strength }.map { it.weekday }.toSet()
-                if (spreadPossible(i.availableDays, s.size)) assertTrue("$tag $s avail ${i.availableDays}", s.none { ((it + 1) % 7) in s })
+                // A hard rule now (review R3-06): never two strength days in a row, whatever days are available.
+                assertTrue("$tag $s avail ${i.availableDays}", s.size < 2 || s.none { ((it + 1) % 7) in s })
             }
         }
     }

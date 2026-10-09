@@ -32,6 +32,8 @@ enum class HiitPermission(val key: String) {
 data class ConditionLimits(
     /** Table entries that apply (resolved: phases, control status and clearance applied). */
     val entries: Set<String> = emptySet(),
+    /** Picked IDs the table does not know; they put the user in SAF-001 conservative mode with a doctor's-OK prompt (review R3-07). */
+    val unknown: Set<String> = emptySet(),
     /** Highest aerobic zone (AER-001). Z4 = no limit; the table's Z3 also rules out sprints (Z4). */
     val maxZone: Zone = Zone.Z4,
     val hiit: HiitPermission = HiitPermission.YES,
@@ -48,6 +50,8 @@ data class ConditionLimits(
     val minRirByTag: Map<String, Double> = emptyMap(),
     val failureAllowed: Boolean = true,
     val avoidTags: Set<String> = emptySet(),
+    /** Conditioning machines a sub-flag rules out (heart: recent breastbone surgery → arm-driven machines). */
+    val avoidModalities: Set<Modality> = emptySet(),
     /** Exercises with these tags are done through a shorter, comfortable range (MOB-004). */
     val rangeLimitedTags: Set<String> = emptySet(),
     val jointLimits: Map<Joint, Int> = emptyMap(),
@@ -78,7 +82,7 @@ data class ConditionLimits(
     /** Entries that tell the user to follow their care provider instead of a training plan (`block_if` answered yes). */
     val blocked: Set<String> = emptySet(),
 ) {
-    val any: Boolean get() = entries.isNotEmpty()
+    val any: Boolean get() = entries.isNotEmpty() || unknown.isNotEmpty()
 
     /** The RIR floor for one exercise with these tags (general floor and any tag floor), or null. */
     fun minRirFor(tags: Set<String>): Double? =

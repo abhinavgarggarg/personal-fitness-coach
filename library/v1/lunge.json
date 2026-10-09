@@ -5,7 +5,7 @@
     "equipment": ["barbell", "rack"], "load": "BARBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"KNEE": 2, "HIP": 2, "SPINE": 2, "ANKLE": 1}, "fatigue": 4,
     "reps": [6, 10], "max_reps": 12, "e1rm": true, "unilateral": true, "setup": 50, "station": "rack",
-    "tags": ["deep_knee_flexion", "spinal_loading"], "regression": "db-split-squat",
+    "tags": ["deep_knee_flexion", "spinal_loading", "upper_body_loaded"], "regression": "db-split-squat",
     "text": {
       "setup": "Take the bar from the rack onto your upper back. Step one foot forward and the other back into a long split stance, back heel raised.",
       "cues": ["Drop the back knee straight down towards the floor.", "Keep most of your weight on the front foot.", "Stand up without moving your feet."],
@@ -19,7 +19,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "unilateral": true, "setup": 15, "station": "dumbbells",
-    "tags": ["deep_knee_flexion"], "progression": "db-rear-foot-elevated-split-squat", "regression": "bodyweight-split-squat",
+    "tags": ["deep_knee_flexion", "upper_body_loaded"], "progression": "db-rear-foot-elevated-split-squat", "regression": "bodyweight-split-squat",
     "text": {
       "setup": "Hold a dumbbell in each hand at your sides and take a long step into a split stance, back heel up.",
       "cues": ["Lower the back knee until it nearly touches the floor.", "Push through the front heel to rise."],
@@ -32,7 +32,7 @@
     "equipment": ["dumbbells"], "equipment_any": [["bench", "plyo_box"]], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"KNEE": 3, "HIP": 2, "ANKLE": 1}, "fatigue": 4,
     "reps": [6, 12], "max_reps": 15, "e1rm": true, "unilateral": true, "setup": 25, "station": "bench",
-    "tags": ["deep_knee_flexion", "deep_hip_flexion", "high_fall_risk", "unsupported_single_leg"], "regression": "db-split-squat",
+    "tags": ["deep_knee_flexion", "deep_hip_flexion", "high_fall_risk", "unsupported_single_leg", "upper_body_loaded"], "regression": "db-split-squat",
     "text": {
       "setup": "Stand about two foot-lengths in front of a bench or a sturdy box at about knee height, holding dumbbells at your sides. Rest the top of your back foot on it.",
       "cues": ["Sink straight down until the front thigh is about parallel.", "Keep the front knee tracking over the toes.", "Drive up through the front foot."],
@@ -45,7 +45,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "dumbbells",
-    "tags": ["deep_knee_flexion"], "regression": "bodyweight-reverse-lunge",
+    "tags": ["deep_knee_flexion", "upper_body_loaded"], "regression": "bodyweight-reverse-lunge",
     "text": {
       "setup": "Stand tall with a dumbbell in each hand, feet hip-width apart.",
       "cues": ["Step one foot back and lower the back knee towards the floor.", "Push through the front foot to return to standing."],
@@ -58,7 +58,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 2, "joints": {"KNEE": 2, "HIP": 2, "ANKLE": 1}, "fatigue": 4,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "dumbbells",
-    "tags": ["deep_knee_flexion", "high_fall_risk"], "regression": "db-reverse-lunge",
+    "tags": ["deep_knee_flexion", "high_fall_risk", "upper_body_loaded"], "regression": "db-reverse-lunge",
     "text": {
       "setup": "Hold dumbbells at your sides with a clear walkway of about 10 metres in front of you.",
       "cues": ["Take a long step and lower the back knee towards the floor.", "Drive up and bring the back foot through into the next step."],
@@ -72,7 +72,7 @@
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 20, "station": "plyo_box", "shallow": true,
     "regression": "step-up",
-    "tags": ["deep_hip_flexion", "high_fall_risk", "unsupported_single_leg"],
+    "tags": ["deep_hip_flexion", "high_fall_risk", "unsupported_single_leg", "upper_body_loaded"],
     "text": {
       "setup": "Stand facing a sturdy box or bench at about knee height, a dumbbell in each hand. Place one whole foot on the box.",
       "cues": ["Lean slightly forward and stand up using the top leg.", "Lower slowly with the same leg in control."],
@@ -85,7 +85,7 @@
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "kettlebells",
-    "tags": ["deep_knee_flexion"], "regression": "bodyweight-reverse-lunge",
+    "tags": ["deep_knee_flexion", "upper_body_loaded"], "regression": "bodyweight-reverse-lunge",
     "text": {
       "setup": "Hold a kettlebell by the horns at your chest and stand with feet hip-width apart.",
       "cues": ["Step back and drop the back knee under control.", "Keep the bell close and the chest tall."],
@@ -98,7 +98,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"KNEE": 2, "HIP": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 30, "station": "cable",
-    "tags": ["deep_knee_flexion"],
+    "tags": ["deep_knee_flexion", "upper_body_loaded"],
     "text": {
       "setup": "Attach a handle to the lowest pulley and hold it at your chest with both hands. Step back into a split stance facing the machine.",
       "cues": ["Lower the back knee straight down.", "Keep the handle at your chest throughout."],
@@ -111,7 +111,7 @@
     "equipment": ["smith_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 2, "skill": 1, "joints": {"KNEE": 2, "HIP": 1, "SPINE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "unilateral": true, "failure_safe": true, "setup": 40, "station": "smith_machine",
-    "tags": ["deep_knee_flexion"],
+    "tags": ["deep_knee_flexion", "upper_body_loaded"],
     "text": {
       "setup": "Set the bar at shoulder height and the stops just above your lowest position. Get under the bar and step into a split stance with the front foot slightly ahead of the bar.",
       "cues": ["Unhook the bar and sink the back knee down.", "Drive up through the front foot."],

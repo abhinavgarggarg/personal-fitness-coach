@@ -142,7 +142,7 @@ class LibraryTest {
     // ---- Library 1.1.0 (Research Update 1.1: SAF-010 tags, D-063 power and "any of" equipment, EQ-003 circuit moves) ----
 
     @Test fun `library 1_1_0 carries the condition-profile safety tags on the right exercises (SAF-010)`() {
-        assertEquals("1.1.0", Library.VERSION)
+        assertEquals("1.1.1", Library.VERSION)
         val newTags = listOf("breath_hold_max", "isometric_heavy", "loaded_spinal_rotation", "deep_hip_flexion", "head_down", "supine_lying",
             "prone_lying", "high_fall_risk", "contact", "olympic_lift", "uneven_surface_running", "overhead_heavy", "unsupported_single_leg")
         assertTrue(GeneratedLibrary.tags.keys.containsAll(newTags))

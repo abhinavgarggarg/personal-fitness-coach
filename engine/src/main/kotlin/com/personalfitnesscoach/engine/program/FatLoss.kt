@@ -67,6 +67,8 @@ data class FatLossMix(
     val balanceMinutesWeek: Int,
     /** Days a week with strength plus balance at 65+ (AGE-001 balance days). */
     val balanceDays: Int,
+    /** 40–49: low-impact machines are preferred (FL-003 `low_impact_preferred`). */
+    val lowImpactPreferred: Boolean = false,
 )
 
 /** This week's activity target (FL-002) in PH-001 equivalent minutes. */
@@ -129,14 +131,15 @@ object FatLoss {
 
     /**
      * FL-002: this week's equivalent-minute target. It grows from last week's minutes by at most 15% (12% at 65+, AER-003 and
-     * AGE-001) toward the band's lower bound and holds there; the band range is shown. With no history yet the first week plans
-     * the 150-minute floor, mostly walking (D-068).
+     * AGE-001) toward the band's lower bound and holds there, never below the 150-minute floor; the band range is shown. With no
+     * history yet the first week plans the floor, mostly walking (D-068).
      */
     fun weeklyTarget(age: Int?, lastWeekEquivalent: Double): EngineResult<ActivityTarget> {
         val range = targetRange(age)
         val pct = if (AgeBand.of(age) == AgeBand.AGE_65_PLUS) P.FL_002.growth_max_pct_week_65_plus else P.FL_002.growth_max_pct_week
+        // Never below the 150-minute floor (review R3-12): a short week does not pull the next target under WHO's minimum.
         val week = if (lastWeekEquivalent <= 0.0) P.FL_002.floor.toDouble()
-            else minOf(range.first.toDouble(), lastWeekEquivalent * (1 + pct / 100.0))
+            else maxOf(P.FL_002.floor.toDouble(), minOf(range.first.toDouble(), lastWeekEquivalent * (1 + pct / 100.0)))
         val t = ActivityTarget(range, Num.round1(minOf(week, range.last.toDouble())), pct)
         return EngineResult(t, listOf(Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.FL_002, RuleIds.AER_003), ReasonKey.ACTIVITY_TARGET_SET,
             inputs = mapOf("age" to age, "lastWeek" to lastWeekEquivalent), outputs = mapOf("range" to range.toString(), "thisWeek" to t.thisWeek))))
@@ -191,7 +194,8 @@ object FatLoss {
         val z2 = b.z2[0]
         val m = FatLossMix(ab, strengthDays(trainingDays), b.z1[0]..b.z1[1], z2, b.z2[1], hiit, b.hiitMax, b.baseWeeks,
             offerOpen && !hiitOptIn, lowImpactOnly, if (lowImpactOnly) LOW_IMPACT_MODALITIES else null, b.sprints && !lowImpactOnly,
-            impact, b.power, b.balance, if (b.multi > 0) b.multi else if (b.balance > 0) Math.ceil(b.balance / 10.0).toInt() else 0)
+            impact, b.power, b.balance, if (b.multi > 0) b.multi else if (b.balance > 0) Math.ceil(b.balance / 10.0).toInt() else 0,
+            lowImpactPreferred = ab == AgeBand.AGE_40_49 && P.FL_003.bands.age_40_49.low_impact_preferred && !lowImpactOnly)
         val rules = listOf(RuleIds.FL_003) + if (ab == AgeBand.AGE_65_PLUS) listOf(RuleIds.AGE_001) else emptyList()
         return EngineResult(m, listOf(Decision(DecisionKind.VOLUME_CHANGE, rules, ReasonKey.FAT_LOSS_MIX,
             inputs = mapOf("age" to age, "level" to level.name, "days" to trainingDays, "regularWeeks" to regularWeeks, "conditioningBlock" to conditioningBlock,

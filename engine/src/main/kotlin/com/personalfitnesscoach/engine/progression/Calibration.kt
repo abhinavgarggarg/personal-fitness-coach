@@ -27,11 +27,17 @@ sealed class CalibrationStep {
  * PROG-003; this reproduces the Phase 1 worked example (20 → 25 → 30 → 32.5 kg).
  */
 object Calibration {
+    /** D-070: at RIR 5+ a coarse machine-stack step may at most double the load. */
+    private const val COARSE_STEP_MAX = 2.0
+
     /** Starting load when the user enters known working weights: 90% of them, rounded down to real equipment. */
     fun startFromKnown(knownWorkingLoad: Double, available: List<Double>): Double {
         val target = knownWorkingLoad * P.CAL_001.known_weights_start_pct / 100.0
         return available.filter { it <= target + 1e-9 }.maxOrNull() ?: (available.minOrNull() ?: PlateMath.round(target))
     }
+
+    /** D-070: coarse steps are allowed for selectorised machines and cables only. */
+    fun coarseStepsAllowed(loadType: com.personalfitnesscoach.engine.model.LoadType): Boolean = loadType == com.personalfitnesscoach.engine.model.LoadType.STACK
 
     /** Conservative first guess: the lightest load the equipment allows. */
     fun startingLoad(available: List<Double>): Double? = available.minOrNull()
@@ -41,8 +47,12 @@ object Calibration {
      * @param reportedRir the answer to "how many more could you have done?" (use 5.0 for "5+")
      * @param setsDone ramp sets completed for this exercise including this one
      * @param ceiling CAL-002: an old known number caps the ramp (the ramp never goes above it)
+     * @param coarseStepsAllowed selectorised machines and cables (LoadType.STACK): at RIR 5+ a step beyond the band is taken when
+     *   the equipment has nothing smaller, up to double the load (D-070). Free weights keep the band (no overshoot with a dumbbell
+     *   or kettlebell, Part 1 review).
      */
-    fun next(load: Double, targetReps: Int, reportedRir: Double, setsDone: Int, available: List<Double>, ceiling: Double? = null): EngineResult<CalibrationStep> {
+    fun next(load: Double, targetReps: Int, reportedRir: Double, setsDone: Int, available: List<Double>, ceiling: Double? = null,
+             coarseStepsAllowed: Boolean = false): EngineResult<CalibrationStep> {
         val inputs = mapOf("load" to load, "reps" to targetReps, "rir" to reportedRir, "setsDone" to setsDone)
         fun d(reason: ReasonKey, out: Map<String, Any?>) =
             listOf(Decision(DecisionKind.CALIBRATION, listOf(RuleIds.CAL_001, RuleIds.PROG_003), reason, inputs, out))
@@ -62,19 +72,23 @@ object Calibration {
         val band = if (reportedRir >= 5.0 - 1e-9) P.CAL_001.rir_5plus_increase_pct else P.CAL_001.rir_4_increase_pct
         val mid = (band[0] + band[1]) / 2.0
         var next = PlateMath.choose(load * (1.0 + mid / 100.0), available)
+        var coarse = false
         if (next <= load + 1e-9) {
             // Rounding fell back to this load: try the next heavier one, but only if it stays inside the band
             // (+ the PROG-003 2% tolerance). Coarse dumbbell or kettlebell steps must not overshoot RPE 8.
             val up = PlateMath.nextAbove(load, available)
             val limit = load * (1.0 + band[1] / 100.0) * (1.0 + P.PROG_003.over_target_tolerance_pct / 100.0)
             next = if (up != null && up <= limit + 1e-9) up else load
-
+            // Very light loads on a machine stack (a 5 kg step from 5 kg is +100%): at RIR 5+ the next step is taken anyway,
+            // up to double the load, so calibration does not stop at a load far below a working weight (review R3-13, D-070). The next
+            // set's effort rating still governs: RIR ≤ 2 stops, RIR 3 is the working load.
+            if (coarseStepsAllowed && next <= load + 1e-9 && reportedRir >= 5.0 - 1e-9 && up != null && up <= load * COARSE_STEP_MAX + 1e-9) { next = up; coarse = true }
         }
         if (ceiling != null && next > ceiling + 1e-9) next = maxOf(load, available.filter { it <= ceiling + 1e-9 }.maxOrNull() ?: load)
         if (next <= load + 1e-9) {
             // No safe heavier step (top of the equipment, the next step is too big, or the CAL-002 ceiling): this is the working load.
             return EngineResult(CalibrationStep.Found(load, null), d(ReasonKey.CALIBRATION_CAPPED, mapOf("workingLoad" to load)))
         }
-        return EngineResult(CalibrationStep.Continue(next), d(ReasonKey.CALIBRATION_STEP, mapOf("nextLoad" to next)))
+        return EngineResult(CalibrationStep.Continue(next), d(ReasonKey.CALIBRATION_STEP, mapOf("nextLoad" to next, "coarseStep" to coarse)))
     }
 }

@@ -5,8 +5,8 @@
 package com.personalfitnesscoach.engine.registry
 
 object Registry {
-    const val VERSION: String = "1.1.0"
-    const val SHA256: String = "e6bbfa7d5741342f8cd19764039043d44200745477ae9d0223249af45ffa3586"
+    const val VERSION: String = "1.1.1"
+    const val SHA256: String = "7fe5d9d5065f7f68a0d531289113e12fe0499d8f805a6d346eba5533a9db9962"
     const val RULE_COUNT: Int = 152
 
     /** Every rule ID with its confidence label, for the coach's "Why?" detail. */
@@ -1557,7 +1557,7 @@ object P {
     }
     object SAF_010 {
         const val table: String = "health_conditions"
-        const val table_version: String = "1.0.0"
+        const val table_version: String = "1.0.1"
         const val combine: String = "most_restrictive"
         val status_values: List<String> = listOf("yes", "no", "not_sure")
         const val not_sure_counts_as: String = "no"

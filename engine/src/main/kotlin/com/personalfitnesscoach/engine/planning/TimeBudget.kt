@@ -111,12 +111,21 @@ object TimeModel {
  * drops below 2 working sets, and rests never go below their REST minimum.
  */
 object TimeBudget {
-    fun fit(plan: SessionPlan, minutes: Double, age: Int? = null, personalFactor: Double = 1.0, crowded: Boolean = false): EngineResult<FitResult> {
+    /** The warm-up floor: WU-003's 5 minutes, WU-004's age extra and any SAF-010 extra. */
+    fun warmupFloor(age: Int?, extraWarmupMin: Double = 0.0): Double = Warmup.floorMinutes(age) + extraWarmupMin
+
+    /**
+     * @param extraWarmupMin / extraCooldownMin SAF-010 extras (the highest of the picked conditions): part of the floor, so time
+     *   pressure never cuts them (review R3-02)
+     */
+    fun fit(plan: SessionPlan, minutes: Double, age: Int? = null, personalFactor: Double = 1.0, crowded: Boolean = false,
+            extraWarmupMin: Double = 0.0, extraCooldownMin: Double = 0.0): EngineResult<FitResult> {
         val express = minutes < P.TIME_002.express_below_minutes
-        // P0 is never below its floor: cool-down ≥ 2 min (TIME-001), warm-up ≥ 5 min (+ age extra, WU-003/004).
+        // P0 is never below its floor: cool-down ≥ 2 min (TIME-001), warm-up ≥ 5 min (+ age extra, WU-003/004), each + the SAF-010 extra.
+        val warmupFloor = warmupFloor(age, extraWarmupMin)
         var cur = plan.copy(
-            cooldownMin = maxOf(plan.cooldownMin, P.TIME_001.cooldown_min_minutes.toDouble()),
-            warmupMin = maxOf(plan.warmupMin, Warmup.floorMinutes(age)),
+            cooldownMin = maxOf(plan.cooldownMin, P.TIME_001.cooldown_min_minutes.toDouble() + extraCooldownMin),
+            warmupMin = maxOf(plan.warmupMin, warmupFloor),
         )
         val dropped = ArrayList<String>()
         val steps = ArrayList<String>()
@@ -163,8 +172,8 @@ object TimeBudget {
             cur.dropLastOf(Priority.P4).let { cur = it.first; dropped += it.second; steps += "P4_drop:${it.second}" }
             if (fits()) return done()
         }
-        // 5) Warm-up to its floor (never removed).
-        cur = cur.copy(warmupMin = minOf(cur.warmupMin, Warmup.floorMinutes(age)))
+        // 5) Warm-up to its floor (never removed; a condition's extra minutes stay).
+        cur = cur.copy(warmupMin = minOf(cur.warmupMin, warmupFloor))
         steps += "warmup_to_floor"; if (fits()) return done()
 
         // 6) P3 −1 set each (at least 1).

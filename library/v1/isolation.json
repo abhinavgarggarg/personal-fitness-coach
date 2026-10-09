@@ -5,6 +5,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"ELBOW": 1}, "fatigue": 1,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 10, "station": "dumbbells",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Stand tall with a dumbbell in each hand, arms by your sides, palms facing forward.",
       "cues": ["Curl the weights up without moving the elbows forward.", "Lower slowly all the way down."],
@@ -17,6 +18,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"ELBOW": 1}, "fatigue": 1,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 10, "station": "dumbbells",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Hold dumbbells at your sides with palms facing your body.",
       "cues": ["Curl up keeping the thumbs on top.", "Lower under control."],
@@ -29,6 +31,7 @@
     "equipment": ["ez_bar"], "load": "BARBELL", "bar": "ez_bar", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"ELBOW": 1, "WRIST": 1}, "fatigue": 1,
     "reps": [8, 12], "max_reps": 15, "setup": 20, "station": "ez_bar",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Hold the EZ bar on the angled grips with palms facing up and arms straight.",
       "cues": ["Curl the bar towards your chest with elbows still.", "Lower all the way to straight arms."],
@@ -41,6 +44,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"ELBOW": 1}, "fatigue": 1,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "cable",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Attach a straight bar or rope to the low pulley and stand facing the machine with arms straight.",
       "cues": ["Curl the handle up keeping elbows by your sides.", "Lower slowly against the cable."],
@@ -53,6 +57,7 @@
     "equipment": ["bands"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"ELBOW": 1}, "fatigue": 1,
     "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 10, "station": "floor",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Stand on the middle of a band and hold an end in each hand, palms up.",
       "cues": ["Curl up and squeeze at the top.", "Lower slowly."],
@@ -65,6 +70,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"ELBOW": 1}, "fatigue": 1,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "cable",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Attach a rope or bar to the high pulley. Stand close with elbows tucked at your sides.",
       "cues": ["Push the handle down until your arms are straight.", "Let it rise until forearms are just above parallel."],
@@ -77,7 +83,7 @@
     "equipment": ["dumbbells", "incline_bench"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 1, "joints": {"ELBOW": 2, "SHOULDER": 1}, "fatigue": 1,
     "reps": [10, 15], "max_reps": 20, "setup": 15, "station": "incline_bench",
-    "tags": ["overhead"],
+    "tags": ["overhead", "upper_body_loaded"],
     "text": {
       "setup": "Sit on an upright bench holding one dumbbell overhead with both hands cupping the top end.",
       "cues": ["Lower the dumbbell behind your head by bending the elbows.", "Straighten the arms back up without moving the upper arms."],
@@ -90,7 +96,7 @@
     "equipment": ["ez_bar", "bench"], "load": "BARBELL", "bar": "ez_bar", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"ELBOW": 3}, "fatigue": 1,
     "reps": [8, 12], "max_reps": 15, "setup": 25, "station": "bench",
-    "tags": ["supine_lying"],
+    "tags": ["supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Lie on a bench holding an EZ bar above your chest with straight arms.",
       "cues": ["Bend the elbows to lower the bar towards the top of your head.", "Straighten the arms back to the start."],
@@ -104,6 +110,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
     "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 10, "station": "dumbbells",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Stand with light dumbbells at your sides and a slight bend in the elbows.",
       "cues": ["Raise the arms out to the sides to shoulder height.", "Lead with the elbows and lower slowly."],
@@ -116,6 +123,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
     "reps": [12, 20], "max_reps": 25, "unilateral": true, "failure_safe": true, "setup": 20, "station": "cable",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Set a handle at the lowest pulley. Stand side-on and hold it with the far hand across the front of your body.",
       "cues": ["Raise the arm out to the side to shoulder height.", "Lower slowly against the cable."],
@@ -128,6 +136,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "SPINE": 1}, "fatigue": 1,
     "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 10, "station": "dumbbells",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Hinge forward with a flat back holding light dumbbells under your chest, palms facing each other.",
       "cues": ["Open the arms out to the sides like wings.", "Lower slowly."],
@@ -140,6 +149,7 @@
     "equipment": ["pec_deck"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
     "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 25, "station": "pec_deck",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Sit facing the pad with the handles set to the rear position, arms straight in front at shoulder height.",
       "cues": ["Sweep the arms back and out until level with the body.", "Return slowly."],
@@ -152,6 +162,7 @@
     "equipment": ["bands"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
     "objectives": ["HYPERTROPHY", "MOBILITY"], "reps": [15, 25], "max_reps": 30, "failure_safe": true, "setup": 5, "station": "floor",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Hold a light band in front of your chest with straight arms, hands shoulder-width apart.",
       "cues": ["Pull the band apart until it touches your chest.", "Return slowly."],
@@ -164,6 +175,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 2}, "fatigue": 1,
     "reps": [12, 15], "max_reps": 20, "failure_safe": true, "setup": 30, "station": "cable",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Set both pulleys at shoulder height. Stand in the middle in a split stance holding a handle in each hand, arms out wide with a slight elbow bend.",
       "cues": ["Hug the handles together in front of your chest.", "Open back up slowly to a comfortable stretch."],
@@ -176,6 +188,7 @@
     "equipment": ["pec_deck"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 2}, "fatigue": 1,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 25, "station": "pec_deck",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Adjust the seat so the handles are at chest height. Sit with your back against the pad and grip the handles.",
       "cues": ["Bring the handles together in front of you.", "Return slowly until you feel a light chest stretch."],
@@ -260,7 +273,7 @@
     "pattern": "ISOLATION", "class": "CABLE", "primary": ["LATS"], "secondary": ["CORE"],
     "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 2, "joints": {"SHOULDER": 1}, "fatigue": 1,
-    "reps": [12, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "cable", "tags": ["overhead"],
+    "reps": [12, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "cable", "tags": ["overhead", "upper_body_loaded"],
     "text": {
       "setup": "Attach a rope or bar to the high pulley. Step back, hinge slightly and hold it with straight arms at eye level.",
       "cues": ["Sweep the handle down to your thighs keeping elbows almost straight.", "Let it rise slowly."],
@@ -273,7 +286,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1}, "fatigue": 1,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 10, "station": "dumbbells",
-    "tags": ["grip_intensive"],
+    "tags": ["grip_intensive", "upper_body_loaded"],
     "text": {
       "setup": "Stand holding heavy dumbbells at your sides.",
       "cues": ["Lift the shoulders straight up towards the ears and pause.", "Lower slowly."],
@@ -299,7 +312,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 2, "joints": {"SPINE": 2}, "fatigue": 1,
     "objectives": ["CORE"], "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "cable",
-    "tags": ["spinal_flexion"], "user_add_only": true,
+    "tags": ["spinal_flexion", "upper_body_loaded"], "user_add_only": true,
     "text": {
       "setup": "Kneel facing a high pulley holding a rope beside your head.",
       "cues": ["Curl the ribs towards the hips, keeping the hips still.", "Return slowly."],

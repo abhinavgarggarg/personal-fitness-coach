@@ -160,7 +160,7 @@ class VolumeTest {
     }
 
     @Test fun `TC-VOL-008b registry version is embedded for traceability`() {
-        assertEquals("1.1.0", Registry.VERSION)
+        assertEquals("1.1.1", Registry.VERSION)
         assertEquals(152, Registry.RULE_COUNT)
     }
 }

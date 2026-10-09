@@ -117,10 +117,18 @@ object Planning {
     }
 }
 
+/**
+ * ADH-004 1.0.1: how habit messages talk about time — a range, never a fixed day count (review R3-14). "About two months for many
+ * people" comes from the median (66 days); the spread runs from a few weeks to most of a year (Singh 2024: 4–335 days), exercise often
+ * takes longer than simpler habits, and a missed day doesn't undo it (Lally 2010, Gardner 2012).
+ */
+data class HabitExpectation(val aboutMonths: Int, val varies: Boolean, val rangeText: String, val exerciseOftenLonger: Boolean, val missedDayUndoes: Boolean)
+
 /** ADH-004: the express session length and the habit expectation used in messages. */
 object Express {
     val minutes: IntRange get() = P.ADH_004.express_minutes[0]..P.ADH_004.express_minutes[1]
-    val habitMedianDays: Int get() = P.ADH_004.habit_median_days
+    val habit: HabitExpectation get() = HabitExpectation(aboutMonths = Math.round(P.ADH_004.habit_median_days / 30.0).toInt(), varies = true,
+        rangeText = "from a few weeks to most of a year", exerciseOftenLonger = true, missedDayUndoes = false)
 }
 
 /** LOAD-002: when to ask for session RPE. */

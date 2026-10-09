@@ -23,6 +23,23 @@ data class WeightTrend(
     val rateCheckIn: Boolean,
 )
 
+/**
+ * One exposure of a lift for the FL-005 strength trend: the best working set of the day (load × reps), and the e1RM after it when the
+ * lift tracks one (INT-004). Bodyweight-only work (no load) is not trended here.
+ */
+data class StrengthPoint(val day: Int, val exerciseId: String, val load: Double, val reps: Int, val e1rm: Double? = null)
+
+enum class TrendDirection { UP, FLAT, DOWN }
+
+/** One lift's trend: best index in the last two weeks against the two weeks ending `trend_weeks` earlier. */
+data class LiftTrend(val exerciseId: String, val now: Double, val then: Double, val changePct: Double, val direction: TrendDirection)
+
+data class StrengthTrend(val lifts: List<LiftTrend>) {
+    val improved: Int get() = lifts.count { it.direction == TrendDirection.UP }
+    val flat: Int get() = lifts.count { it.direction == TrendDirection.FLAT }
+    val down: Int get() = lifts.count { it.direction == TrendDirection.DOWN }
+}
+
 /** Reference line shown as information only (FL-005, South Asian waist cut-offs); never a target. */
 enum class ReferenceSex { MAN, WOMAN }
 
@@ -52,6 +69,32 @@ object BodyProgress {
         if (fastLoss) d += Decision(DecisionKind.SAFETY, listOf(RuleIds.FL_005), ReasonKey.WEIGHT_RATE_CHECK_IN,
             inputs = mapOf("weeklyMeans" to means), outputs = mapOf("checkIn" to true))
         return EngineResult(t, d)
+    }
+
+    /** Change within ±2% counts as flat. */
+    private const val FLAT_PCT = 2.0
+    private const val WINDOW_DAYS = 14
+
+    /**
+     * FL-005 strength trend (review R3-13): strength is a main progress measure, also without weight readings and for lifts that never
+     * get an e1RM. Each exposure's index is its e1RM when there is one, else load × (1 + reps / 30) from its best set — an estimate used
+     * only to compare the same lift with itself. The best index in the last 14 days is compared with the best in the 14 days ending
+     * `trend_weeks` (4) weeks earlier; lifts without both windows are left out.
+     */
+    fun strengthTrend(points: List<StrengthPoint>, asOf: Int): EngineResult<StrengthTrend> {
+        val gap = 7 * P.FL_005.trend_weeks
+        fun index(x: StrengthPoint): Double? = x.e1rm ?: if (x.load > 0 && x.reps > 0) x.load * (1.0 + x.reps / 30.0) else null
+        fun best(id: String, end: Int): Double? = points.filter { it.exerciseId == id && it.day in (end - WINDOW_DAYS + 1)..end }.mapNotNull(::index).maxOrNull()
+        val lifts = points.map { it.exerciseId }.distinct().sorted().mapNotNull { id ->
+            val now = best(id, asOf) ?: return@mapNotNull null
+            val then = best(id, asOf - gap) ?: return@mapNotNull null
+            val pct = Num.round1((now / then - 1.0) * 100.0)
+            LiftTrend(id, Num.round1(now), Num.round1(then), pct,
+                when { pct > FLAT_PCT -> TrendDirection.UP; pct < -FLAT_PCT -> TrendDirection.DOWN; else -> TrendDirection.FLAT })
+        }
+        val t = StrengthTrend(lifts)
+        return EngineResult(t, listOf(Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.FL_005), ReasonKey.STRENGTH_TREND,
+            inputs = mapOf("asOf" to asOf, "points" to points.size), outputs = mapOf("improved" to t.improved, "flat" to t.flat, "down" to t.down))))
     }
 
     /** Waist: the average of the session's readings (three are asked for; one or two are accepted and averaged). */

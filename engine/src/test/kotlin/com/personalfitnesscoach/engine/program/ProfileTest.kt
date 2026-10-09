@@ -180,7 +180,7 @@ class AdherenceTest {
     }
 
     @Test fun `TC-ADH-004a a 20-30 minute express option and habit messaging around 66 days`() {
-        assertEquals(20..30, Express.minutes); assertEquals(66, Express.habitMedianDays)
+        assertEquals(20..30, Express.minutes); assertEquals(2, Express.habit.aboutMonths); assertTrue(Express.habit.varies && !Express.habit.missedDayUndoes)
     }
 
     @Test fun `TC-LOAD-002a session RPE is asked at least 10 minutes after the last hard effort`() {

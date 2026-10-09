@@ -31,7 +31,7 @@ sealed class KnownStart {
 
 /** CAL-002: starting from the user's own numbers. */
 object KnownLoads {
-    /** Age bands of an entry: 0 = full value, 1 = −10%, 2 = −20%, 3 = ceiling only; 60+ or a flagged screen moves one band longer. */
+    /** Age bands of an entry: 0 = full value, 1 = −10%, 2 = −20%, 3 = ceiling only; from 14 days, 60+ or a flagged screen moves one band longer. */
     fun band(daysAgo: Int, age: Int?, flaggedScreen: Boolean): Int {
         val a = P.CAL_002.entry_age_days
         var b = when {
@@ -40,7 +40,8 @@ object KnownLoads {
             daysAgo < a.minus20_below -> 2
             else -> 3
         }
-        if ((age != null && age >= 60) || flaggedScreen) b = minOf(3, b + P.CAL_002.older_or_flagged_shift)
+        // REG-004's shift applies to a gap that is a return to training (14 days or more): a fresh entry keeps its full value (review R3-14).
+        if (b >= 1 && ((age != null && age >= 60) || flaggedScreen)) b = minOf(3, b + P.CAL_002.older_or_flagged_shift)
         return b
     }
 

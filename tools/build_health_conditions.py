@@ -77,6 +77,11 @@ E = [
               "pacemaker_icd": "check with your doctor before upper-body weights",
               "recent_breastbone_surgery": "no loaded overhead work and no heavy pushing or pulling until your surgical team clears it",
               "aortic_or_connective_tissue_or_cardiomyopathy": "always avoid breath_hold_max and isometric_heavy unless cleared"},
+   # 1.0.1 (review R3-01): the breastbone sub-flag's meaning as controls. "No heavy pushing or pulling" is encoded strictly:
+   # nothing that loads the arms, shoulders or chest, and no arm-driven cardio machines, until the surgical team clears it.
+   sub_flag_effects={"recent_breastbone_surgery": {
+       "avoid_tags": ["overhead", "overhead_heavy", "upper_body_loaded", "breath_hold_max", "isometric_heavy"],
+       "avoid_modalities": ["rower", "skierg", "air_fan_bike", "sled", "battle_ropes", "kettlebell", "carries", "medball"]}},
    prompts=["We start gently until your doctor or cardiac rehab team says you can do more.",
             "Go by how hard it feels rather than heart-rate numbers if your heartbeat is irregular or a medicine slows it."],
    stop_signs=["Chest pain, pressure or tightness", "Unusual breathlessness", "Dizziness or light-headedness", "Palpitations or a racing or irregular heartbeat",
@@ -166,6 +171,7 @@ E = [
    clearance="suggest", max_zone="Z1", max_zone_after_weeks={"weeks": 8, "zone": "Z3"}, hiit="after_base", hiit_base_weeks=8, hiit_modalities=["rower", "stationary_bike"],
    min_rir=2, impact="none_at_start", impact_unlock={"after_weeks": 8, "opt_in": True}, joint_limits={"KNEE": 2}, joint_limit_unlock={"KNEE": 3, "after_weeks": 8},
    positions_note="Offer alternatives to getting up and down from the floor and to long lying on the back if uncomfortable", extra_warmup_min=5,
+   avoid_supine_any_time_if="uncomfortable lying on the back",
    prompts=["Build up gradually; fitness gains count even when the scale doesn't move."],
    stop_signs=["Signs of heat illness: stop, cool down and drink water"],
    confidence="Expert Practice", sources=["Misra2025", "WHO04", "Oppert2021"]),
@@ -189,8 +195,16 @@ E = [
 ]
 
 doc = {
-  "table": "health_conditions", "version": "1.0.0", "status": "APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release",
+  "table": "health_conditions", "version": "1.0.1", "status": "APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release",
   "rule": "SAF-010",
+  "changes": [
+    {"version": "1.0.1", "date": "2026-10-09", "kind": "PATCH (encoding of the approved wording; no entry becomes less restrictive)",
+     "items": ["parent_groups: a diabetes add-on picked without type 1 or type 2 brings both base entries (review R3-04)",
+               "heart: sub_flag_effects encode 'recent breastbone surgery' as controls (review R3-01)",
+               "obesity_severe: the positions note becomes 'no lying on the back' when the user says it is uncomfortable (review R3-14)"]}],
+  "parent_groups": {"any_diabetes": {"members": ["t1d", "t2d"],
+                    "rule": "an add-on entry picked without any member brings every member (most restrictive), until the user says which type"}},
+  "unknown_ids": "an ID the table does not know (renamed entry, stale stored value) resolves to SAF-001 conservative mode with a doctor's-OK prompt; it never drops limits",
   "zone_mapping": "App zones per AER-001: Z1 easy/moderate (full sentences), Z2 tempo (vigorous), Z3 intervals. 'Moderate only' guidance maps to Z1.",
   "combine": "First resolve each entry for today (its phase, unlocks, control status and the user's clearance scope); then each control takes its most restrictive value using merge_orders. Prompts, stop signs, avoid-tags and positions are unions; joint limits take the lowest value per joint; warm-up and cool-down extras take the highest; scheduling limits take the strictest value; HIIT modality lists intersect (empty = no HIIT); impact_dose is kept only if the merged impact is 'encouraged'.",
   "merge_orders": {
@@ -211,7 +225,7 @@ doc = {
   "clearance_attestation": ["none", "light_moderate", "vigorous", "intervals"],
   "never": ["read or threshold clinical values (blood pressure, glucose, ketones, oxygen, ECG)", "name a medicine, dose, carbohydrate amount or value target", "diagnose or interpret symptoms", "claim to treat, manage, relieve or lower a condition"],
   "existing_library_tags_used": ["deep_knee_flexion", "overhead", "spinal_loading", "spinal_flexion", "jumping", "wrist_extension_load"],
-  "new_library_tags": ["breath_hold_max", "isometric_heavy", "loaded_spinal_rotation", "deep_hip_flexion", "head_down", "supine_lying", "prone_lying", "high_fall_risk", "contact", "olympic_lift", "uneven_surface_running", "overhead_heavy", "unsupported_single_leg"],
+  "new_library_tags": ["breath_hold_max", "isometric_heavy", "loaded_spinal_rotation", "deep_hip_flexion", "head_down", "supine_lying", "prone_lying", "high_fall_risk", "contact", "olympic_lift", "uneven_surface_running", "overhead_heavy", "unsupported_single_leg", "upper_body_loaded"],
   "entries": E,
 }
 out = sys.argv[1]

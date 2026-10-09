@@ -5,7 +5,7 @@
     "equipment": ["barbell"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
     "difficulty": 4, "skill": 3, "joints": {"SPINE": 4, "HIP": 2, "KNEE": 1}, "fatigue": 5,
     "reps": [3, 6], "max_reps": 8, "e1rm": true, "tempo": 4.0, "setup": 45, "station": "barbell",
-    "tags": ["spinal_loading", "grip_intensive", "breath_hold_max"], "regression": "trap-bar-deadlift",
+    "tags": ["spinal_loading", "grip_intensive", "breath_hold_max", "upper_body_loaded"], "regression": "trap-bar-deadlift",
     "text": {
       "setup": "Stand with the bar over the middle of your feet, feet about hip-width apart. Hinge down and grip the bar just outside your shins, then bend your knees until your shins touch the bar.",
       "cues": ["Pull the slack out of the bar before it leaves the floor.", "Push the floor away while keeping the bar against your legs.", "Finish standing tall with glutes squeezed, without leaning back."],
@@ -19,7 +19,7 @@
     "equipment": ["trap_bar"], "load": "BARBELL", "bar": "trap_bar", "cost": "HEAVY_BILATERAL",
     "difficulty": 3, "skill": 2, "joints": {"SPINE": 3, "HIP": 2, "KNEE": 2}, "fatigue": 5,
     "reps": [4, 8], "max_reps": 10, "e1rm": true, "tempo": 4.0, "setup": 45, "station": "trap_bar",
-    "tags": ["spinal_loading", "grip_intensive", "breath_hold_max"], "progression": "deadlift", "regression": "kb-deadlift",
+    "tags": ["spinal_loading", "grip_intensive", "breath_hold_max", "upper_body_loaded"], "progression": "deadlift", "regression": "kb-deadlift",
     "text": {
       "setup": "Step inside the trap bar so the handles line up with the middle of your feet. Squat down, grip the handles in the centre and set a flat back.",
       "cues": ["Chest up and brace hard.", "Drive through the whole foot and stand straight up.", "Lower under control along the same path."],
@@ -32,7 +32,7 @@
     "equipment": ["barbell"], "load": "BARBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"SPINE": 3, "HIP": 2}, "fatigue": 4,
     "reps": [6, 10], "max_reps": 12, "e1rm": true, "tempo": 4.0, "setup": 40, "station": "barbell",
-    "tags": ["spinal_loading", "grip_intensive"], "regression": "db-romanian-deadlift",
+    "tags": ["spinal_loading", "grip_intensive", "upper_body_loaded"], "regression": "db-romanian-deadlift",
     "text": {
       "setup": "Lift the bar from the rack or floor and stand tall holding it at hip height, hands just outside your thighs, knees softly bent.",
       "cues": ["Push your hips back as if closing a car door with them.", "Keep the bar brushing your thighs on the way down.", "Stop when you feel a strong hamstring stretch, then drive the hips forward."],
@@ -46,7 +46,7 @@
     "difficulty": 2, "skill": 2, "joints": {"HIP": 2, "SPINE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 60, "station": "bench",
     "regression": "glute-bridge",
-    "tags": ["supine_lying"],
+    "tags": ["supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Sit on the floor with your upper back against the long side of a bench and roll a padded bar over your hips. Plant your feet so your shins are vertical at the top.",
       "cues": ["Tuck your chin and look forward, not at the ceiling.", "Drive through your heels until hips are level with your knees and shoulders.", "Pause and squeeze the glutes at the top."],
@@ -59,7 +59,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SPINE": 2, "HIP": 2}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 15, "station": "dumbbells",
-    "tags": ["grip_intensive"], "progression": "romanian-deadlift", "regression": "kb-deadlift",
+    "tags": ["grip_intensive", "upper_body_loaded"], "progression": "romanian-deadlift", "regression": "kb-deadlift",
     "text": {
       "setup": "Stand tall with a dumbbell in each hand in front of your thighs, feet hip-width apart, knees soft.",
       "cues": ["Slide the dumbbells down your thighs as your hips move back.", "Keep your back flat and neck long.", "Stand up by driving the hips forward."],
@@ -73,7 +73,7 @@
     "difficulty": 3, "skill": 3, "joints": {"HIP": 2, "SPINE": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "dumbbells",
     "regression": "bodyweight-single-leg-rdl",
-    "tags": ["high_fall_risk", "unsupported_single_leg"],
+    "tags": ["high_fall_risk", "unsupported_single_leg", "upper_body_loaded"],
     "text": {
       "setup": "Hold a dumbbell in the hand opposite your standing leg. Stand near a wall or rack you can touch for balance if needed.",
       "cues": ["Reach the free leg back as your chest lowers, like a see-saw.", "Keep hips square to the floor.", "Return by pulling the standing hip forward."],
@@ -87,7 +87,7 @@
     "difficulty": 1, "skill": 1, "joints": {"HIP": 1}, "fatigue": 2,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 30, "station": "bench",
     "progression": "barbell-hip-thrust", "regression": "glute-bridge",
-    "tags": ["supine_lying"],
+    "tags": ["supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Sit with your upper back against a bench and hold one dumbbell across your hip crease with both hands.",
       "cues": ["Drive through your heels and lift the hips until the body is straight from knees to shoulders.", "Keep ribs down and chin tucked."],
@@ -100,7 +100,7 @@
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"SPINE": 2, "HIP": 2, "SHOULDER": 1}, "fatigue": 4,
     "objectives": ["POWER", "CONDITIONING", "HYPERTROPHY"], "reps": [10, 15], "max_reps": 20, "tempo": 1.5, "setup": 15,
-    "station": "kettlebells", "power": true, "tags": ["grip_intensive"], "regression": "kb-deadlift",
+    "station": "kettlebells", "power": true, "tags": ["grip_intensive", "upper_body_loaded"], "regression": "kb-deadlift",
     "text": {
       "setup": "Place the kettlebell about a foot in front of you. Hinge, grip the handle with both hands and tilt it towards you.",
       "cues": ["Hike the bell back between your thighs like a long pass.", "Snap the hips forward so the bell floats to chest height.", "Let the arms stay loose; the hips do the work."],
@@ -115,6 +115,7 @@
     "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "HIP": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "setup": 10, "station": "kettlebells",
     "progression": "kb-swing",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Stand with a kettlebell between your feet, in line with your ankles. Hinge and grip the handle with both hands.",
       "cues": ["Shoulders over the bell, back flat.", "Stand up by pushing the floor away.", "Lower by sending the hips back first."],
@@ -128,7 +129,7 @@
     "difficulty": 3, "skill": 3, "joints": {"HIP": 2, "SPINE": 1, "ANKLE": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "kettlebells",
     "regression": "bodyweight-single-leg-rdl",
-    "tags": ["high_fall_risk", "unsupported_single_leg"],
+    "tags": ["high_fall_risk", "unsupported_single_leg", "upper_body_loaded"],
     "text": {
       "setup": "Hold a kettlebell in the hand opposite your standing leg, with a support within reach.",
       "cues": ["Lower the bell straight down beside the standing foot.", "Keep the free leg in line with your torso."],
@@ -141,6 +142,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 1, "skill": 2, "joints": {"HIP": 1, "SPINE": 1}, "fatigue": 2,
     "reps": [10, 15], "max_reps": 20, "failure_safe": true, "setup": 30, "station": "cable",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Attach a rope to the lowest pulley. Face away from the machine, reach between your legs to grab the rope, and walk forward two steps.",
       "cues": ["Push the hips back and let the rope travel through your legs.", "Stand up by driving the hips forward, arms just holding on."],
@@ -221,6 +223,7 @@
     "equipment": ["medicine_ball"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"HIP": 1, "SPINE": 1}, "fatigue": 2,
     "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "tempo": 3.0, "setup": 10, "station": "medicine_ball", "power": true,
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Hold a light medicine ball at arm's length between your legs in a hinge position, facing an open space or a wall.",
       "cues": ["Snap the hips forward and throw the ball forwards and up as far as you can.", "Reset fully between throws."],
@@ -234,7 +237,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"SPINE": 2, "HIP": 2, "SHOULDER": 1}, "fatigue": 3,
     "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "tempo": 1.5, "setup": 10, "station": "dumbbells", "power": true, "power_only": true,
-    "tags": ["grip_intensive"],
+    "tags": ["grip_intensive", "upper_body_loaded"],
     "text": {
       "setup": "Stand with feet a little wider than your hips. Hold one dumbbell by one end with both hands and let it hang at arm's length.",
       "cues": ["Hinge at the hips and let the dumbbell travel back between your thighs.", "Drive the hips forward hard so it floats up to chest height.", "Keep the arms relaxed; the hips do the work."],

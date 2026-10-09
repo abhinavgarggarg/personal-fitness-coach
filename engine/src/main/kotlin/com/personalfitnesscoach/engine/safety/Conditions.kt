@@ -74,6 +74,7 @@ object Conditions {
         val warmup: Int, val cooldown: Int, val maxInactive: Int?, val strengthConsecutive: Boolean, val conservative: Boolean,
         val effortByFeel: Boolean, val strengthFirst: Boolean, val balance: Int, val backExt: Int, val fatLossOffered: Boolean,
         val weightFeatures: Boolean, val prompts: List<String>, val stopSigns: List<String>, val clearancePrompt: Boolean, val blocked: Boolean,
+        val avoidModalities: Set<Modality> = emptySet(),
     )
 
     private fun hiitOf(key: String): HiitPermission = HiitPermission.of(key)
@@ -90,7 +91,10 @@ object Conditions {
         if (e.phases.isNotEmpty()) {
             val w = u.weeksSinceBirth ?: 0
             var idx = e.phases.indexOfFirst { w >= it.fromWeek && w < it.toWeek }.let { if (it < 0) e.phases.lastIndex else it }
-            while (idx > 0 && e.phases[idx].attest != null && !u.attested) idx--
+            // Attestations are cumulative (review R3-05): a phase applies only when its own and every earlier attestation is confirmed,
+            // so "healed; no pelvic floor symptoms" also gates every later phase. Otherwise the last phase before the first unconfirmed one stays.
+            val firstUnconfirmed = (0..idx).firstOrNull { e.phases[it].attest != null && !u.attested }
+            if (firstUnconfirmed != null) idx = maxOf(0, firstUnconfirmed - 1)
             val ph = e.phases[idx]
             maxZone = ph.maxZone
             minRir = ph.minRir
@@ -122,8 +126,9 @@ object Conditions {
         // Tags.
         val avoid = LinkedHashSet(e.avoidTags)
         if (!impactUnlocked) { avoid += e.avoidTagsAtStart; avoid += e.avoidTagsEarly }
+        // Week-based tags (pregnancy: no lying on the back or front from week 20). An unknown week counts as past every threshold (review R3-03).
         val pw = u.pregnancyWeek
-        if (pw != null) for ((week, tags) in e.avoidTagsFromWeek) if (pw >= week) avoid += tags
+        for ((week, tags) in e.avoidTagsFromWeek) if (pw == null || pw >= week) avoid += tags
         if (e.avoidSupineAnyTimeIf != null && u.supineUncomfortable) avoid += "supine_lying"
         // Joint limits and their unlocks.
         val joints = e.jointLimits.toMutableMap()
@@ -134,8 +139,10 @@ object Conditions {
             for ((j, v) in e.flareJointLimits) joints[j] = minOf(joints[j] ?: 4, v)
             avoid += e.flareAvoidTags
         }
-        // Heart sub-flags: recent breastbone surgery = no loaded overhead work and no heavy pushing or pulling.
-        if ("recent_breastbone_surgery" in u.subFlags && "recent_breastbone_surgery" in e.subFlags) avoid += setOf("overhead_heavy", "breath_hold_max", "isometric_heavy")
+        // Sub-flags (table 1.0.1, review R3-01): their controls come from the table (recent breastbone surgery: nothing that loads the arms,
+        // shoulders or chest and no arm-driven cardio machines), their text is shown as a prompt.
+        val avoidModalities = LinkedHashSet<Modality>()
+        for (f in u.subFlags) e.subFlagEffects[f]?.let { eff -> avoid += eff.avoidTags; eff.avoidModalities.mapNotNullTo(avoidModalities) { Modality.byKey(it) } }
         for (f in u.subFlags) e.subFlags[f]?.let { prompts += it }
         e.environment.forEach { prompts += it }
         e.positionsNote?.let { prompts += it }
@@ -176,7 +183,12 @@ object Conditions {
         if (maxZone < Zone.Z3) hiit = HiitPermission.NO
         val cancerTreatment = e.id == "cancer" && "in_active_treatment" in u.subFlags
         val pregnant = e.id == "pregnancy"
-        val needsOk = clearance != "none" && u.clearance.isEmpty()
+        // The doctor's-OK prompt stays while the scope the entry needs is missing ("before vigorous": until vigorous or intervals is confirmed).
+        val needsOk = when (clearance) {
+            "none" -> false
+            "before_vigorous" -> ClearanceScope.VIGOROUS !in u.clearance && ClearanceScope.INTERVALS !in u.clearance
+            else -> u.clearance.isEmpty()
+        }
         return Resolved(
             id = e.id, maxZone = maxZone, hiit = hiit, hiitBaseWeeks = e.hiitBaseWeeks, hiitLowImpactOnly = e.hiitLowImpactOnly,
             hiitModalities = e.hiitModalities?.mapNotNull { Modality.byKey(it) }?.toSet(), impact = impact,
@@ -189,9 +201,17 @@ object Conditions {
             fatLossOffered = !pregnant && !cancerTreatment && !(e.id == "postpartum" && (u.weeksSinceBirth ?: 0) < P.FL_001.not_default_with_postpartum_until_week),
             weightFeatures = !pregnant && !cancerTreatment, prompts = prompts, stopSigns = e.stopSigns,
             clearancePrompt = needsOk && (e.clearancePromptNow || clearance == "always" || clearance == "before_vigorous" || clearance == "suggest"),
-            blocked = u.blockIfYes && e.blockIf.isNotEmpty(),
+            blocked = u.blockIfYes && e.blockIf.isNotEmpty(), avoidModalities = avoidModalities,
         )
     }
+
+    /** An ID the table does not know: SAF-001 conservative mode with a doctor's-OK prompt (review R3-07) — limits never silently disappear. */
+    private fun unknownResolved(): Resolved = Resolved(
+        id = "?", maxZone = Zone.Z1, hiit = HiitPermission.NO, hiitBaseWeeks = 0, hiitLowImpactOnly = false, hiitModalities = null, impact = ImpactLevel.LOW,
+        minRir = P.SAF_001.conservative_mode.min_rir.toDouble(), minRirByTag = emptyMap(), failureAllowed = false, avoidTags = emptySet(),
+        rangeLimitedTags = emptySet(), jointLimits = emptyMap(), warmup = 0, cooldown = 0, maxInactive = null, strengthConsecutive = true,
+        conservative = true, effortByFeel = false, strengthFirst = false, balance = 0, backExt = 0, fatLossOffered = true, weightFeatures = true,
+        prompts = emptyList(), stopSigns = emptyList(), clearancePrompt = true, blocked = false)
 
     private fun ConditionEntry.impactKeyIsLow(): Boolean = impact == "low"
 
@@ -204,16 +224,35 @@ object Conditions {
         if (picked.isEmpty()) return EngineResult(ConditionLimits.NONE)
         val d = ArrayList<Decision>()
         val all = LinkedHashMap<String, UserCondition>()
-        for (u in picked) {
-            if (u.id !in entries) { d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010), ReasonKey.CONDITION_BLOCKED, inputs = mapOf("unknown" to u.id)); continue }
+        val unknown = LinkedHashSet<String>()
+        for (u0 in picked) {
+            // High blood pressure (review R3-08): the status answer decides the entry, whichever ID was stored ("not sure" counts as "no").
+            val u = if (u0.id == "hbp_controlled" && u0.controlled != null && u0.controlled != ControlStatus.YES) {
+                d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010), ReasonKey.CONDITION_STATUS_APPLIED,
+                    inputs = mapOf("entry" to u0.id, "status" to u0.controlled.name), outputs = mapOf("entry" to "hbp_not_controlled"))
+                u0.copy(id = "hbp_not_controlled")
+            } else u0
+            if (u.id !in entries) {
+                unknown += u.id
+                d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010, RuleIds.SAF_001), ReasonKey.CONDITION_UNKNOWN, inputs = mapOf("unknown" to u.id))
+                continue
+            }
             all[u.id] = u
         }
         for (u in all.values.toList()) {
-            val parent = entries.getValue(u.id).parent
-            if (parent != null && parent in entries && parent !in all) all[parent] = u.copy(id = parent)
+            val parent = entries.getValue(u.id).parent ?: continue
+            if (parent in entries) { if (parent !in all) all[parent] = u.copy(id = parent); continue }
+            // A parent group (diabetes add-ons, review R3-04): without any member picked, every member comes along (most restrictive).
+            val members = GeneratedConditions.parentGroups[parent] ?: continue
+            if (members.none { it in all }) {
+                for (m in members) all[m] = u.copy(id = m)
+                d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010), ReasonKey.CONDITION_PARENT_ASSUMED,
+                    inputs = mapOf("entry" to u.id, "group" to parent), outputs = mapOf("added" to members))
+            }
         }
-        val r = all.values.map { resolveEntry(entries.getValue(it.id), it) }
-        if (r.isEmpty()) return EngineResult(ConditionLimits.NONE, d)
+        val known = all.values.map { resolveEntry(entries.getValue(it.id), it) }
+        if (known.isEmpty() && unknown.isEmpty()) return EngineResult(ConditionLimits.NONE, d)
+        val r = known + if (unknown.isEmpty()) emptyList() else listOf(unknownResolved())
         val impact = r.minOf { it.impact }
         val joints = HashMap<Joint, Int>()
         for (x in r) for ((j, v) in x.jointLimits) joints[j] = minOf(joints[j] ?: 4, v)
@@ -221,7 +260,8 @@ object Conditions {
         for (x in r) for ((t, v) in x.minRirByTag) byTag[t] = maxOf(byTag[t] ?: 0.0, v)
         val hiitLists = r.mapNotNull { it.hiitModalities }
         val limits = ConditionLimits(
-            entries = r.map { it.id }.toSet(),
+            entries = known.map { it.id }.toSet(),
+            unknown = unknown,
             maxZone = r.minOf { it.maxZone },
             hiit = r.minOf { it.hiit },
             hiitBaseWeeks = r.maxOf { it.hiitBaseWeeks },
@@ -243,15 +283,16 @@ object Conditions {
             strengthBeforeCardio = r.any { it.strengthFirst },
             obesity = "obesity" in all || "obesity_severe" in all,
             // Bone loading only while impact stays "encouraged" (another entry such as osteoarthritis limits it; CON-004 1.1.0).
-            boneLoading = r.any { entries.getValue(it.id).boneLoading } && impact == ImpactLevel.ENCOURAGED,
+            boneLoading = known.any { entries.getValue(it.id).boneLoading } && impact == ImpactLevel.ENCOURAGED,
             balanceSessionsPerWeek = r.maxOf { it.balance },
             backExtensorSessionsPerWeek = r.maxOf { it.backExt },
             fatLossOffered = r.all { it.fatLossOffered },
             weightFeatures = r.all { it.weightFeatures },
             prompts = r.flatMap { it.prompts }.distinct(),
             stopSigns = r.flatMap { it.stopSigns }.distinct(),
-            clearancePrompts = r.filter { it.clearancePrompt }.map { it.id }.toSet(),
-            blocked = r.filter { it.blocked }.map { it.id }.toSet(),
+            clearancePrompts = known.filter { it.clearancePrompt }.map { it.id }.toSet() + unknown,
+            blocked = known.filter { it.blocked }.map { it.id }.toSet(),
+            avoidModalities = r.flatMap { it.avoidModalities }.toSet(),
         )
         d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010), ReasonKey.CONDITIONS_MERGED,
             inputs = mapOf("picked" to picked.map { it.id }, "table" to GeneratedConditions.VERSION),

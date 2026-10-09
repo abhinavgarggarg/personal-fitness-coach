@@ -29,12 +29,12 @@ KNOWN = {"id", "name", "group", "parent", "optional", "clearance", "clearance_pr
          "joint_limits", "joint_limit_unlock", "extra_warmup_min", "extra_cooldown_min", "max_zone_after_weeks",
          "max_zone_after_clearance", "max_zone_if_previously_vigorous_and_ok", "after_clearance", "ask_control_status",
          "if_not_controlled", "scheduling", "phases", "impact_checks", "impact_dose", "required_work", "effort_by", "default_order",
-         "warmup_style", "sub_flags", "flare_mode", "pain_rule", "block_if", "attest_if", "asks", "prompts", "stop_signs",
+         "warmup_style", "sub_flags", "sub_flag_effects", "flare_mode", "pain_rule", "block_if", "attest_if", "asks", "prompts", "stop_signs",
          "environment", "positions_note", "never_recommend", "goal_effects", "goal_effects_if", "not_encoded",
          "pending_verification", "sources", "confidence"}
 
 # ConditionEntry constructor parameters, in order (ConditionModel.kt); the generator emits named arguments.
-FIELDS = ['id', 'name', 'group', 'parent', 'optional', 'clearance', 'clearancePromptNow', 'clearanceText', 'clearanceAlwaysIf', 'maxZone', 'hiit', 'hiitBaseWeeks', 'hiitNeedsScope', 'hiitLowImpactOnly', 'hiitModalities', 'failureAllowed', 'impact', 'impactMax', 'impactNoneIf', 'impactUnlockAfterWeeks', 'impactUnlockOptIn', 'impactUnlockNeedsPainRule', 'minRir', 'minRirTags', 'avoidTags', 'avoidTagsAtStart', 'avoidTagsEarly', 'avoidTagsFromWeek', 'avoidSupineAnyTimeIf', 'rangeLimitedTags', 'jointLimits', 'jointLimitUnlock', 'jointLimitUnlockAfterWeeks', 'jointLimitUnlockNeedsPainRule', 'extraWarmupMin', 'extraCooldownMin', 'maxZoneAfterWeeks', 'maxZoneAfterWeeksZone', 'maxZoneAfterClearance', 'maxZoneIfPreviouslyVigorousAndOk', 'afterClearance', 'askControlStatus', 'ifNotControlledMaxZone', 'ifNotControlledHiit', 'ifNotControlledPrompt', 'maxConsecutiveInactiveDays', 'strengthOnConsecutiveDays', 'phases', 'impactChecks', 'boneLoading', 'boneLoadingText', 'boneLoadingImpactsMin', 'balancePerWeek', 'backExtensorPerWeek', 'effortBy', 'defaultOrder', 'warmupStyle', 'subFlags', 'flareJointLimits', 'flareAvoidTags', 'flareKeep', 'flareExitSessions', 'painRuleDuringMax', 'blockIf', 'attestIf', 'asks', 'prompts', 'stopSigns', 'environment', 'positionsNote', 'neverRecommend', 'goalEffects', 'goalEffectsIf', 'notEncoded', 'pendingVerification', 'sources', 'confidence']
+FIELDS = ['id', 'name', 'group', 'parent', 'optional', 'clearance', 'clearancePromptNow', 'clearanceText', 'clearanceAlwaysIf', 'maxZone', 'hiit', 'hiitBaseWeeks', 'hiitNeedsScope', 'hiitLowImpactOnly', 'hiitModalities', 'failureAllowed', 'impact', 'impactMax', 'impactNoneIf', 'impactUnlockAfterWeeks', 'impactUnlockOptIn', 'impactUnlockNeedsPainRule', 'minRir', 'minRirTags', 'avoidTags', 'avoidTagsAtStart', 'avoidTagsEarly', 'avoidTagsFromWeek', 'avoidSupineAnyTimeIf', 'rangeLimitedTags', 'jointLimits', 'jointLimitUnlock', 'jointLimitUnlockAfterWeeks', 'jointLimitUnlockNeedsPainRule', 'extraWarmupMin', 'extraCooldownMin', 'maxZoneAfterWeeks', 'maxZoneAfterWeeksZone', 'maxZoneAfterClearance', 'maxZoneIfPreviouslyVigorousAndOk', 'afterClearance', 'askControlStatus', 'ifNotControlledMaxZone', 'ifNotControlledHiit', 'ifNotControlledPrompt', 'maxConsecutiveInactiveDays', 'strengthOnConsecutiveDays', 'phases', 'impactChecks', 'boneLoading', 'boneLoadingText', 'boneLoadingImpactsMin', 'balancePerWeek', 'backExtensorPerWeek', 'effortBy', 'defaultOrder', 'warmupStyle', 'subFlags', 'subFlagEffects', 'flareJointLimits', 'flareAvoidTags', 'flareKeep', 'flareExitSessions', 'painRuleDuringMax', 'blockIf', 'attestIf', 'asks', 'prompts', 'stopSigns', 'environment', 'positionsNote', 'neverRecommend', 'goalEffects', 'goalEffectsIf', 'notEncoded', 'pendingVerification', 'sources', 'confidence']
 
 errors = []
 
@@ -75,6 +75,11 @@ def main():
     matrix = set(next(r for r in reg["rules"] if r["rule_id"] == "MOD-002")["parameters"]["matrix"])
     orders = table["merge_orders"]
     ids = [e["id"] for e in table["entries"]]
+    groups = {k: v["members"] for k, v in (table.get("parent_groups") or {}).items()}
+    for g, members in groups.items():
+        for m in members:
+            if m not in ids:
+                err(f"parent group {g}: member {m} is not an entry")
     if len(set(ids)) != len(ids):
         err("duplicate entry ids")
 
@@ -171,8 +176,19 @@ def main():
             err(f"{o}: effort_by {e.get('effort_by')}")
         if e.get("default_order") not in (None, "strength_then_cardio"):
             err(f"{o}: default_order {e.get('default_order')}")
-        if e.get("parent") and e["parent"] not in ids and e["parent"] != "any_diabetes":
-            err(f"{o}: parent {e['parent']} is not an entry")
+        if e.get("parent") and e["parent"] not in ids and e["parent"] not in groups:
+            err(f"{o}: parent {e['parent']} is neither an entry nor a parent group")
+        sfe = e.get("sub_flag_effects") or {}
+        sfe_kt = []
+        for flag, eff in sfe.items():
+            if flag not in (e.get("sub_flags") or {}):
+                err(f"{o}: sub_flag_effects for unknown sub-flag {flag}")
+            for k in set(eff) - {"avoid_tags", "avoid_modalities"}:
+                err(f"{o}: sub_flag_effects key {k}")
+            for m in eff.get("avoid_modalities") or []:
+                if m not in matrix:
+                    err(f"{o}: sub-flag modality {m} is not in the MOD-002 matrix")
+            sfe_kt.append(f"{kstr(flag)} to SubFlagEffect({kset(tagset(eff.get('avoid_tags'), 'sub_flag_effects'))}, {kset(eff.get('avoid_modalities'))})")
         for s in e["sources"]:
             if s not in reg["sources"]:
                 err(f"{o}: source {s} is not in the registry")
@@ -206,6 +222,7 @@ def main():
             str(rw.get("balance_per_week", 0)), str(rw.get("back_extensor_per_week", 0)),
             kstr(e.get("effort_by")), kstr(e.get("default_order")), kstr(e.get("warmup_style")),
             "emptyMap()" if not e.get("sub_flags") else "mapOf(" + ", ".join(f"{kstr(k)} to {kstr(v)}" for k, v in e["sub_flags"].items()) + ")",
+            "emptyMap()" if not sfe_kt else "mapOf(" + ", ".join(sfe_kt) + ")",
             kjoints(joints(fl.get("joint_limits"), "flare_mode")), kset(tagset(fl.get("avoid_tags"), "flare_mode")), klist(fl.get("keep")),
             str(fl["exit_after_sessions_without_next_day_flare"]) if "exit_after_sessions_without_next_day_flare" in fl else "null",
             str(pr["during_max_0_10"]) if "during_max_0_10" in pr else "null",
@@ -220,9 +237,11 @@ def main():
     for t in table.get("new_library_tags", []) + table.get("existing_library_tags_used", []):
         if t not in tags:
             err(f"table lists library tag {t} that the library does not define")
-    reg_entries = next(r for r in reg["rules"] if r["rule_id"] == "SAF-010")["parameters"]["entries"]
-    if reg_entries != ids:
+    saf010 = next(r for r in reg["rules"] if r["rule_id"] == "SAF-010")["parameters"]
+    if saf010["entries"] != ids:
         err("SAF-010 entries in the registry differ from the table")
+    if saf010["table_version"] != table["version"]:
+        err(f"SAF-010 names table {saf010['table_version']} but the table is {table['version']}")
     if errors:
         for m in errors:
             print("ERROR: " + m)
@@ -241,6 +260,8 @@ def main():
         f"    const val SHA256: String = {kstr(sha)}",
         "    val statusQuestion: String = " + kstr(table["status_question"]),
         "    val never: List<String> = " + klist(table["never"]),
+        "    /** Parent groups: an add-on picked without any member brings every member (SAF-010 1.0.1). */",
+        "    val parentGroups: Map<String, List<String>> = " + ("emptyMap()" if not groups else "mapOf(" + ", ".join(f"{kstr(g)} to {klist(m)}" for g, m in groups.items()) + ")"),
         "",
         "    val entries: List<ConditionEntry> by lazy { listOf(",
         *out,

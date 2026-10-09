@@ -42,7 +42,7 @@ object Mobility {
         Joint.ANKLE -> setOf(Region.ANKLES)
     }
 
-    private fun usable(d: Drill, equipment: Set<String>, limits: Map<Joint, Int> = emptyMap(), avoidTags: Set<String> = emptySet()) =
+    private fun usable(d: Drill, equipment: Set<String>, limits: Map<Joint, Int>, avoidTags: Set<String>) =
         (equipment.containsAll(d.equipment) || d.equipment.all { it == "mat" }) && limits.all { (j, lim) -> d.stress(j) <= lim } &&
             d.tags.none { it in avoidTags }
 
@@ -51,7 +51,7 @@ object Mobility {
      * Restricted-joint drills go first (ORD-002); a balance drill is added at 65+ (WU-004).
      */
     fun warmupDrills(patterns: Set<Pattern>, equipment: Set<String>, restricted: Set<Joint> = emptySet(), age: Int? = null,
-                     jointLimits: Map<Joint, Int> = emptyMap(), avoidTags: Set<String> = emptySet()): EngineResult<List<DrillDose>> {
+                     jointLimits: Map<Joint, Int>, avoidTags: Set<String>): EngineResult<List<DrillDose>> {
         val maxSec = P.MOB_001.minutes[1] * 60
         val minSec = P.MOB_001.minutes[0] * 60
         // Pain limits apply to drills too (SAF-003): a drill never loads a joint beyond today's limit.
@@ -90,8 +90,8 @@ object Mobility {
      * MOB-002 cool-down: 30–60 s stretches for the muscles trained, then 1–2 minutes of slow
      * breathing. `minutes` is the cool-down budget (≥ 2, TIME-001).
      */
-    fun cooldown(trained: Set<Muscle>, minutes: Double, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int> = emptyMap(),
-                 avoidTags: Set<String> = emptySet()): EngineResult<List<DrillDose>> {
+    fun cooldown(trained: Set<Muscle>, minutes: Double, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int>,
+                 avoidTags: Set<String>): EngineResult<List<DrillDose>> {
         val breathing = drills.first { it.kind == DrillKind.BREATHING }
         val minBreath = P.MOB_002.breathing_minutes[0] * 60
         val maxBreath = P.MOB_002.breathing_minutes[1] * 60
@@ -116,7 +116,7 @@ object Mobility {
      * MOB-003: an optional drill for the *next* exercise during rests, only when it does not
      * work the muscles of the current exercise. Null when nothing qualifies.
      */
-    fun betweenSets(current: Exercise, next: Exercise, equipment: Set<String>, jointLimits: Map<Joint, Int> = emptyMap(), avoidTags: Set<String> = emptySet()): Drill? {
+    fun betweenSets(current: Exercise, next: Exercise, equipment: Set<String>, jointLimits: Map<Joint, Int>, avoidTags: Set<String>): Drill? {
         val busy = (current.primary + current.secondary).flatMap { regionsOf(it) }.toSet()
         return drills.filter { it.kind == DrillKind.MOBILISE && usable(it, equipment, jointLimits, avoidTags) && next.pattern in it.prepares && it.regions.none { r -> r in busy } }
             .minByOrNull { it.id }
@@ -129,7 +129,7 @@ object Mobility {
      * MOB-005: optional off-day routine of 10–20 minutes covering hips, upper back, shoulders and
      * ankles, 2 × 30–60 s per position.
      */
-    fun offDayRoutine(minutes: Int, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int> = emptyMap(), avoidTags: Set<String> = emptySet()): EngineResult<List<DrillDose>> {
+    fun offDayRoutine(minutes: Int, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int>, avoidTags: Set<String>): EngineResult<List<DrillDose>> {
         val m = minutes.coerceIn(P.MOB_005.minutes[0], P.MOB_005.minutes[1])
         val focus = listOf(Region.HIPS, Region.UPPER_BACK, Region.SHOULDERS, Region.ANKLES)
         val pool = drills.filter { (it.kind == DrillKind.MOBILISE || it.kind == DrillKind.STRETCH) && usable(it, equipment, jointLimits, avoidTags) }
@@ -157,18 +157,21 @@ object Mobility {
         val countsAsStrengthDay: Boolean get() = P.MOB_006.counts_as_strength_day
     }
 
-    /** MOB-006: offered (never imposed) on rest days, LIGHT and RECOVERY days, and when the check-in stress item is 1–2. */
-    fun calmSessionOffered(restDay: Boolean, tier: com.personalfitnesscoach.engine.model.Tier?, stressItem: Int?): Boolean =
-        restDay || tier == com.personalfitnesscoach.engine.model.Tier.LIGHT || tier == com.personalfitnesscoach.engine.model.Tier.RECOVERY ||
-            (stressItem != null && stressItem <= 2)
+    /**
+     * MOB-006: offered (never imposed) on rest days, LIGHT and RECOVERY days, and when the check-in stress item is 1–2 — never with
+     * illness symptoms (SAF-007), a red flag (SAF-002) or a SAF-010 "follow your care provider" entry (review R3-14).
+     */
+    fun calmSessionOffered(restDay: Boolean, tier: com.personalfitnesscoach.engine.model.Tier?, stressItem: Int?, illness: Boolean, redFlag: Boolean,
+                           followCareProvider: Boolean = false): Boolean =
+        !illness && !redFlag && !followCareProvider && (restDay || tier == com.personalfitnesscoach.engine.model.Tier.LIGHT ||
+            tier == com.personalfitnesscoach.engine.model.Tier.RECOVERY || (stressItem != null && stressItem <= 2))
 
     /**
      * MOB-006 calm mobility session of 15–30 minutes: easy movement to start, slow mobility for hips, upper back, shoulders and
      * ankles, standing balance holds, 30–60 s stretch holds, and 3–5 minutes of easy slow breathing to finish (no breath holds).
      * Condition tags, joint limits and pain limits apply; balance holds count toward FL-003 balance minutes.
      */
-    fun calmSession(minutes: Int, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int> = emptyMap(),
-                    avoidTags: Set<String> = emptySet()): EngineResult<CalmSession> {
+    fun calmSession(minutes: Int, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int>, avoidTags: Set<String>): EngineResult<CalmSession> {
         val m = minutes.coerceIn(P.MOB_006.minutes[0], P.MOB_006.minutes[1])
         val budget = m * 60
         val breath = drills.first { it.kind == DrillKind.BREATHING }
@@ -199,8 +202,8 @@ object Mobility {
      * FL-003 / AGE-001 balance work: supported balance drills filling `minutes`, 2 sets each, a third set round the
      * list if time is left. `offset` rotates the start (the weekday) so the week's sessions vary.
      */
-    fun balanceDrills(minutes: Double, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int> = emptyMap(),
-                      avoidTags: Set<String> = emptySet(), offset: Int = 0): EngineResult<List<DrillDose>> {
+    fun balanceDrills(minutes: Double, equipment: Set<String> = emptySet(), jointLimits: Map<Joint, Int>, avoidTags: Set<String>,
+                      offset: Int = 0): EngineResult<List<DrillDose>> {
         val budget = Math.round(minutes * 60).toInt()
         val pool = drills.filter { it.kind == DrillKind.BALANCE && usable(it, equipment, jointLimits, avoidTags) }.sortedBy { it.id }
         if (budget <= 0 || pool.isEmpty()) return EngineResult(emptyList())

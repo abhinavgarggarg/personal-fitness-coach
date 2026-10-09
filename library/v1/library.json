@@ -1,5 +1,5 @@
 {
-  "library_version": "1.1.0",
+  "library_version": "1.1.1",
   "license": "All exercise names, instructions, cues, mistakes and safety notes were written originally for the Personal Fitness Coach project (master prompt D7). No third-party text, images or video are included. Licence recorded per asset: ORIGINAL.",
   "defaults": {
     "difficulty": 2,
@@ -83,7 +83,8 @@
     "contact":               "Contact with other people or objects at speed; used for activities the user adds (SAF-010)",
     "olympic_lift":          "Olympic lifts and their variations; none in the built-in library (SAF-010)",
     "uneven_surface_running": "Running on trails or uneven ground; used for activities the user adds (SAF-010)",
-    "overhead_heavy":        "An external load pressed or held overhead (SAF-010)"
+    "overhead_heavy":        "An external load pressed or held overhead (SAF-010)",
+    "upper_body_loaded":     "Loads the arms, shoulders or chest: pushing, pulling, carrying, holding free weights, cables or bands, or bearing weight on the arms (SAF-010 heart sub-flag: recent breastbone surgery)"
   },
   "classes": ["BARBELL", "DUMBBELL", "KETTLEBELL", "CABLE", "MACHINE", "BODYWEIGHT", "BAND", "OTHER"],
   "coverage_gaps": {

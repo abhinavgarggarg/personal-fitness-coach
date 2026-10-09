@@ -74,10 +74,10 @@ object Aerobic {
      * @param plannedThisWeekMin aerobic minutes already planned in the week's *other* sessions
      * @param sessionsLeft sessions still to plan this week, including this one; they share what is left of the weekly cap
      */
-    fun nextZ1Minutes(currentSessionMin: Double, lastWeekMin: Double, plannedThisWeekMin: Double, sessionsLeft: Int): EngineResult<Double> {
+    fun nextZ1Minutes(currentSessionMin: Double, lastWeekMin: Double, plannedThisWeekMin: Double, sessionsLeft: Int, age: Int? = null): EngineResult<Double> {
         val target = P.AER_003.z1_target_minutes[1].toDouble()
         val step = 3.0.coerceIn(P.AER_003.per_session_minutes[0].toDouble(), P.AER_003.per_session_minutes[1].toDouble())
-        val weekCap = weeklyCap(lastWeekMin)
+        val weekCap = weeklyCap(lastWeekMin, age)
         val allowed = if (sessionsLeft <= 0) 0.0 else (weekCap - plannedThisWeekMin) / sessionsLeft
         val next = maxOf(0.0, minOf(currentSessionMin + step, target, allowed))
         // Rounded down to 0.1 min so the weekly cap is never exceeded by rounding.
@@ -85,9 +85,15 @@ object Aerobic {
             ReasonKey.AEROBIC_DURATION_UP, inputs = mapOf("current" to currentSessionMin, "lastWeek" to lastWeekMin), outputs = mapOf("next" to next))))
     }
 
-    /** AER-003 / PROG-007: this week's aerobic minutes may be at most +15% on last week's (no limit before there is a week to compare). */
-    fun weeklyCap(lastWeekMin: Double): Double =
-        if (lastWeekMin > 0) lastWeekMin * (1 + P.AER_003.weekly_increase_pct_max / 100.0) else Double.MAX_VALUE
+    /**
+     * AER-003 / PROG-007: this week's aerobic minutes may be at most +15% on last week's (no limit before there is a week to compare);
+     * from 65 the cap is ×0.8, so +12% (AGE-001 progression caps; review R3-14).
+     */
+    fun weeklyCap(lastWeekMin: Double, age: Int? = null): Double {
+        if (lastWeekMin <= 0) return Double.MAX_VALUE
+        val m = if (age != null && age >= 65) P.AGE_001.age_65.progression_cap_multiplier else 1.0
+        return lastWeekMin * (1 + P.AER_003.weekly_increase_pct_max * m / 100.0)
+    }
 
     /** AER-003: duration first; tempo once Z1 sessions reach 30 min; intervals once tempo is established and HIIT-003 allows. */
     fun stage(z1SessionMin: Double, tempoWeeks: Int, hiitBaseReady: Boolean): Stage = when {

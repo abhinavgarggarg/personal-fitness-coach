@@ -6,7 +6,7 @@
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 2, "WRIST": 1}, "fatigue": 4,
     "reps": [5, 8], "max_reps": 12, "e1rm": true, "tempo": 3.5, "setup": 60, "station": "rack",
     "regression": "db-bench-press",
-    "tags": ["breath_hold_max", "supine_lying"],
+    "tags": ["breath_hold_max", "supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Lie on the bench with your eyes under the bar and feet flat. Set the safety arms just below chest height. Grip the bar a little wider than shoulder-width.",
       "cues": ["Pull your shoulder blades together and down before unracking.", "Lower the bar to the lower chest with elbows at about 45 degrees.", "Press up and slightly back towards the rack."],
@@ -21,6 +21,7 @@
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 2, "WRIST": 1}, "fatigue": 4,
     "reps": [6, 10], "max_reps": 12, "e1rm": true, "setup": 60, "station": "rack",
     "regression": "db-incline-press",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Set an adjustable bench to about 30 degrees inside a rack with safety arms at chest height. Lie back with eyes just in front of the bar.",
       "cues": ["Lower to the upper chest just below the collarbones.", "Keep the shoulder blades pinned to the bench.", "Press straight up."],
@@ -35,7 +36,7 @@
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "ELBOW": 3, "WRIST": 2}, "fatigue": 4,
     "reps": [6, 10], "max_reps": 12, "e1rm": true, "setup": 60, "station": "rack",
     "regression": "db-bench-press",
-    "tags": ["supine_lying"],
+    "tags": ["supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Set up as for the bench press but grip the bar about shoulder-width apart.",
       "cues": ["Keep elbows tucked closer to your sides.", "Touch the lower chest and press back up."],
@@ -50,7 +51,7 @@
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2, "WRIST": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 30, "station": "bench",
     "progression": "bench-press", "regression": "push-up",
-    "tags": ["supine_lying"],
+    "tags": ["supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Sit on the end of a bench with dumbbells on your thighs. Lie back while bringing them to chest level, palms facing your feet or each other.",
       "cues": ["Lower the dumbbells beside your chest under control.", "Press up and slightly together without clanking them.", "Keep feet planted and shoulder blades set."],
@@ -65,6 +66,7 @@
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2, "WRIST": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 30, "station": "incline_bench",
     "progression": "incline-bench-press",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Set the bench to about 30 degrees. Sit with the dumbbells on your thighs, then lie back and bring them to the top of your chest.",
       "cues": ["Press up over your upper chest.", "Lower slowly until the dumbbells are level with your chest."],
@@ -78,7 +80,7 @@
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 2, "WRIST": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "setup": 20, "station": "dumbbells",
     "progression": "db-bench-press",
-    "tags": ["supine_lying"],
+    "tags": ["supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Lie on the floor with knees bent and a dumbbell in each hand, upper arms resting on the floor.",
       "cues": ["Press up until the arms are straight.", "Lower until the upper arms lightly touch the floor, then press again."],
@@ -91,7 +93,7 @@
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 1, "ELBOW": 2, "WRIST": 2}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 20, "station": "kettlebells",
-    "tags": ["supine_lying"],
+    "tags": ["supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Lie on your back with knees bent. Roll to one side to pick up the kettlebell with both hands, then roll back with it resting on your forearm, elbow on the floor.",
       "cues": ["Keep the wrist straight with the bell on the back of the forearm.", "Press up and lower until the elbow touches the floor."],
@@ -105,6 +107,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [10, 15], "max_reps": 18, "failure_safe": true, "setup": 30, "station": "cable",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Set both pulleys at chest height with handles attached. Stand in the middle with one foot forward and the handles beside your chest.",
       "cues": ["Press the handles forward until your arms are straight.", "Return slowly until hands are beside the chest."],
@@ -117,6 +120,7 @@
     "equipment": ["chest_press_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "chest_press_machine",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Adjust the seat so the handles are level with the middle of your chest. Sit with your back flat against the pad.",
       "cues": ["Press the handles forward without locking your elbows hard.", "Return slowly until you feel a light stretch in the chest."],
@@ -129,7 +133,7 @@
     "equipment": [], "equipment_any": [["bench", "plyo_box"]], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1, "WRIST": 1}, "fatigue": 1,
     "reps": [8, 15], "max_reps": 15, "failure_safe": true, "setup": 10, "station": "bench",
-    "tags": ["wrist_extension_load"], "family": "push_up", "rung": 1, "progression": "push-up",
+    "tags": ["wrist_extension_load", "upper_body_loaded"], "family": "push_up", "rung": 1, "progression": "push-up",
     "text": {
       "setup": "Place your hands on the edge of a sturdy bench or box, slightly wider than shoulders, and walk your feet back into a straight-body position.",
       "cues": ["Keep a straight line from head to heels.", "Lower your chest to the edge, then push away."],
@@ -142,7 +146,7 @@
     "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 2, "ELBOW": 1, "WRIST": 2}, "fatigue": 2,
     "reps": [6, 15], "max_reps": 15, "failure_safe": true, "setup": 5, "station": "floor",
-    "tags": ["wrist_extension_load"], "family": "push_up", "rung": 2,
+    "tags": ["wrist_extension_load", "upper_body_loaded"], "family": "push_up", "rung": 2,
     "progression": "push-up-feet-elevated", "regression": "push-up-incline",
     "text": {
       "setup": "Start in a high plank with hands slightly wider than shoulders and body straight from head to heels.",
@@ -156,7 +160,7 @@
     "equipment": [], "equipment_any": [["bench", "plyo_box"]], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 1, "WRIST": 2}, "fatigue": 2,
     "reps": [6, 15], "max_reps": 15, "failure_safe": true, "setup": 10, "station": "bench",
-    "tags": ["wrist_extension_load", "head_down"], "family": "push_up", "rung": 3,
+    "tags": ["wrist_extension_load", "head_down", "upper_body_loaded"], "family": "push_up", "rung": 3,
     "progression": "push-up-deficit", "regression": "push-up",
     "text": {
       "setup": "Place your feet on a bench or a sturdy box and your hands on the floor, body in a straight line.",
@@ -171,6 +175,7 @@
     "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 3, "ELBOW": 1, "WRIST": 1}, "fatigue": 2,
     "reps": [6, 15], "max_reps": 15, "failure_safe": true, "setup": 15, "station": "dumbbells",
     "family": "push_up", "rung": 4, "progression": "push-up-weighted", "regression": "push-up-feet-elevated",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Grip two hexagonal dumbbells (or sturdy push-up handles) on the floor slightly wider than your shoulders and set a straight plank.",
       "cues": ["Lower the chest below the level of your hands.", "Only go as deep as your shoulders feel comfortable."],
@@ -183,7 +188,7 @@
     "equipment": ["weight_vest"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 4, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2, "WRIST": 2}, "fatigue": 3,
     "reps": [6, 12], "max_reps": 15, "failure_safe": true, "setup": 30, "station": "floor",
-    "tags": ["wrist_extension_load"], "family": "push_up", "rung": 5, "regression": "push-up-deficit",
+    "tags": ["wrist_extension_load", "upper_body_loaded"], "family": "push_up", "rung": 5, "regression": "push-up-deficit",
     "text": {
       "setup": "Wear a weight vest, or have a partner place a plate high on your upper back, then set a straight plank.",
       "cues": ["Keep the same straight-body push-up you use without load.", "Lower under control."],
@@ -196,7 +201,7 @@
     "equipment": ["assisted_pullup_machine"], "load": "STACK", "assisted": true, "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 3, "ELBOW": 2}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "failure_safe": true, "setup": 30, "station": "assisted_pullup_machine",
-    "tags": ["shoulder_extension_load"], "family": "dip", "rung": 1, "progression": "dip",
+    "tags": ["shoulder_extension_load", "upper_body_loaded"], "family": "dip", "rung": 1, "progression": "dip",
     "text": {
       "setup": "Choose an assistance weight (more weight means more help). Kneel or stand on the pad and grip the dip handles with arms straight.",
       "cues": ["Lower until the upper arms are about parallel to the floor.", "Press back up to straight arms."],
@@ -209,7 +214,7 @@
     "equipment": ["dip_station"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 3, "ELBOW": 2, "WRIST": 1}, "fatigue": 3,
     "reps": [6, 12], "max_reps": 15, "setup": 15, "station": "dip_station",
-    "tags": ["shoulder_extension_load"], "family": "dip", "rung": 2,
+    "tags": ["shoulder_extension_load", "upper_body_loaded"], "family": "dip", "rung": 2,
     "progression": "dip-weighted", "regression": "dip-assisted",
     "text": {
       "setup": "Grip the bars and jump or step up to straight arms, shoulders pressed down away from your ears.",
@@ -223,7 +228,7 @@
     "equipment": ["dip_station", "weight_vest"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 4, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 3, "WRIST": 1}, "fatigue": 4,
     "reps": [5, 10], "max_reps": 12, "setup": 40, "station": "dip_station",
-    "tags": ["shoulder_extension_load"], "family": "dip", "rung": 3, "regression": "dip",
+    "tags": ["shoulder_extension_load", "upper_body_loaded"], "family": "dip", "rung": 3, "regression": "dip",
     "text": {
       "setup": "Wear a dip belt with a plate or a weight vest, then mount the bars as for a normal dip.",
       "cues": ["Keep the same controlled depth as your bodyweight dips.", "Stay tight so the weight does not swing."],
@@ -236,7 +241,7 @@
     "equipment": ["barbell", "rack"], "load": "BARBELL", "cost": "HEAVY_BILATERAL",
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 2, "SPINE": 2, "WRIST": 1}, "fatigue": 4,
     "reps": [5, 8], "max_reps": 12, "e1rm": true, "setup": 50, "station": "rack",
-    "tags": ["overhead", "spinal_loading", "breath_hold_max", "overhead_heavy"], "regression": "db-shoulder-press",
+    "tags": ["overhead", "spinal_loading", "breath_hold_max", "overhead_heavy", "upper_body_loaded"], "regression": "db-shoulder-press",
     "text": {
       "setup": "Set the bar at upper-chest height in the rack. Grip just outside shoulder-width, step back with the bar resting on the front of your shoulders.",
       "cues": ["Squeeze glutes and brace so the lower back does not arch.", "Press the bar straight up, moving your head back then through once it passes.", "Finish with the bar over the middle of your feet."],
@@ -249,6 +254,7 @@
     "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 40, "station": "landmine", "not_overhead": true,
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Load one end of a barbell anchored in a landmine. Kneel on the knee on the same side as the pressing arm and hold the bar end at your shoulder.",
       "cues": ["Squeeze the glute of the down knee.", "Press up and forward until the arm is straight.", "Lower back to the shoulder with control."],
@@ -261,6 +267,7 @@
     "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "KNEE": 1, "ELBOW": 1}, "fatigue": 3,
     "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "unilateral": true, "tempo": 2.5, "setup": 40, "station": "landmine", "not_overhead": true, "power": true,
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Stand facing the landmine holding the loaded bar end at one shoulder, feet hip-width apart.",
       "cues": ["Dip quickly by bending the knees a little.", "Drive up through the legs and punch the bar up and forward.", "Lower under control and reset."],
@@ -273,7 +280,7 @@
     "equipment": ["dumbbells", "incline_bench"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 3, "ELBOW": 2}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 30, "station": "incline_bench",
-    "tags": ["overhead", "overhead_heavy"], "progression": "overhead-press", "regression": "landmine-press",
+    "tags": ["overhead", "overhead_heavy", "upper_body_loaded"], "progression": "overhead-press", "regression": "landmine-press",
     "text": {
       "setup": "Set the bench upright. Sit with dumbbells on your thighs, then kick them up one at a time to shoulder height, palms forward.",
       "cues": ["Press the dumbbells up until arms are straight.", "Lower until they are level with your ears or just below."],
@@ -286,7 +293,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "dumbbells",
-    "tags": ["overhead", "overhead_heavy"],
+    "tags": ["overhead", "overhead_heavy", "upper_body_loaded"],
     "text": {
       "setup": "Kneel with one knee down and the other foot forward. Hold a dumbbell at the shoulder on the side of the down knee.",
       "cues": ["Squeeze the glute of the down knee and keep ribs down.", "Press straight up and lower slowly."],
@@ -299,7 +306,7 @@
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "ELBOW": 1, "WRIST": 1}, "fatigue": 3,
     "reps": [5, 10], "max_reps": 12, "unilateral": true, "setup": 20, "station": "kettlebells",
-    "tags": ["overhead", "overhead_heavy"], "regression": "db-half-kneeling-press",
+    "tags": ["overhead", "overhead_heavy", "upper_body_loaded"], "regression": "db-half-kneeling-press",
     "text": {
       "setup": "Clean the kettlebell to the rack position: handle in the palm, bell resting on the back of the forearm, elbow tucked.",
       "cues": ["Grip hard and brace the whole body.", "Press up until the arm is straight with the biceps near the ear.", "Pull the bell back down to the rack."],
@@ -312,7 +319,7 @@
     "equipment": ["shoulder_press_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "shoulder_press_machine",
-    "tags": ["overhead", "overhead_heavy"],
+    "tags": ["overhead", "overhead_heavy", "upper_body_loaded"],
     "text": {
       "setup": "Adjust the seat so the handles start at about shoulder height. Sit with your back against the pad.",
       "cues": ["Press up until arms are nearly straight.", "Lower slowly to shoulder height."],
@@ -325,7 +332,7 @@
     "equipment": ["smith_machine", "incline_bench"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 3, "ELBOW": 2}, "fatigue": 3,
     "reps": [6, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 45, "station": "smith_machine",
-    "tags": ["overhead", "overhead_heavy"],
+    "tags": ["overhead", "overhead_heavy", "upper_body_loaded"],
     "text": {
       "setup": "Place an upright bench inside the Smith machine so the bar lowers just in front of your face. Set the stops at chin height.",
       "cues": ["Unhook and press straight up.", "Lower to chin level."],
@@ -338,7 +345,7 @@
     "equipment": [], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "WRIST": 2, "ELBOW": 1}, "fatigue": 2,
     "reps": [5, 12], "max_reps": 15, "failure_safe": true, "setup": 5, "station": "floor",
-    "tags": ["overhead", "wrist_extension_load", "head_down"], "family": "pike", "rung": 1, "progression": "pike-push-up-elevated",
+    "tags": ["overhead", "wrist_extension_load", "head_down", "upper_body_loaded"], "family": "pike", "rung": 1, "progression": "pike-push-up-elevated",
     "text": {
       "setup": "Start in a push-up position, then walk your feet in and lift your hips high so your body forms an upside-down V.",
       "cues": ["Lower the top of your head towards a spot just in front of your hands.", "Press back up to the V."],
@@ -351,7 +358,7 @@
     "equipment": [], "equipment_any": [["bench", "plyo_box"]], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 3, "WRIST": 2, "ELBOW": 2}, "fatigue": 2,
     "reps": [5, 10], "max_reps": 12, "failure_safe": true, "setup": 10, "station": "bench",
-    "tags": ["overhead", "wrist_extension_load", "head_down"], "family": "pike", "rung": 2, "regression": "pike-push-up",
+    "tags": ["overhead", "wrist_extension_load", "head_down", "upper_body_loaded"], "family": "pike", "rung": 2, "regression": "pike-push-up",
     "text": {
       "setup": "Put your feet on a bench or a sturdy box and walk your hands back until your hips are stacked roughly over your shoulders.",
       "cues": ["Lower your head between your hands with elbows angled back.", "Push up until arms are straight."],
@@ -364,7 +371,7 @@
     "equipment": ["dumbbells"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"SHOULDER": 2, "ELBOW": 1, "KNEE": 1, "SPINE": 1}, "fatigue": 3,
     "objectives": ["POWER"], "reps": [3, 5], "max_reps": 6, "tempo": 2.5, "setup": 15, "station": "dumbbells", "power": true, "power_only": true,
-    "tags": ["overhead", "overhead_heavy"],
+    "tags": ["overhead", "overhead_heavy", "upper_body_loaded"],
     "text": {
       "setup": "Stand with feet hip-width apart, holding a dumbbell at each shoulder with palms facing each other.",
       "cues": ["Dip quickly by bending the knees a little, chest staying tall.", "Drive up through the legs and press the dumbbells overhead in one movement.", "Lower them to the shoulders under control and reset."],

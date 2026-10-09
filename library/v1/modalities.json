@@ -48,7 +48,7 @@
       "text": {"setup": "Stand with one foot slightly behind you and arms reaching up.", "cues": ["Pull the arms down as you drive the back knee up to the front.", "Return and repeat; switch legs halfway."]}},
      {"id": "move-shadow-box", "name": "Shadow boxing", "jumping": false, "joints": {"SHOULDER": 1, "ELBOW": 1}, "tags": [],
       "text": {"setup": "Stand in a staggered stance with hands up by your chin.", "cues": ["Throw quick, relaxed punches straight ahead, turning from the hips.", "Keep the knees soft and feet moving lightly without hopping."]}},
-     {"id": "move-wall-climber", "name": "Wall mountain climber", "jumping": false, "joints": {"WRIST": 1, "SHOULDER": 1, "HIP": 1}, "tags": ["wrist_extension_load"],
+     {"id": "move-wall-climber", "name": "Wall mountain climber", "jumping": false, "joints": {"WRIST": 1, "SHOULDER": 1, "HIP": 1}, "tags": ["wrist_extension_load", "upper_body_loaded"],
       "text": {"setup": "Place your hands on a wall at chest height and walk your feet back into a slight lean.", "cues": ["Drive one knee towards the wall, then the other, at a brisk pace.", "Keep a straight line from head to back heel."]}},
      {"id": "move-reverse-lunge", "name": "Alternating reverse lunge", "jumping": false, "joints": {"KNEE": 2, "HIP": 1}, "tags": ["deep_knee_flexion"],
       "text": {"setup": "Stand tall with hands on your hips.", "cues": ["Step back and lower the back knee towards the floor.", "Push through the front foot to return, then switch legs."]}},

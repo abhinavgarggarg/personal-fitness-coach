@@ -1,0 +1,12 @@
+{
+  "registry_version": "1.1.1",
+  "base_registry_version": "1.1.0",
+  "kind": "PATCH",
+  "date": "2026-10-09",
+  "note": "Phase 3 Part 3 independent review (findings R3-01, R3-04, R3-14): the health-condition table's encoding is corrected to match the approved wording (table 1.0.0 -> 1.0.1). No rule wording, limit or confidence changes; no table entry becomes less restrictive.",
+  "changed_rules": [
+    {"rule_id": "SAF-010", "from_version": "1.0.0", "to_version": "1.0.1", "change": "PATCH",
+     "parameters_replace_keys": {"table_version": "1.0.1"},
+     "reason": "Table reference only: health_conditions 1.0.1 encodes the breastbone sub-flag as controls, makes diabetes add-ons bring their base entries, honours 'uncomfortable lying on the back' with severe obesity, and resolves unknown IDs to conservative mode (D-069)"}
+  ]
+}

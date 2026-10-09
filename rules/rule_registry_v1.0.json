@@ -1,5 +1,5 @@
 {
-  "registry_version": "1.1.0",
+  "registry_version": "1.1.1",
   "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09",
   "generated": "2026-10-09",
   "confidence_scale": [
@@ -6140,13 +6140,13 @@
     },
     {
       "rule_id": "SAF-010",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "safety",
       "title": "Health-condition profiles",
       "statement": "Users may select health conditions from a versioned table (health_conditions v1.0). Each entry sets conservative limits on general fitness training: doctor's OK advice, highest zone, intervals, minimum reps in reserve, no training to failure, impact, exercise tags to avoid, joint limits, extra warm-up and cool-down, positions, prompts and condition-specific stop signs. With several conditions each control takes its most restrictive value. Control status is self-reported (not sure = not under control); the app never reads or thresholds clinical values (blood pressure, glucose, ketones). A doctor's OK is the user's statement of scope (light–moderate, vigorous, intervals) and unlocks only that scope. Prompts never name a medicine, dose, value target or diagnosis, and never claim to treat a condition. A clinician and a regulatory adviser review the table before any public release.",
       "parameters": {
         "table": "health_conditions",
-        "table_version": "1.0.0",
+        "table_version": "1.0.1",
         "combine": "most_restrictive",
         "status_values": [
           "yes",
@@ -6216,7 +6216,7 @@
         "TC-SAF-010a",
         "TC-SAF-010b"
       ],
-      "change_reason": "CR-001 / D-058: health-condition picker driven by data (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
+      "change_reason": "PATCH: Table reference only: health_conditions 1.0.1 encodes the breastbone sub-flag as controls, makes diabetes add-ons bring their base entries, honours 'uncomfortable lying on the back' with severe obesity, and resolves unknown IDs to conservative mode (D-069)",
       "status": "approved",
       "verification_pending": [
         "Riebe2015"

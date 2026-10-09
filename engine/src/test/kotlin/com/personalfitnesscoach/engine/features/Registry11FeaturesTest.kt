@@ -78,7 +78,8 @@ class Registry11FeaturesTest {
         assertEquals(10, (start(20) as KnownStart.Estimate).reductionPct)
         assertEquals(20, (start(40) as KnownStart.Estimate).reductionPct)
         assertTrue(start(60) is KnownStart.Ceiling)
-        assertEquals(10, (start(5, age = 62) as KnownStart.Estimate).reductionPct)
+        assertEquals(0, (start(5, age = 62) as KnownStart.Estimate).reductionPct) // a fresh entry is not a return to training (review R3-14)
+        assertEquals(20, (start(20, age = 62) as KnownStart.Estimate).reductionPct) // from 14 days, 60+ moves one band longer
         assertTrue(start(30, flagged = true) is KnownStart.Ceiling)
         assertEquals(listOf(0, 1, 2, 3), listOf(0, 14, 28, 56).map { KnownLoads.band(it, 40, false) })
         // A ceiling stops the CAL-001 ramp: never above it.
@@ -126,11 +127,11 @@ class Registry11FeaturesTest {
     // ------------------------------------------------------------------ MOB-006
 
     @Test fun `TC-MOB-006a a calm mobility session is offered on rest, LIGHT and RECOVERY days and on stressed days only`() {
-        assertTrue(Mobility.calmSessionOffered(restDay = true, tier = null, stressItem = null))
-        assertTrue(Mobility.calmSessionOffered(false, Tier.LIGHT, 4)); assertTrue(Mobility.calmSessionOffered(false, Tier.RECOVERY, 4))
-        assertTrue(Mobility.calmSessionOffered(false, Tier.FULL, 2))
-        assertFalse(Mobility.calmSessionOffered(false, Tier.FULL, 4)); assertFalse(Mobility.calmSessionOffered(false, Tier.MODIFIED, 3))
-        val s = Mobility.calmSession(20).value
+        assertTrue(Mobility.calmSessionOffered(restDay = true, tier = null, stressItem = null, illness = false, redFlag = false))
+        assertTrue(Mobility.calmSessionOffered(false, Tier.LIGHT, 4, false, false)); assertTrue(Mobility.calmSessionOffered(false, Tier.RECOVERY, 4, false, false))
+        assertTrue(Mobility.calmSessionOffered(false, Tier.FULL, 2, false, false))
+        assertFalse(Mobility.calmSessionOffered(false, Tier.FULL, 4, false, false)); assertFalse(Mobility.calmSessionOffered(false, Tier.MODIFIED, 3, false, false))
+        val s = Mobility.calmSession(20, jointLimits = emptyMap(), avoidTags = emptySet()).value
         assertFalse(s.countsAsZ1); assertFalse(s.countsAsStrengthDay)
         assertTrue(s.minutes in 15.0..30.0)
         assertEquals(DrillKind.BREATHING, s.drills.last().drill.kind)
@@ -141,12 +142,12 @@ class Registry11FeaturesTest {
 
     @Test fun `TC-MOB-006b condition tags and joint limits apply to the calm session, and its length stays within 15 to 30 minutes`() {
         val preg = Conditions.resolve(listOf(UserCondition("pregnancy", pregnancyWeek = 24))).value
-        val s = Mobility.calmSession(25, avoidTags = preg.avoidTags).value
+        val s = Mobility.calmSession(25, jointLimits = emptyMap(), avoidTags = preg.avoidTags).value
         assertTrue(s.drills.none { d -> d.drill.tags.any { it in preg.avoidTags } })
-        val limited = Mobility.calmSession(15, jointLimits = mapOf(com.personalfitnesscoach.engine.model.Joint.WRIST to 0)).value
+        val limited = Mobility.calmSession(15, jointLimits = mapOf(com.personalfitnesscoach.engine.model.Joint.WRIST to 0), avoidTags = emptySet()).value
         assertTrue(limited.drills.all { it.drill.stress(com.personalfitnesscoach.engine.model.Joint.WRIST) == 0 })
-        assertTrue(Mobility.calmSession(5).value.minutes <= 15.0 + 1e-9)
-        assertTrue(Mobility.calmSession(60).value.minutes <= 30.0 + 1e-9)
+        assertTrue(Mobility.calmSession(5, jointLimits = emptyMap(), avoidTags = emptySet()).value.minutes <= 15.0 + 1e-9)
+        assertTrue(Mobility.calmSession(60, jointLimits = emptyMap(), avoidTags = emptySet()).value.minutes <= 30.0 + 1e-9)
     }
 
     // ------------------------------------------------------------------ EQ-003

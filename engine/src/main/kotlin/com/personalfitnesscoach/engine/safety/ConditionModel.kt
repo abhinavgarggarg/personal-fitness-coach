@@ -20,6 +20,9 @@ data class ConditionPhase(
     val focus: List<String>,
 )
 
+/** What a sub-flag adds (heart: recent breastbone surgery): tags and conditioning machines to avoid (MOD-002 keys). */
+data class SubFlagEffect(val avoidTags: Set<String>, val avoidModalities: Set<String>)
+
 /** Limits after a doctor's OK of a given scope (heart). */
 data class AfterClearance(val scope: String, val maxZone: Zone?, val minRir: Int?, val hiit: String?)
 
@@ -90,8 +93,10 @@ data class ConditionEntry(
     val effortBy: String?,
     val defaultOrder: String?,
     val warmupStyle: String?,
-    /** Heart sub-flags: flag → what it means for training. */
+    /** Heart sub-flags: flag → what it means for training (shown as a prompt). */
     val subFlags: Map<String, String>,
+    /** The sub-flags' meaning as controls (table 1.0.1). */
+    val subFlagEffects: Map<String, SubFlagEffect>,
     val flareJointLimits: Map<Joint, Int>,
     val flareAvoidTags: Set<String>,
     val flareKeep: List<String>,

@@ -191,7 +191,7 @@ class ReviewRegressionTest {
 
     @Test fun `R12 SAF-003 warm-up and cool-down drills respect today's joint limits`() {
         val drills = Mobility.warmupDrills(setOf(Pattern.SQUAT, Pattern.HORIZONTAL_PUSH, Pattern.VERTICAL_PULL), FULL_GYM,
-            restricted = setOf(Joint.WRIST, Joint.SHOULDER), jointLimits = mapOf(Joint.WRIST to 0, Joint.SHOULDER to 0)).value
+            restricted = setOf(Joint.WRIST, Joint.SHOULDER), jointLimits = mapOf(Joint.WRIST to 0, Joint.SHOULDER to 0), avoidTags = emptySet()).value
         assertTrue(drills.isNotEmpty())
         assertTrue(drills.map { it.drill.id }.toString(), drills.all { it.drill.stress(Joint.WRIST) == 0 && it.drill.stress(Joint.SHOULDER) == 0 })
         val plan = WeekPlanner.plan(weekInput(4, weekOf(BlockType.BUILD), program = program), program).value

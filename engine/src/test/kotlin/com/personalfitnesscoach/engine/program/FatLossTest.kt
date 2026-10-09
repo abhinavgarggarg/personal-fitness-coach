@@ -75,19 +75,22 @@ class FatLossTest {
     @Test fun `TC-FL-002a the weekly target by age grows at most 15 percent toward the band and starts at the 150 floor`() {
         assertEquals(200..300, FatLoss.targetRange(45)); assertEquals(180..250, FatLoss.targetRange(62)); assertEquals(150..250, FatLoss.targetRange(70))
         assertEquals(150.0, FatLoss.weeklyTarget(45, 0.0).value.thisWeek, 1e-9)
-        assertEquals(115.0, FatLoss.weeklyTarget(45, 100.0).value.thisWeek, 1e-9)
+        assertEquals(150.0, FatLoss.weeklyTarget(45, 100.0).value.thisWeek, 1e-9) // never below the floor (review R3-12)
+        assertEquals(150.0, FatLoss.weeklyTarget(45, 50.0).value.thisWeek, 1e-9)
+        assertEquals(172.5, FatLoss.weeklyTarget(45, 150.0).value.thisWeek, 1e-9)
         assertEquals(200.0, FatLoss.weeklyTarget(45, 180.0).value.thisWeek, 1e-9)
         assertEquals(200.0, FatLoss.weeklyTarget(45, 260.0).value.thisWeek, 1e-9) // holds at the band's lower bound
         // The plan meets this week's target: gym work first, brisk walks for the rest.
-        val p = plan(input(45, 3, lastEq = 100.0))
+        val p = plan(input(45, 3, lastEq = 150.0))
         val a = p.activity!!
-        assertEquals(115.0, a.target.thisWeek, 1e-9)
-        assertTrue(a.plannedEquivalent <= 115.0 + 1e-9 || a.walk.minutesPerWeek == 0.0)
+        assertEquals(172.5, a.target.thisWeek, 1e-9)
+        assertTrue(a.plannedEquivalent <= 172.5 + 1e-9 || a.walk.minutesPerWeek == 0.0)
         assertEquals(a.plannedEquivalent, a.gymZ1Minutes + a.walk.minutesPerWeek + 2 * (a.z2Minutes + a.hiitWorkMinutes), 0.15)
     }
 
     @Test fun `TC-FL-002b 65 plus grows 12 percent a week, walks fill the gap within the Z1 range and PH-001 counts them`() {
-        assertEquals(112.0, FatLoss.weeklyTarget(70, 100.0).value.thisWeek, 1e-9)
+        assertEquals(150.0, FatLoss.weeklyTarget(70, 150.0).value.thisWeek, 1e-9) // 65+: the band's lower bound is the floor
+        assertEquals(150.0, FatLoss.weeklyTarget(70, 100.0).value.thisWeek, 1e-9)
         assertEquals(12, FatLoss.weeklyTarget(70, 100.0).value.growthPct)
         val r = WeekPlanner.plan(input(45, 3, lastEq = 250.0), fatLoss)
         val a = r.value.activity!!

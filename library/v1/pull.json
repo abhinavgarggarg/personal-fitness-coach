@@ -5,7 +5,7 @@
     "equipment": ["barbell"], "load": "BARBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 3, "joints": {"SPINE": 3, "SHOULDER": 1, "ELBOW": 1, "HIP": 1}, "fatigue": 4,
     "reps": [6, 10], "max_reps": 12, "e1rm": true, "setup": 30, "station": "barbell",
-    "tags": ["spinal_loading", "grip_intensive"], "regression": "chest-supported-db-row",
+    "tags": ["spinal_loading", "grip_intensive", "upper_body_loaded"], "regression": "chest-supported-db-row",
     "text": {
       "setup": "Hold the bar with an overhand grip just outside your thighs. Hinge forward until your torso is at about 45 degrees, knees soft, back flat.",
       "cues": ["Pull the bar to your lower ribs, leading with the elbows.", "Pause briefly, then lower to straight arms.", "Keep the torso angle fixed."],
@@ -18,7 +18,7 @@
     "equipment": ["landmine", "barbell"], "load": "BARBELL", "one_sided": true, "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SPINE": 2, "SHOULDER": 1, "HIP": 1}, "fatigue": 3,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "setup": 40, "station": "landmine",
-    "tags": ["spinal_loading", "grip_intensive"],
+    "tags": ["spinal_loading", "grip_intensive", "upper_body_loaded"],
     "text": {
       "setup": "Load the free end of a landmine bar and straddle it. Hook a V-handle under the bar just behind the plates, hinge forward and grip it.",
       "cues": ["Pull the plates towards your chest.", "Lower until the arms are straight without letting the back round."],
@@ -31,6 +31,7 @@
     "equipment": ["dumbbells"], "equipment_any": [["bench", "plyo_box"]], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SPINE": 1, "SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "unilateral": true, "setup": 20, "station": "bench",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Place one hand and the same-side knee on a bench or a sturdy box, the other foot on the floor. Hold a dumbbell in the free hand with the arm hanging straight.",
       "cues": ["Pull the dumbbell towards your hip.", "Keep your shoulders square to the floor.", "Lower until the arm is straight and feel the stretch."],
@@ -43,7 +44,7 @@
     "equipment": ["dumbbells", "incline_bench"], "load": "DUMBBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "incline_bench",
-    "tags": ["prone_lying"],
+    "tags": ["prone_lying", "upper_body_loaded"],
     "text": {
       "setup": "Set a bench to about 30 degrees and lie face down on it with your chest at the top edge, a dumbbell in each hand hanging down.",
       "cues": ["Row both dumbbells up, squeezing the shoulder blades together.", "Keep your chest on the pad."],
@@ -56,6 +57,7 @@
     "equipment": ["kettlebells"], "load": "KETTLEBELL", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SPINE": 2, "SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "unilateral": true, "setup": 15, "station": "kettlebells",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Take a staggered stance and rest your free forearm on your front thigh. Hold the kettlebell below your shoulder.",
       "cues": ["Row the bell to your hip.", "Lower to a full stretch without twisting."],
@@ -68,6 +70,7 @@
     "equipment": ["cable_row"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1, "SPINE": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "cable_row",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Sit on the bench with feet on the foot plates and knees slightly bent. Grip the handle with straight arms and sit tall.",
       "cues": ["Pull the handle to your lower ribs.", "Squeeze the shoulder blades together, then let them slide forward on the return."],
@@ -81,6 +84,7 @@
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [10, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable",
     "family": "anti_rotation", "rung": 4, "progression": "renegade-row", "regression": "pallof-walkout",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Set a handle at chest height. Stand side-on in a split stance facing the machine, holding the handle in one hand with the arm straight.",
       "cues": ["Row to the ribs without letting the hips or shoulders twist.", "Return slowly to a long arm."],
@@ -93,6 +97,7 @@
     "equipment": ["cable"], "load": "STACK", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 2, "joints": {"SHOULDER": 1}, "fatigue": 1,
     "reps": [12, 15], "max_reps": 20, "failure_safe": true, "setup": 20, "station": "cable",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Set a rope attachment at about forehead height. Grip the rope ends with thumbs pointing back and step back until the arms are straight.",
       "cues": ["Pull the rope towards your face, spreading the ends apart.", "Finish with hands beside your ears and elbows high."],
@@ -105,6 +110,7 @@
     "equipment": ["row_machine"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "row_machine",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Adjust the chest pad so you can just reach the handles with straight arms. Sit with your chest on the pad.",
       "cues": ["Pull the handles back, driving the elbows behind you.", "Return slowly to full stretch."],
@@ -117,7 +123,7 @@
     "equipment": ["rack", "barbell"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 2,
     "reps": [6, 15], "max_reps": 15, "failure_safe": true, "setup": 30, "station": "rack",
-    "tags": ["supine_lying"],
+    "tags": ["supine_lying", "upper_body_loaded"],
     "text": {
       "setup": "Set a bar in a rack at about hip height. Lie underneath it, grip it just wider than shoulders and lift your body into a straight line from heels to head.",
       "cues": ["Pull your chest to the bar.", "Lower until arms are straight, keeping the body rigid.", "Bend your knees to make it easier, or lower the bar to make it harder."],
@@ -130,6 +136,7 @@
     "equipment": ["bands"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 1,
     "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 20, "station": "floor",
+    "tags": ["upper_body_loaded"],
     "text": {
       "setup": "Anchor a band at chest height (or loop it around your feet while seated). Hold an end in each hand with arms straight.",
       "cues": ["Row the hands to your ribs and squeeze the shoulder blades.", "Return slowly."],
@@ -141,7 +148,7 @@
     "pattern": "VERTICAL_PULL", "class": "CABLE", "primary": ["LATS"], "secondary": ["BICEPS", "UPPER_BACK", "REAR_DELTS"],
     "equipment": ["lat_pulldown"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
-    "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "lat_pulldown", "tags": ["overhead"],
+    "reps": [8, 12], "max_reps": 15, "e1rm": true, "failure_safe": true, "setup": 30, "station": "lat_pulldown", "tags": ["overhead", "upper_body_loaded"],
     "progression": "pull-up",
     "text": {
       "setup": "Adjust the thigh pad so your legs are locked in. Grip the bar a little wider than shoulders and sit with arms straight.",
@@ -154,7 +161,7 @@
     "pattern": "VERTICAL_PULL", "class": "CABLE", "primary": ["LATS"], "secondary": ["BICEPS", "CORE"],
     "equipment": ["cable"], "load": "STACK", "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
-    "reps": [10, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable", "tags": ["overhead"],
+    "reps": [10, 12], "max_reps": 15, "unilateral": true, "failure_safe": true, "setup": 25, "station": "cable", "tags": ["overhead", "upper_body_loaded"],
     "text": {
       "setup": "Set a handle at the top of the cable column. Kneel on one knee facing the machine and grip the handle with the arm reaching up.",
       "cues": ["Pull the elbow down to your side.", "Let the arm return all the way up under control."],
@@ -166,7 +173,7 @@
     "pattern": "VERTICAL_PULL", "class": "BAND", "primary": ["LATS"], "secondary": ["BICEPS", "UPPER_BACK"],
     "equipment": ["bands"], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 1, "ELBOW": 1}, "fatigue": 1,
-    "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 20, "station": "floor", "tags": ["overhead"],
+    "reps": [12, 20], "max_reps": 25, "failure_safe": true, "setup": 20, "station": "floor", "tags": ["overhead", "upper_body_loaded"],
     "text": {
       "setup": "Anchor a band high on a door anchor or bar. Kneel facing it with an end in each hand and arms reaching up.",
       "cues": ["Pull your elbows down towards your ribs.", "Return slowly to straight arms."],
@@ -178,7 +185,7 @@
     "pattern": "VERTICAL_PULL", "class": "MACHINE", "primary": ["LATS"], "secondary": ["BICEPS", "UPPER_BACK"],
     "equipment": ["assisted_pullup_machine"], "load": "STACK", "assisted": true, "cost": "MACHINE_OR_CABLE_COMPOUND",
     "difficulty": 1, "skill": 1, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
-    "reps": [6, 10], "max_reps": 12, "failure_safe": true, "setup": 30, "station": "assisted_pullup_machine", "tags": ["overhead"],
+    "reps": [6, 10], "max_reps": 12, "failure_safe": true, "setup": 30, "station": "assisted_pullup_machine", "tags": ["overhead", "upper_body_loaded"],
     "family": "pull_up", "rung": 1, "progression": "pull-up-negative",
     "text": {
       "setup": "Choose an assistance weight (more weight means more help). Kneel on the pad and grip the handles above you with arms straight.",
@@ -191,7 +198,7 @@
     "pattern": "VERTICAL_PULL", "class": "BAND", "primary": ["LATS"], "secondary": ["BICEPS", "UPPER_BACK", "CORE"],
     "equipment": ["pullup_bar", "bands"], "load": "BODYWEIGHT", "assisted": true, "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 1}, "fatigue": 2,
-    "reps": [5, 10], "max_reps": 12, "failure_safe": true, "setup": 30, "station": "pullup_bar", "tags": ["overhead"],
+    "reps": [5, 10], "max_reps": 12, "failure_safe": true, "setup": 30, "station": "pullup_bar", "tags": ["overhead", "upper_body_loaded"],
     "family": "pull_up", "rung": 1, "progression": "pull-up-negative",
     "text": {
       "setup": "Loop a band over the pull-up bar and place one foot or knee in the loop. Grip the bar slightly wider than your shoulders.",
@@ -205,7 +212,7 @@
     "pattern": "VERTICAL_PULL", "class": "BODYWEIGHT", "primary": ["LATS"], "secondary": ["BICEPS", "UPPER_BACK"],
     "equipment": ["pullup_bar"], "equipment_any": [["plyo_box", "bench"]], "load": "BODYWEIGHT", "cost": "ISOLATION_OR_CORE",
     "difficulty": 2, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2}, "fatigue": 2,
-    "reps": [3, 6], "max_reps": 8, "tempo": 6.0, "setup": 20, "station": "pullup_bar", "tags": ["overhead"],
+    "reps": [3, 6], "max_reps": 8, "tempo": 6.0, "setup": 20, "station": "pullup_bar", "tags": ["overhead", "upper_body_loaded"],
     "family": "pull_up", "rung": 2, "progression": "pull-up", "regression": "pull-up-assisted",
     "text": {
       "setup": "Stand on a sturdy box or bench under the pull-up bar so you can grip it with your chin already above it.",
@@ -218,7 +225,7 @@
     "pattern": "VERTICAL_PULL", "class": "BODYWEIGHT", "primary": ["LATS"], "secondary": ["BICEPS", "UPPER_BACK", "CORE"],
     "equipment": ["pullup_bar"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 3, "skill": 2, "joints": {"SHOULDER": 2, "ELBOW": 2}, "fatigue": 3,
-    "reps": [4, 12], "max_reps": 12, "failure_safe": true, "setup": 10, "station": "pullup_bar", "tags": ["overhead"],
+    "reps": [4, 12], "max_reps": 12, "failure_safe": true, "setup": 10, "station": "pullup_bar", "tags": ["overhead", "upper_body_loaded"],
     "family": "pull_up", "rung": 3, "progression": "pull-up-weighted", "regression": "pull-up-negative",
     "text": {
       "setup": "Hang from the bar with hands slightly wider than your shoulders (palms away), or shoulder-width with palms facing you for a chin-up.",
@@ -231,7 +238,7 @@
     "pattern": "VERTICAL_PULL", "class": "BODYWEIGHT", "primary": ["LATS"], "secondary": ["BICEPS", "UPPER_BACK"],
     "equipment": ["pullup_bar", "weight_vest"], "load": "BODYWEIGHT", "cost": "FREE_WEIGHT_COMPOUND",
     "difficulty": 4, "skill": 3, "joints": {"SHOULDER": 2, "ELBOW": 2}, "fatigue": 4,
-    "reps": [4, 8], "max_reps": 10, "setup": 40, "station": "pullup_bar", "tags": ["overhead"],
+    "reps": [4, 8], "max_reps": 10, "setup": 40, "station": "pullup_bar", "tags": ["overhead", "upper_body_loaded"],
     "family": "pull_up", "rung": 4, "regression": "pull-up",
     "text": {
       "setup": "Wear a weight vest or a dip belt with a plate, then hang from the bar as for a normal pull-up.",

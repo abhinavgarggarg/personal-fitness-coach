@@ -4,12 +4,14 @@ package com.personalfitnesscoach.engine.safety
 import com.personalfitnesscoach.engine.model.Joint
 import com.personalfitnesscoach.engine.model.Zone
 
-/** Health-condition table 1.0.0 (SAF-010). APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release. */
+/** Health-condition table 1.0.1 (SAF-010). APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release. */
 object GeneratedConditions {
-    const val VERSION: String = "1.0.0"
-    const val SHA256: String = "e89838d664b8756a6b9c71029ee40c73d8def8b297f1fd56ed3f6bc2ee779148"
+    const val VERSION: String = "1.0.1"
+    const val SHA256: String = "9d0570a57d5ee803572dfe3692710ec64f4881b1cebb2f9cd7e6c784bfe94951"
     val statusQuestion: String = "Has a doctor or nurse told you this is currently under control / stable? (yes / no / not sure; not sure counts as no)"
     val never: List<String> = listOf("read or threshold clinical values (blood pressure, glucose, ketones, oxygen, ECG)", "name a medicine, dose, carbohydrate amount or value target", "diagnose or interpret symptoms", "claim to treat, manage, relieve or lower a condition")
+    /** Parent groups: an add-on picked without any member brings every member (SAF-010 1.0.1). */
+    val parentGroups: Map<String, List<String>> = mapOf("any_diabetes" to listOf("t1d", "t2d"))
 
     val entries: List<ConditionEntry> by lazy { listOf(
         ConditionEntry(
@@ -71,6 +73,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -150,6 +153,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -229,6 +233,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -308,6 +313,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -387,6 +393,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -466,6 +473,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -545,6 +553,7 @@ object GeneratedConditions {
             defaultOrder = "strength_then_cardio",
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -624,6 +633,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = mapOf("heart_failure" to "only if your doctor says it is stable", "pacemaker_icd" to "check with your doctor before upper-body weights", "recent_breastbone_surgery" to "no loaded overhead work and no heavy pushing or pulling until your surgical team clears it", "aortic_or_connective_tissue_or_cardiomyopathy" to "always avoid breath_hold_max and isometric_heavy unless cleared"),
+            subFlagEffects = mapOf("recent_breastbone_surgery" to SubFlagEffect(setOf("overhead", "overhead_heavy", "upper_body_loaded", "breath_hold_max", "isometric_heavy"), setOf("rower", "skierg", "air_fan_bike", "sled", "battle_ropes", "kettlebell", "carries", "medball"))),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -703,6 +713,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = "intervals",
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -782,6 +793,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -861,6 +873,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -940,6 +953,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = mapOf(Joint.SPINE to 2),
             flareAvoidTags = setOf("spinal_loading", "spinal_flexion"),
             flareKeep = listOf("walking", "cycling_if_allowed", "gentle_mobility"),
@@ -1019,6 +1033,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -1098,6 +1113,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -1177,6 +1193,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -1256,6 +1273,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -1335,6 +1353,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -1384,7 +1403,7 @@ object GeneratedConditions {
             avoidTagsAtStart = emptySet(),
             avoidTagsEarly = emptySet(),
             avoidTagsFromWeek = emptyMap(),
-            avoidSupineAnyTimeIf = null,
+            avoidSupineAnyTimeIf = "uncomfortable lying on the back",
             rangeLimitedTags = emptySet(),
             jointLimits = mapOf(Joint.KNEE to 2),
             jointLimitUnlock = mapOf(Joint.KNEE to 3),
@@ -1414,6 +1433,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -1493,6 +1513,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -1572,6 +1593,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),
@@ -1651,6 +1673,7 @@ object GeneratedConditions {
             defaultOrder = null,
             warmupStyle = null,
             subFlags = emptyMap(),
+            subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
             flareKeep = emptyList(),

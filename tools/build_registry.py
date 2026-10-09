@@ -602,6 +602,19 @@ registry["registry_version"] = CHANGE["registry_version"]
 registry["status"] = "APPROVED — Product Owner Phase 1 sign-off on " + APPROVED_ON + "; Research Update 1.1 sign-off on " + APPROVED_11
 registry["generated"] = APPROVED_11
 registry["verification_pending"] = CHANGE["verification_pending"]
+# ---- PATCH 1.1.1 (2026-10-09): Part 3 review — table reference only (rules/changes/registry_1.1.1.json, D-069).
+PATCH_111 = json.loads((ROOTDIR / "rules" / "changes" / "registry_1.1.1.json").read_text(encoding="utf-8"))
+assert PATCH_111["base_registry_version"] == registry["registry_version"], PATCH_111["base_registry_version"]
+for c in PATCH_111["changed_rules"]:
+    r = BY_ID[c["rule_id"]]
+    assert r["version"] == c["from_version"], (c["rule_id"], r["version"], c["from_version"])
+    for k, v in c["parameters_replace_keys"].items():
+        assert k in r["parameters"], (c["rule_id"], k)
+        r["parameters"][k] = v
+    r["version"] = c["to_version"]
+    r["date_reviewed"] = PATCH_111["date"]
+    r["change_reason"] = f"{c['change']}: {c['reason']}"
+registry["registry_version"] = PATCH_111["registry_version"]
 ids = [r["rule_id"] for r in registry["rules"]]
 assert len(ids) == len(set(ids)), "duplicate rule IDs"
 assert len(ids) == CHANGE["rule_count_after"], len(ids)
