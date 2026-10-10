@@ -74,6 +74,8 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
         awayFromGym: Boolean = false,
         inDeload: Boolean = false,
         activeState: String = "{}",
+        /** CAL-002 ceilings per exercise ID from the generation request (the ramp never goes above them). */
+        calibrationCeilings: Map<String, Double> = emptyMap(),
     ): Long = store.transaction {
         check(store.active() == null) { "another workout is in progress" }
         require(workout.safetyStop == null && workout.followCareProvider.isEmpty()) { "a safety stop has no workout to start" }
@@ -81,14 +83,21 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
         val day = clock.today()
         val lifts = workout.items.filter { it.sets > 0 }
         val plannedRpe = if (lifts.isEmpty()) null else 10.0 - lifts.sumOf { it.targetRir * it.sets } / lifts.sumOf { it.sets }
-        val doc = WorkoutDoc(weekday, workout.plannedMinutes, workout.warmupMinutes, null, workout.conditioning.map { ConditioningItem.of(it) },
+        val conditioning = workout.conditioning.mapIndexed { j, b ->
+            ConditioningItem.of(b, workout.intervals.getOrNull(j)?.let { IntervalRef.of(it) }, workout.circuits.getOrNull(j)?.let { CircuitRef.of(it) }) }
+        val doc = WorkoutDoc(weekday, workout.plannedMinutes, workout.warmupMinutes, workout.validated.cooldownMinutes ?: (workout.cooldown.sumOf { it.seconds } / 60.0), conditioning,
             workout.conditioningFirst, workout.mobilityMinutes, workout.balanceDrills.sumOf { it.seconds } / 60.0, workout.fullTierWorkingSets, inDeload,
-            express, awayFromGym, plannedRpe)
+            express, awayFromGym, plannedRpe, warmupDrills = workout.warmupDrills.map { DrillRef.of(it) }, cooldownDrills = workout.cooldown.map { DrillRef.of(it) },
+            balanceDrills = workout.balanceDrills.map { DrillRef.of(it) },
+            boneLoading = workout.boneLoading?.let { BoneRef(it.minutes, it.landings, it.variant) }, effortByFeel = workout.effortByFeel)
         val id = store.insertWorkout(WorkoutRow(day = day, status = Status.IN_PROGRESS, template = template.name, tier = workout.tier.name,
             startedAtMs = now, registryVersion = Registry.VERSION, json = doc.encode()))
         workout.items.forEachIndexed { i, it ->
             val item = ItemDoc(it.role, it.priority, it.sets, it.reps, it.unit, it.perSide, it.targetRir, it.lastSetToFailure, it.load, it.loadFactor,
-                it.rest.minSec, it.rest.defaultSec, it.rest.maxSec, it.calibrating, it.main)
+                it.rest.minSec, it.rest.defaultSec, it.rest.maxSec, it.calibrating, it.main,
+                rampSets = it.warmupSets.map { r -> RampRef(r.load, r.reps) },
+                reducedRange = it.range == com.personalfitnesscoach.engine.planning.RangeOfMotion.REDUCED,
+                calibrationCeiling = if (it.calibrating) calibrationCeilings[it.exercise.id] else null)
             store.insertExercise(ExerciseRow(workoutId = id, position = i, exerciseId = it.exercise.id, slotKey = it.slotKey, status = Status.PLANNED,
                 json = item.encode()))
         }
@@ -133,6 +142,42 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
         store.updateExercise(ex.copy(exerciseId = newExerciseId, status = Status.PLANNED, json = newDose.copy(swappedFrom = ex.exerciseId).encode()))
     }
 
+    /** Replaces an exercise's dose during the session (a re-fit to the time left, a pain-gate load reduction, an added set). */
+    suspend fun updateItem(workoutExerciseId: Long, doc: ItemDoc) = store.transaction {
+        val ex = store.exercise(workoutExerciseId) ?: error("no workout exercise $workoutExerciseId")
+        val w = store.workout(ex.workoutId) ?: error("no workout ${ex.workoutId}")
+        check(w.status == Status.IN_PROGRESS) { "workout ${w.id} is not in progress" }
+        store.updateExercise(ex.copy(json = doc.encode()))
+    }
+
+    /** Replaces the workout's document during the session (conditioning re-fitted to the time left). */
+    suspend fun updateDoc(workoutId: Long, doc: WorkoutDoc) = store.transaction {
+        val w = store.workout(workoutId) ?: error("no workout $workoutId")
+        check(w.status == Status.IN_PROGRESS) { "workout $workoutId is not in progress" }
+        store.updateWorkout(w.copy(json = doc.encode()))
+    }
+
+    /** Inserts an exercise at `position` (later ones move down): a pain-free alternative after SAF-003 stops one. */
+    suspend fun addExercise(workoutId: Long, position: Int, exerciseId: String, slotKey: String, doc: ItemDoc): Long = store.transaction {
+        val w = store.workout(workoutId) ?: error("no workout $workoutId")
+        check(w.status == Status.IN_PROGRESS) { "workout $workoutId is not in progress" }
+        val all = store.exercisesOf(workoutId)
+        val at = position.coerceIn(0, all.size)
+        all.filter { it.position >= at }.sortedByDescending { it.position }.forEach { store.updateExercise(it.copy(position = it.position + 1)) }
+        store.insertExercise(ExerciseRow(workoutId = workoutId, position = at, exerciseId = exerciseId, slotKey = slotKey, status = Status.PLANNED, json = doc.encode()))
+    }
+
+    /**
+     * Moves an exercise to the end of the workout's remaining exercises ("do it later" when the equipment is occupied, EQ-002, SUB-002).
+     * Positions are renumbered in order, so the list stays dense.
+     */
+    suspend fun moveToEnd(workoutExerciseId: Long) = store.transaction {
+        val ex = store.exercise(workoutExerciseId) ?: error("no workout exercise $workoutExerciseId")
+        val all = store.exercisesOf(ex.workoutId)
+        val order = all.filter { it.id != ex.id } + ex
+        order.forEachIndexed { i, r -> if (r.position != i) store.updateExercise((if (r.id == ex.id) ex else r).copy(position = i)) }
+    }
+
     suspend fun skipExercise(workoutExerciseId: Long) = store.transaction {
         val ex = store.exercise(workoutExerciseId) ?: error("no workout exercise $workoutExerciseId")
         store.updateExercise(ex.copy(status = Status.SKIPPED))
@@ -142,7 +187,8 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
      * Ends the workout: the session rating (LOAD-001, asked 10–30 minutes after the session, SrpePrompt) and minutes are stored
      * with the conditioning actually done; the resume point is cleared. Exercises with no logged set are marked skipped.
      */
-    suspend fun finish(workoutId: Long, sessionRpe: Double?, actualMinutes: Double?, conditioningDoneMinutes: List<Double>? = null): StoredWorkout = store.transaction {
+    suspend fun finish(workoutId: Long, sessionRpe: Double?, actualMinutes: Double?, conditioningDoneMinutes: List<Double?>? = null,
+                       endedEarly: Boolean = false): StoredWorkout = store.transaction {
         require(sessionRpe == null || sessionRpe in 0.0..10.0) { "session rating is 0–10" }
         require(actualMinutes == null || actualMinutes in 0.0..600.0) { "minutes out of range" }
         val w = store.workout(workoutId) ?: error("no workout $workoutId")
@@ -151,7 +197,7 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
         // Not recorded = null per block (counted as planned for caps and spacing); 0 = skipped.
         val done: List<Double?> = conditioningDoneMinutes ?: doc.conditioning.map { null }
         require(done.size == doc.conditioning.size && done.all { it == null || it in 0.0..600.0 }) { "one done-minutes value per conditioning block" }
-        val newDoc = doc.copy(conditioning = doc.conditioning.zip(done) { c, m -> c.copy(doneWorkMinutes = m) })
+        val newDoc = doc.copy(conditioning = doc.conditioning.zip(done) { c, m -> c.copy(doneWorkMinutes = m) }, endedEarly = endedEarly || doc.endedEarly)
         for (ex in store.exercisesOf(workoutId)) {
             val logged = store.setsOf(ex.id).any { it.kind != SetKind.WARMUP }
             val status = when {

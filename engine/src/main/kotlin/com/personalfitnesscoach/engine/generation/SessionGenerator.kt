@@ -181,13 +181,46 @@ object SessionGenerator {
     private val STEPS = listOf("load_state", "safety_readiness_gates", "slots", "exercise_per_slot", "dose", "tier_changes",
         "warmup", "time_fit", "safety_validator", "output")
 
-    fun generate(request: GenerationRequest): EngineResult<Workout> {
-        val d = ArrayList<Decision>()
-        // SAF-010: condition limits join the limitation tags, joint limits and screening mode, so every later step honours them.
+    /** SAF-010: condition limits joined to the limitation tags, joint limits and screening mode, so every later step honours them. */
+    fun withConditions(request: GenerationRequest): GenerationRequest {
         val c = request.conditions
-        val r = if (!c.any) request else request.copy(blockedTags = request.blockedTags + c.avoidTags,
+        return if (!c.any) request else request.copy(blockedTags = request.blockedTags + c.avoidTags,
             jointLimits = (request.jointLimits.keys + c.jointLimits.keys).associateWith { minOf(request.jointLimits[it] ?: 4, c.jointLimits[it] ?: 4) },
             screening = if (c.conservative) ScreeningMode.CONSERVATIVE else request.screening)
+    }
+
+    /**
+     * The SAF-008 context a session generated from `request` is validated against. Mid-session re-plans (a swap, a re-fit to the time
+     * left, a pain-gate change, an added set) re-validate the whole session against the same context before it is shown (FS-6).
+     */
+    fun validationContext(request: GenerationRequest, fullTierWorkingSets: Int): ValidationContext {
+        val r = withConditions(request)
+        val c = r.conditions
+        return r.week.copy(level = r.level, weeksTraining = r.weeksTraining, age = r.age, screening = r.screening, jointLimits = mergedLimits(r), regions = r.regions,
+            blockedTags = r.blockedTags, excludedIds = r.excludedIds, inDeload = r.inDeload, fullTierWorkingSets = fullTierWorkingSets,
+            equipmentToday = r.equipmentToday, library = Library.all.filter { !it.userAddOnly },
+            excludedModalities = r.week.excludedModalities + r.excludedModalities, conditions = c,
+            planImpactAllowed = r.day.impactAllowed && r.week.planImpactAllowed,
+            planIntervalModalities = listOfNotNull(r.day.intervalModalities, r.week.planIntervalModalities).reduceOrNull { a, b -> a intersect b })
+    }
+
+    /** SUB-001 filters for today (equipment here, level, joint limits, tags, exclusions, preferences, sensitive joints), as the generator uses them. */
+    fun subContext(request: GenerationRequest): SubContext {
+        val r = withConditions(request)
+        return SubContext(r.equipmentToday, r.level, mergedLimits(r), r.blockedTags, r.excludedIds, r.preferences, r.painCaution + r.regions.map { it.region })
+    }
+
+    /** True when `e` may be used today under the request's limits (equipment, exclusions, tags, joint limits, no cardio machines as lifts). */
+    fun allowed(e: Exercise, request: GenerationRequest): Boolean = withConditions(request).let { r -> allowedToday(e, r, subContext(r)) }
+
+    /** RDY-004: the FULL-day target RIR of a slot (the MODIFIED +1 shift is checked against it). */
+    fun fullTierRir(slotKey: String, targetRir: Double, request: GenerationRequest): Double =
+        request.day.slots.firstOrNull { s -> s.spec.key == slotKey }?.targetRir?.let { maxOf(it, 1.0) } ?: targetRir
+
+    fun generate(request: GenerationRequest): EngineResult<Workout> {
+        val d = ArrayList<Decision>()
+        val c = request.conditions
+        val r = withConditions(request)
         if (c.blocked.isNotEmpty()) {
             d += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_010), ReasonKey.CONDITION_BLOCKED, outputs = mapOf("entries" to c.blocked.sorted()))
             return EngineResult(rest(null).copy(followCareProvider = c.blocked, conditionPrompts = c.prompts, stopSigns = c.stopSigns), d + done(r, Tier.RECOVERY, true))
@@ -203,7 +236,7 @@ object SessionGenerator {
         val tier = r.tier
 
         // 3) Slots from the week plan; 4) exercise per slot (planned lift if allowed today, else the best swap).
-        val sub = SubContext(r.equipmentToday, r.level, mergedLimits(r), r.blockedTags, r.excludedIds, r.preferences, r.painCaution + r.regions.map { it.region })
+        val sub = subContext(r)
         val slots = ArrayList<PlannedSlot>()
         if (tier != Tier.RECOVERY) for (s in r.day.slots) {
             if (s.power && !Concurrent.powerAllowed(r.hiitEarlierToday, atSessionStart = true)) {
@@ -340,12 +373,7 @@ object SessionGenerator {
         // 9) Safety validator (SAF-008): corrected or replaced, never shown unvalidated.
         val session = Session(tier, items.map { SessionExercise(it.exercise, it.sets, it.reps.last, it.targetRir, it.loadFactor, it.main, it.lastSetToFailure, fullTierRir = slotRir(it, r)) },
             conditioning, warmupMinutes = warmupMin, cooldownMinutes = fit.value.plan.cooldownMin, boneLoading = bone?.variant)
-        val ctx = r.week.copy(level = r.level, weeksTraining = r.weeksTraining, age = r.age, screening = r.screening, jointLimits = mergedLimits(r), regions = r.regions,
-            blockedTags = r.blockedTags, excludedIds = r.excludedIds, inDeload = r.inDeload, fullTierWorkingSets = fullSets,
-            equipmentToday = r.equipmentToday, library = Library.all.filter { !it.userAddOnly },
-            excludedModalities = r.week.excludedModalities + r.excludedModalities, conditions = c,
-            planImpactAllowed = r.day.impactAllowed && r.week.planImpactAllowed,
-            planIntervalModalities = listOfNotNull(r.day.intervalModalities, r.week.planIntervalModalities).reduceOrNull { a, b -> a intersect b })
+        val ctx = validationContext(r, fullSets)
         val v = SessionValidator.validate(session, ctx)
         d += v.decisions
         val final = rebuild(items, v.value.session, r)
@@ -458,8 +486,7 @@ object SessionGenerator {
         else -> inv.bars[e.bar] ?: inv.barKg
     }
 
-    private fun slotRir(it: WorkoutItem, r: GenerationRequest): Double =
-        r.day.slots.firstOrNull { s -> s.spec.key == it.slotKey }?.targetRir?.let { maxOf(it, 1.0) } ?: it.targetRir
+    private fun slotRir(it: WorkoutItem, r: GenerationRequest): Double = fullTierRir(it.slotKey, it.targetRir, r)
 
     /** Normal working load (FULL day) from e1RM (INT-005), the progression engine, or calibration (CAL-001, IND-001). */
     private fun normalLoad(s: PlannedSlot, e: Exercise, r: GenerationRequest, rir: Double, d: MutableList<Decision>): Pair<Double?, Boolean> {

@@ -27,6 +27,8 @@ import com.personalfitnesscoach.data.core.time.Days
 import com.personalfitnesscoach.data.core.time.SystemClock
 import com.personalfitnesscoach.engine.core.Decision
 import com.personalfitnesscoach.engine.core.EngineResult
+import com.personalfitnesscoach.engine.generation.AwayFromGym
+import com.personalfitnesscoach.engine.generation.GenerationRequest
 import com.personalfitnesscoach.engine.generation.SessionGenerator
 import com.personalfitnesscoach.engine.generation.Workout
 import com.personalfitnesscoach.engine.model.Tier
@@ -36,6 +38,20 @@ import com.personalfitnesscoach.engine.program.WeekPlanner
 
 /** Today as the app shows it: the user, the programme position, this week's plan and the next planned session. */
 data class TodayPlan(val user: UserState, val program: ProgramRecord, val week: WeekPlan, val next: PlannedDay?, val decisions: List<Decision>)
+
+/**
+ * A generated session with what it was generated from: the planned day, the GEN-001 request (mid-session re-plans re-validate against
+ * the same request, FS-6) and the options chosen (ADH-004 express, EQ-003 away from the gym).
+ */
+data class GeneratedSession(
+    val plan: TodayPlan,
+    val day: PlannedDay,
+    val workout: Workout,
+    val request: GenerationRequest,
+    val decisions: List<Decision>,
+    val express: Boolean = false,
+    val awayFromGym: Boolean = false,
+)
 
 /**
  * The data layer's front door (Phase 3 Part 4). One instance per app, over one [RowStore] (Room on the phone, in memory in tests).
@@ -88,12 +104,25 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
      * workout is what [SessionLog.start] saves.
      */
     suspend fun generate(t: TodayPlan, day: PlannedDay, tier: Tier, minutes: Int = t.user.profile.sessionMinutes,
-                         redFlags: Set<String> = emptySet(), illnessSymptoms: Set<String> = emptySet()): EngineResult<Workout> = store.transaction {
+                         redFlags: Set<String> = emptySet(), illnessSymptoms: Set<String> = emptySet()): EngineResult<Workout> =
+        generateSession(t, day, tier, minutes, redFlags, illnessSymptoms).let { EngineResult(it.workout, it.decisions) }
+
+    /**
+     * [generate] with the session options: ADH-004 express (20–30 minutes, one tap) and EQ-003 away from the gym (today's equipment is the
+     * saved home kit). Returns the request too, so the session can start ([startSession]) and be re-planned against the same limits.
+     */
+    suspend fun generateSession(t: TodayPlan, day: PlannedDay, tier: Tier, minutes: Int = t.user.profile.sessionMinutes,
+                                redFlags: Set<String> = emptySet(), illnessSymptoms: Set<String> = emptySet(), express: Boolean = false,
+                                awayFromGym: Boolean = false): GeneratedSession = store.transaction {
         val checkIn = docs.get(ReadinessRecord, dayKey(t.user.today))
         val capped = checkIn?.let { Tier.min(tier, it.tier) } ?: tier
         val prepared = bridge.prepare(t.user, t.program, t.week, day, capped, minutes, redFlags + (checkIn?.redFlags ?: emptySet()),
-            illnessSymptoms + (checkIn?.illnessSymptoms ?: emptySet()))
-        val g = SessionGenerator.generate(prepared.request)
+            illnessSymptoms + (checkIn?.illnessSymptoms ?: emptySet()), awayFromGym)
+        val g = when {
+            express -> SessionGenerator.express(prepared.request)
+            awayFromGym -> AwayFromGym.generate(prepared.request, t.user.equipment.homeKit)
+            else -> SessionGenerator.generate(prepared.request)
+        }
         // A return ramp or a post-deload resume scaled these loads: the items carry that factor, so the reduced exposure is recorded as
         // reduced and never becomes the base of the next one (re-check finding 7).
         val w = if (prepared.loadFactors.isEmpty()) g.value else g.value.copy(items = g.value.items.map { item ->
@@ -103,7 +132,38 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
         // SAF-002: a stop raised here (red flags given now) is kept until the user confirms it resolved (re-check finding 3).
         w.safetyStop?.let { checkIns.startStop(it, t.user.today) }
         decisions.append(prepared.decisions + g.decisions)
-        EngineResult(w, prepared.decisions + g.decisions)
+        GeneratedSession(t, day, w, prepared.request, prepared.decisions + g.decisions, express, awayFromGym)
+    }
+
+    /**
+     * Starts a generated session (only the validated workout is ever saved, SAF-008). The CAL-002 ceilings go with each calibrating
+     * exercise, so the ramp never climbs above an old known number.
+     */
+    suspend fun startSession(g: GeneratedSession, activeState: String = "{}"): Long = store.transaction {
+        sessions.start(g.workout, g.day.template, g.day.weekday, g.express, g.awayFromGym, g.plan.week.deload, activeState, g.request.calibrationCeilings)
+    }
+
+    /**
+     * SAF-003 "Something hurts": the pain gate decides, and the report is kept (it drives region limits, SAF-004 persistence and STEP-001).
+     * Returns the gate's outcome; the session player applies it to an open workout.
+     */
+    suspend fun reportPain(report: com.personalfitnesscoach.engine.safety.PainReport, side: com.personalfitnesscoach.data.core.model.Side? = null,
+                           workoutId: Long? = null, exerciseId: String? = null): EngineResult<com.personalfitnesscoach.engine.safety.PainOutcome> = store.transaction {
+        val r = com.personalfitnesscoach.engine.safety.PainGate.assess(report)
+        docs.put(com.personalfitnesscoach.data.core.model.PainRecord, com.personalfitnesscoach.data.core.model.PainRecord(clock.nowMs(), clock.today(),
+            workoutId, exerciseId, report, side, r.value.action))
+        decisions.append(r.decisions, clock.today(), workoutId)
+        r
+    }
+
+    /** T2 check-in "equipment missing today" (EQ-002): unavailable until tomorrow, so today's plan swaps around it. */
+    suspend fun equipmentMissingToday(ids: Set<String>) = store.transaction {
+        if (ids.isEmpty()) return@transaction
+        val today = clock.today()
+        docs.update(com.personalfitnesscoach.data.core.model.EquipmentRecord) { cur ->
+            val e = cur ?: com.personalfitnesscoach.data.core.model.EquipmentRecord(emptySet())
+            e.copy(unavailableUntil = e.unavailableUntil + ids.associateWith { maxOf(today + 1, e.unavailableUntil[it] ?: Int.MIN_VALUE) })
+        }
     }
 
     /**
@@ -120,9 +180,10 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
     }
 
     /** Finishes the active workout and turns its sets into the next prescriptions, in one transaction. */
-    suspend fun finishWorkout(workoutId: Long, sessionRpe: Double?, actualMinutes: Double?, conditioningDoneMinutes: List<Double>? = null): StoredWorkout =
+    suspend fun finishWorkout(workoutId: Long, sessionRpe: Double?, actualMinutes: Double?, conditioningDoneMinutes: List<Double?>? = null,
+                              endedEarly: Boolean = false): StoredWorkout =
         store.transaction {
-            val w = sessions.finish(workoutId, sessionRpe, actualMinutes, conditioningDoneMinutes)
+            val w = sessions.finish(workoutId, sessionRpe, actualMinutes, conditioningDoneMinutes, endedEarly)
             val u = checkNotNull(bridge.user(w.day)) { "no profile" }
             decisions.append(progress.record(w, u), w.day, w.id)
             w

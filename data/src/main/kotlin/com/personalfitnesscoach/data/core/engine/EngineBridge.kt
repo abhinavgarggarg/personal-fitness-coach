@@ -577,7 +577,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         listOfNotNull(a.tierCap, b.tierCap).minByOrNull { it.ordinal }, a.hiitAllowed && b.hiitAllowed, a.recalibrate || b.recalibrate, a.inReturn || b.inReturn)
 
     /** Planned sessions between the last finished one and today that were not done (SKIPPED counts as missed): REG-002/003. */
-    private suspend fun missedPlannedSince(lastDone: Int, today: Int): Int {
+    suspend fun missedPlannedSince(lastDone: Int, today: Int): Int {
         var n = 0
         var ws = Days.weekStart(lastDone)
         while (ws <= Days.weekStart(today)) {

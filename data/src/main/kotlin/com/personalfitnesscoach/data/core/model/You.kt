@@ -286,14 +286,20 @@ data class SettingsRecord(
     val completedAtLastExport: Int = 0,
     /** Completed-workout count when the reminder card was last dismissed (it comes back after 8 more). */
     val reminderDismissedAt: Int? = null,
+    /** FL-001: weight features off (no weight or waist tracking, expectations or rate check-in). */
+    val weightFeaturesOff: Boolean = false,
+    /** O9: the notification permission was asked once (so it is never asked again; the banner explains how to switch alerts on). */
+    val alertsAsked: Boolean = false,
 ) {
     companion object Codec : DocCodec<SettingsRecord>("settings", 1, RecordKind.APP, emptySet(), "App settings") {
         override fun key(v: SettingsRecord) = SINGLE
         override fun write(v: SettingsRecord, o: Obj) = with(o) {
             put("units", v.units); put("theme", v.theme); flag("stepTracking", v.stepTracking); put("lastExportDay", v.lastExportDay)
             if (v.completedAtLastExport != 0) put("completedAtLastExport", v.completedAtLastExport); put("reminderDismissedAt", v.reminderDismissedAt)
+            flag("weightFeaturesOff", v.weightFeaturesOff); flag("alertsAsked", v.alertsAsked)
         }
         override fun read(o: JsonObject, version: Int) = SettingsRecord(o.enum("units"), o.enum("theme"), o.bool("stepTracking"),
-            o.intOrNull("lastExportDay"), o.int("completedAtLastExport", 0), o.intOrNull("reminderDismissedAt"))
+            o.intOrNull("lastExportDay"), o.int("completedAtLastExport", 0), o.intOrNull("reminderDismissedAt"), o.bool("weightFeaturesOff"),
+            o.bool("alertsAsked"))
     }
 }

@@ -33,6 +33,11 @@ echo "== compiling :data core"
 kotlinc -cp "$STDLIB:$KX:$OUT/engine/main" -d "$OUT/data/main" $(find "$ROOT/data/src/main/kotlin/com/personalfitnesscoach/data/core" -name '*.kt') 2>&1 | grep -v "^Picked up" || true
 test -d "$OUT/data/main/com" || { echo "data core compile FAILED"; exit 1; }
 
+echo "== compiling :app flow (plain Kotlin screen logic)"
+mkdir -p "$OUT/app/main" "$OUT/app/test"
+kotlinc -cp "$STDLIB:$KX:$OUT/engine/main:$OUT/data/main" -d "$OUT/app/main" $(find "$ROOT/app/src/main/kotlin/com/personalfitnesscoach/app/flow" -name '*.kt') 2>&1 | grep -v "^Picked up" || true
+test -d "$OUT/app/main/com" || { echo "app flow compile FAILED"; exit 1; }
+
 if [[ "${1:-}" == "--no-test" ]]; then echo "compiled (tests skipped)"; exit 0; fi
 
 run_tests() { # $1 = classes dir, $2 = classpath
@@ -53,3 +58,8 @@ echo "== compiling :data core tests"
 kotlinc -cp "$STDLIB:$KX:$JUNIT:$OUT/engine/main:$OUT/data/main" -d "$OUT/data/test" $(find "$ROOT/data/src/test/kotlin/com/personalfitnesscoach/data/core" -name '*.kt') 2>&1 | grep -v "^Picked up" || true
 echo "== running :data core tests"
 run_tests "$OUT/data/test" "$STDLIB:$KX:$JUNIT:$OUT/engine/main:$OUT/data/main:$OUT/data/test"
+
+echo "== compiling :app flow tests"
+kotlinc -cp "$STDLIB:$KX:$JUNIT:$OUT/engine/main:$OUT/data/main:$OUT/app/main" -d "$OUT/app/test" $(find "$ROOT/app/src/test/kotlin/com/personalfitnesscoach/app/flow" -name '*.kt') 2>&1 | grep -v "^Picked up" || true
+echo "== running :app flow tests"
+run_tests "$OUT/app/test" "$STDLIB:$KX:$JUNIT:$OUT/engine/main:$OUT/data/main:$OUT/app/main:$OUT/app/test"
