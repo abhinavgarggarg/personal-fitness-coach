@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-10 — Phase 3 Part 4: data layer
+- New `:data` module: Room 3 database in private storage (schema v1 exported and drift-checked; no destructive migrations), relational workout log plus 22 typed, versioned record types mapped to DATA-001 (D-073, D-074); the exercise library and condition table stay compiled into the app, records refer to them by ID and version (D-077).
+- History drives the engine: estimated max, prescriptions, calibration handover, weekly totals, workload ratios, block clock; return to training (REG-002 to REG-005) from stored days off, misses and illness (D-076); red flags at any time end the session and stay until confirmed (D-081); deloads and DEL-004 resume; reduced loads recorded with their factor (D-082); type 2 diabetes spacing enforced by the final check.
+- Steps from the phone's step counter, read on app open, permission only when tracking is turned on, restarts by boot count (D-078). Backup and restore with an optional password (AES-256-GCM, PBKDF2 600k), checked fully, safety copy first, replaced in one step and normalised (D-075). Android system backup only when end-to-end encrypted (D-079); no free-text notes, decision log ~1 year, erase leaves nothing readable (D-080).
+- Independent review: 32 findings (R4-01–R4-32), all fixed with tests; re-check of the fixes: 4 high, 5 medium, 4 low more (RC-01–RC-13), all fixed. Rule coverage 150/152 (DATA-001 now covered).
+- Tests: 498 locally; 516 on GitHub (engine 408, data 107 incl. Room and Robolectric, app 1); device tests on 5 emulated phones and tablets. Report `docs/phase3/part4_report.md`.
+
 ## 2026-10-09 — Phase 3 Part 3: Research Update 1.1 in the engine
 - Research Update 1.1 approved by the Product Owner (decision 2 as recommended: cardio machines are per-person choices). Registry 1.1.0 (12 new rules, 10 changed), then 1.1.1 (SAF-010 table reference only); health-condition table 1.0.1; library 1.1.0 → 1.1.1.
 - Engine: fat-loss goal and age-banded mix, weekly activity target (never below 150), steps and brisk-walk counting, progress trends (weight, waist, strength), health-condition profiles applied by planner, generator and validator, starting from your own numbers, 60+ volume floor, reduced-range rule, habit features, calm mobility session, away-from-gym day.
