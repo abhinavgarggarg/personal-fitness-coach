@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.personalfitnesscoach.R
+import com.personalfitnesscoach.app.flow.ConservativeReason
 import com.personalfitnesscoach.app.flow.DayCell
 import com.personalfitnesscoach.app.flow.DayState
 import com.personalfitnesscoach.app.flow.SettingsFlow
@@ -36,6 +37,7 @@ import com.personalfitnesscoach.app.ui.ScreenColumn
 import com.personalfitnesscoach.app.ui.SecondaryButton
 import com.personalfitnesscoach.app.ui.SectionTitle
 import com.personalfitnesscoach.app.ui.SmallAction
+import com.personalfitnesscoach.app.ui.SwitchRow
 import com.personalfitnesscoach.app.ui.Tone
 import com.personalfitnesscoach.app.ui.text.Labels
 import com.personalfitnesscoach.app.ui.text.ReasonTexts
@@ -52,15 +54,29 @@ fun TodayScreen(m: TodayModel) {
                 PrimaryButton(stringResource(R.string.today_stop_confirm), { a.run { confirmStopResolved() } })
             }
         }
-        if (m.conservative) InfoCard(stringResource(R.string.today_conservative), Tone.WARN) {
-            SmallAction(stringResource(R.string.today_record_ok), { a.run { openSettings() } })
+        if (m.conservative) {
+            val (text, action) = when (m.conservativeReason) {
+                ConservativeReason.CLINICIAN -> R.string.today_conservative_clinician to R.string.today_rescreen_go
+                ConservativeReason.CONDITION -> R.string.today_conservative_condition to R.string.today_record_ok
+                else -> R.string.today_conservative to R.string.today_record_ok
+            }
+            InfoCard(stringResource(text), Tone.WARN) {
+                SmallAction(stringResource(action), { a.run { if (m.conservativeReason == ConservativeReason.CLINICIAN) openRescreen() else openSettings() } })
+            }
         }
+        if (m.rescreenDue) InfoCard(stringResource(R.string.today_rescreen), Tone.WARN) {
+            SmallAction(stringResource(R.string.today_rescreen_go), { a.run { openRescreen() } })
+        }
+        if (m.painStop) InfoCard(stringResource(R.string.today_pain_stop), Tone.WARN)
+        m.backFlare?.let { on -> SwitchRow(stringResource(R.string.today_back_flare), on, { v -> a.run { setBackFlare(v) } }) }
         if (m.welcomeBack && stop == null) InfoCard(stringResource(R.string.today_welcome_back), Tone.GOOD)
 
         val next = m.next
         when {
-            stop != null -> Unit
-            m.doneToday -> InfoCard(stringResource(R.string.today_done), Tone.GOOD)
+            stop != null || m.painStop -> Unit
+            m.doneToday -> InfoCard(stringResource(R.string.today_done), Tone.GOOD) {
+                m.upcoming?.let { n -> Text(stringResource(R.string.done_next, stringResource(Labels.weekday(n.weekday)), stringResource(Labels.template(n.template)))) }
+            }
             next == null -> InfoCard(stringResource(R.string.today_week_done), Tone.GOOD)
             else -> {
                 val name = stringResource(Labels.template(next.template))

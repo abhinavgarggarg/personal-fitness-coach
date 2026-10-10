@@ -176,8 +176,9 @@ private fun ScreeningOutcome(r: ScreeningResult) {
 // ================================================================================================ conditions (SAF-010, CR-001)
 private val HBP_IDS = setOf("hbp_controlled", "hbp_not_controlled")
 
+/** The conditions page; also used by Settings → health conditions (R5-12). */
 @Composable
-private fun ConditionsStep(f: OnboardingForm, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
+internal fun ConditionsStep(f: OnboardingForm, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
     Heading(stringResource(R.string.onb_cond_title))
     Body(stringResource(R.string.onb_cond_intro))
     CheckRow(stringResource(R.string.onb_cond_none), f.noneOfThese, { on -> edit { it.copy(noneOfThese = on, conditions = if (on) emptyMap() else it.conditions) } })
@@ -206,7 +207,13 @@ private fun ConditionItem(key: String, name: String, e: ConditionEntry?, f: Onbo
 /** The questions the table asks for one picked condition; each answer maps to a stored field the engine reads (SAF-010). */
 @Composable
 private fun ColumnScope.ConditionFollowUps(key: String, e: ConditionEntry?, c: ConditionAnswers, change: ((ConditionAnswers) -> ConditionAnswers) -> Unit) {
-    val clearance = if (key == AppController.HBP) (if (c.status == ControlStatus.YES) "none" else "before_vigorous") else e?.clearance ?: "always"
+    // The rule as the engine applies it: some answers (cancer in treatment, spread to the bones, lymphoedema) make the doctor's OK required (R5-16).
+    val clearance = when {
+        key == AppController.HBP -> if (c.status == ControlStatus.YES) "none" else "before_vigorous"
+        e == null -> "always"
+        e.clearanceAlwaysIf.any { it in c.subFlags } -> "always"
+        else -> e.clearance
+    }
     if (key == AppController.HBP || e?.askControlStatus == true) {
         Text(stringResource(R.string.onb_cond_status_q), style = MaterialTheme.typography.bodyLarge)
         RadioRow(stringResource(R.string.action_yes), c.status == ControlStatus.YES, { change { it.copy(status = ControlStatus.YES) } })
@@ -229,8 +236,15 @@ private fun ColumnScope.ConditionFollowUps(key: String, e: ConditionEntry?, c: C
             CheckRow(stringResource(R.string.onb_cond_block_yes), c.blockIfYes, { on -> change { it.copy(blockIfYes = on) } })
         }
         if (e.attestIf.isNotEmpty()) {
+            // Three plain answers (R5-17): none applies; one applies and the provider OK'd exercise; one applies without that OK, which
+            // means following the provider instead of a training plan.
             e.attestIf.forEach { Note(it) }
-            CheckRow(stringResource(R.string.onb_cond_attest), c.attested, { on -> change { it.copy(attested = on) } })
+            RadioRow(stringResource(R.string.onb_cond_attest_none), !c.attested && !c.attestNotOk, { change { it.copy(attested = false, attestNotOk = false) } })
+            RadioRow(stringResource(R.string.onb_cond_attest_ok), c.attested, { change { it.copy(attested = true, attestNotOk = false) } })
+            RadioRow(stringResource(R.string.onb_cond_attest_not_ok), c.attestNotOk, { change { it.copy(attested = false, attestNotOk = true) } })
+        }
+        if (e.impactUnlockOptIn) {
+            CheckRow(stringResource(R.string.onb_cond_impact_opt_in), c.impactOptIn, { on -> change { it.copy(impactOptIn = on) } })
         }
         if (e.id == "pregnancy") {
             NumberField(stringResource(R.string.onb_cond_pregnancy_week), c.pregnancyWeek?.toDouble(),

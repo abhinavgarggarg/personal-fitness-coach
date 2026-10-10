@@ -49,14 +49,24 @@ import kotlinx.coroutines.launch
  * [edit] is for typing and ticking answers: every change is kept, in order.
  */
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class Actions(scope: CoroutineScope, val controller: AppController, dispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(1)) {
+class Actions(scope: CoroutineScope, val controller: AppController, dispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(1),
+              private val doubleTapMs: Long = DOUBLE_TAP_MS) {
     /** One call after another, in order (a single-thread view of the default pool; tests pass the main thread). */
     private val ordered = CoroutineScope(scope.coroutineContext + dispatcher)
     private val pending = java.util.concurrent.atomic.AtomicBoolean(false)
+    @Volatile private var lastDoneMs = 0L
 
     fun run(block: suspend AppController.() -> Unit) {
+        // A second tap within a moment of the last one finishing is a double tap on what is now a different button (R5-10).
+        if (doubleTapMs > 0 && android.os.SystemClock.uptimeMillis() - lastDoneMs < doubleTapMs) return
         if (!pending.compareAndSet(false, true)) return
-        ordered.launch { try { controller.block() } finally { pending.set(false) } }
+        ordered.launch {
+            try { controller.block() } finally { lastDoneMs = android.os.SystemClock.uptimeMillis(); pending.set(false) }
+        }
+    }
+
+    companion object {
+        const val DOUBLE_TAP_MS = 350L
     }
 
     fun edit(block: suspend AppController.() -> Unit) {
@@ -75,7 +85,8 @@ fun PfcApp(actions: Actions) {
     val error by c.error.collectAsState()
     val snack = remember { SnackbarHostState() }
     val context = LocalContext.current
-    val errorText = error?.let { stringResource(R.string.error_action, it) }
+    // A short, plain message (COACH-001, NFR-16); the technical detail stays out of the screen.
+    val errorText = error?.let { stringResource(R.string.error_action) }
 
     LaunchedEffect(Unit) { if (c.screen.value == Screen.Loading) actions.run { start() } }
     LaunchedEffect(errorText) {
@@ -105,6 +116,8 @@ fun PfcApp(actions: Actions) {
                     is Screen.Done -> DoneScreen(s)
                     is Screen.Stop -> StopScreen(s.stop)
                     is Screen.Settings -> SettingsScreen(s.model)
+                    is Screen.PainDay -> com.personalfitnesscoach.app.ui.workout.PainDayScreen(s.outcome)
+                    is Screen.EditConditions -> com.personalfitnesscoach.app.ui.settings.EditConditionsScreen(s)
                 }
             }
         }

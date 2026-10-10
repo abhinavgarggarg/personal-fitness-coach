@@ -26,7 +26,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.personalfitnesscoach.R
 import com.personalfitnesscoach.app.flow.SettingsFlow
 import com.personalfitnesscoach.app.flow.SettingsModel
+import com.personalfitnesscoach.app.flow.ScreeningQuestion
+import com.personalfitnesscoach.app.ui.AnswerRow
 import com.personalfitnesscoach.app.ui.Body
+import com.personalfitnesscoach.app.ui.SmallAction
 import com.personalfitnesscoach.app.ui.CheckRow
 import com.personalfitnesscoach.app.ui.InfoCard
 import com.personalfitnesscoach.app.ui.LocalActions
@@ -42,6 +45,7 @@ import com.personalfitnesscoach.data.android.StepSensor
 import com.personalfitnesscoach.data.core.backup.BackupFormat
 import com.personalfitnesscoach.data.core.time.Days
 import com.personalfitnesscoach.engine.safety.ClearanceScope
+import com.personalfitnesscoach.engine.safety.ScreeningMode
 import java.text.DateFormat
 import java.util.Date
 
@@ -55,6 +59,7 @@ fun SettingsScreen(m: SettingsModel) {
     val context = LocalContext.current
     var stepsDenied by remember { mutableStateOf(false) }
     var exportPassword by remember { mutableStateOf("") }
+    var exportPassword2 by remember { mutableStateOf("") }
     var safetyPassword by remember { mutableStateOf("") }
     var restorePassword by remember { mutableStateOf("") }
     var failed by remember { mutableStateOf(false) }
@@ -68,6 +73,7 @@ fun SettingsScreen(m: SettingsModel) {
         if (uri == null) return@rememberLauncherForActivityResult
         val pw = exportPassword.toCharArray()
         exportPassword = ""
+        exportPassword2 = ""
         a.run {
             val ok = try {
                 val bytes = exportBytes(pw)
@@ -96,7 +102,16 @@ fun SettingsScreen(m: SettingsModel) {
         }
     }
 
+    val askAlerts = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> a.run { openSettings() } }
+
     ScreenColumn(stringResource(R.string.settings_title)) {
+        // Phase 2 section 11: the rest timer can't buzz while locked without notifications (R5-21).
+        if (m.alertsOff) InfoCard(stringResource(R.string.set_alerts_off), Tone.WARN) {
+            SmallAction(stringResource(R.string.set_alerts_allow), {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) askAlerts.launch(Manifest.permission.POST_NOTIFICATIONS)
+            })
+        }
+
         // ------------------------------------------------------------------ steps
         SectionTitle(stringResource(R.string.set_steps))
         if (!m.stepCounterAvailable) Note(stringResource(R.string.set_steps_unavailable))
@@ -110,7 +125,32 @@ fun SettingsScreen(m: SettingsModel) {
             if (stepsDenied) Note(stringResource(R.string.set_steps_denied))
         }
 
-        // ------------------------------------------------------------------ doctor's OK (SAF-001, SAF-010)
+        // ------------------------------------------------------------------ health: conditions, screening, doctor's OK (SAF-001, SAF-010)
+        SectionTitle(stringResource(R.string.set_conditions_title))
+        Body(stringResource(R.string.set_conditions_body))
+        SecondaryButton(stringResource(R.string.set_conditions_edit), { a.run { openConditionsEditor() } })
+        if (m.screeningGuidance) InfoCard(stringResource(R.string.set_screening_guidance), Tone.WARN)
+        val rescreen = m.flow as? SettingsFlow.Rescreen
+        if (rescreen == null) SecondaryButton(stringResource(R.string.set_rescreen), { a.run { openRescreen() } })
+        else {
+            SectionTitle(stringResource(R.string.set_rescreen))
+            ScreeningQuestion.entries.forEach { q ->
+                AnswerRow(stringResource(Labels.screening(q)), rescreen.answers[q], { yes -> a.edit { answerRescreen(q, yes) } })
+            }
+            rescreen.result?.let { r ->
+                InfoCard(stringResource(when {
+                    r.clinicianGuidance -> R.string.screen_result_clinician
+                    r.mode == ScreeningMode.CONSERVATIVE -> R.string.screen_result_conservative
+                    r.mode == ScreeningMode.MODERATE_ONLY -> R.string.screen_result_moderate
+                    else -> R.string.screen_result_standard
+                }), if (r.mode == ScreeningMode.STANDARD) Tone.GOOD else Tone.WARN)
+            }
+            if (rescreen.result == null) {
+                PrimaryButton(stringResource(R.string.set_rescreen_save), { a.run { submitRescreen() } },
+                    enabled = rescreen.answers.size == ScreeningQuestion.entries.size)
+            }
+            SecondaryButton(stringResource(R.string.action_close), { a.run { settingsFlow(null) } })
+        }
         if (m.screeningClearanceNeeded || m.screeningClearanceDay != null || m.clearances.isNotEmpty()) {
             SectionTitle(stringResource(R.string.set_clearance_title))
             if (m.screeningClearanceNeeded) {
@@ -141,10 +181,16 @@ fun SettingsScreen(m: SettingsModel) {
         if (failed) InfoCard(stringResource(R.string.set_backup_failed), Tone.WARN)
         when (m.flow) {
             is SettingsFlow.Export -> {
+                Note(stringResource(R.string.set_backup_health_note))
                 PasswordField(stringResource(R.string.set_backup_password), exportPassword) { exportPassword = it }
+                // A mistyped password would make the backup impossible to open: it is typed twice (R5-21).
+                if (exportPassword.isNotEmpty()) PasswordField(stringResource(R.string.set_backup_password_again), exportPassword2) { exportPassword2 = it }
+                val mismatch = exportPassword.isNotEmpty() && exportPassword != exportPassword2
+                if (mismatch && exportPassword2.isNotEmpty()) Note(stringResource(R.string.set_backup_password_mismatch))
                 Note(stringResource(R.string.set_backup_password_note))
-                PrimaryButton(stringResource(R.string.set_backup_choose), { failed = false; exportTo.launch(BackupFormat.fileName(Days.of(java.time.LocalDate.now()))) })
-                SecondaryButton(stringResource(R.string.action_cancel), { exportPassword = ""; a.run { settingsFlow(null) } })
+                PrimaryButton(stringResource(R.string.set_backup_choose), { failed = false; exportTo.launch(BackupFormat.fileName(Days.of(java.time.LocalDate.now()))) },
+                    enabled = !mismatch)
+                SecondaryButton(stringResource(R.string.action_cancel), { exportPassword = ""; exportPassword2 = ""; a.run { settingsFlow(null) } })
             }
             SettingsFlow.Exported -> InfoCard(stringResource(R.string.set_backup_done), Tone.GOOD)
             else -> PrimaryButton(stringResource(R.string.set_backup_now), { failed = false; a.run { settingsFlow(SettingsFlow.Export()) } })

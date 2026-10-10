@@ -64,7 +64,7 @@ class ScreensTest {
         val store = InMemoryRowStore()
         val c = AppController({ PfcData(store, clock, "test") }, FakePlatform(), "test")
         runBlocking { prepare(c) }
-        val actions = Actions(CoroutineScope(SupervisorJob()), c, Dispatchers.Main)
+        val actions = Actions(CoroutineScope(SupervisorJob()), c, Dispatchers.Main, doubleTapMs = 0)
         compose.setContent { PfcTheme { PfcApp(actions) } }
         compose.waitForIdle()
         return c

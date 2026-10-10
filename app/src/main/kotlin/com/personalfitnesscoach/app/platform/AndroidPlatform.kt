@@ -15,4 +15,6 @@ class AndroidPlatform(context: Context) : Platform {
     override suspend fun readSteps(): StepReadingData? = sensor.read()?.let { StepReadingData(it.atMs, it.elapsedMs, it.counter, it.bootCount) }
 
     override fun cancelAlerts() = RestAlerts.cancel(app)
+
+    override val alertsAllowed: Boolean get() = androidx.core.app.NotificationManagerCompat.from(app).areNotificationsEnabled()
 }

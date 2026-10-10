@@ -47,8 +47,10 @@ data class ActiveState(
     val pausedMs: Long = 0,
     /** When the last hard set or interval finished (LOAD-002: the session rating is asked 10+ minutes after it). */
     val lastHardEffortAtMs: Long? = null,
-    /** Conditioning block index → work minutes done (logged when the block ends). */
+    /** Conditioning block index → work minutes done (logged when the block ends; 0 = skipped or dropped by a re-plan). */
     val conditioningDone: Map<Int, Double> = emptyMap(),
+    /** The last tap that changed the workout: a gap with no tap longer than the stage allows is not session time (LOAD-001, review R5-05). */
+    val lastActionAtMs: Long? = null,
 ) {
     init {
         require(nextLoads.values.all { it in 0.0..1000.0 }) { "load out of range" }
@@ -69,6 +71,7 @@ data class ActiveState(
         put("restStartedAtMs", restStartedAtMs); put("restSec", restSec); put("sheet", sheet); put("pausedAtMs", pausedAtMs)
         if (pausedMs != 0L) put("pausedMs", pausedMs); put("lastHardEffortAtMs", lastHardEffortAtMs)
         if (conditioningDone.isNotEmpty()) put("conditioningDone", JsonObject(conditioningDone.toSortedMap().map { (k, v) -> k.toString() to JsonPrimitive(v) }.toMap()))
+        put("lastActionAtMs", lastActionAtMs)
     }.toString()
 
     companion object {
@@ -98,6 +101,7 @@ data class ActiveState(
                     lastHardEffortAtMs = o.longOrNull("lastHardEffortAtMs"),
                     conditioningDone = (o.objOrNull("conditioningDone") ?: JsonObject(emptyMap())).entries.associate { (k, v) ->
                         (k.toIntOrNull() ?: throw DataFormatException("bad key")) to ((v as? JsonPrimitive)?.doubleOrNull ?: throw DataFormatException("bad minutes")) },
+                    lastActionAtMs = o.longOrNull("lastActionAtMs"),
                 )
             } catch (e: DataFormatException) {
                 ActiveState()

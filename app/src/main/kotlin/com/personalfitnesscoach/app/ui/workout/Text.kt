@@ -73,4 +73,5 @@ fun changeText(c: Change, conditioning: List<ConditioningItem>): String = when (
         minutes(c.toMinutes))
     is Change.ConditioningDropped -> stringResource(R.string.change_cond_dropped, conditioning.getOrNull(c.index)?.let { modalityName(it.modality) } ?: "-")
     is Change.Added -> stringResource(R.string.change_added, exerciseName(c.exerciseId))
+    is Change.ConditioningSwapped -> stringResource(R.string.change_cond_swapped, modalityName(c.from), modalityName(c.to))
 }

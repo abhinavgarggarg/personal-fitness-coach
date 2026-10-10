@@ -1,5 +1,8 @@
 package com.personalfitnesscoach.data.core.engine
 
+import com.personalfitnesscoach.data.core.model.ConditionsRecord
+import com.personalfitnesscoach.engine.safety.Conditions
+
 import com.personalfitnesscoach.data.core.model.DecisionEntry
 import com.personalfitnesscoach.data.core.model.ExerciseState
 import com.personalfitnesscoach.data.core.model.KnownNumber
@@ -243,11 +246,32 @@ class ProgramClock(private val docs: Docs, private val log: SessionLog, private 
                 carryOrRotationLastWeek = t.carryOrRotation, lastClockAction = step.action,
             )
             stepWeek(u.copy(today = we + 1), ws, wasDeload)?.let { d += it }
+            painRuleWeek(ws, we, t.completed)
         }
         docs.put(ProgramRecord, prog)
         // The decision log keeps about a year ("Why?" for recent changes); older entries are removed.
         for (old in docs.between(DecisionEntry, Int.MIN_VALUE / 2, today - DECISION_DAYS)) docs.delete(DecisionEntry, DecisionEntry.key(old))
         return EngineResult(prog, d)
+    }
+
+    /**
+     * SAF-010 pain rule (knee and hip arthritis): a trained week meets it when no pain report for the condition's joints was above the
+     * table's limit during the week or the next morning; it counts towards the unlocks that need it, and a week that breaks it starts the
+     * count again (review R5-12). A week without training leaves the count as it was.
+     */
+    private suspend fun painRuleWeek(ws: Int, we: Int, completed: Int) {
+        val rec = docs.get(ConditionsRecord) ?: return
+        var changed = false
+        val items = rec.items.map { c ->
+            val e = Conditions[c.id] ?: return@map c
+            val max = e.painRuleDuringMax ?: return@map c
+            if (!e.impactUnlockNeedsPainRule && !e.jointLimitUnlockNeedsPainRule) return@map c
+            val joints = e.jointLimits.keys + e.jointLimitUnlock.keys
+            val broken = docs.between(PainRecord, ws, we + 1).any { it.report.region in joints && it.report.rating > max }
+            val n = when { broken -> 0; completed > 0 -> c.painRuleMetWeeks + 1; else -> c.painRuleMetWeeks }
+            if (n != c.painRuleMetWeeks) { changed = true; c.copy(painRuleMetWeeks = n) } else c
+        }
+        if (changed) docs.put(ConditionsRecord, rec.copy(items = items))
     }
 
     /** Days in the last 14 whose check-in had 2 or more fatigue signals (DEL-002 "sessions with ≥ 2 signals"). */

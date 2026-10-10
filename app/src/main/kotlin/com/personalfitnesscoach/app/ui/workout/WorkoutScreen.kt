@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -95,7 +96,9 @@ fun WorkoutScreen(s: Screen.Workout) {
         WorkoutSheetPanel(v, sheet)
         return
     }
-    ScreenColumn(null) {
+    // The safety controls sit in a bar that never scrolls away (A4/A5 "always one tap away", R5-11).
+    Column(Modifier.fillMaxSize()) {
+    ScreenColumn(null, Modifier.weight(1f)) {
         TopRow(v)
         if (v.paused) {
             InfoCard(stringResource(R.string.wk_paused), Tone.WARN) { PrimaryButton(stringResource(R.string.wk_resume), { a.run { resume() } }) }
@@ -122,7 +125,8 @@ fun WorkoutScreen(s: Screen.Workout) {
             }
         }
         if (v.lifts.isNotEmpty()) ExerciseList(v)
-        SafetyRow(v)
+    }
+    SafetyRow(v)
     }
 }
 
@@ -142,7 +146,8 @@ private fun TopRow(v: PlayerView) {
 private fun SafetyRow(v: PlayerView) {
     val a = LocalActions.current
     HorizontalDivider()
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val current = (v.step as? Step.Lift)?.lift?.rowId
         OutlinedButton(onClick = { a.run { openHurts(current) } }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight)) {
             Text(stringResource(R.string.wk_hurts))
@@ -176,25 +181,29 @@ private fun Notice(n: WorkoutNotice, v: PlayerView) {
 private fun RestPanel(endsAtMs: Long, v: PlayerView) {
     val a = LocalActions.current
     val context = LocalContext.current
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    // Counted on the phone's elapsed-time clock from the moment the rest is shown (Phase 2 section 11): changing the time of day never
+    // changes a rest (R5-19).
+    val startLeft = remember(endsAtMs) { endsAtMs - System.currentTimeMillis() }
+    val startElapsed = remember(endsAtMs) { android.os.SystemClock.elapsedRealtime() }
+    var leftMs by remember(endsAtMs) { mutableLongStateOf(startLeft) }
     LaunchedEffect(endsAtMs) {
         while (true) {
-            now = System.currentTimeMillis()
-            if (now >= endsAtMs) {
+            leftMs = startLeft - (android.os.SystemClock.elapsedRealtime() - startElapsed)
+            if (leftMs <= 0) {
                 RestAlerts.vibrate(context)
                 break
             }
             delay(250)
         }
     }
-    val left = ((endsAtMs - now + 999) / 1000).coerceAtLeast(0)
+    val left = ((leftMs + 999) / 1000).coerceAtLeast(0)
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             if (left > 0) {
                 Text(stringResource(R.string.wk_rest_title), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.wk_rest_left, (left / 60).toInt(), (left % 60).toInt()), style = Numerals,
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                // Not a live region: TalkBack would read every second (R5-18); the end of the rest is announced instead.
+                Text(stringResource(R.string.wk_rest_left, (left / 60).toInt(), (left % 60).toInt()), style = Numerals)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilledTonalButton(onClick = { a.run { adjustRest(-30) } }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight)) {
                         Text(stringResource(R.string.wk_rest_minus))
@@ -267,6 +276,9 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
     var load by remember(l.rowId, t.kind, t.number) { mutableStateOf(t.load) }
     var amount by remember(l.rowId, t.kind, t.number) { mutableStateOf(t.reps.last) }
     fun entry(rir: Double?): LiftEntry = if (t.unit == DoseUnit.SECONDS) LiftEntry(load, null, amount, rir, form) else LiftEntry(load, amount, null, rir, form)
+    // A loaded set needs its weight: an emptied weight field never saves a set as bodyweight (R5-22).
+    val canLog = t.load == null || load != null
+    fun logIt(rir: Double?) { a.run { log(l.rowId, entry(rir), expected = t) } }
 
     if (t.askForm) {
         Text(stringResource(R.string.wk_form_q), style = MaterialTheme.typography.bodyLarge)
@@ -278,25 +290,29 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
         if (t.load != null) NumberField(stringResource(R.string.wk_weight), load, { x -> load = x?.takeIf { it in 0.0..1000.0 } })
         NumberField(stringResource(if (t.unit == DoseUnit.SECONDS) R.string.wk_seconds else R.string.wk_reps), amount.toDouble(),
             { x -> amount = (x?.toInt() ?: 0).coerceIn(0, 1000) }, decimals = false)
+        if (!canLog) Note(stringResource(R.string.wk_enter_weight))
     }
     when (t.kind) {
         SetKind.WARMUP -> {
-            PrimaryButton(stringResource(R.string.wk_done_as_planned), { a.run { log(l.rowId, entry(null)) } })
+            PrimaryButton(stringResource(R.string.wk_done_as_planned), { logIt(null) }, enabled = canLog)
             SmallAction(stringResource(R.string.wk_skip_ramp), { a.run { skipRamp(l.rowId) } })
         }
         SetKind.CALIBRATION -> {
             Note(stringResource(R.string.wk_calibration_hint))
-            EffortButtons(v.effortPrompt, includeFivePlus = true) { rir -> a.run { log(l.rowId, entry(rir)) } }
+            EffortButtons(v.effortPrompt, includeFivePlus = true, enabled = canLog) { rir -> logIt(rir) }
         }
         else -> {
-            if (!adjusting) PrimaryButton(stringResource(R.string.wk_done_as_planned), { a.run { log(l.rowId, entry(t.targetRir)) } })
-            EffortButtons(v.effortPrompt, includeFivePlus = false) { rir -> a.run { log(l.rowId, entry(rir)) } }
+            if (!adjusting) PrimaryButton(stringResource(R.string.wk_done_as_planned), { logIt(t.targetRir) }, enabled = canLog)
+            EffortButtons(v.effortPrompt, includeFivePlus = false, enabled = canLog) { rir -> logIt(rir) }
         }
     }
     if (!adjusting) SmallAction(stringResource(R.string.wk_adjust), { adjusting = true })
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SmallAction(stringResource(R.string.wk_replace), { a.run { openReplace(l.rowId, occupied = false) } })
-        SmallAction(stringResource(R.string.wk_busy), { a.run { openReplace(l.rowId, occupied = true) } })
+        // A swap is only for an exercise not started yet (R5-15); once sets are logged, "skip" ends it at the sets done.
+        if (!l.hasLoggedWork) {
+            SmallAction(stringResource(R.string.wk_replace), { a.run { openReplace(l.rowId, occupied = false) } })
+            SmallAction(stringResource(R.string.wk_busy), { a.run { openReplace(l.rowId, occupied = true) } })
+        }
         SmallAction(stringResource(R.string.wk_skip_exercise), { a.run { skipExercise(l.rowId) } })
         if (t.kind == SetKind.WORKING && l.workingDone > 0) SmallAction(stringResource(R.string.wk_add_set), { a.run { addSet(l.rowId) } })
     }
@@ -325,7 +341,7 @@ private fun TargetCard(t: SetTarget, l: LiftView) {
 
 /** INT-006: "how many more could you have done?" 0 / 1 / 2 / 3 / 4+ (and 5+ while finding a weight, CAL-001). One tap logs the set. */
 @Composable
-private fun EffortButtons(style: Effort.PromptStyle, includeFivePlus: Boolean, onPick: (Double) -> Unit) {
+private fun EffortButtons(style: Effort.PromptStyle, includeFivePlus: Boolean, enabled: Boolean = true, onPick: (Double) -> Unit) {
     Text(stringResource(if (style == Effort.PromptStyle.RIR_QUESTION) R.string.wk_effort_q else R.string.wk_effort_q_rpe),
         style = MaterialTheme.typography.bodyLarge)
     val five = stringResource(R.string.wk_effort_5plus)
@@ -334,7 +350,7 @@ private fun EffortButtons(style: Effort.PromptStyle, includeFivePlus: Boolean, o
         else Effort.rirOptions.map { it to (Effort.rirFromAnswer(it) ?: 4.0) }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { (label, rir) ->
-            FilledTonalButton(onClick = { onPick(rir) }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight).widthIn(min = PrimaryHeight)) {
+            FilledTonalButton(onClick = { onPick(rir) }, enabled = enabled && !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight).widthIn(min = PrimaryHeight)) {
                 Text(label, style = MaterialTheme.typography.titleMedium)
             }
         }
@@ -347,16 +363,20 @@ private fun ExerciseList(v: PlayerView) {
     val a = LocalActions.current
     SectionTitle(stringResource(R.string.wk_exercises))
     val current = (v.step as? Step.Lift)?.lift?.rowId
+    // Exercises can be chosen in any order once the lifts have started (never skipping the warm-up, R5-08).
+    val choosing = v.stage == Stage.LIFTS
     v.lifts.forEach { l ->
         val state = when {
             l.status == Status.SKIPPED -> stringResource(R.string.wk_ex_skipped)
             l.finished -> stringResource(R.string.wk_ex_done)
             else -> stringResource(R.string.wk_ex_sets_done, l.workingDone, l.item.sets)
         }
-        val label = l.exercise.name + " · " + state
-        if (l.rowId == current || l.finished) {
+        val label = stringResource(R.string.list_item, l.exercise.name, state)
+        if (l.rowId == current || l.finished || !choosing) {
             Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = if (l.rowId == current) FontWeight.SemiBold else FontWeight.Normal,
                 modifier = Modifier.heightIn(min = SecondaryHeight).padding(vertical = 12.dp))
+            // SAF-006: one more set of a finished exercise (R5-23).
+            if (l.finished && l.status != Status.SKIPPED && l.workingDone > 0 && v.state.stage.ordinal <= Stage.LIFTS.ordinal) SmallAction(stringResource(R.string.wk_add_set), { a.run { addSet(l.rowId) } })
         } else {
             SmallAction(label, { a.run { select(l.rowId) } })
         }

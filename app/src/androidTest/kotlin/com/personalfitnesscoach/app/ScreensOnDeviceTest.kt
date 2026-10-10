@@ -72,7 +72,8 @@ class ScreensOnDeviceTest {
             repeat(4) { c.submitOnboarding() }
         }
         assertTrue(c.screen.value is Screen.Today)
-        val actions = Actions(CoroutineScope(SupervisorJob()), c)
+        // The test taps as soon as the screen changes; the double-tap window is for people and is off here.
+        val actions = Actions(CoroutineScope(SupervisorJob()), c, doubleTapMs = 0)
         compose.setContent { PfcTheme { PfcApp(actions) } }
         tapThenWait(s(R.string.today_start)) { c.screen.value is Screen.CheckIn }
         tapThenWait(s(R.string.checkin_submit)) { c.screen.value is Screen.Preview }

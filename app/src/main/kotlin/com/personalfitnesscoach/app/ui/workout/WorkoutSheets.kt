@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -93,7 +94,7 @@ fun WorkoutSheetPanel(v: PlayerView, sheet: WorkoutSheet) {
                     e.seconds?.let { stringResource(R.string.unit_sec, it) }).joinToString(" × ")
                 Body(stringResource(R.string.confirm_entry_body, what))
                 PrimaryButton(stringResource(R.string.confirm_entry_fix), { a.run { closeSheet() } })
-                SecondaryButton(stringResource(R.string.confirm_entry_save), { a.run { log(sheet.rowId, e, confirmed = true) } })
+                SecondaryButton(stringResource(R.string.confirm_entry_save), { a.run { log(sheet.rowId, e, confirmed = true, expected = sheet.expected) } })
             }
             is WorkoutSheet.ConfirmAddSet -> {
                 Heading(stringResource(R.string.addset_confirm_title))
@@ -152,10 +153,11 @@ private fun IntervalTimer(index: Int, c: ConditioningItem) {
     val a = LocalActions.current
     val context = LocalContext.current
     val phases = remember(c) { phasesOf(c) }
-    var i by remember(c) { mutableIntStateOf(0) }
-    var running by remember(c) { mutableStateOf(false) }
-    var leftMs by remember(c) { mutableLongStateOf(phases.firstOrNull()?.seconds?.times(1000L) ?: 0L) }
-    var workDoneMs by remember(c) { mutableLongStateOf(0L) }
+    // Kept across turning the phone (R5-20); a restarted app starts the block's timer again (the minutes are logged when it ends).
+    var i by rememberSaveable(index) { mutableIntStateOf(0) }
+    var running by rememberSaveable(index) { mutableStateOf(false) }
+    var leftMs by rememberSaveable(index) { mutableLongStateOf(phases.firstOrNull()?.seconds?.times(1000L) ?: 0L) }
+    var workDoneMs by rememberSaveable(index) { mutableLongStateOf(0L) }
     val tone = remember { try { ToneGenerator(AudioManager.STREAM_ALARM, 80) } catch (e: RuntimeException) { null } }
     DisposableEffect(Unit) { onDispose { tone?.release() } }
 

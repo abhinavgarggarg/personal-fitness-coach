@@ -58,9 +58,11 @@ object RestAlerts {
         val am = context.getSystemService(AlarmManager::class.java) ?: return
         val pi = alarmIntent(context)
         am.cancel(pi)
+        // On the elapsed-time clock (Phase 2 section 11, R5-19): changing the phone's time never moves the end of a rest.
+        val at = android.os.SystemClock.elapsedRealtime() + (endsAtMs - System.currentTimeMillis()).coerceAtLeast(0)
         val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()
-        if (exact) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endsAtMs, pi)
-        else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endsAtMs, pi)
+        if (exact) am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi)
+        else am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi)
         scheduledAt = endsAtMs
     }
 

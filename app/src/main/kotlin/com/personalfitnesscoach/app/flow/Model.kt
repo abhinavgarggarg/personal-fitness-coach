@@ -61,8 +61,14 @@ sealed interface Screen {
     /** Workout mode (A1–A7): no tabs; one sheet at a time. */
     data class Workout(val view: PlayerView, val sheet: WorkoutSheet? = null, val notice: WorkoutNotice? = null) : Screen
 
-    /** A8. */
-    data class Done(val summary: Summary, val rated: Boolean = false) : Screen
+    /** A8, with the next planned session (J1 step 7). */
+    data class Done(val summary: Summary, val rated: Boolean = false, val next: PlannedDay? = null) : Screen
+
+    /** SAF-003 at the check-in: the pain reported ends training for today (no session is generated). */
+    data class PainDay(val outcome: PainOutcome) : Screen
+
+    /** Settings → health conditions: the same questions as onboarding, answers changeable at any time (SAF-010, R5-12). */
+    data class EditConditions(val form: OnboardingForm, val problem: OnboardingProblem? = null) : Screen
 
     /** A5: a red flag. Calm guidance and the emergency number; training waits until the user confirms (SAF-002). */
     data class Stop(val stop: SafetyStop) : Screen
@@ -118,6 +124,10 @@ data class ConditionAnswers(
     val supineUncomfortable: Boolean = false,
     val impactChecksPassed: Boolean = false,
     val flare: Boolean = false,
+    /** The user wants impact work added once the table allows it (knee/hip arthritis, severe obesity). */
+    val impactOptIn: Boolean = false,
+    /** Pregnancy `attest_if`: one of the listed conditions applies and the provider has not OK'd exercise → follow the provider (stored as block). */
+    val attestNotOk: Boolean = false,
 )
 
 enum class GymPreset { FULL_GYM, DUMBBELLS_AND_MACHINES, HOME_DUMBBELLS, BODYWEIGHT_ONLY }
@@ -133,7 +143,8 @@ data class Increments(
     val stackMaxKg: Double = 100.0,
 ) {
     fun inventory(): Inventory {
-        val plates = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25).filter { it >= smallestPlateKg - 1e-9 }
+        // The standard plates down to the smallest the gym has, and that smallest plate itself even when it is an unusual size (R5-24).
+        val plates = (listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25).filter { it > smallestPlateKg + 1e-9 } + smallestPlateKg).distinct().sortedDescending()
             .associateWith { if (it == 25.0) 4 else 2 }
         val dbs = generateSequence(dumbbellMinKg) { it + dumbbellStepKg }.takeWhile { it <= dumbbellMaxKg + 1e-9 }.map { Math.round(it * 100) / 100.0 }.toList()
         return Inventory(barKg = barKg, plates = plates, dumbbells = dbs, stack = com.personalfitnesscoach.engine.calc.Stack(stackStepKg, stackMaxKg, stackStepKg))
@@ -168,7 +179,26 @@ data class TodayModel(
     val doneToday: Boolean,
     /** Today's readiness, safety, return and deload decisions (the one-line "why"). */
     val reasons: List<DecisionEntry>,
+    /** SAF-003: a pain reported today ends training for the day. */
+    val painStop: Boolean = false,
+    /** Why gentle (conservative) mode is on, so the card says what ends it. */
+    val conservativeReason: ConservativeReason? = null,
+    /** SAF-001: the health questions are due again (12 months). */
+    val rescreenDue: Boolean = false,
+    /** SAF-010 low back pain: the "my back is flaring" switch (null when the condition isn't picked). */
+    val backFlare: Boolean? = null,
+    /** The next planned session, also after today's is done (shown as "Next: …"). */
+    val upcoming: PlannedDay? = null,
 )
+
+enum class ConservativeReason {
+    /** The screening recommends a doctor's OK (confirmed in Settings). */
+    SCREENING_DOCTOR,
+    /** Screening question 5: follow the clinician's guidance; answering the questions again ends it. */
+    CLINICIAN,
+    /** A condition's table entry needs a doctor's OK (Settings, per condition). */
+    CONDITION,
+}
 
 data class DayCell(val weekday: Int, val day: Int, val template: DayTemplate?, val state: DayState, val today: Boolean)
 
@@ -210,8 +240,8 @@ sealed interface WorkoutSheet {
     data class HurtsResult(val outcome: PainOutcome, val changes: List<Change>, val alternatives: SwapChoice?, val region: Joint? = null) : WorkoutSheet
     data class ChangeTime(val minutes: Int) : WorkoutSheet
     data class RedFlag(val picked: Set<String> = emptySet()) : WorkoutSheet
-    /** FS-5: an unusual entry needs a confirmation before it is saved. */
-    data class ConfirmEntry(val rowId: Long, val entry: LiftEntry) : WorkoutSheet
+    /** FS-5: an unusual entry needs a confirmation before it is saved (for the set it was typed for). */
+    data class ConfirmEntry(val rowId: Long, val entry: LiftEntry, val expected: com.personalfitnesscoach.data.core.player.SetTarget? = null) : WorkoutSheet
     /** SAF-006 past a cap. */
     data class ConfirmAddSet(val rowId: Long) : WorkoutSheet
     /** End now: finish early or, with nothing logged, discard. */
@@ -245,6 +275,10 @@ data class SettingsModel(
     val screeningClearanceDay: Int? = null,
     /** SAF-010: picked conditions whose table entry asks for (or suggests) a doctor's OK, with the scopes confirmed so far. */
     val clearances: List<ConditionClearance> = emptyList(),
+    /** SAF-001 question 5: the clinician's guidance applies; answering the questions again is the way out. */
+    val screeningGuidance: Boolean = false,
+    /** Android 13+: notifications are off, so the rest timer can't buzz while the phone is locked. */
+    val alertsOff: Boolean = false,
 )
 
 /** One condition's doctor's-OK scopes (each scope unlocks only itself, SAF-010). `rule` is the table's clearance kind. */
@@ -264,4 +298,6 @@ sealed interface SettingsFlow {
     data object Restored : SettingsFlow
     /** Two-step confirmation (Phase 2 section 12). */
     data class Erase(val confirmations: Int) : SettingsFlow
+    /** SAF-001 re-screen: the eight questions again; `result` once saved. */
+    data class Rescreen(val answers: Map<ScreeningQuestion, Boolean> = emptyMap(), val result: ScreeningResult? = null) : SettingsFlow
 }

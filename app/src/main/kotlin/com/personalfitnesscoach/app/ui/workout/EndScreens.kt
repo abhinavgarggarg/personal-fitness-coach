@@ -65,6 +65,21 @@ fun DoneScreen(s: Screen.Done) {
             sum.ask == SrpePrompt.Ask.NEVER -> Unit
             else -> Note(stringResource(R.string.done_rate_wait))
         }
+        s.next?.let { n -> Body(stringResource(R.string.done_next, stringResource(Labels.weekday(n.weekday)), stringResource(Labels.template(n.template)))) }
+        PrimaryButton(stringResource(R.string.done_back), { a.run { closeToToday() } })
+    }
+}
+
+/** SAF-003 at the check-in: the pain ends training for today; what to do instead. */
+@Composable
+fun PainDayScreen(o: com.personalfitnesscoach.engine.safety.PainOutcome) {
+    val a = LocalActions.current
+    BackHandler { a.run { closeToToday() } }
+    ScreenColumn(stringResource(R.string.pain_day_title)) {
+        InfoCard(stringResource(Labels.painAction(o.action)), Tone.WARN) {
+            androidx.compose.material3.Text(stringResource(R.string.pain_result_end))
+            if (o.suggestProfessional) androidx.compose.material3.Text(stringResource(R.string.pain_result_professional))
+        }
         PrimaryButton(stringResource(R.string.done_back), { a.run { closeToToday() } })
     }
 }

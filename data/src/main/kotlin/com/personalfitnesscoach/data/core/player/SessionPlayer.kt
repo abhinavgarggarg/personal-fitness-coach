@@ -156,7 +156,9 @@ data class LiftEntry(
 )
 
 /** The result of logging one set. */
-data class LogResult(val view: PlayerView, val decisions: List<Decision>, val calibration: CalibrationStep? = null, val restSec: Int?)
+data class LogResult(val view: PlayerView, val decisions: List<Decision>, val calibration: CalibrationStep? = null, val restSec: Int?,
+                     /** The tap was for a set already logged (a late double tap) and was ignored. */
+                     val ignored: Boolean = false)
 
 /** SUB-002 swap options for one exercise, and EQ-002 "do it later" when other exercises are still to come. */
 data class SwapChoice(val rowId: Long, val original: Exercise, val options: List<Candidate>, val canDoLater: Boolean, val decisions: List<Decision>)
@@ -170,6 +172,8 @@ sealed interface Change {
     data class ConditioningShortened(val index: Int, val fromMinutes: Double, val toMinutes: Double) : Change
     data class ConditioningDropped(val index: Int) : Change
     data class Added(val rowId: Long, val exerciseId: String) : Change
+    /** A conditioning block moved to another machine (pain limits, R5-02). */
+    data class ConditioningSwapped(val index: Int, val from: com.personalfitnesscoach.engine.model.Modality, val to: com.personalfitnesscoach.engine.model.Modality) : Change
 }
 
 /** SAF-003 in a session: the gate's outcome, what changed, and pain-free alternatives for the stopped exercise. */
@@ -219,7 +223,8 @@ class SessionPlayer(private val d: PfcData) {
         // A reset resume point (a restore resets it) never sends the user back: the logged work shows how far they got.
         val inferred = when {
             lifts.any { it.hasLoggedWork } -> Stage.LIFTS
-            s0.conditioningDone.isNotEmpty() -> if (doc.conditioningFirst) Stage.CONDITIONING_FIRST else Stage.CONDITIONING
+            // Only work actually done shows progress: a block dropped by a re-plan (0 minutes) never moves the user past the lifts (R5-03).
+            s0.conditioningDone.values.any { it > 0 } -> if (doc.conditioningFirst) Stage.CONDITIONING_FIRST else Stage.CONDITIONING
             else -> Stage.WARMUP
         }
         val s = if (s0.stage.ordinal < inferred.ordinal && inferred in stages) s0.copy(stage = inferred) else s0
@@ -239,7 +244,7 @@ class SessionPlayer(private val d: PfcData) {
         }
         val start = w.row.startedAtMs ?: now
         val pausedNow = s.pausedAtMs?.let { p -> (now - p).takeIf { it > PAUSE_EXCLUDED_MS } ?: 0L } ?: 0L
-        val elapsed = ((now - start - s.pausedMs - pausedNow) / 60_000.0).coerceIn(0.0, 600.0)
+        val elapsed = ((now - start - s.pausedMs - pausedNow - openIdle(w, s, now)) / 60_000.0).coerceIn(0.0, 600.0)
         val u = d.bridge.user()
         val program = d.docs.get(com.personalfitnesscoach.data.core.model.ProgramRecord)
         val prompt = Effort.promptStyle(u?.profile?.level ?: com.personalfitnesscoach.engine.model.Level.BEGINNER, program?.weeksTraining ?: 0)
@@ -333,8 +338,34 @@ class SessionPlayer(private val d: PfcData) {
 
     // ------------------------------------------------------------------------------------------------ moving through the session
     private suspend fun save(w: StoredWorkout, s: ActiveState): PlayerView {
-        d.sessions.saveState(w.id, s.encode())
-        return build(d.sessions.load(w.id)!!, s)
+        val t = touch(w, s)
+        d.sessions.saveState(w.id, t.encode())
+        return build(d.sessions.load(w.id)!!, t)
+    }
+
+    /**
+     * How long the workout may go without a tap and still be session time: 20 minutes, or the current conditioning block plus 10 (a long
+     * steady block has no taps). A longer gap — the phone left in a bag, the app reopened the next day — is not session time (R5-05).
+     */
+    private fun idleAllowanceMs(w: StoredWorkout, s: ActiveState): Long {
+        val block = if (s.stage == Stage.CONDITIONING || s.stage == Stage.CONDITIONING_FIRST)
+            w.doc.conditioning.withIndex().firstOrNull { it.index !in s.conditioningDone }?.value?.let { it.workMinutes + it.restMinutes } ?: 0.0 else 0.0
+        return maxOf(IDLE_MS, ((block + 10.0) * 60_000).toLong())
+    }
+
+    /** The gap since the last tap, when it is longer than allowed (and no pause is open): excluded from the session's minutes. */
+    private fun openIdle(w: StoredWorkout, s: ActiveState, now: Long): Long {
+        val last = s.lastActionAtMs ?: return 0L
+        if (s.pausedAtMs != null) return 0L
+        val gap = now - last
+        return if (gap > idleAllowanceMs(w, s)) gap else 0L
+    }
+
+    /** Records this tap: a too-long gap before it is counted like a long pause (LOAD-001). */
+    private fun touch(w: StoredWorkout, s: ActiveState): ActiveState {
+        val now = d.clock.nowMs()
+        val idle = openIdle(w, s, now)
+        return s.copy(pausedMs = s.pausedMs + idle, lastActionAtMs = now)
     }
 
     private suspend fun active(): Pair<StoredWorkout, ActiveState> {
@@ -356,7 +387,10 @@ class SessionPlayer(private val d: PfcData) {
     suspend fun select(rowId: Long): PlayerView = d.store.transaction {
         val (w, s) = active()
         require(w.exercises.any { it.row.id == rowId }) { "not in this workout" }
-        save(w, s.copy(currentRowId = rowId, stage = maxStage(s.stage, Stage.LIFTS, w)))
+        // Only during the lifts: choosing an exercise never skips the warm-up or a block before the lifts (R5-08).
+        val v = build(w, s)
+        if (v.stage != Stage.LIFTS) return@transaction v
+        save(w, s.copy(currentRowId = rowId))
     }
 
     private fun maxStage(a: Stage, b: Stage, w: StoredWorkout): Stage = if (a.ordinal >= b.ordinal) a else b
@@ -368,10 +402,14 @@ class SessionPlayer(private val d: PfcData) {
     }
 
     /** Logs one set (FS-5, NFR-03: saved at once with the resume point) and applies INT-007 or the CAL-001 ramp step for the next set. */
-    suspend fun log(rowId: Long, entry: LiftEntry): LogResult = d.store.transaction {
+    suspend fun log(rowId: Long, entry: LiftEntry, expected: SetTarget? = null): LogResult = d.store.transaction {
         val (w, s) = active()
         val v = build(w, s)
         val lift = v.lifts.firstOrNull { it.rowId == rowId } ?: error("not in this workout")
+        // A tap meant for a set that was already logged (a late double tap) is ignored, never logged as the next set (R5-10).
+        val nt = lift.next
+        if (expected != null && (nt == null || nt.kind != expected.kind || nt.number != expected.number))
+            return@transaction LogResult(v, emptyList(), null, null, ignored = true)
         val t = lift.next ?: error("${lift.exercise.id} is finished for today")
         val item = lift.item
         val u = checkNotNull(d.bridge.user()) { "no profile" }
@@ -405,10 +443,16 @@ class SessionPlayer(private val d: PfcData) {
                     !lift.exercise.assisted && avail.isNotEmpty()) {
                     val normal = planned / maxOf(item.loadFactor, 1e-9)
                     val tierMax = Autoregulation.tierMaxLoad(normal, item.main, v.tier, w.doc.inDeload)
+                    val cap = minOf(tierMax, planned * (1 + P.INT_007.net_limit_pct / 100.0))
                     val adj = Autoregulation.adjust(planned, entry.load, SetLog(entry.load, entry.reps, rir, warmup = false, formOk = entry.form),
-                        item.reps.last, item.reps.first, item.targetRir, avail, minOf(tierMax, planned * (1 + P.INT_007.net_limit_pct / 100.0)))
+                        item.reps.last, item.reps.first, item.targetRir, avail, cap)
                     dec += adj.decisions
-                    next = next.copy(nextLoads = next.nextLoads + (rowId to adj.value))
+                    // The next target never goes above the in-session limit or the tier's cap, whatever was typed for this set (R5-04).
+                    val top = avail.filter { it <= cap + 1e-9 }.maxOrNull() ?: planned
+                    val nextLoad = if (adj.value > top + 1e-9) top else adj.value
+                    if (nextLoad < adj.value - 1e-9) dec += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.INT_007, RuleIds.RDY_004), ReasonKey.INSESSION_LIMIT_REACHED,
+                        inputs = mapOf("typed" to entry.load, "planned" to planned), outputs = mapOf("next" to nextLoad, "cap" to cap))
+                    next = next.copy(nextLoads = next.nextLoads + (rowId to nextLoad))
                 }
             }
         }
@@ -420,6 +464,7 @@ class SessionPlayer(private val d: PfcData) {
         }
         next = next.copy(currentRowId = rowId, stage = maxStage(next.stage, Stage.LIFTS, w), restStartedAtMs = now, restSec = rest,
             lastHardEffortAtMs = if (t.kind == SetKind.WARMUP) next.lastHardEffortAtMs else now, sheet = null)
+        next = touch(w, next)
         d.sessions.logSet(rowId, newSet, next.encode())
         d.decisions.append(dec, w.day, w.id)
         val view = build(d.sessions.load(w.id)!!, next)
@@ -455,7 +500,7 @@ class SessionPlayer(private val d: PfcData) {
         val p = s.pausedAtMs ?: return@transaction build(w, s)
         val seg = d.clock.nowMs() - p
         // LOAD-001: pauses over 10 minutes are removed from the session's minutes.
-        save(w, s.copy(pausedAtMs = null, pausedMs = s.pausedMs + if (seg > PAUSE_EXCLUDED_MS) seg else 0L))
+        save(w, s.copy(pausedAtMs = null, pausedMs = s.pausedMs + if (seg > PAUSE_EXCLUDED_MS) seg else 0L, lastActionAtMs = d.clock.nowMs()))
     }
 
     /** Opens or closes a sheet (A3–A6), so a resumed session reopens it. */
@@ -476,8 +521,19 @@ class SessionPlayer(private val d: PfcData) {
 
     suspend fun skipExercise(rowId: Long): PlayerView = d.store.transaction {
         val (w, s) = active()
-        d.sessions.skipExercise(rowId)
-        save(w, s.copy(currentRowId = null, sheet = null))
+        val e = w.exercises.first { it.row.id == rowId }
+        save(w, endAtLogged(e, s).copy(currentRowId = null, sheet = null))
+    }
+
+    /**
+     * Ends an exercise for today. Without logged work it is skipped; with logged work it ends at the sets done, which count for history
+     * and progression (a finding-your-weight ramp ends there too) — R5-07.
+     */
+    private suspend fun endAtLogged(e: StoredExercise, s: ActiveState): ActiveState {
+        if (e.sets.none { it.kind != SetKind.WARMUP }) { d.sessions.skipExercise(e.row.id); return s }
+        val to = maxOf(1, e.working.size)
+        d.sessions.updateItem(e.row.id, e.doc.copy(sets = to, addedSets = minOf(e.doc.addedSets, to)))
+        return if (e.calibration.isNotEmpty()) s.copy(calibrationDone = s.calibrationDone + e.row.id) else s
     }
 
     /** EQ-002 "do it later": the exercise moves to the end of the list. */
@@ -512,7 +568,14 @@ class SessionPlayer(private val d: PfcData) {
             w.doc.boneLoading?.variant)
     }
 
-    private fun violations(w: StoredWorkout, req: GenerationRequest, s: Session): List<Violation> {
+    /**
+     * The validator's verdict on the session as it stands. A conditioning block already done (or dropped) can't be changed any more, so
+     * its own checks are not repeated against limits that arrived later (a pain report): only the work still to do is judged (R5-02).
+     */
+    private fun violations(w: StoredWorkout, req: GenerationRequest, s: Session, done: Set<Int> = emptySet()): List<Violation> =
+        allViolations(w, req, s).filter { v -> !(v.index in done && v.code in BLOCK_CODES) }
+
+    private fun allViolations(w: StoredWorkout, req: GenerationRequest, s: Session): List<Violation> {
         val base = SessionGenerator.validationContext(req, w.doc.fullTierWorkingSets)
         // The exercises' MODIFIED +1 RIR shift is checked against the FULL-day RIR of their slots.
         val withRir = s.copy(exercises = s.exercises.map { e ->
@@ -558,7 +621,7 @@ class SessionPlayer(private val d: PfcData) {
         val doc = itemFor(w, e, Library.require(newId))
         if (doc == null) return@transaction ReplanResult(emptyList(), listOf(swapRefused(e.exerciseId, newId)), build(w, s), refused = true)
         val (req, _) = request(w)!!
-        val bad = violations(w, req, live(w, mapOf(rowId to (newId to doc))))
+        val bad = violations(w, req, live(w, mapOf(rowId to (newId to doc))), s.conditioningDone.keys)
         if (bad.isNotEmpty()) return@transaction ReplanResult(emptyList(), listOf(swapRefused(e.exerciseId, newId, bad)), build(w, s), refused = true)
         d.sessions.swap(rowId, newId, doc)
         d.docs.update(PreferencesRecord) { p -> (p ?: PreferencesRecord()).let { it.copy(exerciseScores = it.exerciseScores +
@@ -626,8 +689,7 @@ class SessionPlayer(private val d: PfcData) {
             PainAction.STOP_EXERCISE, PainAction.STOP_REGION -> {
                 if (e != null && e.row.status != Status.SKIPPED && e.row.status != Status.DONE) {
                     // An exercise with logged work ends as done (its sets stay); one without any is skipped.
-                    if (e.sets.none { it.kind != SetKind.WARMUP }) d.sessions.skipExercise(e.row.id)
-                    else d.sessions.updateItem(e.row.id, e.doc.copy(sets = maxOf(1, e.working.size), addedSets = minOf(e.doc.addedSets, maxOf(1, e.working.size))))
+                    state = endAtLogged(e, state)
                     changes += Change.Skipped(e.row.id, e.exerciseId)
                 }
                 val limit = o.regionMaxStress ?: 0
@@ -644,7 +706,7 @@ class SessionPlayer(private val d: PfcData) {
                         if (pick != null && doc != null) {
                             val (req, _) = request(w)!!
                             val bad = violations(w, req.copy(jointLimits = req.jointLimits + (joint to minOf(req.jointLimits[joint] ?: 4, limit))),
-                                live(d.sessions.load(w.id)!!, mapOf(x.row.id to (pick.id to doc))))
+                                live(d.sessions.load(w.id)!!, mapOf(x.row.id to (pick.id to doc))), state.conditioningDone.keys)
                             if (bad.isEmpty()) {
                                 d.sessions.swap(x.row.id, pick.id, doc)
                                 changes += Change.Swapped(x.row.id, x.exerciseId, pick.id)
@@ -652,10 +714,11 @@ class SessionPlayer(private val d: PfcData) {
                             }
                         }
                     }
-                    if (logged) d.sessions.updateItem(x.row.id, x.doc.copy(sets = maxOf(1, x.working.size), addedSets = minOf(x.doc.addedSets, maxOf(1, x.working.size))))
-                    else d.sessions.skipExercise(x.row.id)
+                    state = endAtLogged(x, state)
                     changes += Change.Skipped(x.row.id, x.exerciseId)
                 }
+                // Conditioning still to do that loads the joint is changed to a machine within the limit, or dropped (R5-02).
+                state = conditioningWithinLimits(w.id, state, changes)
             }
         }
         val alternatives = if (o.action == PainAction.STOP_EXERCISE && e != null)
@@ -667,6 +730,36 @@ class SessionPlayer(private val d: PfcData) {
             return@transaction PainResult(o, changes, emptyList(), true, dec, null).also { lastSummary = sum }
         }
         PainResult(o, changes, alternatives, false, dec, save(d.sessions.load(w.id)!!, state.copy(sheet = null, currentRowId = null)))
+    }
+
+    /**
+     * After a pain stop: every conditioning block still to do is checked against today's limits (the new pain report included). A block
+     * the validator would refuse becomes steady work (Z2 at most) on the first machine that passes, or is dropped (logged as 0 minutes).
+     */
+    private suspend fun conditioningWithinLimits(workoutId: Long, s: ActiveState, changes: MutableList<Change>): ActiveState {
+        val w = d.sessions.load(workoutId)!!
+        val (req, _) = request(w) ?: return s
+        var cond = w.doc.conditioning
+        var state = s
+        val bad = setOf("MODALITY", "CONDITIONING_JOINT", "IMPACT_NOT_ALLOWED", "INTERVAL_MODALITY", "ZONE_ABOVE_LIMIT")
+        fun refused(c: List<ConditioningItem>, i: Int) = allViolations(w, req, live(w, conditioning = c)).any { it.index == i && it.code in bad }
+        for (i in cond.indices) {
+            val k = cond[i]
+            if (i in state.conditioningDone || k.workMinutes <= 0 || !refused(cond, i)) continue
+            val steady = k.copy(impact = 0, hiit = false, protocol = null, interval = null, circuit = null, restMinutes = 0.0,
+                zone = if (k.zone > com.personalfitnesscoach.engine.model.Zone.Z2) com.personalfitnesscoach.engine.model.Zone.Z2 else k.zone)
+            val alt = CONDITIONING_SWAPS.filter { it != k.modality }.firstOrNull { m -> !refused(cond.mapIndexed { j, x -> if (j == i) steady.copy(modality = m) else x }, i) }
+            if (alt != null) {
+                cond = cond.mapIndexed { j, x -> if (j == i) steady.copy(modality = alt) else x }
+                changes += Change.ConditioningSwapped(i, k.modality, alt)
+            } else {
+                cond = cond.mapIndexed { j, x -> if (j == i) x.copy(workMinutes = 0.0, restMinutes = 0.0) else x }
+                state = state.copy(conditioningDone = state.conditioningDone + (i to 0.0))
+                changes += Change.ConditioningDropped(i)
+            }
+        }
+        if (cond != w.doc.conditioning) d.sessions.updateDoc(w.id, w.doc.copy(conditioning = cond))
+        return state
     }
 
     private suspend fun swapOptionsFor(w: StoredWorkout, e: StoredExercise, limits: Map<Joint, Int>): List<Candidate> {
@@ -694,7 +787,7 @@ class SessionPlayer(private val d: PfcData) {
         val reqLimited = req.copy(jointLimits = req.jointLimits + (region to minOf(req.jointLimits[region] ?: 4, maxStress)))
         val trial = live(w).let { it.copy(exercises = it.exercises.filter { x -> x.exercise.id != e.exerciseId || e.working.isNotEmpty() } +
             SessionExercise(ex, add.sets, add.reps.last, add.targetRir, add.loadFactor, add.main, add.lastSetToFailure)) }
-        val bad = violations(w, reqLimited, trial)
+        val bad = violations(w, reqLimited, trial, s.conditioningDone.keys)
         if (bad.isNotEmpty()) return@transaction ReplanResult(emptyList(), listOf(swapRefused(e.exerciseId, newId, bad)), build(w, s), refused = true)
         val id = d.sessions.addExercise(w.id, e.row.position + 1, newId, e.row.slotKey, add)
         val dec = listOf(Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.SAF_003, RuleIds.SUB_001, RuleIds.SAF_008), ReasonKey.SWAP_CHOSEN,
@@ -733,6 +826,7 @@ class SessionPlayer(private val d: PfcData) {
         }
         val byId = plan.items.associateBy { it.id }
         val changes = ArrayList<Change>()
+        var state = s
         rem.lifts.forEachIndexed { i, l ->
             val p: PlanItem? = byId["$i:${l.exercise.id}"]
             val planned = rem.slots[i].sets
@@ -740,7 +834,9 @@ class SessionPlayer(private val d: PfcData) {
                 if (l.hasLoggedWork) {
                     val to = maxOf(1, l.workingDone)
                     d.sessions.updateItem(l.rowId, l.item.copy(sets = to, addedSets = minOf(l.item.addedSets, to)))
-                    if (calibrates(l.exercise, l.item)) Unit else changes += Change.SetsReduced(l.rowId, l.exercise.id, l.item.sets, to)
+                    // A finding-your-weight ramp that no longer fits ends at the sets done (R5-13).
+                    if (calibrates(l.exercise, l.item)) { state = state.copy(calibrationDone = state.calibrationDone + l.rowId); changes += Change.Skipped(l.rowId, l.exercise.id) }
+                    else changes += Change.SetsReduced(l.rowId, l.exercise.id, l.item.sets, to)
                 } else { d.sessions.skipExercise(l.rowId); changes += Change.Skipped(l.rowId, l.exercise.id) }
             } else if (p.sets < planned && !calibrates(l.exercise, l.item)) {
                 val to = l.workingDone + p.sets
@@ -749,7 +845,6 @@ class SessionPlayer(private val d: PfcData) {
             }
         }
         var cond = w.doc.conditioning
-        var state = s
         rem.conditioning.forEachIndexed { j, (idx, k) ->
             val p = byId["c$j:${k.modality}"]
             if (p == null) {
@@ -825,8 +920,9 @@ class SessionPlayer(private val d: PfcData) {
         val v = build(w, s)
         // Pauses over 10 minutes don't count (LOAD-001); an open pause ends now.
         val openPause = s.pausedAtMs?.let { p -> (now - p).takeIf { it > PAUSE_EXCLUDED_MS } ?: 0L } ?: 0L
-        val minutes = (((now - (w.row.startedAtMs ?: now)) - s.pausedMs - openPause) / 60_000.0).coerceIn(0.0, 600.0)
-        val done = w.doc.conditioning.indices.map { i -> s.conditioningDone[i] ?: if (v.step == Step.Done) null else 0.0 }
+        val minutes = (((now - (w.row.startedAtMs ?: now)) - s.pausedMs - openPause - openIdle(w, s, now)) / 60_000.0).coerceIn(0.0, 600.0)
+        // A block never reached is not done: 0 minutes, so weekly cardio and interval counts never include it (R5-08).
+        val done = w.doc.conditioning.indices.map { i -> s.conditioningDone[i] ?: 0.0 }
         val finished = d.finishWorkout(w.id, sessionRpe, Math.round(minutes * 10) / 10.0, done, endedEarly)
         val after = d.docs.all(ExerciseState)
         val records = after.mapNotNull { st -> val a = st.e1rm ?: return@mapNotNull null; val b = before[st.exerciseId]
@@ -841,8 +937,10 @@ class SessionPlayer(private val d: PfcData) {
 
     /** Abandons the workout without keeping it (nothing counts). Only before any work is logged; otherwise end it early. */
     suspend fun discard(): Boolean = d.store.transaction {
-        val (w, _) = active()
+        val (w, s) = active()
         if (w.exercises.any { e -> e.sets.any { it.kind != SetKind.WARMUP } }) return@transaction false
+        // Conditioning done is logged work too: a workout with only cardio is ended, never deleted (R5-06).
+        if (s.conditioningDone.values.any { it > 0 }) return@transaction false
         d.sessions.discard(w.id)
         true
     }
@@ -853,6 +951,15 @@ class SessionPlayer(private val d: PfcData) {
         const val RAMP_REST_SEC = 60
         /** LOAD-001: pauses over 10 minutes are removed from session minutes. */
         val PAUSE_EXCLUDED_MS: Long = P.LOAD_001.pause_exclusion_min * 60_000L
+        /** The validator's checks that belong to one conditioning block (its machine, zone, impact, intervals). */
+        val BLOCK_CODES = setOf("MODALITY", "CONDITIONING_JOINT", "IMPACT_NOT_ALLOWED", "ZONE_ABOVE_LIMIT", "INTERVAL_MODALITY", "HIIT_NOT_ALLOWED",
+            "Z3_NOT_ALLOWED", "SPRINT_NOT_ALLOWED")
+        /** A gap of more than 20 minutes without a tap (outside a long conditioning block) is not session time (R5-05). */
+        const val IDLE_MS: Long = 20 * 60_000L
+        /** Machines tried, in order, when pain limits rule out a conditioning block's machine (as the validator's own order). */
+        val CONDITIONING_SWAPS = listOf(com.personalfitnesscoach.engine.model.Modality.ELLIPTICAL, com.personalfitnesscoach.engine.model.Modality.ROWER,
+            com.personalfitnesscoach.engine.model.Modality.SKIERG, com.personalfitnesscoach.engine.model.Modality.STATIONARY_BIKE,
+            com.personalfitnesscoach.engine.model.Modality.TREADMILL_WALK)
 
         /** FS-5 "absurd entries (e.g. 500 kg, 99 reps) → confirm prompt": far from the target or beyond what anyone lifts. */
         fun unusual(entry: LiftEntry, t: SetTarget): Boolean {

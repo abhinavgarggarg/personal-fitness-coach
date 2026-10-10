@@ -67,6 +67,8 @@ interface Platform {
     suspend fun readSteps(): StepReadingData?
     /** After an erase or when the workout ends: no alarm or notification is left behind. */
     fun cancelAlerts()
+    /** False when the phone blocks this app's notifications (the rest timer can't buzz while locked). */
+    val alertsAllowed: Boolean get() = true
 }
 
 /**
@@ -101,7 +103,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
             val next = try { block() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
                 // Every change runs in one transaction, so a failure leaves nothing half-written. Before the data layer opens it is ERROR_SAFE.
                 if (d == null) Screen.Failed(e.javaClass.simpleName + ": " + (e.message ?: ""))
-                else { _error.value = e.javaClass.simpleName + (e.message?.let { ": $it" } ?: ""); null }
+                else { _error.value = e.javaClass.simpleName; null }
             }
             if (next != null) _screen.value = next
         } finally {
@@ -176,7 +178,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
             clearance = sc.clearance, subFlags = sc.subFlags, pregnancyWeek = sc.pregnancyWeek?.let { w -> w + maxOf(0, today - (sc.pregnancyWeekDay ?: sc.addedDay)) / 7 },
             weeksSinceBirth = sc.birthDay?.let { b -> maxOf(0, today - b) / 7 }, attested = sc.attested, blockIfYes = sc.blockIfYes,
             previouslyVigorous = sc.previouslyVigorous, alreadyDoingImpact = sc.alreadyDoingImpact, supineUncomfortable = sc.supineUncomfortable,
-            impactChecksPassed = sc.impactChecksPassed, flare = sc.flare) }) }
+            impactChecksPassed = sc.impactChecksPassed, flare = sc.flare, impactOptIn = sc.impactOptIn) }) }
         e?.let { f = f.copy(gym = it.gym, increments = Increments(barKg = it.inventory.barKg, smallestPlateKg = it.inventory.plates.keys.minOrNull() ?: 1.25,
             dumbbellMinKg = it.inventory.dumbbells.minOrNull() ?: 2.5, dumbbellMaxKg = it.inventory.dumbbells.maxOrNull() ?: 50.0,
             dumbbellStepKg = it.inventory.dumbbells.sorted().zipWithNext { a, b -> b - a }.minOrNull() ?: 2.5, stackStepKg = it.inventory.stack.stepKg,
@@ -273,8 +275,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         StoredCondition(id, today, controlled = if (key == HBP) null else a.status, clearance = a.clearance, clearanceDay = if (a.clearance.isEmpty()) null else today,
             subFlags = a.subFlags, pregnancyWeek = a.pregnancyWeek, pregnancyWeekDay = a.pregnancyWeek?.let { today },
             birthDay = a.weeksSinceBirth?.let { today - it * 7 }, attested = a.attested, impactChecksPassed = a.impactChecksPassed,
-            blockIfYes = a.blockIfYes, previouslyVigorous = a.previouslyVigorous, alreadyDoingImpact = a.alreadyDoingImpact,
-            supineUncomfortable = a.supineUncomfortable, flare = a.flare)
+            blockIfYes = a.blockIfYes || a.attestNotOk, previouslyVigorous = a.previouslyVigorous, alreadyDoingImpact = a.alreadyDoingImpact,
+            supineUncomfortable = a.supineUncomfortable, flare = a.flare, impactOptIn = a.impactOptIn)
     }.distinctBy { it.id }
 
     /** The equipment ticked by a preset (the list stays editable). */
@@ -333,10 +335,32 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val steps = if (settings.stepTracking) dd.docs.get(StepsRecord, dayKey(today))?.steps ?: 0 else null
         val target = if (settings.stepTracking) dd.docs.get(StepStateRecord)?.target else null
         val reasons = dd.decisions.forDay(today).filter { it.reason in TODAY_REASONS }.distinctBy { it.reason }
+        val painStop = dd.docs.between(com.personalfitnesscoach.data.core.model.PainRecord, today, today)
+            .any { it.resolvedDay == null && com.personalfitnesscoach.engine.safety.PainGate.assess(it.report).value.endSession }
+        val scr = dd.docs.get(ScreeningRecord)
+        val reason = when {
+            !t.user.flaggedScreen -> null
+            t.user.conditions.conservative && t.user.screening == com.personalfitnesscoach.engine.safety.ScreeningMode.STANDARD -> ConservativeReason.CONDITION
+            scr != null && com.personalfitnesscoach.engine.safety.Screening.evaluate(scr.answers, scr.clearanceConfirmedDay != null).value.clinicianGuidance -> ConservativeReason.CLINICIAN
+            else -> ConservativeReason.SCREENING_DOCTOR
+        }
+        val rescreen = scr != null && com.personalfitnesscoach.engine.safety.Screening.rescreenDue(
+            java.time.Period.between(Days.date(scr.takenDay), Days.date(today)).toTotalMonths().toInt())
+        val flare = dd.docs.get(ConditionsRecord)?.items?.firstOrNull { it.id == "low_back_pain" }?.flare
         return TodayModel(t, next, nextIsToday, cells, dd.docs.get(ReadinessRecord, dayKey(today)),
             dd.docs.get(SafetyStopRecord)?.takeIf { it.confirmedDay == null }?.symptoms, missed >= 1 && (next != null),
             dd.backup.reminderDue(dd.completedWorkouts()), rate, streak, steps, target, t.user.flaggedScreen, t.user.conditions.prompts,
-            week.any { it.day == today && it.row.status == Status.DONE }, reasons)
+            week.any { it.day == today && it.row.status == Status.DONE }, reasons, painStop, reason, rescreen, flare, upcoming(t))
+    }
+
+    /** SAF-010 low back pain flare mode, switched from Today (R5-12). */
+    suspend fun setBackFlare(on: Boolean) = act {
+        val dd = data
+        dd.docs.update(ConditionsRecord) { r ->
+            val rec = checkNotNull(r) { "no conditions" }
+            rec.copy(items = rec.items.map { if (it.id == "low_back_pain") it.copy(flare = on) else it })
+        }
+        today()
     }
 
     /** SAF-002: the user confirms the symptoms resolved or were reviewed by a doctor; the next session is LIGHT at most. */
@@ -363,6 +387,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val dd = data
         val t = dd.planToday() ?: return@act null
         val next = t.next ?: return@act null
+        if (todayModel(t).painStop) return@act null
         val prev = dd.docs.get(ReadinessRecord, dayKey(t.user.today))
         Screen.CheckIn(CheckInForm(sleep = prev?.checkIn?.sleep ?: 3, energy = prev?.checkIn?.energy ?: 3, soreness = prev?.checkIn?.soreness ?: 3,
             stress = prev?.checkIn?.stress ?: 3, sleepHours = prev?.checkIn?.sleepHours, minutes = prev?.minutesAvailable ?: t.user.profile.sessionMinutes), next)
@@ -381,16 +406,19 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val s = current() as? Screen.CheckIn ?: return@act null
         val dd = data
         val f = s.form
-        f.pain?.let { p -> if (p.region != null && p.kind != null) dd.reportPain(PainReport(p.region, p.kind, p.rating, p.worsening, p.descriptors, p.wholeBody)) }
+        // SAF-003: the pain gate's outcome decides the day (R5-01): ending the session means no session today.
+        val pain = f.pain?.let { p -> if (p.region != null && p.kind != null) dd.reportPain(PainReport(p.region, p.kind, p.rating, p.worsening, p.descriptors, p.wholeBody)) else null }
         dd.equipmentMissingToday(f.missingEquipment)
         val t = dd.planToday() ?: return@act today()
         val out = dd.checkIns.record(t.user, CheckIn(f.sleep, f.energy, f.soreness, f.stress, f.sleepHours), f.minutes, f.redFlags, f.illness)
         dd.decisions.append(out.decisions)
         out.safetyStop?.let { return@act Screen.Stop(it) }
-        preview(s.next, out.record.tier, f.minutes, express = false, away = f.awayFromGym)
+        if (pain?.value?.endSession == true) return@act Screen.PainDay(pain.value)
+        preview(s.next, out.record.tier, f.minutes, express = false, away = f.awayFromGym, extra = pain?.decisions ?: emptyList())
     }
 
-    private suspend fun preview(day: com.personalfitnesscoach.engine.program.PlannedDay, tier: Tier, minutes: Int, express: Boolean, away: Boolean): Screen {
+    private suspend fun preview(day: com.personalfitnesscoach.engine.program.PlannedDay, tier: Tier, minutes: Int, express: Boolean, away: Boolean,
+                                extra: List<com.personalfitnesscoach.engine.core.Decision> = emptyList()): Screen {
         val dd = data
         val t = dd.planToday() ?: return today()
         val planned = t.week.days.firstOrNull { it.weekday == day.weekday && it.template == day.template } ?: day
@@ -398,10 +426,11 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         g.workout.safetyStop?.let { return Screen.Stop(it) }
         val rec = dd.docs.get(ReadinessRecord, dayKey(t.user.today))
         val engineTier = rec?.engineTier ?: tier
-        val locked = t.user.flaggedScreen || dd.docs.get(SafetyStopRecord)?.confirmedDay == null && dd.docs.get(SafetyStopRecord) != null ||
-            (rec?.illnessSymptoms?.isNotEmpty() == true) || dd.bridge.painToday(t.user.today).first.isNotEmpty()
-        val options = Tier.entries.filter { it != g.workout.tier && Readiness.userChoice(engineTier, it, locked).value == it }
-        return Screen.Preview(PreviewModel(g, g.workout.tier, options, g.decisions, minutes))
+        // RDY-007 with the same lock as the check-in, the day's safety, return and lighter-week caps included (R5-14).
+        val gate = dd.bridge.gate(t.user, t.program)
+        val locked = t.user.flaggedScreen || gate.locked || (rec?.illnessSymptoms?.isNotEmpty() == true) || dd.bridge.painToday(t.user.today).first.isNotEmpty()
+        val options = Tier.entries.filter { it != g.workout.tier && Readiness.userChoice(engineTier, it, locked).value == it && gate.cap(it) == it }
+        return Screen.Preview(PreviewModel(g, g.workout.tier, options, extra + g.decisions, minutes))
     }
 
     /** RDY-007: an easier tier always; one step harder with a warning when nothing locks it. The check-in is saved again with the choice. */
@@ -453,8 +482,15 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         if (player.discard()) { platform.cancelAlerts(); return@act today() }
         val sum = player.finish(null, endedEarly = true)
         platform.cancelAlerts()
-        Screen.Done(sum)
+        done(sum)
     }
+
+    /** A8 with the next planned session. */
+    private suspend fun done(sum: com.personalfitnesscoach.data.core.player.Summary): Screen = Screen.Done(sum, next = data.planToday()?.let { upcoming(it) })
+
+    /** The next session to show: today's offer, or the next planned day later this week (after today's session is done). */
+    private fun upcoming(t: TodayPlan): com.personalfitnesscoach.engine.program.PlannedDay? =
+        t.next ?: t.week.days.filter { it.weekday > Days.weekday(t.user.today) }.minByOrNull { it.weekday }
 
     private fun sheetFor(v: com.personalfitnesscoach.data.core.player.PlayerView): WorkoutSheet? = when (v.state.sheet) {
         Sheet.CHANGE_TIME -> WorkoutSheet.ChangeTime(Math.round(v.remainingMinutes).toInt())
@@ -481,10 +517,13 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
      * Logs a set (one tap for "done as planned"). FS-5: an unusual entry asks for a confirmation first. The next set's load may change
      * (INT-007, CAL-001) — the decision is shown as a one-line notice.
      */
-    suspend fun log(rowId: Long, entry: LiftEntry, confirmed: Boolean = false) = workout { v ->
+    suspend fun log(rowId: Long, entry: LiftEntry, confirmed: Boolean = false, expected: com.personalfitnesscoach.data.core.player.SetTarget? = null) = workout { v ->
         val t = v.lifts.firstOrNull { it.rowId == rowId }?.next ?: return@workout shown(v)
-        if (!confirmed && SessionPlayer.unusual(entry, t)) return@workout Screen.Workout(v, WorkoutSheet.ConfirmEntry(rowId, entry))
-        val r = player.log(rowId, entry)
+        // A tap for a set that was already logged (a late double tap) changes nothing (R5-10).
+        if (expected != null && (t.kind != expected.kind || t.number != expected.number)) return@workout shown(v)
+        if (!confirmed && SessionPlayer.unusual(entry, t)) return@workout Screen.Workout(v, WorkoutSheet.ConfirmEntry(rowId, entry, expected))
+        val r = player.log(rowId, entry, expected)
+        if (r.ignored) return@workout shown(r.view)
         val change = r.decisions.firstOrNull { it.kind == DecisionKind.LOAD_CHANGE || it.kind == DecisionKind.CALIBRATION }
         shown(r.view, change?.let { WorkoutNotice.LoadChanged(it) })
     }
@@ -530,7 +569,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val region = f.region ?: return@workout Screen.Workout(v, s)
         val kind = f.kind ?: return@workout Screen.Workout(v, s)
         val r = player.reportPain(s.rowId, PainReport(region, kind, f.rating, f.worsening, f.descriptors, f.wholeBody))
-        if (r.endSession) { platform.cancelAlerts(); return@workout Screen.Done(player.lastSummary!!) }
+        if (r.endSession) { platform.cancelAlerts(); return@workout done(player.lastSummary!!) }
         val nv = player.openSheet(null)
         val alt = if (r.alternatives.isNotEmpty() && s.rowId != null) com.personalfitnesscoach.data.core.player.SwapChoice(s.rowId, Library.require(
             v.workout.exercises.first { it.row.id == s.rowId }.exerciseId), r.alternatives, false, emptyList()) else null
@@ -576,7 +615,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     suspend fun finishWorkout(early: Boolean = false) = act {
         val sum = player.finish(null, endedEarly = early)
         platform.cancelAlerts()
-        Screen.Done(sum)
+        done(sum)
     }
 
     /** Nothing logged yet: the workout is dropped without a trace. */
@@ -605,8 +644,72 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
             val rule = if (e.clearanceAlwaysIf.any { it in c.subFlags }) "always" else e.clearance
             if (rule == "none") null else ConditionClearance(c.id, e.name, rule, c.clearance)
         }
+        val guidance = scr != null && com.personalfitnesscoach.engine.safety.Screening.evaluate(scr.answers, scr.clearanceConfirmedDay != null).value.clinicianGuidance
         return SettingsModel(s.stepTracking, platform.stepCounterAvailable, s.units, s.lastExportDay, flow, appVersion, Registry.VERSION, Library.VERSION,
-            GeneratedConditions.VERSION, needs, scr?.clearanceConfirmedDay, clearances)
+            GeneratedConditions.VERSION, needs, scr?.clearanceConfirmedDay, clearances, guidance, !platform.alertsAllowed)
+    }
+
+    /** SAF-001 re-screen from Settings (12-monthly, or when health changes; the only way out of question 5's guidance). */
+    suspend fun openRescreen() = act { Screen.Settings(settingsModel(SettingsFlow.Rescreen())) }
+
+    suspend fun answerRescreen(q: ScreeningQuestion, yes: Boolean) = act(showBusy = false) {
+        val s = current() as? Screen.Settings ?: return@act null
+        val f = s.model.flow as? SettingsFlow.Rescreen ?: return@act null
+        s.copy(model = s.model.copy(flow = f.copy(answers = f.answers + (q to yes), result = null)))
+    }
+
+    /** Saves the new answers (the doctor's-OK confirmation starts again from them) and shows the outcome. */
+    suspend fun submitRescreen() = act {
+        val s = current() as? Screen.Settings ?: return@act null
+        val f = s.model.flow as? SettingsFlow.Rescreen ?: return@act null
+        if (f.answers.size < ScreeningQuestion.entries.size) return@act null
+        val a = f.answers
+        val r = onboarding.screening(ScreeningAnswers(a.getValue(ScreeningQuestion.HEART_OR_BLOOD_PRESSURE), a.getValue(ScreeningQuestion.METABOLIC_RENAL_PULMONARY),
+            a.getValue(ScreeningQuestion.SYMPTOMS), a.getValue(ScreeningQuestion.PALPITATIONS), a.getValue(ScreeningQuestion.LIMIT_OR_PREGNANCY),
+            a.getValue(ScreeningQuestion.MUSCULOSKELETAL), a.getValue(ScreeningQuestion.LONG_TERM_MEDICATION), a.getValue(ScreeningQuestion.REGULARLY_ACTIVE)))
+        Screen.Settings(settingsModel(SettingsFlow.Rescreen(a, r)))
+    }
+
+    /** Settings → health conditions: the onboarding questions with the stored answers (R5-12). */
+    suspend fun openConditionsEditor() = act {
+        form = loadForm()
+        Screen.EditConditions(form)
+    }
+
+    suspend fun editConditions(change: (OnboardingForm) -> OnboardingForm) = act(showBusy = false) {
+        val s = current() as? Screen.EditConditions ?: return@act null
+        form = change(form)
+        s.copy(form = form, problem = null)
+    }
+
+    /**
+     * Saves changed condition answers. A condition kept from before keeps its start day and pain-rule weeks (its time-based unlocks), and
+     * its doctor's-OK date unless the scopes changed; a new one starts today.
+     */
+    suspend fun saveConditions() = act {
+        val s = current() as? Screen.EditConditions ?: return@act null
+        val dd = data
+        val f = form
+        if (!f.noneOfThese && f.conditions.isEmpty()) return@act s.copy(problem = com.personalfitnesscoach.data.core.onboarding.OnboardingProblem.UNKNOWN_CONDITION)
+        val today = dd.clock.today()
+        val old = dd.docs.get(ConditionsRecord)?.items.orEmpty().associateBy { it.id }
+        val fresh = if (f.noneOfThese) emptyList() else storedConditions(f.conditions, today)
+        val merged = fresh.map { n ->
+            val o = old[n.id] ?: return@map n
+            // Unchanged dates are kept exactly (the form shows whole weeks, so re-saving never shifts a week or a birth date).
+            val oWeek = o.pregnancyWeek
+            val sameWeek = oWeek != null && n.pregnancyWeek == oWeek + maxOf(0, today - (o.pregnancyWeekDay ?: o.addedDay)) / 7
+            val oBirth = o.birthDay
+            val nBirth = n.birthDay
+            val sameBirth = oBirth != null && nBirth != null && (today - oBirth) / 7 == (today - nBirth) / 7
+            n.copy(addedDay = o.addedDay, painRuleMetWeeks = o.painRuleMetWeeks,
+                clearanceDay = if (n.clearance == o.clearance) o.clearanceDay else n.clearanceDay,
+                pregnancyWeek = if (sameWeek) oWeek else n.pregnancyWeek,
+                pregnancyWeekDay = if (sameWeek) o.pregnancyWeekDay else n.pregnancyWeekDay,
+                birthDay = if (sameBirth) oBirth else nBirth)
+        }
+        try { onboarding.conditions(merged) } catch (e: OnboardingException) { return@act s.copy(problem = e.problem) }
+        Screen.Settings(settingsModel())
     }
 
     /** SAF-001: the user confirms a doctor said they can exercise; conservative or moderate-only mode from the screening ends. */

@@ -16,7 +16,7 @@
     <string name="action_dismiss">Dismiss</string>
     <string name="action_decrease">Decrease %1$s</string>
     <string name="action_increase">Increase %1$s</string>
-    <string name="error_action">That didn’t work, and nothing was changed. (%1$s)</string>
+    <string name="error_action">That didn’t work, and nothing was changed. Please try again.</string>
     <string name="unit_kg">%1$s kg</string>
     <string name="unit_min">%1$d min</string>
     <string name="unit_sec">%1$d s</string>
@@ -92,7 +92,10 @@
     <string name="onb_cond_clearance_always">Until a doctor says exercise is OK, the plan stays gentle.</string>
     <string name="onb_cond_subflags">Does any of this apply?</string>
     <string name="onb_cond_block_yes">Yes, my care provider has told me one of these applies</string>
-    <string name="onb_cond_attest">My care provider has said exercise is OK</string>
+    <string name="onb_cond_attest_none">None of these apply</string>
+    <string name="onb_cond_attest_ok">One applies, and my provider has said exercise is OK</string>
+    <string name="onb_cond_attest_not_ok">One applies, and my provider hasn’t said exercise is OK</string>
+    <string name="onb_cond_impact_opt_in">When it’s allowed, I’d like to add some jumping or impact work</string>
     <string name="onb_cond_pregnancy_week">Week of pregnancy</string>
     <string name="onb_cond_prev_vigorous">I was already doing hard exercise before this pregnancy, and my provider is happy for me to continue</string>
     <string name="onb_cond_already_impact">I already do jumping or running exercise comfortably</string>
@@ -209,6 +212,12 @@
     <string name="today_steps">Steps today: %1$d</string>
     <string name="today_steps_target">Steps today: %1$d of %2$d</string>
     <string name="today_conservative">Gentle mode: until you confirm a doctor’s OK, sessions stay at easy to moderate effort.</string>
+    <string name="today_conservative_clinician">Gentle mode: you said a doctor told you to limit exercise, or that you are pregnant or recently gave birth. Follow their guidance; when it changes, answer the health questions again in Settings.</string>
+    <string name="today_conservative_condition">Gentle mode: one of your health conditions needs a doctor’s OK first. Record it in Settings once you have it.</string>
+    <string name="today_rescreen">It’s been a year since you answered the health questions. Please answer them again.</string>
+    <string name="today_rescreen_go">Answer the health questions</string>
+    <string name="today_pain_stop">Training stops for today because of the pain you reported. Rest it; if it’s still sore after a couple of days, see a physiotherapist or doctor.</string>
+    <string name="today_back_flare">My back is flaring up right now</string>
     <string name="today_stop_title">Training is paused</string>
     <string name="today_stop_body">You reported a warning sign. Training stays paused until the symptoms have gone or a doctor has checked them.</string>
     <string name="today_stop_confirm">The symptoms have gone, or a doctor has checked them</string>
@@ -312,6 +321,7 @@
     <string name="pain_result_professional">If it’s still sore after a couple of sessions, see a physiotherapist or doctor.</string>
     <string name="pain_result_end">The session ends here.</string>
     <string name="pain_alternative_title">A pain-free option instead</string>
+    <string name="pain_day_title">No training today</string>
 
     <!-- ======================================================================== preview -->
     <string name="preview_title">Today’s session</string>
@@ -440,6 +450,9 @@
     <string name="change_cond_short">%1$s shortened to %2$s min</string>
     <string name="change_cond_dropped">%1$s dropped</string>
     <string name="change_added">%1$s added</string>
+    <string name="change_cond_swapped">%1$s → %2$s</string>
+    <string name="list_item">%1$s · %2$s</string>
+    <string name="wk_enter_weight">Enter the weight you used to save this set.</string>
 
     <string name="sheet_replace_title">Replace %1$s</string>
     <string name="sheet_busy_title">%1$s is busy</string>
@@ -483,6 +496,7 @@
     <string name="done_rate_wait">Rate the session in a few minutes, once your breathing has settled. Today will ask.</string>
     <string name="done_rated">Thanks, saved.</string>
     <string name="done_back">Back to Today</string>
+    <string name="done_next">Next: %1$s, %2$s</string>
     <string name="stop_title">Stop training now</string>
     <string name="stop_body">You reported: %1$s. Stop exercising, sit down and rest.</string>
     <string name="stop_emergency">If it is severe, getting worse, or doesn’t settle within a few minutes, call %1$s now.</string>
@@ -502,6 +516,18 @@
     <string name="set_clearance_screening_done">Doctor’s OK for your health answers: confirmed on %1$s.</string>
     <string name="set_clearance_condition_intro">Tick what your doctor has said is OK. Each one unlocks only itself.</string>
     <string name="today_record_ok">Record a doctor’s OK</string>
+    <string name="set_rescreen">Answer the health questions again</string>
+    <string name="set_rescreen_save">Save my answers</string>
+    <string name="set_screening_guidance">Your answers say a doctor told you to limit exercise, or that you are pregnant or recently gave birth. Follow their guidance; when it changes, answer the health questions again.</string>
+    <string name="set_conditions_title">Health conditions</string>
+    <string name="set_conditions_body">Change your conditions and answers at any time, for example after a doctor’s visit or a birth.</string>
+    <string name="set_conditions_edit">Change health conditions</string>
+    <string name="set_save">Save</string>
+    <string name="set_alerts_off">Notifications are off, so the rest timer can’t buzz while your phone is locked.</string>
+    <string name="set_alerts_allow">Allow alerts</string>
+    <string name="set_backup_health_note">The file holds your health information. Keep it somewhere private, or add a password.</string>
+    <string name="set_backup_password_again">Password again</string>
+    <string name="set_backup_password_mismatch">The two passwords are different.</string>
     <string name="set_backup_title">Backup</string>
     <string name="set_backup_body">Save all your data to a file you choose. You can add a password.</string>
     <string name="set_backup_last">Last backup: %1$s</string>

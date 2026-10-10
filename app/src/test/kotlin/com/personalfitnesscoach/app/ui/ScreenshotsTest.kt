@@ -75,7 +75,7 @@ class ScreenshotsTest {
         out = File(dir!!).also { it.mkdirs() }
         val clock = FixedClock(0, ZoneId.of("UTC")).also { it.setDay(monday, hour = 8) }
         val c = AppController({ PfcData(InMemoryRowStore(), clock, "1.0.0") }, NoPlatform(), "1.0.0")
-        val actions = Actions(CoroutineScope(SupervisorJob()), c, Dispatchers.Main)
+        val actions = Actions(CoroutineScope(SupervisorJob()), c, Dispatchers.Main, doubleTapMs = 0)
         compose.setContent { PfcTheme { PfcApp(actions) } }
         fun step(block: suspend AppController.() -> Unit) { runBlocking { c.block() }; compose.waitForIdle() }
 
