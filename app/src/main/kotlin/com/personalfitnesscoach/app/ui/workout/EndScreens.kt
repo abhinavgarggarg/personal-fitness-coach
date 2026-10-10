@@ -46,12 +46,12 @@ fun DoneScreen(s: Screen.Done) {
     val sum = s.summary
     BackHandler { a.run { closeToToday() } }
     ScreenColumn(stringResource(R.string.done_title)) {
-        Body(stringResource(R.string.done_minutes, Math.round(sum.minutes).toInt(), sum.workingSets))
+        Body(stringResource(R.string.done_minutes, Math.round(sum.minutes).toInt(), sum.hardSets))
         if (sum.records.isNotEmpty()) {
             SectionTitle(stringResource(R.string.done_records))
             sum.records.forEach { r -> Body(stringResource(R.string.done_record_line, exerciseName(r.exerciseId), kg(r.after))) }
         }
-        val changes = Reasons.shown(sum.decisions.map { it.reason })
+        val changes = Reasons.nextTime(sum.decisions.map { it.reason })
         if (changes.isNotEmpty()) {
             SectionTitle(stringResource(R.string.done_changes))
             changes.forEach { Note(stringResource(ReasonTexts.of(it))) }

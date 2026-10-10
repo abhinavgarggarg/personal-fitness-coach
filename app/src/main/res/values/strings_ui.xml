@@ -199,7 +199,6 @@
 
     <!-- ======================================================================== today -->
     <string name="today_title">Today</string>
-    <string name="today_next_today">Today: %1$s</string>
     <string name="today_next_planned">Next: %1$s (planned for %2$s, you can do it today)</string>
     <string name="today_about_minutes">About %1$d min</string>
     <string name="today_start">Start</string>
@@ -341,7 +340,7 @@
     <string name="preview_cooldown">Cool-down · %1$s min</string>
     <string name="preview_balance">Balance · %1$s min</string>
     <string name="preview_bone">Bone-loading · %1$s min</string>
-    <string name="preview_sets_line">%1$d sets · %2$s</string>
+    <string name="preview_sets_line">Sets: %1$d · %2$s</string>
     <string name="preview_finding_weight">finding your weight</string>
     <string name="preview_effort_by_feel">Go by feel today: you should be able to talk in short sentences unless the plan says otherwise.</string>
     <string name="reps_range">%1$d to %2$d reps</string>
@@ -384,7 +383,7 @@
     <string name="wk_exercises">Exercises</string>
     <string name="wk_ex_done">done</string>
     <string name="wk_ex_skipped">skipped</string>
-    <string name="wk_ex_sets_done">%1$d of %2$d sets</string>
+    <string name="wk_ex_sets_done">sets done: %1$d of %2$d</string>
     <string name="wk_set_working">Set %1$d of %2$d</string>
     <string name="wk_set_ramp">Warm-up set %1$d of %2$d</string>
     <string name="wk_set_calibration">Finding your weight · set %1$d</string>
@@ -426,7 +425,6 @@
     <string name="wk_cond_skip">Skip this block</string>
     <string name="wk_finish">Finish workout</string>
     <string name="wk_all_done">Everything is done. Well done.</string>
-    <string name="wk_load_changed">Next set: %1$s</string>
     <string name="wk_changes">What changed</string>
     <string name="wk_no_changes">Nothing needed to change.</string>
     <string name="wk_refused">That change isn’t possible today: it would break a safety limit.</string>
@@ -477,7 +475,7 @@
     <string name="resume_continue">Continue</string>
     <string name="resume_end">End it here</string>
     <string name="done_title">Workout done</string>
-    <string name="done_minutes">%1$d min · %2$d working sets</string>
+    <string name="done_minutes">%1$d min · sets done: %2$d</string>
     <string name="done_records">New personal bests</string>
     <string name="done_record_line">%1$s: estimated best %2$s kg</string>
     <string name="done_changes">What changed for next time</string>
@@ -498,6 +496,12 @@
     <string name="set_steps_body">Reads the phone’s step counter when you open the app. Needs the “physical activity” permission.</string>
     <string name="set_steps_unavailable">This phone has no step counter.</string>
     <string name="set_steps_denied">Steps stay off without the physical-activity permission.</string>
+    <string name="set_clearance_title">Doctor’s OK</string>
+    <string name="set_clearance_screening_body">Your health answers suggested checking with a doctor first. Once they agree, confirm it here and the gentle limits from those answers end.</string>
+    <string name="set_clearance_screening">My doctor has said I can exercise</string>
+    <string name="set_clearance_screening_done">Doctor’s OK for your health answers: confirmed on %1$s.</string>
+    <string name="set_clearance_condition_intro">Tick what your doctor has said is OK. Each one unlocks only itself.</string>
+    <string name="today_record_ok">Record a doctor’s OK</string>
     <string name="set_backup_title">Backup</string>
     <string name="set_backup_body">Save all your data to a file you choose. You can add a password.</string>
     <string name="set_backup_last">Last backup: %1$s</string>

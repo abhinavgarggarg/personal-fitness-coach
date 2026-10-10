@@ -193,6 +193,8 @@ data class Summary(
     val ask: SrpePrompt.Ask,
     val minutes: Double,
     val workingSets: Int,
+    /** Working and finding-your-weight (CAL-001) sets: what the user did, as the summary shows it. */
+    val hardSets: Int = workingSets,
 )
 
 /**
@@ -834,7 +836,7 @@ class SessionPlayer(private val d: PfcData) {
         d.decisions.append(ask.decisions, w.day, w.id)
         val dec = d.decisions.forWorkout(w.id, w.day)
         return Summary(finished, records, dec, if (sessionRpe != null) SrpePrompt.Ask.NEVER else ask.value, minutes,
-            finished.exercises.sumOf { it.working.size })
+            finished.exercises.sumOf { it.working.size }, finished.exercises.sumOf { e -> e.sets.count { it.kind != SetKind.WARMUP } })
     }
 
     /** Abandons the workout without keeping it (nothing counts). Only before any work is logged; otherwise end it early. */

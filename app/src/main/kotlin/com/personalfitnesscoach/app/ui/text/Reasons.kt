@@ -16,6 +16,12 @@ object Reasons {
         "GOAL_DEFAULT_CHOSEN", "BONE_LOADING_VARIANT", "SWAP_OR_LATER", "ADDITION_OK", "STRENGTH_TREND",
     )
 
+    /** What happened during the session itself (a set, a swap, a pain report): shown at the time, not as "what changed for next time". */
+    private val IN_SESSION = listOf("INSESSION_", "CALIBRATION_STEP", "PAIN_", "SAFETY_", "SWAP_", "TIME_", "VALIDATOR_", "ADDITION_", "TIER_", "SRPE_")
+
+    /** The summary's "What changed for next time" (A8): only the decisions about the next sessions. */
+    fun nextTime(names: List<String>, max: Int = 8): List<String> = shown(names, Int.MAX_VALUE).filter { n -> IN_SESSION.none { n.startsWith(it) } }.take(max)
+
     /** The distinct reasons worth a line, in the order they were decided, at most [max]. */
     fun shown(names: List<String>, max: Int = 8): List<String> = names.filter { it !in ROUTINE }.distinct().take(max)
 }

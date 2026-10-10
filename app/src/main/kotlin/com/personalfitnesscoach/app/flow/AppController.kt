@@ -595,9 +595,37 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     // ======================================================================================================== settings
     private suspend fun settingsModel(flow: SettingsFlow? = null): SettingsModel {
-        val s = data.docs.get(SettingsRecord) ?: SettingsRecord()
+        val dd = data
+        val s = dd.docs.get(SettingsRecord) ?: SettingsRecord()
+        val scr = dd.docs.get(ScreeningRecord)
+        val needs = scr != null && scr.clearanceConfirmedDay == null &&
+            com.personalfitnesscoach.engine.safety.Screening.evaluate(scr.answers).value.clearanceRecommended
+        val clearances = dd.docs.get(ConditionsRecord)?.items.orEmpty().mapNotNull { c ->
+            val e = Conditions[c.id] ?: return@mapNotNull null
+            val rule = if (e.clearanceAlwaysIf.any { it in c.subFlags }) "always" else e.clearance
+            if (rule == "none") null else ConditionClearance(c.id, e.name, rule, c.clearance)
+        }
         return SettingsModel(s.stepTracking, platform.stepCounterAvailable, s.units, s.lastExportDay, flow, appVersion, Registry.VERSION, Library.VERSION,
-            GeneratedConditions.VERSION)
+            GeneratedConditions.VERSION, needs, scr?.clearanceConfirmedDay, clearances)
+    }
+
+    /** SAF-001: the user confirms a doctor said they can exercise; conservative or moderate-only mode from the screening ends. */
+    suspend fun confirmScreeningClearance() = act {
+        val dd = data
+        val today = dd.clock.today()
+        dd.docs.update(ScreeningRecord) { r -> checkNotNull(r) { "no screening" }.copy(clearanceConfirmedDay = today) }
+        Screen.Settings(settingsModel())
+    }
+
+    /** SAF-010: the doctor's-OK scopes confirmed for one condition (each unlocks only itself); recorded with today's date. */
+    suspend fun setConditionClearance(id: String, scopes: Set<com.personalfitnesscoach.engine.safety.ClearanceScope>) = act {
+        val dd = data
+        val today = dd.clock.today()
+        dd.docs.update(ConditionsRecord) { r ->
+            val rec = checkNotNull(r) { "no conditions" }
+            rec.copy(items = rec.items.map { c -> if (c.id != id) c else c.copy(clearance = scopes, clearanceDay = if (scopes.isEmpty()) null else today) })
+        }
+        Screen.Settings(settingsModel())
     }
 
     suspend fun openSettings() = act { Screen.Settings(settingsModel()) }

@@ -239,7 +239,16 @@ data class SettingsModel(
     val registryVersion: String,
     val libraryVersion: String,
     val conditionsVersion: String,
+    /** SAF-001: the screening recommends a doctor's OK and none was confirmed yet. */
+    val screeningClearanceNeeded: Boolean = false,
+    /** The day a doctor's OK for the screening was confirmed. */
+    val screeningClearanceDay: Int? = null,
+    /** SAF-010: picked conditions whose table entry asks for (or suggests) a doctor's OK, with the scopes confirmed so far. */
+    val clearances: List<ConditionClearance> = emptyList(),
 )
+
+/** One condition's doctor's-OK scopes (each scope unlocks only itself, SAF-010). `rule` is the table's clearance kind. */
+data class ConditionClearance(val id: String, val name: String, val rule: String, val confirmed: Set<ClearanceScope>)
 
 /** Backup, restore and erase dialogs (Phase 2 section 12). */
 sealed interface SettingsFlow {

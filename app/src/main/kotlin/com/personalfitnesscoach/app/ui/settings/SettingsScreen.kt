@@ -7,6 +7,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +27,7 @@ import com.personalfitnesscoach.R
 import com.personalfitnesscoach.app.flow.SettingsFlow
 import com.personalfitnesscoach.app.flow.SettingsModel
 import com.personalfitnesscoach.app.ui.Body
+import com.personalfitnesscoach.app.ui.CheckRow
 import com.personalfitnesscoach.app.ui.InfoCard
 import com.personalfitnesscoach.app.ui.LocalActions
 import com.personalfitnesscoach.app.ui.Note
@@ -39,6 +41,7 @@ import com.personalfitnesscoach.app.ui.text.Labels
 import com.personalfitnesscoach.data.android.StepSensor
 import com.personalfitnesscoach.data.core.backup.BackupFormat
 import com.personalfitnesscoach.data.core.time.Days
+import com.personalfitnesscoach.engine.safety.ClearanceScope
 import java.text.DateFormat
 import java.util.Date
 
@@ -105,6 +108,30 @@ fun SettingsScreen(m: SettingsModel) {
             })
             Note(stringResource(R.string.set_steps_body))
             if (stepsDenied) Note(stringResource(R.string.set_steps_denied))
+        }
+
+        // ------------------------------------------------------------------ doctor's OK (SAF-001, SAF-010)
+        if (m.screeningClearanceNeeded || m.screeningClearanceDay != null || m.clearances.isNotEmpty()) {
+            SectionTitle(stringResource(R.string.set_clearance_title))
+            if (m.screeningClearanceNeeded) {
+                Body(stringResource(R.string.set_clearance_screening_body))
+                PrimaryButton(stringResource(R.string.set_clearance_screening), { a.run { confirmScreeningClearance() } })
+            }
+            m.screeningClearanceDay?.let { Note(stringResource(R.string.set_clearance_screening_done, dateText(it))) }
+            if (m.clearances.isNotEmpty()) Note(stringResource(R.string.set_clearance_condition_intro))
+            m.clearances.forEach { cc ->
+                Text(cc.name, style = MaterialTheme.typography.titleMedium)
+                Note(stringResource(when (cc.rule) {
+                    "suggest" -> R.string.onb_cond_clearance_suggest
+                    "before_vigorous" -> R.string.onb_cond_clearance_before_vigorous
+                    else -> R.string.onb_cond_clearance_always
+                }))
+                ClearanceScope.entries.forEach { sc ->
+                    CheckRow(stringResource(Labels.clearance(sc)), sc in cc.confirmed, { on ->
+                        a.run { setConditionClearance(cc.id, if (on) cc.confirmed + sc else cc.confirmed - sc) }
+                    })
+                }
+            }
         }
 
         // ------------------------------------------------------------------ backup

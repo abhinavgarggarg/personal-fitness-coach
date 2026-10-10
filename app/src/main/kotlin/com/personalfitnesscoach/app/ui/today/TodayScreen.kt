@@ -52,7 +52,9 @@ fun TodayScreen(m: TodayModel) {
                 PrimaryButton(stringResource(R.string.today_stop_confirm), { a.run { confirmStopResolved() } })
             }
         }
-        if (m.conservative) InfoCard(stringResource(R.string.today_conservative), Tone.WARN)
+        if (m.conservative) InfoCard(stringResource(R.string.today_conservative), Tone.WARN) {
+            SmallAction(stringResource(R.string.today_record_ok), { a.run { openSettings() } })
+        }
         if (m.welcomeBack && stop == null) InfoCard(stringResource(R.string.today_welcome_back), Tone.GOOD)
 
         val next = m.next
@@ -63,7 +65,7 @@ fun TodayScreen(m: TodayModel) {
             else -> {
                 val name = stringResource(Labels.template(next.template))
                 Text(
-                    if (m.nextIsToday) stringResource(R.string.today_next_today, name)
+                    if (m.nextIsToday) name
                     else stringResource(R.string.today_next_planned, name, stringResource(Labels.weekday(next.weekday))),
                     style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold,
                 )
@@ -88,7 +90,8 @@ fun TodayScreen(m: TodayModel) {
 
         SectionTitle(stringResource(R.string.today_week))
         WeekStrip(m.week)
-        Note(stringResource(R.string.today_streak, m.streak.current, m.streak.best))
+        // ADH-001: the streak appears once there is one (never a "0 weeks" line for someone just starting).
+        if (m.streak.best > 0) Note(stringResource(R.string.today_streak, m.streak.current, m.streak.best))
         m.stepsToday?.let { steps ->
             val target = m.stepTarget
             Body(if (target != null) stringResource(R.string.today_steps_target, steps, target) else stringResource(R.string.today_steps, steps))

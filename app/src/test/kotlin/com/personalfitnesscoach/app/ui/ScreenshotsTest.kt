@@ -156,15 +156,15 @@ class ScreenshotsTest {
         step { closeToToday() }
         step { openSettings() }
         shot("settings")
-        step { submitRedFlagForShot() }
+        // A red flag at Wednesday's check-in (SAF-002): the stop, then Today keeping it until the user confirms.
+        clock.setDay(monday + 2, hour = 8)
+        step { closeSettings() }
+        step { openCheckIn() }
+        step { editCheckIn { it.copy(redFlags = setOf("chest_pain_pressure_tightness")) } }
+        step { submitCheckIn() }
         shot("safety-stop")
+        step { closeToToday() }
+        shot("today-paused")
     }
 
-    /** A red flag reported at check-in (SAF-002) for the stop screen picture. */
-    private suspend fun AppController.submitRedFlagForShot() {
-        closeSettings()
-        openCheckIn()
-        editCheckIn { it.copy(redFlags = setOf("chest_pain_pressure_tightness")) }
-        submitCheckIn()
-    }
 }

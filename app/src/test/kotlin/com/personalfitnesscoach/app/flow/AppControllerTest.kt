@@ -289,6 +289,39 @@ class AppControllerTest {
         assertFalse(c.busy.value)
     }
 
+    @Test fun `SAF-001 and SAF-010 a doctor's OK recorded in settings ends gentle mode, one scope at a time`() = runBlocking {
+        val w = World()
+        w.clock.setDay(monday, hour = 8)
+        val c = w.controller()
+        c.start()
+        c.submitOnboarding()
+        // Known heart condition while inactive: conservative until a doctor's OK (SAF-001).
+        c.editOnboarding { it.copy(screening = ScreeningQuestion.entries.associateWith { q -> q == ScreeningQuestion.HEART_OR_BLOOD_PRESSURE }) }
+        c.submitOnboarding()
+        c.editOnboarding { it.copy(birthYear = 1975, months = ExperienceBand.ONE_TO_3_YEARS, comfortable = setOf("squat", "hinge", "press", "row")) }
+        c.submitOnboarding()
+        c.editOnboarding { it.copy(conditions = mapOf("t2d" to ConditionAnswers())) }
+        c.submitOnboarding()
+        repeat(2) { c.submitOnboarding() }
+        c.editOnboarding { it.copy(gym = c.preset(GymPreset.FULL_GYM)) }
+        c.submitOnboarding()
+        repeat(4) { c.submitOnboarding() }
+        assertTrue((c.s() as Screen.Today).model.conservative)
+        c.openSettings()
+        val m = (c.s() as Screen.Settings).model
+        assertTrue(m.screeningClearanceNeeded)
+        assertEquals(listOf("t2d"), m.clearances.map { it.id })
+        assertEquals("before_vigorous", m.clearances.single().rule)
+        c.confirmScreeningClearance()
+        val m2 = (c.s() as Screen.Settings).model
+        assertFalse(m2.screeningClearanceNeeded)
+        assertEquals(monday, m2.screeningClearanceDay)
+        c.setConditionClearance("t2d", setOf(com.personalfitnesscoach.engine.safety.ClearanceScope.VIGOROUS))
+        assertEquals(setOf(com.personalfitnesscoach.engine.safety.ClearanceScope.VIGOROUS), (c.s() as Screen.Settings).model.clearances.single().confirmed)
+        c.closeSettings()
+        assertFalse((c.s() as Screen.Today).model.conservative)
+    }
+
     @Test fun `own-number candidates exist in the library`() {
         val c = World().controller()
         for (id in AppController.COMMON_LIFTS) assertNotNull(id, com.personalfitnesscoach.engine.library.Library[id])
