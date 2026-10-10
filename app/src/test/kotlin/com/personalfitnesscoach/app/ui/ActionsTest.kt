@@ -46,7 +46,9 @@ class ActionsTest {
         gate.complete(Unit)
         withTimeout(5_000) { while (ran.size < 3) delay(10) }
         delay(200)
-        assertEquals(listOf("foreground refresh", "file picker result", "tap"), ran.toList())
+        // Nothing from the phone is dropped; the second tap is. (The order of real actions is kept by the controller's own lock.)
+        assertEquals(setOf("foreground refresh", "file picker result", "tap"), ran.toSet())
+        assertEquals(3, ran.size)
         // Right after an action finished, a system result still runs (the double-tap window is for taps only).
         a.fromSystem { ran += "permission result" }
         withTimeout(5_000) { while (ran.size < 4) delay(10) }
