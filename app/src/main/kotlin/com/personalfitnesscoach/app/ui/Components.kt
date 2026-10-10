@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
@@ -187,7 +188,7 @@ fun <T> ChipGroup(options: List<T>, selected: (T) -> Boolean, label: @Composable
         options.forEach { o ->
             val text = label(o)
             FilterChip(selected = selected(o), onClick = { onToggle(o) }, enabled = !LocalBusy.current, label = { Text(text) },
-                modifier = Modifier.heightIn(min = SecondaryHeight))
+                modifier = Modifier.heightIn(min = SecondaryHeight).widthIn(min = SecondaryHeight))
         }
     }
 }
@@ -199,9 +200,9 @@ fun AnswerRow(question: String, answer: Boolean?, onAnswer: (Boolean) -> Unit, m
         Text(question, style = MaterialTheme.typography.bodyLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = answer == true, onClick = { onAnswer(true) }, enabled = !LocalBusy.current,
-                label = { Text(stringResource(R.string.action_yes)) }, modifier = Modifier.heightIn(min = SecondaryHeight))
+                label = { Text(stringResource(R.string.action_yes)) }, modifier = Modifier.heightIn(min = SecondaryHeight).widthIn(min = SecondaryHeight))
             FilterChip(selected = answer == false, onClick = { onAnswer(false) }, enabled = !LocalBusy.current,
-                label = { Text(stringResource(R.string.action_no)) }, modifier = Modifier.heightIn(min = SecondaryHeight))
+                label = { Text(stringResource(R.string.action_no)) }, modifier = Modifier.heightIn(min = SecondaryHeight).widthIn(min = SecondaryHeight))
         }
     }
 }
