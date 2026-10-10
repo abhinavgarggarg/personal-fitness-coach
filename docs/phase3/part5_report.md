@@ -10,7 +10,7 @@ The app can now be used from start to finish:
 - **The end:** a summary, plus a calm stop screen if a warning sign is reported.
 - **Settings:** steps, backup and restore, erase, and changing your health answers at any time.
 
-An independent reviewer found 26 problems: 1 critical, 3 high, 8 medium and 14 low. All are fixed with tests. A second check of those fixes found 8 more (1 high, 4 medium, 3 low), also all fixed and tested. **589 automated tests pass on GitHub**, and the device tests pass on five phone and tablet set-ups. Every screen is rendered as a picture in `docs/phase3/screens/` so it can be looked at without a phone.
+An independent reviewer found 26 problems: 1 critical, 3 high, 8 medium and 14 low. All are fixed with tests. A second check of those fixes found 8 more (1 high, 4 medium, 3 low), also all fixed and tested. **589 automated tests pass on GitHub**, and the device tests pass on five phone and tablet set-ups. Every screen is rendered as a picture in `docs/phase3/screens/`, and all 28 are on one page, "Personal Fitness Coach Screens" (https://claude.ai/artifact/ENfS9tFet1rQ21x4xHRXsY), so they can be looked at without a phone.
 
 ## What was built
 
@@ -29,13 +29,13 @@ Rule coverage stays at **150 of 152 rules** (`docs/phase3/rule_coverage_part5.md
 
 ## How it was checked
 - **Locally:** 564 tests pass (engine 408, data core 132, app screen logic 24). The strings check passes (710 strings, all used, nothing hard-coded), and so does the reason-text check (157 reasons).
-- **GitHub CI** (Kotlin 2.4.0, run 38078041708, green): **589 tests**, made up of:
+- **GitHub CI** (Kotlin 2.4.0, run 38079715387, green): **589 tests**, made up of:
   - engine 408;
   - data 149, including the real database;
   - app 32, including the screens on Robolectric: onboarding, a workout, a warning sign, erase, text at 200% and touch-target size.
 
   It also confirms the permission list (6 permissions, no internet) and builds the debug APK.
-- **On five emulated devices** (Android 10 small phone, 12, 14 at 200% text, 16 phone, 16 tablet; Devices run 38078793257), 8 of 8 device tests pass on each. They cover:
+- **On five emulated devices** (Android 10 small phone, 12, 14 at 200% text, 16 phone, 16 tablet; Devices run 38079955034), 8 of 8 device tests pass on each. They cover:
   - a workout started from Today and logged into the real database;
   - the end-of-rest alarm going off;
   - an encrypted backup and restore;
