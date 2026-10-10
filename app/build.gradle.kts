@@ -55,6 +55,11 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // The screens are also tested on the JVM (Robolectric) with the app's own resources.
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -68,6 +73,10 @@ dependencies {
     implementation(libs.compose.material3)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
 
     // Device tests run on emulators of several Android versions and screen sizes (decision D-044).
     androidTestImplementation(platform(libs.compose.bom))

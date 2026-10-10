@@ -41,5 +41,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- The end-of-rest alarm (A2). Not exported: only this app's own alarm reaches it. -->
+        <receiver
+            android:name=".app.platform.RestAlarmReceiver"
+            android:exported="false" />
     </application>
 </manifest>

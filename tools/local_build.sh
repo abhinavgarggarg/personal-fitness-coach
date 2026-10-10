@@ -23,6 +23,8 @@ python3 -I "$ROOT/tools/gen_registry_kotlin.py" --check
 python3 -I "$ROOT/tools/gen_library_kotlin.py" --check
 python3 -I "$ROOT/tools/gen_conditions_kotlin.py" --check
 python3 -I "$ROOT/tools/check_registry.py" > /dev/null || { python3 -I "$ROOT/tools/check_registry.py"; exit 1; }
+python3 -I "$ROOT/tools/gen_reason_texts.py" --check > /dev/null || { python3 -I "$ROOT/tools/gen_reason_texts.py" --check; exit 1; }
+python3 -I "$ROOT/tools/check_strings.py" > /dev/null || { python3 -I "$ROOT/tools/check_strings.py"; exit 1; }
 
 rm -rf "$OUT" && mkdir -p "$OUT/engine/main" "$OUT/engine/test" "$OUT/data/main" "$OUT/data/test"
 echo "== compiling :engine"

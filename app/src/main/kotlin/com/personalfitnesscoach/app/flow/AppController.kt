@@ -94,8 +94,9 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     private val data: PfcData get() = d ?: open().also { d = it; player = SessionPlayer(it); onboarding = Onboarding(it) }
 
-    private suspend fun act(block: suspend () -> Screen?) = lock.withLock {
-        _busy.value = true
+    /** Runs one tap. `showBusy` is false for typing and ticking answers (no flicker); buttons disable while a real action runs. */
+    private suspend fun act(showBusy: Boolean = true, block: suspend () -> Screen?) = lock.withLock {
+        if (showBusy) _busy.value = true
         try {
             val next = try { block() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
                 // Every change runs in one transaction, so a failure leaves nothing half-written. Before the data layer opens it is ERROR_SAFE.
@@ -202,7 +203,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     private fun formKey(id: String) = if (id.startsWith("hbp_")) HBP else id
 
     /** Changes the answers on the current step (no saving until the step is submitted). */
-    suspend fun editOnboarding(change: (OnboardingForm) -> OnboardingForm) = act {
+    suspend fun editOnboarding(change: (OnboardingForm) -> OnboardingForm) = act(showBusy = false) {
         val s = current() as? Screen.Onboarding ?: return@act null
         form = change(form)
         val goals = if (s.step == OnboardingStep.GOAL) onboarding.goalOptions(form.weightFeaturesOff).value else s.goals
@@ -367,7 +368,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
             stress = prev?.checkIn?.stress ?: 3, sleepHours = prev?.checkIn?.sleepHours, minutes = prev?.minutesAvailable ?: t.user.profile.sessionMinutes), next)
     }
 
-    suspend fun editCheckIn(change: (CheckInForm) -> CheckInForm) = act {
+    suspend fun editCheckIn(change: (CheckInForm) -> CheckInForm) = act(showBusy = false) {
         val s = current() as? Screen.CheckIn ?: return@act null
         s.copy(form = change(s.form))
     }
@@ -463,7 +464,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     }
 
     // ======================================================================================================== workout
-    private suspend fun workout(update: suspend (com.personalfitnesscoach.data.core.player.PlayerView) -> Screen) = act {
+    private suspend fun workout(showBusy: Boolean = true, update: suspend (com.personalfitnesscoach.data.core.player.PlayerView) -> Screen) = act(showBusy) {
         val s = current()
         val v = (s as? Screen.Workout)?.view ?: player.view() ?: return@act today()
         update(v)
@@ -518,7 +519,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     /** A4: "Something hurts" is always one tap away. */
     suspend fun openHurts(rowId: Long?) = workout { v -> Screen.Workout(player.openSheet(Sheet.SOMETHING_HURTS), WorkoutSheet.Hurts(rowId)) }
 
-    suspend fun editHurts(change: (PainForm) -> PainForm) = workout { v ->
+    suspend fun editHurts(change: (PainForm) -> PainForm) = workout(showBusy = false) { v ->
         val s = (current() as? Screen.Workout)?.sheet as? WorkoutSheet.Hurts ?: return@workout shown(v)
         Screen.Workout(v, s.copy(form = change(s.form)))
     }
@@ -533,7 +534,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val nv = player.openSheet(null)
         val alt = if (r.alternatives.isNotEmpty() && s.rowId != null) com.personalfitnesscoach.data.core.player.SwapChoice(s.rowId, Library.require(
             v.workout.exercises.first { it.row.id == s.rowId }.exerciseId), r.alternatives, false, emptyList()) else null
-        Screen.Workout(nv, WorkoutSheet.HurtsResult(r.outcome, r.changes, alt))
+        Screen.Workout(nv, WorkoutSheet.HurtsResult(r.outcome, r.changes, alt, region))
     }
 
     /** After a pain stop: a pain-free alternative instead (SAF-003 substitute with joint stress ≤ 1). */

@@ -207,7 +207,7 @@ sealed interface WorkoutSheet {
     /** A3 Replace (or "occupied" with "do it later"). */
     data class Replace(val choice: SwapChoice) : WorkoutSheet
     data class Hurts(val rowId: Long?, val form: PainForm = PainForm()) : WorkoutSheet
-    data class HurtsResult(val outcome: PainOutcome, val changes: List<Change>, val alternatives: SwapChoice?) : WorkoutSheet
+    data class HurtsResult(val outcome: PainOutcome, val changes: List<Change>, val alternatives: SwapChoice?, val region: Joint? = null) : WorkoutSheet
     data class ChangeTime(val minutes: Int) : WorkoutSheet
     data class RedFlag(val picked: Set<String> = emptySet()) : WorkoutSheet
     /** FS-5: an unusual entry needs a confirmation before it is saved. */

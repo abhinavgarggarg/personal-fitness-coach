@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Personal Fitness Coach</string>
-    <string name="build_banner">Development build — the training screens arrive in later parts of Phase 3.</string>
-    <string name="engine_status">Training engine ready · rules %1$s (%2$d rules)</string>
 </resources>

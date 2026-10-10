@@ -41,6 +41,11 @@ jobs:
           python3 -I tools/check_phase1.py
           python3 -I tools/check_registry.py
 
+      - name: Screen text (every word in resources, placeholders match, reasons complete)
+        run: |
+          python3 -I tools/gen_reason_texts.py --check
+          python3 -I tools/check_strings.py
+
       - name: No destructive database migration (Phase 2 data rule 2)
         run: |
           if grep -rn "fallbackToDestructiveMigration\|DestructiveMigration" --include=*.kt --include=*.kts app data engine; then
