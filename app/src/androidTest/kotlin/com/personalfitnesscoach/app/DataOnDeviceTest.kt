@@ -78,6 +78,24 @@ class DataOnDeviceTest {
         }
     }
 
+    /** "Erase all my data" leaves nothing readable in the database file or its write-ahead log (Part 4 re-check finding 10). */
+    @Test fun erasingEverythingLeavesNoTraceOnTheDevice() = runBlocking {
+        val name = "device-erase-${System.nanoTime()}.db"
+        val db = PfcDatabase.open(ctx, name)
+        try {
+            val store = RoomRowStore(db)
+            val marker = "ERASE-MARKER-${System.nanoTime()}"
+            repeat(300) { i -> store.putDoc(com.personalfitnesscoach.data.core.store.DocRow("probe", "k$i", null, "{\"m\":\"$marker-$i\"}", 1L)) }
+            store.eraseAll()
+            db.close()
+            val files = listOf(name, "$name-wal", "$name-journal").map { ctx.getDatabasePath(it) }.filter { it.exists() }
+            assertTrue(files.isNotEmpty())
+            for (f in files) assertTrue("${f.name} still holds erased data", !String(f.readBytes(), Charsets.ISO_8859_1).contains(marker))
+        } finally {
+            ctx.deleteDatabase(name)
+        }
+    }
+
     @Test fun theStepCounterIsSilentWithoutPermission() = runBlocking {
         val s = StepSensor(ctx)
         assertEquals(PackageManager.PERMISSION_DENIED, ctx.checkSelfPermission(StepSensor.PERMISSION))

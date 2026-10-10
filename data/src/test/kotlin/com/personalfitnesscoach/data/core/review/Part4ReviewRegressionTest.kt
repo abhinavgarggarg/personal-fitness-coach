@@ -175,13 +175,26 @@ class Part4ReviewRegressionTest {
     }
 
     // ------------------------------------------------------------------------------------------------ R4-04 T2D across the week boundary
-    @Test fun `R4-04 type 2 diabetes - no strength on Monday after Sunday strength`() = runBlocking {
+    @Test fun `R4-04 type 2 diabetes - no strength on Monday after Sunday strength, whichever planned day is opened`() = runBlocking {
         val (d, clock) = ready(monday - 7, conditions = listOf(StoredCondition("t2d", monday - 7)), priorities = listOf(Goal.FAT_LOSS), days = 4)
-        done(d, monday - 1, DayTemplate.FB_A, weekday = 6)
+        done(d, monday - 1, DayTemplate.FB_A, weekday = 6, lifts = listOf(Triple("goblet-squat", 20.0, 10)))
         clock.setDay(monday)
         val t = d.planToday()!!
         val next = t.next
         assertTrue("Monday after Sunday strength: ${next?.template}", next == null || next.slots.isEmpty())
+        // Re-check finding 4: opening a strength day directly is no way round it — no resistance exercise, and the final check agrees.
+        for (day in t.week.days.filter { it.slots.isNotEmpty() }) {
+            val w = d.generate(t, day, Tier.FULL).value
+            assertTrue("${day.template}: ${w.items.map { it.exercise.id }}", w.items.none { it.sets > 0 })
+            assertTrue(w.validated.exercises.isEmpty())
+        }
+        // Without a lift yesterday, the same day keeps its strength work.
+        val (d2, clock2) = ready(monday - 7, conditions = listOf(StoredCondition("t2d", monday - 7)), priorities = listOf(Goal.FAT_LOSS), days = 4)
+        done(d2, monday - 1, DayTemplate.COND, weekday = 6, conditioning = listOf(ConditioningItem(Modality.ROWER, Zone.Z1, 20.0, doneWorkMinutes = 20.0)))
+        clock2.setDay(monday)
+        val t2 = d2.planToday()!!
+        val strengthDay = t2.week.days.first { it.slots.isNotEmpty() }
+        assertTrue(d2.generate(t2, strengthDay, Tier.FULL).value.items.any { it.sets > 0 })
     }
 
     // ------------------------------------------------------------------------------------------------ R4-05 lighter week

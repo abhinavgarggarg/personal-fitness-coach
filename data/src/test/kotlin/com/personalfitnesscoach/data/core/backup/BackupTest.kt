@@ -28,7 +28,7 @@ class BackupTest {
         Fixtures.onboard(d)
         for (i in 0 until 10) { d.docs.put(WeightRecord, WeightRecord(clock.today() - i, 80.0 + i * 0.1)) }
         val w = d.store.insertWorkout(WorkoutRow(day = clock.today() - 2, status = "DONE", template = "FB_A", tier = "FULL", startedAtMs = 1, endedAtMs = 2,
-            sessionRpe = 6.0, actualMinutes = 55.0, registryVersion = "1.1.1", json = "{\"v\":1,\"weekday\":0,\"plannedMinutes\":60.0,\"warmupMinutes\":10.0}"))
+            sessionRpe = 6.0, actualMinutes = 55.0, registryVersion = "1.1.1", json = com.personalfitnesscoach.data.core.session.WorkoutDoc(0, 60.0, 10.0).encode()))
         val e = d.store.insertExercise(ExerciseRow(workoutId = w, position = 0, exerciseId = "goblet_squat", slotKey = "main", status = "DONE",
             json = "{\"v\":1,\"role\":\"MAIN\",\"priority\":\"P1\",\"sets\":3,\"reps\":[8,12],\"unit\":\"REPS\",\"targetRir\":2.0,\"loadFactor\":1.0,\"restMinSec\":90,\"restDefaultSec\":120,\"restMaxSec\":180}"))
         for (i in 0 until 3) d.store.insertSet(SetRow(workoutExerciseId = e, setIndex = i, kind = "WORKING", loadKg = 24.0, reps = 10, rir = 2.0, loggedAtMs = 10L + i))

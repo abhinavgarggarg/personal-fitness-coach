@@ -76,7 +76,7 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
         val week = sessions.between(Days.weekStart(today), today)
         val doneWeekdays = week.filter { it.row.status == Status.DONE || it.row.status == Status.SKIPPED }.map { it.doc.weekday }.toSet()
         // Yesterday may be last week (Sunday before Monday): SAF-010 "no strength on consecutive days" looks across the week boundary.
-        val strengthYesterday = sessions.done(today - 1, today - 1).any { it.template.strength }
+        val strengthYesterday = bridge.strengthDoneOn(today - 1)
         val doneToday = week.any { it.day == today && it.row.status == Status.DONE }
         val next = if (doneToday) null else WeekPlanner.nextSession(plan.value, doneWeekdays, strengthYesterday, u.conditions)
         TodayPlan(u, program2, plan.value, next, u.decisions + plan.decisions)
@@ -88,14 +88,35 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
      * workout is what [SessionLog.start] saves.
      */
     suspend fun generate(t: TodayPlan, day: PlannedDay, tier: Tier, minutes: Int = t.user.profile.sessionMinutes,
-                         redFlags: Set<String> = emptySet(), illnessSymptoms: Set<String> = emptySet()): EngineResult<Workout> {
+                         redFlags: Set<String> = emptySet(), illnessSymptoms: Set<String> = emptySet()): EngineResult<Workout> = store.transaction {
         val checkIn = docs.get(ReadinessRecord, dayKey(t.user.today))
         val capped = checkIn?.let { Tier.min(tier, it.tier) } ?: tier
-        val req = bridge.request(t.user, t.program, t.week, day, capped, minutes, redFlags + (checkIn?.redFlags ?: emptySet()),
+        val prepared = bridge.prepare(t.user, t.program, t.week, day, capped, minutes, redFlags + (checkIn?.redFlags ?: emptySet()),
             illnessSymptoms + (checkIn?.illnessSymptoms ?: emptySet()))
-        val w = SessionGenerator.generate(req)
-        decisions.append(w.decisions)
-        return w
+        val g = SessionGenerator.generate(prepared.request)
+        // A return ramp or a post-deload resume scaled these loads: the items carry that factor, so the reduced exposure is recorded as
+        // reduced and never becomes the base of the next one (re-check finding 7).
+        val w = if (prepared.loadFactors.isEmpty()) g.value else g.value.copy(items = g.value.items.map { item ->
+            val f = prepared.loadFactors[item.exercise.id]
+            if (f == null || item.load == null || item.calibrating) item else item.copy(loadFactor = minOf(item.loadFactor, Math.round(f * 100) / 100.0))
+        })
+        // SAF-002: a stop raised here (red flags given now) is kept until the user confirms it resolved (re-check finding 3).
+        w.safetyStop?.let { checkIns.startStop(it, t.user.today) }
+        decisions.append(prepared.decisions + g.decisions)
+        EngineResult(w, prepared.decisions + g.decisions)
+    }
+
+    /**
+     * SAF-002 at any time — before or during a workout: the symptoms are checked, the stop is kept until confirmed, and an open workout
+     * ends at once ([SessionLog.stopForSafety]: its sets count towards caps, never towards progression). Null when none is a red flag.
+     */
+    suspend fun reportRedFlag(symptoms: Set<String>): com.personalfitnesscoach.engine.safety.SafetyStop? = store.transaction {
+        val r = com.personalfitnesscoach.engine.safety.RedFlags.check(symptoms)
+        val stop = r.value ?: return@transaction null
+        checkIns.startStop(stop, clock.today())
+        sessions.active()?.let { (w, _) -> if (w.row.status == Status.IN_PROGRESS) sessions.stopForSafety(w.id) }
+        decisions.append(r.decisions)
+        stop
     }
 
     /** Finishes the active workout and turns its sets into the next prescriptions, in one transaction. */
@@ -141,10 +162,9 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
 
     suspend fun completedWorkouts(): Int = sessions.between(Int.MIN_VALUE / 2, Int.MAX_VALUE / 2).count { it.row.status == Status.DONE }
 
-    /** Restores a checked backup (current data saved first). The step-counter reading belongs to the old phone and is dropped. */
+    /** Restores a checked backup (current data saved first). The step-counter reading belongs to the old phone and is never restored. */
     suspend fun restore(preview: RestorePreview, safetyPassword: CharArray? = null, safetyCopy: BackupSink) {
         backup.restore(preview, safetyPassword, safetyCopy)
-        docs.delete(StepCounterRecord)
         decisions.reset()
     }
 

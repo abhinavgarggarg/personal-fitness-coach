@@ -13,6 +13,8 @@ import com.personalfitnesscoach.data.core.json.objs
 import com.personalfitnesscoach.data.core.json.str
 import com.personalfitnesscoach.data.core.json.strOrNull
 import com.personalfitnesscoach.data.core.model.SettingsRecord
+import com.personalfitnesscoach.data.core.model.StepCounterRecord
+import com.personalfitnesscoach.data.core.session.NewSet
 import com.personalfitnesscoach.data.core.repo.DataSchema
 import com.personalfitnesscoach.data.core.repo.Docs
 import com.personalfitnesscoach.data.core.session.ItemDoc
@@ -39,6 +41,7 @@ import kotlinx.serialization.json.JsonObject
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
+import java.security.GeneralSecurityException
 import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
@@ -155,16 +158,23 @@ object BackupFormat {
                 val d = Base64.getDecoder()
                 val cipherBytes = try { d.decode(body) } catch (e: IllegalArgumentException) {
                     throw BackupException(BackupProblem.DAMAGED, "the file is damaged", e) }
-                val c = Cipher.getInstance("AES/GCM/NoPadding")
-                c.init(Cipher.DECRYPT_MODE, key(password, d.decode(enc.str("salt")), enc.int("iterations")), GCMParameterSpec(TAG_BITS, d.decode(enc.str("iv"))))
-                c.updateAAD(head)
+                // A damaged salt, IV or iteration count is a damaged file, not a crash (re-check finding 13).
+                val c = try {
+                    Cipher.getInstance("AES/GCM/NoPadding").apply {
+                        init(Cipher.DECRYPT_MODE, key(password, d.decode(enc.str("salt")), enc.int("iterations")), GCMParameterSpec(TAG_BITS, d.decode(enc.str("iv"))))
+                        updateAAD(head)
+                    }
+                } catch (e: GeneralSecurityException) { throw BackupException(BackupProblem.DAMAGED, "the file is damaged", e)
+                } catch (e: IllegalArgumentException) { throw BackupException(BackupProblem.DAMAGED, "the file is damaged", e) }
                 try { c.doFinal(cipherBytes) } catch (e: AEADBadTagException) {
-                    throw BackupException(BackupProblem.WRONG_PASSWORD_OR_DAMAGED, "wrong password, or the file is damaged", e) }
+                    throw BackupException(BackupProblem.WRONG_PASSWORD_OR_DAMAGED, "wrong password, or the file is damaged", e)
+                } catch (e: GeneralSecurityException) { throw BackupException(BackupProblem.DAMAGED, "the file is damaged", e) }
             }
             if (enc == null && (payload.size != header.int("payloadBytes") || sha256(payload) != header.str("sha256")))
                 throw BackupException(BackupProblem.DAMAGED, "the file is damaged or incomplete (checksum does not match)")
-            val snapshot = migrate(readPayload(Js.parse(String(payload, Charsets.UTF_8))), schema)
-            validate(snapshot)
+            val read = migrate(readPayload(Js.parse(String(payload, Charsets.UTF_8))), schema)
+            validate(read)
+            val snapshot = normalize(read)
             val days = snapshot.workouts.map { it.day } + snapshot.docs.mapNotNull { it.day }
             return RestorePreview(BackupSummary(header.long("createdAtMs"), header.str("app"), schema, header.str("registryVersion"), enc != null,
                 days.minOrNull(), days.maxOrNull(), snapshot.workouts.count { it.status == Status.DONE }, snapshot.sets.size,
@@ -181,6 +191,22 @@ object BackupFormat {
         if (fromSchema < 1) throw DataFormatException("schema version $fromSchema is not supported")
         return s
     }
+
+    /**
+     * What is restored is what this app would have written (re-check findings 5 and 12): every record is decoded and encoded again, so
+     * fields this version does not know — such as the free-text note older versions kept — are dropped (DATA-001); the open session's
+     * screen state is reset (sets logged so far are kept); and the step-counter reading, which belongs to the old phone, is left out.
+     */
+    @Suppress("UNCHECKED_CAST")
+    internal fun normalize(s: Snapshot): Snapshot = s.copy(
+        docs = s.docs.filter { it.type != StepCounterRecord.type }.map { d ->
+            val c = DataSchema.codec(d.type) as com.personalfitnesscoach.data.core.model.DocCodec<Any?>
+            d.copy(json = c.encode(c.decode(d.json)))
+        },
+        workouts = s.workouts.map { it.copy(json = WorkoutDoc.decode(it.json).encode()) },
+        exercises = s.exercises.map { it.copy(json = ItemDoc.decode(it.json).encode()) },
+        active = s.active?.copy(json = "{}"),
+    )
 
     /** Every record must be readable and every reference valid before anything is replaced. */
     internal fun validate(s: Snapshot) {
@@ -200,6 +226,7 @@ object BackupFormat {
             if (DayTemplate.entries.none { it.name == w.template }) throw DataFormatException("workout ${w.id} has an unknown template")
             if (w.tier != null && Tier.entries.none { it.name == w.tier }) throw DataFormatException("workout ${w.id} has an unknown tier")
             if (w.sessionRpe != null && w.sessionRpe !in 0.0..10.0) throw DataFormatException("workout ${w.id} has a session rating out of range")
+            if (w.actualMinutes != null && w.actualMinutes !in 0.0..600.0) throw DataFormatException("workout ${w.id} has minutes out of range")
             WorkoutDoc.decode(w.json)
         }
         val exercises = s.exercises.associateBy { it.id }
@@ -216,6 +243,9 @@ object BackupFormat {
             if (x.kind !in SetKind.all) throw DataFormatException("set ${x.id} has an unknown kind")
             if (FormCheck.entries.none { it.name == x.formCheck }) throw DataFormatException("set ${x.id} has an unknown form check")
             if (x.deviation !in DEVIATIONS) throw DataFormatException("set ${x.id} has an unknown deviation")
+            // The same ranges logging accepts (re-check finding 8): a restored file cannot hold what the app would refuse to record.
+            try { NewSet(x.setIndex, x.kind, x.loadKg, x.reps, x.seconds, x.metres, x.rir, x.rpe, FormCheck.valueOf(x.formCheck), x.deviation) }
+            catch (e: IllegalArgumentException) { throw DataFormatException("set ${x.id}: ${e.message}") }
         }
         s.active?.let { if (it.workoutId !in workouts) throw DataFormatException("the open workout is missing") }
     }

@@ -64,12 +64,17 @@ class RoomRowStore(private val db: PfcDatabase) : RowStore {
         snapshot.active?.let { putActive(it) }
     }
 
-    /** Erases every row, then compacts the file so deleted records do not linger in free pages or the write-ahead log. */
+    /**
+     * Erases every row so nothing lingers on disk (re-check finding 10): deleted pages are zeroed (secure_delete), VACUUM rewrites the
+     * database without free pages, and the write-ahead log is then checkpointed into the main file and truncated — in that order, because
+     * in WAL mode VACUUM itself goes through the log.
+     */
     override suspend fun eraseAll() {
+        db.useWriterConnection { c -> c.usePrepared("PRAGMA secure_delete = ON") { it.step() } }
         db.withWriteTransaction { eraseAllInTransaction() }
         db.useWriterConnection { c ->
-            c.usePrepared("PRAGMA wal_checkpoint(TRUNCATE)") { it.step() }
             c.usePrepared("VACUUM") { it.step() }
+            c.usePrepared("PRAGMA wal_checkpoint(TRUNCATE)") { it.step() }
         }
     }
 

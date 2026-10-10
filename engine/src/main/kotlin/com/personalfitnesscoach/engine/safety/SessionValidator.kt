@@ -128,6 +128,8 @@ data class ValidationContext(
     val planIntervalModalities: Set<Modality>? = null,
     /** SAF-010 merged health-condition limits: tags, joints, zone, intervals, impact, effort and failure. */
     val conditions: ConditionLimits = ConditionLimits.NONE,
+    /** Resistance work was done yesterday (SAF-010 "no strength on consecutive days", type 2 diabetes; D-071). */
+    val strengthYesterday: Boolean = false,
 ) {
     /** Tags to avoid today: limitation tags plus the condition entries' (SAF-010). */
     val allBlockedTags: Set<String> get() = blockedTags + conditions.avoidTags
@@ -215,6 +217,8 @@ object SessionValidator {
             if (!c.conditions.boneLoading || !BoneLoading.allowed(bl, c.allJointLimits, c.allBlockedTags, c.regions))
                 v += Violation(RuleIds.SAF_010, "BONE_LOADING_NOT_ALLOWED", detail = bl.name)
         }
+        // SAF-010 (type 2 diabetes): never resistance work on consecutive days — enforced here so no screen or moved session can bypass it.
+        if (strength.isNotEmpty() && c.strengthYesterday && !c.conditions.strengthOnConsecutiveDays) v += Violation(RuleIds.SAF_010, "STRENGTH_CONSECUTIVE")
         // Exclusions, pain limits, tags (limitation and SAF-010), impact for exercises.
         strength.forEachIndexed { i, e -> if (!exerciseAllowed(e.exercise, c)) v += Violation(RuleIds.SAF_003, "EXERCISE_NOT_ALLOWED", i, e.exercise.id) }
         // RDY-004 tier compliance.
@@ -402,7 +406,8 @@ object SessionValidator {
                 if (swap != null) setEx(v.index) { it.copy(exercise = swap) } to d(ReasonKey.VALIDATOR_SWAPPED, mapOf("from" to e.exercise.id, "to" to swap.id))
                 else s.copy(exercises = s.exercises.filterIndexed { j, _ -> j != v.index }) to d(ReasonKey.VALIDATOR_REMOVED_EXERCISE, mapOf("removed" to e.exercise.id))
             }
-            "RECOVERY_NO_RESISTANCE" -> s.copy(exercises = emptyList()) to d(ReasonKey.VALIDATOR_REMOVED_EXERCISE, mapOf("removed" to s.exercises.map { it.exercise.id }))
+            "RECOVERY_NO_RESISTANCE", "STRENGTH_CONSECUTIVE" ->
+                s.copy(exercises = emptyList()) to d(ReasonKey.VALIDATOR_REMOVED_EXERCISE, mapOf("removed" to s.exercises.map { it.exercise.id }))
             "Z1_ONLY" -> {
                 val b = s.conditioning[v.index]
                 val max = if (s.tier == Tier.RECOVERY) P.RDY_004.RECOVERY.optional_z1_minutes[1].toDouble() else b.totalMinutes

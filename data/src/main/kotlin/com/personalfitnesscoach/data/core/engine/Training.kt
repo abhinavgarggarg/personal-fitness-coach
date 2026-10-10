@@ -75,6 +75,8 @@ class ProgressRecorder(private val docs: Docs, private val log: SessionLog, priv
 
     suspend fun record(w: StoredWorkout, u: UserState): List<Decision> {
         check(w.row.status == Status.DONE) { "only finished workouts change training state" }
+        // A session ended by a red-flag stop counts towards caps and spacing (it is DONE) but never changes progression (SAF-002).
+        if (w.doc.stoppedBySafety) return emptyList()
         val readiness = docs.get(ReadinessRecord, dayKey(w.day))
         val tier = w.row.tier?.let { Tier.valueOf(it) } ?: Tier.FULL
         val ctx = bridge.progressContext(u, recoveryOk = (tier == Tier.FULL || tier == Tier.MODIFIED) && (readiness?.signals?.size ?: 0) < 2)
@@ -105,12 +107,16 @@ class ProgressRecorder(private val docs: Docs, private val log: SessionLog, priv
         return d
     }
 
-    /** Recomputes every exercise's state from all finished workouts, oldest first (ladder rungs from the plan are kept). */
+    /**
+     * Recomputes every exercise's state from all finished workouts, oldest first (ladder rungs from the plan are kept). A DEL-002
+     * lighter week in progress is not history to recompute: its remaining sessions are kept (re-check finding 6).
+     */
     suspend fun rebuild(u: UserState) {
         docs.deleteAll(ExerciseState)
         val program = docs.get(ProgramRecord) ?: return
-        docs.put(ProgramRecord, program.copy(hiitDoneEver = 0, lighterSessionsLeft = 0))
+        docs.put(ProgramRecord, program.copy(hiitDoneEver = 0))
         for (w in log.done(Int.MIN_VALUE / 2, Int.MAX_VALUE / 2)) record(w, u)
+        docs.get(ProgramRecord)?.let { docs.put(ProgramRecord, it.copy(lighterSessionsLeft = program.lighterSessionsLeft, lighterThisWeek = program.lighterThisWeek)) }
     }
 }
 
@@ -133,7 +139,7 @@ class CheckIns(private val docs: Docs, private val bridge: EngineBridge, private
         val r = Readiness.tier(checkIn, baseline, signals.size).also { d += it.decisions }.value
         // SAF-002: new red flags start a stop that lasts until confirmed.
         var stop = RedFlags.check(redFlags).also { d += it.decisions }.value
-        if (stop != null) docs.put(SafetyStopRecord, SafetyStopRecord(today, stop.symptoms))
+        stop?.let { startStop(it, today) }
         val illness = RedFlags.illnessGate(illnessSymptoms).also { d += it.decisions }.value
         val gate = bridge.gate(u, program).also { d += it.decisions }
         if (stop == null) stop = gate.stop
@@ -155,6 +161,13 @@ class CheckIns(private val docs: Docs, private val bridge: EngineBridge, private
             }
         }
         return CheckInOutcome(rec, stop, d)
+    }
+
+    /** Keeps a SAF-002 stop until the user confirms it resolved; symptoms reported again while one is open are added to it. */
+    suspend fun startStop(stop: SafetyStop, today: Int) {
+        val cur = docs.get(SafetyStopRecord)
+        val open = cur != null && cur.confirmedDay == null
+        docs.put(SafetyStopRecord, SafetyStopRecord(if (open) minOf(cur!!.day, today) else today, if (open) cur!!.symptoms + stop.symptoms else stop.symptoms))
     }
 
     /** The user confirms the red-flag symptoms have resolved or were reviewed; the next session is LIGHT at most (SAF-002). */

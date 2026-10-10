@@ -136,6 +136,18 @@ data class DayGate(val tierCap: Tier?, val stop: SafetyStop?, val returnPlan: Re
     val locked: Boolean get() = stop != null || tierCap != null
 }
 
+/**
+ * REG-002…005 for today, and the day before which an exercise's stored state is stale: after a layoff of 56 days or more (REG-004),
+ * every exercise last done before `recalibrateBefore` recalibrates on its first exposure back — once each (D-076).
+ */
+data class ReturnInfo(val plan: ReturnPlan, val recalibrateBefore: Int? = null)
+
+/**
+ * GEN-001's request for one planned day, and the load factor each exercise's history was scaled by (REG-003…005 return, DEL-004
+ * resume). The factors are recorded on the session's items, so a reduced exposure never becomes the base of the next one.
+ */
+data class PreparedSession(val request: GenerationRequest, val loadFactors: Map<String, Double>, val decisions: List<Decision>)
+
 /** Body progress for the progress screen (FL-004/005). */
 data class BodyView(val weight: WeightTrend, val waistCm: Double?, val waistDay: Int?, val waistDue: Boolean, val strength: StrengthTrend)
 
@@ -469,8 +481,16 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             loadCapExempt = plan.deload || program.justFinishedLighterWeek || ret.inReturn, inDeload = plan.deload,
             equipmentToday = u.equipment.availableOn(today), library = Library.all.filter { !it.userAddOnly },
             planImpactAllowed = day?.impactAllowed ?: true, planIntervalModalities = day?.intervalModalities, conditions = u.conditions,
+            strengthYesterday = strengthDoneOn(today - 1),
         )
     }
+
+    /**
+     * Resistance work was logged in a finished workout on `day` (SAF-010 "no strength on consecutive days"): any working or calibration
+     * set of a done exercise — what was lifted, not what the day's template was called.
+     */
+    suspend fun strengthDoneOn(day: Int): Boolean = log.done(day, day).any { w ->
+        w.exercises.any { e -> e.row.status == Status.DONE && e.sets.any { it.kind != com.personalfitnesscoach.data.core.session.SetKind.WARMUP } } }
 
     /**
      * CON-003/CON-004: days until the next possible heavy-lower session, at the planner's day granularity. A planned heavy-lower day
@@ -486,39 +506,52 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         return (pending + nextWeek).minOrNull()
     }
 
-    /** VOL-007 k (AU per SSU) once 4 weeks with both a session rating and stress exist: their total load ÷ total SSU. */
-    private fun learnedK(active: List<WeekSummary>): Double? {
-        val weeks = active.filter { it.workload > 0 && it.ssu > 0 }.takeLast(P.VOL_007.k_after_weeks)
-        if (weeks.size < P.VOL_007.k_after_weeks) return null
-        return weeks.sumOf { it.workload } / weeks.sumOf { it.ssu }
+    /**
+     * VOL-007 k (AU per SSU) once 4 weeks with both a session rating and stress exist: the median of the weekly load ÷ SSU ratios
+     * (re-check finding 11: a ratio of sums lets one unusual week move k).
+     */
+    fun learnedK(active: List<WeekSummary>): Double? {
+        val ratios = active.filter { it.workload > 0 && it.ssu > 0 }.takeLast(P.VOL_007.k_after_weeks).map { it.workload / it.ssu }.sorted()
+        if (ratios.size < P.VOL_007.k_after_weeks) return null
+        val n = ratios.size
+        return if (n % 2 == 1) ratios[n / 2] else (ratios[n / 2 - 1] + ratios[n / 2]) / 2.0
     }
 
     // ------------------------------------------------------------------------------------------------ return, stops, lighter weeks
+    /** REG-002…005 for today (the plan only; see [returnInfo]). */
+    suspend fun returnPlan(u: UserState, program: ProgramRecord?): EngineResult<ReturnPlan> =
+        returnInfo(u, program).let { EngineResult(it.value.plan, it.decisions) }
+
     /**
-     * REG-002…005 for today: the current gap since the last finished session (or the last one, while its ramp still runs), planned
-     * sessions missed in a row, and a recent illness. The engine's ReturnPlan is applied by [request] and [gate].
+     * REG-002…005 for today. Two parts, merged so the stricter value of each control wins (re-check finding 2):
+     *  - the ramp from the latest earlier gap of 7 days or more, while it still runs (REG-003/004), counted from the first session back;
+     *  - today's gap since the last finished session and the planned sessions missed since then (REG-002/003/004).
+     * A missed session inside a ramp therefore never ends the ramp. After a layoff of 56 days or more, exercises last done before the
+     * return recalibrate once each ([ReturnInfo.recalibrateBefore], D-076). A recent illness adds REG-005.
      */
-    suspend fun returnPlan(u: UserState, program: ProgramRecord?): EngineResult<ReturnPlan> {
+    suspend fun returnInfo(u: UserState, program: ProgramRecord?): EngineResult<ReturnInfo> {
         val today = u.today
         val done = log.done(today - 400, today)
         val days = done.map { it.day }.filter { it < today }
         val d = ArrayList<Decision>()
         var plan = ReturnPlan()
+        var recalibrateBefore: Int? = null
         if (days.isNotEmpty()) {
+            val i = (days.size - 1 downTo 1).firstOrNull { days[it] - days[it - 1] >= P.REG_003.days[0] }
+            if (i != null) {
+                val back = days[i]
+                val r = ReturnToTraining.afterBreak(back - days[i - 1], 0, (today - back) / 7, done.count { it.day >= back }, u.age, u.flaggedScreen)
+                if (r.value.recalibrate) recalibrateBefore = back
+                if (r.value.inReturn) { d += r.decisions; plan = r.value }
+            }
             val last = days.last()
             val gapNow = today - last
             val missed = missedPlannedSince(last, today)
             if (gapNow >= P.REG_003.days[0] || missed >= 1) {
                 val r = ReturnToTraining.afterBreak(gapNow, missed, 0, done.count { it.day == today }, u.age, u.flaggedScreen)
-                d += r.decisions; plan = r.value
-            } else {
-                // A ramp from an earlier gap may still be running (REG-004 weeks 1–2, or longer bands).
-                val i = (days.size - 1 downTo 1).firstOrNull { days[it] - days[it - 1] >= P.REG_003.days[0] }
-                if (i != null) {
-                    val back = days[i]
-                    val r = ReturnToTraining.afterBreak(back - days[i - 1], 0, (today - back) / 7, done.count { it.day >= back }, u.age, u.flaggedScreen)
-                    if (r.value.inReturn) { d += r.decisions; plan = r.value }
-                }
+                d += r.decisions
+                if (r.value.recalibrate) recalibrateBefore = today
+                plan = merge(plan, r.value)
             }
         }
         // REG-005: after an illness (today's symptoms are the check-in's SAF-007 gate).
@@ -532,9 +565,12 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             val symptomFree = (today - lastIll - 1) * 24 + hour
             val r = ReturnToTraining.afterIllness(symptomFree, false, done.count { it.day > lastIll }, false, lastIll - first + 1, (today - lastIll) / 7,
                 u.age, u.flaggedScreen)
-            if (r.value.inReturn || r.value.tierCap != null || r.value.setsFactor < 1.0) { d += r.decisions; plan = merge(plan, r.value) }
+            if (r.value.inReturn || r.value.tierCap != null || r.value.setsFactor < 1.0) {
+                d += r.decisions; plan = merge(plan, r.value)
+                if (r.value.recalibrate) recalibrateBefore = maxOf(recalibrateBefore ?: Int.MIN_VALUE, lastIll + 1)
+            }
         }
-        return EngineResult(plan, d)
+        return EngineResult(ReturnInfo(plan, recalibrateBefore), d)
     }
 
     private fun merge(a: ReturnPlan, b: ReturnPlan) = ReturnPlan(minOf(a.loadFactor, b.loadFactor), minOf(a.setsFactor, b.setsFactor),
@@ -583,17 +619,55 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         redFlags: Set<String> = emptySet(),
         illnessSymptoms: Set<String> = emptySet(),
         awayFromGym: Boolean = false,
-    ): GenerationRequest {
+    ): GenerationRequest = prepare(u, program, plan, day, tier, minutes, redFlags, illnessSymptoms, awayFromGym).request
+
+    /**
+     * GEN-001 step 1 for one planned day: the request, and the load factor each exercise was scaled by. Applied here, from stored
+     * state: the SAF-002 stop and the day's caps ([gate]); the return ramp and recalibration (REG-003…005, D-076); the first week after
+     * a deload (DEL-004: loads 95–100%, RIR +1); SAF-010's "no strength on consecutive days" (also checked again by the validator).
+     */
+    suspend fun prepare(
+        u: UserState,
+        program: ProgramRecord,
+        plan: WeekPlan,
+        day: PlannedDay,
+        tier: Tier,
+        minutes: Int = u.profile.sessionMinutes,
+        redFlags: Set<String> = emptySet(),
+        illnessSymptoms: Set<String> = emptySet(),
+        awayFromGym: Boolean = false,
+    ): PreparedSession {
         val today = u.today
+        val d = ArrayList<Decision>()
         val gate = gate(u, program)
         val ret = gate.returnPlan
-        val h = scaled(history(u, day), u, ret, resumeAfterDeload(u, program))
+        val before = returnInfo(u, program).value.recalibrateBefore
+        val stale = if (before == null) emptySet() else staleSince(before, today)
+        val resume = resumeAfterDeload(u, program)
+        val h = scaled(history(u, day), u, ret, resume, stale)
+        val factors = day.slots.map { it.exercise.id }.distinct().associateWith { id ->
+            if (id in stale) 1.0 else minOf(ret.loadFactor, if (id in resume.second) resume.first else 1.0) }.filterValues { it < 1.0 - 1e-9 }
         // REG-004 sets: fewer sets per slot while the return ramp runs (never below one).
-        val dose = if (ret.setsFactor in 0.0..0.999) day.copy(slots = day.slots.map { it.copy(sets = maxOf(1, Math.floor(it.sets * ret.setsFactor + 1e-9).toInt())) }) else day
+        var dose = if (ret.setsFactor in 0.0..0.999) day.copy(slots = day.slots.map { it.copy(sets = maxOf(1, Math.floor(it.sets * ret.setsFactor + 1e-9).toInt())) }) else day
+        // DEL-004: RIR +1 in the first week after a deload week (re-check finding 9).
+        val ws = Days.weekStart(today)
+        if (docs.between(WeekSummary, ws - 7, ws - 1).firstOrNull()?.deload == true && dose.slots.isNotEmpty()) {
+            val off = P.DEL_004.week1_rir_offset.toDouble()
+            dose = dose.copy(slots = dose.slots.map { it.copy(targetRir = minOf(10.0, it.targetRir + off)) })
+            d += Decision(com.personalfitnesscoach.engine.core.DecisionKind.LOAD_CHANGE, listOf(com.personalfitnesscoach.engine.registry.RuleIds.DEL_004),
+                com.personalfitnesscoach.engine.core.ReasonKey.DELOAD_RESUME, outputs = mapOf("rirOffset" to off, "loadFactor" to resume.first))
+        }
+        // SAF-010 (type 2 diabetes): resistance work yesterday → none today, whichever planned day is opened (re-check finding 4).
+        if (!u.conditions.strengthOnConsecutiveDays && dose.slots.isNotEmpty() && strengthDoneOn(today - 1)) {
+            d += Decision(com.personalfitnesscoach.engine.core.DecisionKind.SAFETY, listOf(com.personalfitnesscoach.engine.registry.RuleIds.SAF_010),
+                com.personalfitnesscoach.engine.core.ReasonKey.STRENGTH_DAYS_SPACED, inputs = mapOf("strengthYesterday" to true),
+                outputs = mapOf("removed" to dose.slots.map { it.exercise.id }))
+            dose = dose.copy(slots = emptyList())
+        }
         val (painLimits, caution) = painToday(today)
         val earlierToday = log.done(today, today).any { doneSession(it).hiitBlocks > 0 }
         val equipmentToday = if (awayFromGym) u.equipment.homeKit else u.equipment.availableOn(today)
-        return GenerationRequest(
+        val req = GenerationRequest(
             day = dose, level = u.profile.level, weeksTraining = program.weeksTraining, minutes = minutes, equipmentToday = equipmentToday, tier = gate.cap(tier),
             age = u.age, screening = u.screening, redFlags = redFlags + (gate.stop?.symptoms ?: emptySet()), illnessSymptoms = illnessSymptoms, inventory = u.equipment.inventory,
             e1rm = h.e1rm, progression = h.progression, calibrationLoads = h.calibrationLoads, calibrationCeilings = h.calibrationCeilings,
@@ -602,6 +676,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             excludedModalities = u.preferences.excludedModalities, excludedIds = u.preferences.excludedIds, preferences = u.preferences.exerciseScores,
             inDeload = plan.deload, week = validationContext(u, program, plan, day), conditions = u.conditions, circuitJumps = u.preferences.circuitJumps,
         )
+        return PreparedSession(req, factors, d)
     }
 
     /**
@@ -618,27 +693,44 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
     }
 
     /**
-     * The history maps scaled for a return (REG-003/004/005) or a post-deload resume (DEL-004). A long layoff (recalibrate) drops the
-     * e1RM and prescriptions so calibration runs again, never above the old working load.
+     * D-076: exercises with stored state that were not lifted in a finished workout from `before` to `today` — their state predates a
+     * layoff of 56 days or more, so they recalibrate. Read from the workout log (what was actually lifted), not from stored state.
      */
-    fun scaled(h: HistoryMaps, u: UserState, ret: ReturnPlan, resume: Pair<Double, Set<String>>): HistoryMaps {
-        if (ret.recalibrate) {
+    suspend fun staleSince(before: Int, today: Int): Set<String> {
+        val doneSince = log.done(before, today).flatMap { w ->
+            w.exercises.filter { e -> e.row.status == Status.DONE && e.sets.any { it.kind != com.personalfitnesscoach.data.core.session.SetKind.WARMUP } }
+                .map { it.exerciseId } }.toSet()
+        return docs.all(ExerciseState).map { it.exerciseId }.filter { it !in doneSince }.toSet()
+    }
+
+    /**
+     * The history maps scaled for a return (REG-003/004/005) or a post-deload resume (DEL-004). Exercises in `recalibrate` (stale since
+     * a layoff of 56 days or more, D-076) lose their e1RM and prescription so calibration runs again, never above the old working load;
+     * everything else is scaled by its factor. The scaled load is recorded with the factor ([PreparedSession.loadFactors]), so the next
+     * exposure scales the same base again instead of compounding (re-check finding 7).
+     */
+    fun scaled(h: HistoryMaps, u: UserState, ret: ReturnPlan, resume: Pair<Double, Set<String>>, recalibrate: Set<String> = emptySet()): HistoryMaps {
+        var out = h
+        if (recalibrate.isNotEmpty()) {
             val ceilings = HashMap(h.calibrationCeilings)
-            for ((id, e) in h.e1rm) ceilings[id] = minOf(ceilings[id] ?: Double.MAX_VALUE, E1rm.loadFor(e, 8, 2.0))
-            for ((id, p) in h.progression) ceilings[id] = minOf(ceilings[id] ?: Double.MAX_VALUE, p.load)
-            return h.copy(e1rm = emptyMap(), progression = emptyMap(), calibrationLoads = emptyMap(), calibrationCeilings = ceilings)
+            for (id in recalibrate) {
+                h.e1rm[id]?.let { e -> ceilings[id] = minOf(ceilings[id] ?: Double.MAX_VALUE, E1rm.loadFor(e, 8, 2.0)) }
+                h.progression[id]?.let { p -> ceilings[id] = minOf(ceilings[id] ?: Double.MAX_VALUE, p.load) }
+            }
+            out = h.copy(e1rm = h.e1rm - recalibrate, progression = h.progression - recalibrate, calibrationLoads = h.calibrationLoads - recalibrate,
+                calibrationCeilings = ceilings)
         }
-        fun f(id: String) = minOf(ret.loadFactor, if (id in resume.second) resume.first else 1.0)
-        if (ret.loadFactor >= 1.0 && resume.second.isEmpty()) return h
+        fun f(id: String) = if (id in recalibrate) 1.0 else minOf(ret.loadFactor, if (id in resume.second) resume.first else 1.0)
+        if (ret.loadFactor >= 1.0 && resume.second.isEmpty()) return out
         fun down(id: String, x: Double): Double {
             val ex = Library[id] ?: return x
             val avail = PlateMath.loadsFor(ex, u.equipment.inventory)
             return avail.filter { it <= x + 1e-9 }.maxOrNull() ?: avail.minOrNull() ?: x
         }
-        return h.copy(
-            e1rm = h.e1rm.mapValues { (id, v) -> v * f(id) },
-            progression = h.progression.mapValues { (id, p) -> if (f(id) >= 1.0) p else p.copy(load = down(id, p.load * f(id))) },
-            calibrationLoads = h.calibrationLoads.mapValues { (id, v) -> if (f(id) >= 1.0) v else down(id, v * f(id)) },
+        return out.copy(
+            e1rm = out.e1rm.mapValues { (id, v) -> v * f(id) },
+            progression = out.progression.mapValues { (id, p) -> if (f(id) >= 1.0) p else p.copy(load = down(id, p.load * f(id))) },
+            calibrationLoads = out.calibrationLoads.mapValues { (id, v) -> if (f(id) >= 1.0) v else down(id, v * f(id)) },
         )
     }
 

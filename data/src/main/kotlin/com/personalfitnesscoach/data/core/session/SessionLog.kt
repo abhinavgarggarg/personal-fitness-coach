@@ -166,6 +166,25 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
         load(workoutId)!!
     }
 
+    /**
+     * SAF-002: a red flag ends the workout at once. Sets logged so far stay — they count towards caps, spacing and stress — and the
+     * workout is marked [WorkoutDoc.stoppedBySafety] so progression ignores it. Conditioning not yet logged counts as planned.
+     */
+    suspend fun stopForSafety(workoutId: Long): StoredWorkout = store.transaction {
+        val w = store.workout(workoutId) ?: error("no workout $workoutId")
+        check(w.status == Status.IN_PROGRESS) { "workout $workoutId is not in progress" }
+        for (ex in store.exercisesOf(workoutId)) {
+            val logged = store.setsOf(ex.id).any { it.kind != SetKind.WARMUP }
+            val status = if (ex.status != Status.SKIPPED && logged) Status.DONE else Status.SKIPPED
+            if (status != ex.status) store.updateExercise(ex.copy(status = status))
+        }
+        val now = clock.nowMs()
+        val minutes = w.startedAtMs?.let { ((now - it) / 60_000.0).coerceIn(0.0, 600.0) }
+        store.updateWorkout(w.copy(status = Status.DONE, endedAtMs = now, actualMinutes = minutes, json = WorkoutDoc.decode(w.json).copy(stoppedBySafety = true).encode()))
+        if (store.active()?.workoutId == workoutId) store.clearActive()
+        load(workoutId)!!
+    }
+
     /** Adds the session rating later (it is asked 10–30 minutes after the session). */
     suspend fun rate(workoutId: Long, sessionRpe: Double, actualMinutes: Double? = null) = store.transaction {
         require(sessionRpe in 0.0..10.0) { "session rating is 0–10" }

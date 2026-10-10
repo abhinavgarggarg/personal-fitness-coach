@@ -148,7 +148,11 @@ object ReturnToTraining {
     private fun layoffPlan(band: Int, week: Int): ReturnPlan {
         val b = BANDS[band]
         if (b["action"] == "recalibrate_and_restart_block") {
-            return ReturnPlan(loadFactor = 1.0, setsFactor = 1.0, hiitAllowed = false, recalibrate = true, inReturn = true)
+            // ≥ 56 days (D-076): each exercise recalibrates on its own first exposure back — the caller applies `recalibrate` only to
+            // exercises not done since the return, so it never repeats. Intervals wait for a new Z1 base (HIIT-003, 3 weeks), and the
+            // return window (with its LOAD-005 exemption) ends with that base.
+            val base = P.HIIT_003.base_weeks
+            return ReturnPlan(loadFactor = 1.0, setsFactor = 1.0, hiitAllowed = week >= base, recalibrate = true, inReturn = week < base)
         }
         val hiitPause = (b["hiit_pause_weeks"] as Number).toInt()
         val hiit = week >= hiitPause

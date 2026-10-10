@@ -65,7 +65,17 @@ data class WorkoutDoc(
     val awayFromGym: Boolean = false,
     /** Planned session effort for fatigue signal F2 (DEL-001): 10 − the mean target RIR of the working sets (INT-001); null without lifts. */
     val plannedSessionRpe: Double? = null,
+    /** SAF-002: the session was ended by a red-flag stop. Its work counts towards caps and spacing, never towards progression. */
+    val stoppedBySafety: Boolean = false,
 ) {
+    init {
+        require(weekday in 0..6) { "weekday is 0–6" }
+        require(plannedMinutes in 0.0..600.0 && warmupMinutes in 0.0..120.0 && (cooldownMinutes ?: 0.0) in 0.0..120.0) { "minutes out of range" }
+        require(conditioning.all { it.workMinutes in 0.0..600.0 && it.restMinutes in 0.0..600.0 && (it.doneWorkMinutes ?: 0.0) in 0.0..600.0 && it.impact in 0..1 }) {
+            "conditioning out of range" }
+        require(plannedSessionRpe == null || plannedSessionRpe in 0.0..10.0) { "planned effort out of range" }
+    }
+
     fun encode(): String = obj {
         put("v", VERSION); put("weekday", weekday); put("plannedMinutes", plannedMinutes); put("warmupMinutes", warmupMinutes)
         put("cooldownMinutes", cooldownMinutes)
@@ -75,7 +85,7 @@ data class WorkoutDoc(
         } })
         flag("conditioningFirst", conditioningFirst); put("mobilityMinutes", mobilityMinutes); put("balanceMinutes", balanceMinutes)
         put("fullTierWorkingSets", fullTierWorkingSets); flag("inDeload", inDeload); flag("express", express); flag("awayFromGym", awayFromGym)
-        put("plannedSessionRpe", plannedSessionRpe)
+        put("plannedSessionRpe", plannedSessionRpe); flag("stoppedBySafety", stoppedBySafety)
     }.toString()
 
     companion object {
@@ -87,7 +97,7 @@ data class WorkoutDoc(
                 o.objs("conditioning").map { c -> ConditioningItem(c.enum("modality"), c.enum("zone"), c.dbl("workMinutes"), c.dbl("restMinutes", 0.0),
                     c.bool("hiit"), c.int("impact", 0), c.enumOrNull<HiitProtocol>("protocol"), c.dblOrNull("doneWorkMinutes")) },
                 o.bool("conditioningFirst"), o.dbl("mobilityMinutes", 0.0), o.dbl("balanceMinutes", 0.0), o.int("fullTierWorkingSets", 0),
-                o.bool("inDeload"), o.bool("express"), o.bool("awayFromGym"), o.dblOrNull("plannedSessionRpe"))
+                o.bool("inDeload"), o.bool("express"), o.bool("awayFromGym"), o.dblOrNull("plannedSessionRpe"), o.bool("stoppedBySafety"))
         }
     }
 }
@@ -115,6 +125,14 @@ data class ItemDoc(
     /** CAL-002: the load came from the user's own number on this first session. */
     val fromKnownNumber: Boolean = false,
 ) {
+    init {
+        require(sets in 0..50 && !reps.isEmpty() && reps.first >= 0 && reps.last <= 1000) { "dose out of range" }
+        require(targetRir in 0.0..10.0) { "target RIR out of range" }
+        require(load == null || load in 0.0..1000.0) { "load out of range" }
+        require(loadFactor in 0.0..1.0 + 1e-9) { "load factor out of range" }
+        require(restMinSec in 0..3600 && restDefaultSec in 0..3600 && restMaxSec in 0..3600) { "rest out of range" }
+    }
+
     fun encode(): String = obj {
         put("v", VERSION); put("role", role); put("priority", priority); put("sets", sets); ints("reps", listOf(reps.first, reps.last), sort = false)
         put("unit", unit); flag("perSide", perSide); put("targetRir", targetRir); flag("lastSetToFailure", lastSetToFailure); put("load", load)

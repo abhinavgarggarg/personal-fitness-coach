@@ -180,6 +180,16 @@ data class ExerciseState(
     /** CAL-002: the user's own number has been turned into this state (it is not applied again). */
     val knownApplied: Boolean = false,
 ) {
+    // Plausible values only (a restored file cannot bring in a 5000 kg reference that would lift every cap; re-check finding 8).
+    init {
+        require(e1rm == null || e1rm > 0.0 && e1rm <= 1000.0) { "e1RM out of range" }
+        require(prescription == null || prescription.load in 0.0..1000.0) { "prescribed load out of range" }
+        require(calibration == null || calibration.nextLoad in 0.0..1000.0 && (calibration.ceiling ?: 0.0) in 0.0..1000.0 && calibration.sessions in 0..20) {
+            "calibration out of range" }
+        require(loadBeforeReductions == null || loadBeforeReductions in 0.0..1000.0) { "load out of range" }
+        require(exposures >= 0 && formNoStreak >= 0) { "counts out of range" }
+    }
+
     companion object Codec : DocCodec<ExerciseState>("exercise_state", 1, RecordKind.DERIVED, setOf(DataItem.LOGGED_SETS, DataItem.KNOWN_LOADS_AND_RECORDS),
         "Your current level on each exercise") {
         override fun key(v: ExerciseState) = v.exerciseId

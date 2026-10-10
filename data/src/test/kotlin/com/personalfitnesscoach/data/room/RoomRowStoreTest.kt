@@ -42,6 +42,21 @@ class RoomRowStoreTest : RowStoreContract() {
         Unit
     }
 
+    @Test fun `erasing everything leaves no trace of the data in the database files`() = runBlocking {
+        val name = "pfc-erase-${System.nanoTime()}.db"
+        val db = PfcDatabase.open(context, name)
+        val store = RoomRowStore(db)
+        val marker = "ERASE-MARKER-${System.nanoTime()}"
+        repeat(300) { i -> store.putDoc(com.personalfitnesscoach.data.core.store.DocRow("probe", "k$i", null, "{\"m\":\"$marker-$i\"}", 1L)) }
+        store.eraseAll()
+        db.close()
+        val files = listOf(name, "$name-wal", "$name-journal").map { context.getDatabasePath(it) }.filter { it.exists() }
+        assertTrue(files.isNotEmpty())
+        for (f in files) assertTrue("${f.name} still holds erased data", !String(f.readBytes(), Charsets.ISO_8859_1).contains(marker))
+        context.deleteDatabase(name)
+        Unit
+    }
+
     @Test fun `a file database keeps its data across reopening`() = runBlocking {
         val name = "pfc-test-${System.nanoTime()}.db"
         val clock = FixedClock(0).also { it.setDay(Fixtures.MONDAY) }
