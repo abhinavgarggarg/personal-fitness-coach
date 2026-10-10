@@ -56,8 +56,8 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             adb shell settings put system font_scale ${{ matrix.font }}
-            ./gradlew --no-daemon :app:connectedDebugAndroidTest
-            python3 -I tools/ci_summary.py "Device tests (${{ matrix.name }})=app/build/outputs/androidTest-results/connected/**/*.xml"
+            # One line: the results are reported (each failing test with its message) even when a test fails, then the step fails.
+            ./gradlew --no-daemon :app:connectedDebugAndroidTest; s=$?; python3 -I tools/ci_summary.py "Device tests (${{ matrix.name }})=app/build/outputs/androidTest-results/connected/**/*.xml"; exit $s
 
       - name: Upload device test reports
         if: always()
