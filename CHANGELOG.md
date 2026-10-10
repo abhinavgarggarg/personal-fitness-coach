@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-10-10 — Phase 3 Part 5: the screens
+- The app is usable end to end: 11-step onboarding; Today with the check-in and session preview; the workout (big numbers, one-tap logging, finding-your-weight sets, rest countdown and an exact end-of-rest alarm, interval timer, Replace/busy, something hurts, warning signs, change time, added sets); summary; safety-stop screen; Settings (steps, backup with password, restore with a safety copy, erase, conditions editor, health questions again, doctor's OK per scope).
+- Behind the screens: a plain-Kotlin controller tested on the JVM; the session player in the data core; taps one at a time with double taps ignored; results from the phone never dropped; session minutes without idle gaps; every word in string resources (checked in CI); screen pictures rendered on GitHub. Decisions D-083 to D-090.
+- Independent review: 1 critical, 3 high, 8 medium, 14 low (R5-01–R5-26), all fixed; re-check of the fixes: 1 high, 4 medium, 3 low more (N1–N8), all fixed — including backup and restore results being dropped on a phone and the backup password being lost if the phone turned while the file picker was open.
+- Tests: 564 locally; 589 on GitHub (engine 408, data 149, app 32); device tests on 5 emulated phones and tablets. Report `docs/phase3/part5_report.md`.
+
 ## 2026-10-10 — Phase 3 Part 4: data layer
 - New `:data` module: Room 3 database in private storage (schema v1 exported and drift-checked; no destructive migrations), relational workout log plus 22 typed, versioned record types mapped to DATA-001 (D-073, D-074); the exercise library and condition table stay compiled into the app, records refer to them by ID and version (D-077).
 - History drives the engine: estimated max, prescriptions, calibration handover, weekly totals, workload ratios, block clock; return to training (REG-002 to REG-005) from stored days off, misses and illness (D-076); red flags at any time end the session and stay until confirmed (D-081); deloads and DEL-004 resume; reduced loads recorded with their factor (D-082); type 2 diabetes spacing enforced by the final check.

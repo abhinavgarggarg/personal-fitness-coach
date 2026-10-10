@@ -419,7 +419,8 @@ private fun PlanStep(s: Screen.Onboarding) {
     Body(stringResource(R.string.onb_plan_intro))
     val plan = s.plan ?: return
     plan.blocks.forEach { b ->
-        val line = stringResource(R.string.onb_plan_block, stringResource(Labels.block(b.type.kind)), b.loadingWeeks) +
+        val line = (if (b.loadingWeeks == 1) stringResource(R.string.onb_plan_block_one, stringResource(Labels.block(b.type.kind)))
+            else stringResource(R.string.onb_plan_block, stringResource(Labels.block(b.type.kind)), b.loadingWeeks)) +
             if (b.followedByDeloadOrPivot) ", " + stringResource(R.string.onb_plan_then_easy) else ""
         Body(line)
     }

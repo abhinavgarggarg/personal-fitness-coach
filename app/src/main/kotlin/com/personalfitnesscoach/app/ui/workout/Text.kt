@@ -23,7 +23,7 @@ fun doseText(reps: IntRange, unit: DoseUnit, perSide: Boolean): String {
     val base = when {
         unit == DoseUnit.SECONDS && reps.first == reps.last -> stringResource(R.string.secs_exact, reps.first)
         unit == DoseUnit.SECONDS -> stringResource(R.string.secs_range, reps.first, reps.last)
-        reps.first == reps.last -> stringResource(R.string.reps_exact, reps.first)
+        reps.first == reps.last -> if (reps.first == 1) stringResource(R.string.reps_one) else stringResource(R.string.reps_exact, reps.first)
         else -> stringResource(R.string.reps_range, reps.first, reps.last)
     }
     return if (perSide) base + ", " + stringResource(R.string.each_side) else base
