@@ -51,6 +51,12 @@ data class ActiveState(
     val conditioningDone: Map<Int, Double> = emptyMap(),
     /** The last tap that changed the workout: a gap with no tap longer than the stage allows is not session time (LOAD-001, review R5-05). */
     val lastActionAtMs: Long? = null,
+    /**
+     * How long the screen shown after the last tap may go without a tap and still be session time: its own length plus 10 minutes, at
+     * least 20 (a 30-minute ride after the lifts, a long warm-up for a heart condition). Fixed when the screen is shown, so a change made
+     * by the next tap (the block marked done) never shortens it (re-check N1). Null = not known (judged from the saved stage).
+     */
+    val idleAllowanceMs: Long? = null,
 ) {
     init {
         require(nextLoads.values.all { it in 0.0..1000.0 }) { "load out of range" }
@@ -71,7 +77,7 @@ data class ActiveState(
         put("restStartedAtMs", restStartedAtMs); put("restSec", restSec); put("sheet", sheet); put("pausedAtMs", pausedAtMs)
         if (pausedMs != 0L) put("pausedMs", pausedMs); put("lastHardEffortAtMs", lastHardEffortAtMs)
         if (conditioningDone.isNotEmpty()) put("conditioningDone", JsonObject(conditioningDone.toSortedMap().map { (k, v) -> k.toString() to JsonPrimitive(v) }.toMap()))
-        put("lastActionAtMs", lastActionAtMs)
+        put("lastActionAtMs", lastActionAtMs); put("idleAllowanceMs", idleAllowanceMs)
     }.toString()
 
     companion object {
@@ -102,6 +108,7 @@ data class ActiveState(
                     conditioningDone = (o.objOrNull("conditioningDone") ?: JsonObject(emptyMap())).entries.associate { (k, v) ->
                         (k.toIntOrNull() ?: throw DataFormatException("bad key")) to ((v as? JsonPrimitive)?.doubleOrNull ?: throw DataFormatException("bad minutes")) },
                     lastActionAtMs = o.longOrNull("lastActionAtMs"),
+                    idleAllowanceMs = o.longOrNull("idleAllowanceMs")?.takeIf { it in 0..(24 * 3_600_000L) },
                 )
             } catch (e: DataFormatException) {
                 ActiveState()

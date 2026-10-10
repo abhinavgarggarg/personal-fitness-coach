@@ -37,7 +37,9 @@ import com.personalfitnesscoach.engine.program.WeekPlan
 import com.personalfitnesscoach.engine.program.WeekPlanner
 
 /** Today as the app shows it: the user, the programme position, this week's plan and the next planned session. */
-data class TodayPlan(val user: UserState, val program: ProgramRecord, val week: WeekPlan, val next: PlannedDay?, val decisions: List<Decision>)
+data class TodayPlan(val user: UserState, val program: ProgramRecord, val week: WeekPlan, val next: PlannedDay?, val decisions: List<Decision>,
+                     /** Planned weekdays already done (or skipped) this week, whichever day they were done on (SCH-002). */
+                     val doneWeekdays: Set<Int> = emptySet())
 
 /**
  * A generated session with what it was generated from: the planned day, the GEN-001 request (mid-session re-plans re-validate against
@@ -95,7 +97,7 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
         val strengthYesterday = bridge.strengthDoneOn(today - 1)
         val doneToday = week.any { it.day == today && it.row.status == Status.DONE }
         val next = if (doneToday) null else WeekPlanner.nextSession(plan.value, doneWeekdays, strengthYesterday, u.conditions)
-        TodayPlan(u, program2, plan.value, next, u.decisions + plan.decisions)
+        TodayPlan(u, program2, plan.value, next, u.decisions + plan.decisions, doneWeekdays)
     }
 
     /**
@@ -170,11 +172,11 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
      * SAF-002 at any time — before or during a workout: the symptoms are checked, the stop is kept until confirmed, and an open workout
      * ends at once ([SessionLog.stopForSafety]: its sets count towards caps, never towards progression). Null when none is a red flag.
      */
-    suspend fun reportRedFlag(symptoms: Set<String>): com.personalfitnesscoach.engine.safety.SafetyStop? = store.transaction {
+    suspend fun reportRedFlag(symptoms: Set<String>, actualMinutes: Double? = null): com.personalfitnesscoach.engine.safety.SafetyStop? = store.transaction {
         val r = com.personalfitnesscoach.engine.safety.RedFlags.check(symptoms)
         val stop = r.value ?: return@transaction null
         checkIns.startStop(stop, clock.today())
-        sessions.active()?.let { (w, _) -> if (w.row.status == Status.IN_PROGRESS) sessions.stopForSafety(w.id) }
+        sessions.active()?.let { (w, _) -> if (w.row.status == Status.IN_PROGRESS) sessions.stopForSafety(w.id, actualMinutes) }
         decisions.append(r.decisions)
         stop
     }

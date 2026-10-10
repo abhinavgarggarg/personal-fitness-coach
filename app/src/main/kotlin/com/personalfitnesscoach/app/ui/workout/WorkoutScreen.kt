@@ -168,6 +168,8 @@ private fun Notice(n: WorkoutNotice, v: PlayerView) {
         is WorkoutNotice.Replanned -> InfoCard(stringResource(R.string.wk_changes)) {
             if (n.changes.isEmpty()) Text(stringResource(R.string.wk_no_changes))
             n.changes.forEach { c -> Text(changeText(c, v.conditioning)) }
+            // D-071: what can't be cut stays, and the user is told how short the session can be from here (re-check N7).
+            n.shortestSafeMinutes?.let { Text(stringResource(R.string.wk_shortest_safe, it)) }
         }
         is WorkoutNotice.Refused -> InfoCard(stringResource(R.string.wk_refused), Tone.WARN)
         is WorkoutNotice.AddSet -> InfoCard(stringResource(if (n.verdict == AdditionVerdict.BLOCKED) R.string.addset_blocked else R.string.addset_ok),

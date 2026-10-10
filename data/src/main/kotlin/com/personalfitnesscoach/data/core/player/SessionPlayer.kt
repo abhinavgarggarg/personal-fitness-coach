@@ -174,13 +174,19 @@ sealed interface Change {
     data class Added(val rowId: Long, val exerciseId: String) : Change
     /** A conditioning block moved to another machine (pain limits, R5-02). */
     data class ConditioningSwapped(val index: Int, val from: com.personalfitnesscoach.engine.model.Modality, val to: com.personalfitnesscoach.engine.model.Modality) : Change
+    /** TIME-002 step 5: the warm-up still to do goes to its floor (a condition's extra minutes stay). */
+    data class WarmupShortened(val fromMinutes: Double, val toMinutes: Double) : Change
+    /** TIME-002 / REST-007: rests between sets go toward (never below) their minimum. */
+    data object RestsShortened : Change
 }
 
 /** SAF-003 in a session: the gate's outcome, what changed, and pain-free alternatives for the stopped exercise. */
 data class PainResult(val outcome: PainOutcome, val changes: List<Change>, val alternatives: List<Candidate>, val endSession: Boolean,
                       val decisions: List<Decision>, val view: PlayerView?)
 
-data class ReplanResult(val changes: List<Change>, val decisions: List<Decision>, val view: PlayerView, val refused: Boolean = false)
+data class ReplanResult(val changes: List<Change>, val decisions: List<Decision>, val view: PlayerView, val refused: Boolean = false,
+                        /** TIME-002 / D-071: the time asked for is below the floors that can't be cut (a condition's warm-up and cool-down); this is the shortest safe rest of the session. */
+                        val shortestSafeMinutes: Int? = null)
 
 data class AddSetResult(val verdict: AdditionVerdict, val decisions: List<Decision>, val view: PlayerView)
 
@@ -339,8 +345,12 @@ class SessionPlayer(private val d: PfcData) {
     // ------------------------------------------------------------------------------------------------ moving through the session
     private suspend fun save(w: StoredWorkout, s: ActiveState): PlayerView {
         val t = touch(w, s)
-        d.sessions.saveState(w.id, t.encode())
-        return build(d.sessions.load(w.id)!!, t)
+        val fresh = d.sessions.load(w.id)!!
+        val v = build(fresh, t)
+        // What is now on screen sets how long the next gap without a tap may be (re-check N1).
+        val allowance = allowanceFor(v)
+        d.sessions.saveState(w.id, t.copy(idleAllowanceMs = allowance).encode())
+        return v.copy(state = v.state.copy(idleAllowanceMs = allowance))
     }
 
     /**
@@ -348,14 +358,38 @@ class SessionPlayer(private val d: PfcData) {
      * steady block has no taps). A longer gap — the phone left in a bag, the app reopened the next day — is not session time (R5-05).
      */
     private fun idleAllowanceMs(w: StoredWorkout, s: ActiveState): Long {
-        val block = if (s.stage == Stage.CONDITIONING || s.stage == Stage.CONDITIONING_FIRST)
-            w.doc.conditioning.withIndex().firstOrNull { it.index !in s.conditioningDone }?.value?.let { it.workMinutes + it.restMinutes } ?: 0.0 else 0.0
+        s.idleAllowanceMs?.let { return it }
+        // Not stamped yet (a new session, or one reset by a restore): judged from the saved stage — the warm-up first.
+        val doc = w.doc
+        val block = when (s.stage) {
+            Stage.WARMUP -> doc.warmupMinutes
+            Stage.BONE_LOADING -> doc.boneLoading?.minutes ?: 0.0
+            Stage.CONDITIONING, Stage.CONDITIONING_FIRST ->
+                doc.conditioning.withIndex().firstOrNull { it.index !in s.conditioningDone }?.value?.let { it.workMinutes + it.restMinutes } ?: 0.0
+            Stage.BALANCE -> doc.balanceMinutes
+            Stage.COOLDOWN -> (doc.cooldownMinutes ?: 0.0) + doc.mobilityMinutes
+            else -> 0.0
+        }
         return maxOf(IDLE_MS, ((block + 10.0) * 60_000).toLong())
+    }
+
+    /** The idle allowance for the screen in `v`: its own length plus 10 minutes, at least 20 (LOAD-001, R5-05, re-check N1). */
+    private fun allowanceFor(v: PlayerView): Long {
+        val minutes = when (val st = v.step) {
+            is Step.Warmup -> st.minutes
+            is Step.BoneLoading -> st.block.minutes
+            is Step.Conditioning -> st.item.workMinutes + st.item.restMinutes
+            is Step.Balance -> st.minutes
+            is Step.Cooldown -> st.minutes + st.mobilityMinutes
+            is Step.Lift, Step.Done -> 0.0
+        }
+        return maxOf(IDLE_MS, ((minutes + 10.0) * 60_000).toLong())
     }
 
     /** The gap since the last tap, when it is longer than allowed (and no pause is open): excluded from the session's minutes. */
     private fun openIdle(w: StoredWorkout, s: ActiveState, now: Long): Long {
-        val last = s.lastActionAtMs ?: return 0L
+        // Before the first tap the gap runs from the start: a workout reopened the next day without a tap is not 600 minutes (re-check N5).
+        val last = s.lastActionAtMs ?: w.row.startedAtMs ?: return 0L
         if (s.pausedAtMs != null) return 0L
         val gap = now - last
         return if (gap > idleAllowanceMs(w, s)) gap else 0L
@@ -370,7 +404,9 @@ class SessionPlayer(private val d: PfcData) {
 
     private suspend fun active(): Pair<StoredWorkout, ActiveState> {
         val (w, a) = checkNotNull(d.sessions.active()) { "no workout in progress" }
-        return w to ActiveState.decode(a.json)
+        // Every tap starts here: the gap since the last tap is judged against what was on screen during it, before this tap changes the
+        // stage or marks a block done (re-check N1).
+        return w to touch(w, ActiveState.decode(a.json))
     }
 
     /** Marks a stage done (warm-up, bone-loading block, balance, cool-down) and moves on. */
@@ -467,8 +503,11 @@ class SessionPlayer(private val d: PfcData) {
         next = touch(w, next)
         d.sessions.logSet(rowId, newSet, next.encode())
         d.decisions.append(dec, w.day, w.id)
-        val view = build(d.sessions.load(w.id)!!, next)
-        LogResult(view, dec, calStep, rest)
+        val built = build(d.sessions.load(w.id)!!, next)
+        // What is now on screen (the block after the lifts once the last set is logged) sets the next idle allowance (re-check N1).
+        val allowance = allowanceFor(built)
+        d.sessions.saveState(w.id, next.copy(idleAllowanceMs = allowance).encode())
+        LogResult(built.copy(state = built.state.copy(idleAllowanceMs = allowance)), dec, calStep, rest)
     }
 
     /** Rest timer controls (A2): ±30 s or skip. */
@@ -492,7 +531,8 @@ class SessionPlayer(private val d: PfcData) {
 
     suspend fun pause(): PlayerView = d.store.transaction {
         val (w, s) = active()
-        if (s.pausedAtMs != null) build(w, s) else save(w, s.copy(pausedAtMs = d.clock.nowMs()))
+        // The idle gap before the pause is measured first: a pause tapped after hours without a tap doesn't make them session time (N6).
+        if (s.pausedAtMs != null) build(w, s) else save(w, touch(w, s).copy(pausedAtMs = d.clock.nowMs()))
     }
 
     suspend fun resume(): PlayerView = d.store.transaction {
@@ -827,6 +867,7 @@ class SessionPlayer(private val d: PfcData) {
         val byId = plan.items.associateBy { it.id }
         val changes = ArrayList<Change>()
         var state = s
+        var restsShortened = false
         rem.lifts.forEachIndexed { i, l ->
             val p: PlanItem? = byId["$i:${l.exercise.id}"]
             val planned = rem.slots[i].sets
@@ -838,13 +879,27 @@ class SessionPlayer(private val d: PfcData) {
                     if (calibrates(l.exercise, l.item)) { state = state.copy(calibrationDone = state.calibrationDone + l.rowId); changes += Change.Skipped(l.rowId, l.exercise.id) }
                     else changes += Change.SetsReduced(l.rowId, l.exercise.id, l.item.sets, to)
                 } else { d.sessions.skipExercise(l.rowId); changes += Change.Skipped(l.rowId, l.exercise.id) }
-            } else if (p.sets < planned && !calibrates(l.exercise, l.item)) {
-                val to = l.workingDone + p.sets
-                d.sessions.updateItem(l.rowId, l.item.copy(sets = to, addedSets = minOf(l.item.addedSets, to)))
-                changes += Change.SetsReduced(l.rowId, l.exercise.id, l.item.sets, to)
+            } else {
+                var item = l.item
+                if (p.sets < planned && !calibrates(l.exercise, l.item)) {
+                    val to = l.workingDone + p.sets
+                    item = item.copy(sets = to, addedSets = minOf(l.item.addedSets, to))
+                    changes += Change.SetsReduced(l.rowId, l.exercise.id, l.item.sets, to)
+                }
+                // The fit's shorter rests are applied, never below the exercise's minimum (TIME-002, REST-007): what is shown is what was fitted.
+                val rest = maxOf(item.restMinSec, p.restSec)
+                if (rest < item.restDefaultSec) { item = item.copy(restDefaultSec = rest); restsShortened = true }
+                if (item != l.item) d.sessions.updateItem(l.rowId, item)
             }
         }
-        var cond = w.doc.conditioning
+        if (restsShortened) changes += Change.RestsShortened
+        // A warm-up still to do goes to the fitted length (its floor, with a condition's extra minutes kept).
+        var doc = w.doc
+        if (stage == Stage.WARMUP && plan.warmupMin < doc.warmupMinutes - 1e-6) {
+            changes += Change.WarmupShortened(doc.warmupMinutes, plan.warmupMin)
+            doc = doc.copy(warmupMinutes = plan.warmupMin)
+        }
+        var cond = doc.conditioning
         rem.conditioning.forEachIndexed { j, (idx, k) ->
             val p = byId["c$j:${k.modality}"]
             if (p == null) {
@@ -862,11 +917,16 @@ class SessionPlayer(private val d: PfcData) {
                 }
             }
         }
-        if (cond != w.doc.conditioning) d.sessions.updateDoc(w.id, w.doc.copy(conditioning = cond))
+        if (doc.copy(conditioning = cond) != w.doc) d.sessions.updateDoc(w.id, doc.copy(conditioning = cond))
+        val view = save(d.sessions.load(w.id)!!, state.copy(sheet = null))
+        // What can't be cut (warm-up and cool-down floors with a condition's extras, one set of each main lift) still takes longer than
+        // asked: the user is told the shortest this session can be from here, as the express session does (D-071, re-check N7).
+        val shortest = if (view.remainingMinutes > minutesLeft + 0.5) Math.ceil(view.remainingMinutes - 1e-6).toInt() else null
         val dec = fit.decisions + Decision(DecisionKind.TIME_FIT, listOf(RuleIds.TIME_001, RuleIds.TIME_002, RuleIds.TIME_004, RuleIds.SAF_008),
-            ReasonKey.TIME_COMPRESSED, inputs = mapOf("minutesLeft" to minutesLeft), outputs = mapOf("changes" to changes.size, "belowFloors" to extra))
+            ReasonKey.TIME_COMPRESSED, inputs = mapOf("minutesLeft" to minutesLeft),
+            outputs = mapOf("changes" to changes.size, "belowFloors" to extra, "shortestSafeMinutes" to shortest))
         d.decisions.append(dec, w.day, w.id)
-        ReplanResult(changes, dec, save(d.sessions.load(w.id)!!, state.copy(sheet = null)))
+        ReplanResult(changes, dec, view, shortestSafeMinutes = shortest)
     }
 
     /** SAF-006: one more set than prescribed — OK, warn-and-confirm past a cap, blocked at the absolute ceiling or on a painful region. */
@@ -897,7 +957,11 @@ class SessionPlayer(private val d: PfcData) {
 
     // ------------------------------------------------------------------------------------------------ ending
     /** SAF-002 during a session (A5): the workout ends at once and the stop is kept until confirmed. */
-    suspend fun redFlag(symptoms: Set<String>): SafetyStop? = d.reportRedFlag(symptoms)
+    suspend fun redFlag(symptoms: Set<String>): SafetyStop? = d.store.transaction {
+        // The minutes stored are the session's own (pauses and idle gaps removed, LOAD-001), as on a normal finish.
+        val minutes = view()?.elapsedMinutes?.let { Math.round(it * 10) / 10.0 }
+        d.reportRedFlag(symptoms, minutes)
+    }
 
     /** A summary produced by an automatic end (pain gate), picked up by the screen. */
     var lastSummary: Summary? = null

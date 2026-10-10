@@ -120,6 +120,28 @@ class Onboarding(private val d: PfcData) {
             weightFeaturesOff = weightFeaturesOff))
     }
 
+    /**
+     * FL-001 after the conditions change once onboarding is done (Settings, re-check N2): goals no longer offered (fat loss in pregnancy
+     * or active cancer treatment, or soon after a birth) are dropped — the default replaces an empty list — and weight features are
+     * switched off when not allowed. The weekly mix, activity target and walks follow at once; the year's block order stays as planned
+     * (D-086). Nothing is switched back on automatically when the condition ends. Null when nothing changed.
+     */
+    suspend fun reconcileGoals(): GoalChange? = d.store.transaction {
+        val p = d.docs.get(Profile) ?: return@transaction null
+        if (p.onboardingStep != null) return@transaction null
+        val settings = d.docs.get(SettingsRecord) ?: SettingsRecord()
+        val r = goalOptions(settings.weightFeaturesOff)
+        val o = r.value
+        val removed = p.priorities.filter { it !in o.offered }
+        val turnOff = !settings.weightFeaturesOff && !o.weightFeatures
+        if (removed.isEmpty() && !turnOff) return@transaction null
+        val kept = p.priorities.filter { it in o.offered }.ifEmpty { listOf(o.default) }
+        if (removed.isNotEmpty()) d.docs.put(Profile, p.copy(priorities = kept))
+        if (turnOff) d.docs.update(SettingsRecord) { (it ?: SettingsRecord()).copy(weightFeaturesOff = true) }
+        d.decisions.append(r.decisions)
+        GoalChange(removed, kept, turnOff)
+    }
+
     /** O6: the top goals in order (PER-006) and the FL-001 weight-features switch. A goal not offered (FL-001) is refused. */
     suspend fun goal(priorities: List<Goal>, weightFeaturesOff: Boolean = false, focus: Set<com.personalfitnesscoach.engine.model.Muscle> = emptySet()) =
         d.store.transaction {
@@ -188,3 +210,6 @@ class Onboarding(private val d: PfcData) {
         const val ADULT_AGE = 18
     }
 }
+
+/** What [Onboarding.reconcileGoals] changed: goals no longer offered, the goals now, and whether weight features were switched off. */
+data class GoalChange(val removed: List<Goal>, val priorities: List<Goal>, val weightFeaturesOff: Boolean)

@@ -150,6 +150,11 @@ data class StoredCondition(
     val alreadyDoingImpact: Boolean = false,
     val supineUncomfortable: Boolean = false,
     val flare: Boolean = false,
+    /**
+     * Pregnancy `attest_if`: one of the listed conditions applies and the care provider has not OK'd exercise. Kept as its own answer
+     * (so it reloads as given, re-check N3); the engine treats it like a yes to `block_if`: follow the provider.
+     */
+    val attestNotOk: Boolean = false,
 ) {
     /**
      * The engine's view on `today`. `trainingWeeks` is weeks with at least one completed session since the condition was added
@@ -162,7 +167,7 @@ data class StoredCondition(
         pregnancyWeek = pregnancyWeek?.let { w -> w + (maxOf(0, today - (pregnancyWeekDay ?: addedDay)) + 6) / 7 },
         weeksSinceBirth = birthDay?.let { maxOf(0, today - it) / 7 },
         attested = attested, impactChecksPassed = impactChecksPassed, impactOptIn = impactOptIn, painRuleMetWeeks = painRuleMetWeeks,
-        blockIfYes = blockIfYes, previouslyVigorous = previouslyVigorous, alreadyDoingImpact = alreadyDoingImpact,
+        blockIfYes = blockIfYes || attestNotOk, previouslyVigorous = previouslyVigorous, alreadyDoingImpact = alreadyDoingImpact,
         supineUncomfortable = supineUncomfortable, flare = flare,
     )
 
@@ -172,7 +177,7 @@ data class StoredCondition(
         flag("attested", attested); flag("impactChecksPassed", impactChecksPassed); flag("impactOptIn", impactOptIn)
         if (painRuleMetWeeks != 0) put("painRuleMetWeeks", painRuleMetWeeks)
         flag("blockIfYes", blockIfYes); flag("previouslyVigorous", previouslyVigorous); flag("alreadyDoingImpact", alreadyDoingImpact)
-        flag("supineUncomfortable", supineUncomfortable); flag("flare", flare)
+        flag("supineUncomfortable", supineUncomfortable); flag("flare", flare); flag("attestNotOk", attestNotOk)
     }
 
     internal companion object {
@@ -182,7 +187,7 @@ data class StoredCondition(
             pregnancyWeekDay = o.intOrNull("pregnancyWeekDay"), birthDay = o.intOrNull("birthDay"), attested = o.bool("attested"),
             impactChecksPassed = o.bool("impactChecksPassed"), impactOptIn = o.bool("impactOptIn"), painRuleMetWeeks = o.int("painRuleMetWeeks", 0),
             blockIfYes = o.bool("blockIfYes"), previouslyVigorous = o.bool("previouslyVigorous"), alreadyDoingImpact = o.bool("alreadyDoingImpact"),
-            supineUncomfortable = o.bool("supineUncomfortable"), flare = o.bool("flare"),
+            supineUncomfortable = o.bool("supineUncomfortable"), flare = o.bool("flare"), attestNotOk = o.bool("attestNotOk"),
         )
     }
 }

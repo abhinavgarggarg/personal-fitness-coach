@@ -436,6 +436,7 @@
     <string name="wk_finish">Finish workout</string>
     <string name="wk_all_done">Everything is done. Well done.</string>
     <string name="wk_changes">What changed</string>
+    <string name="wk_shortest_safe">That’s less than the shortest safe session from here: about %1$d minutes. The warm-up, the cool-down and one set of each main lift always stay.</string>
     <string name="wk_no_changes">Nothing needed to change.</string>
     <string name="wk_refused">That change isn’t possible today: it would break a safety limit.</string>
     <string name="addset_ok">Set added.</string>
@@ -451,6 +452,8 @@
     <string name="change_cond_dropped">%1$s dropped</string>
     <string name="change_added">%1$s added</string>
     <string name="change_cond_swapped">%1$s → %2$s</string>
+    <string name="change_warmup_short">Warm-up shortened to %1$s min, the shortest safe warm-up for you</string>
+    <string name="change_rests_short">Rests between sets are shorter, never below their minimum</string>
     <string name="list_item">%1$s · %2$s</string>
     <string name="wk_enter_weight">Enter the weight you used to save this set.</string>
 
@@ -523,6 +526,9 @@
     <string name="set_conditions_body">Change your conditions and answers at any time, for example after a doctor’s visit or a birth.</string>
     <string name="set_conditions_edit">Change health conditions</string>
     <string name="set_save">Save</string>
+    <string name="set_goals_changed_title">Your plan changed with your health answers</string>
+    <string name="set_goals_changed_body">“Lose fat, keep muscle” isn’t offered with these conditions, so your goals are now: %1$s.</string>
+    <string name="set_goals_weight_off">Weight and waist tracking is switched off for now.</string>
     <string name="set_alerts_off">Notifications are off, so the rest timer can’t buzz while your phone is locked.</string>
     <string name="set_alerts_allow">Allow alerts</string>
     <string name="set_backup_health_note">The file holds your health information. Keep it somewhere private, or add a password.</string>

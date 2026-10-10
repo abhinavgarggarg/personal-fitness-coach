@@ -24,7 +24,8 @@ class MainActivity : ComponentActivity() {
         RestAlerts.appVisible = true
         RestAlerts.hideCountdown(this)
         // Back in the foreground: finished weeks roll over and steps are read (D-078). The first start is handled by the screen.
-        if (app.controller.screen.value != Screen.Loading) app.actions.run { onForeground() }
+        // Not a tap: it never blocks one, and a file picker's result arriving right after it is never dropped (re-check N4).
+        if (app.controller.screen.value != Screen.Loading) app.actions.fromSystem { onForeground() }
     }
 
     override fun onStop() {

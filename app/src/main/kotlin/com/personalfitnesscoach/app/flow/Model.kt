@@ -252,7 +252,8 @@ sealed interface WorkoutSheet {
 
 /** One-line messages after a change (the decision behind it is in the "Why?" log). */
 sealed interface WorkoutNotice {
-    data class Replanned(val changes: List<Change>) : WorkoutNotice
+    /** `shortestSafeMinutes`: the time asked for is below what can't be cut; the shortest this session can be from here (D-071, N7). */
+    data class Replanned(val changes: List<Change>, val shortestSafeMinutes: Int? = null) : WorkoutNotice
     data class Refused(val decisions: List<Decision>) : WorkoutNotice
     data class AddSet(val verdict: AdditionVerdict) : WorkoutNotice
     data class LoadChanged(val decision: Decision) : WorkoutNotice
@@ -289,6 +290,9 @@ sealed interface SettingsFlow {
     data class Export(val usePassword: Boolean = false, val problem: Boolean = false) : SettingsFlow
     /** The file was written. */
     data object Exported : SettingsFlow
+    /** FL-001 after a condition change: goals no longer offered were dropped and/or weight features switched off (re-check N2). */
+    data class GoalsChanged(val removed: List<com.personalfitnesscoach.engine.program.Goal>, val now: List<com.personalfitnesscoach.engine.program.Goal>,
+                            val weightFeaturesOff: Boolean) : SettingsFlow
     data class RestoreNeedsPassword(val bytes: ByteArray, val wrong: Boolean = false) : SettingsFlow {
         override fun equals(other: Any?) = other is RestoreNeedsPassword && other.wrong == wrong && other.bytes.contentEquals(bytes)
         override fun hashCode() = bytes.contentHashCode() * 31 + wrong.hashCode()

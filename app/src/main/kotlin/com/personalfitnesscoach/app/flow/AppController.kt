@@ -113,6 +113,23 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     fun clearError() { _error.value = null }
 
+    /**
+     * A backup password typed before the system file picker opens. It waits here, in memory only, until the picker answers — the screen
+     * can be rebuilt meanwhile (the phone turned in the picker), and a lost password would have saved the file without one — and is
+     * wiped when taken.
+     */
+    @Volatile private var pickerPassword: CharArray? = null
+
+    fun holdPickerPassword(password: CharArray?) {
+        pickerPassword?.fill(' ')
+        pickerPassword = password?.takeIf { it.isNotEmpty() }
+    }
+
+    fun takePickerPassword(): CharArray? = pickerPassword.also { pickerPassword = null }
+
+    /** The restore waiting for its safety copy's file (from the screen the controller holds, so it survives the screen being rebuilt). */
+    fun pendingRestoreToken(): Int? = ((current() as? Screen.Settings)?.model?.flow as? SettingsFlow.RestorePreview)?.token
+
     private fun current(): Screen = _screen.value
 
     // ======================================================================================================== launch
@@ -176,7 +193,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         c?.let { r -> f = f.copy(noneOfThese = r.items.isEmpty(), conditions = r.items.associate { sc -> formKey(sc.id) to ConditionAnswers(
             status = if (sc.id.startsWith("hbp_")) (if (sc.id == "hbp_controlled") ControlStatus.YES else ControlStatus.NO) else sc.controlled,
             clearance = sc.clearance, subFlags = sc.subFlags, pregnancyWeek = sc.pregnancyWeek?.let { w -> w + maxOf(0, today - (sc.pregnancyWeekDay ?: sc.addedDay)) / 7 },
-            weeksSinceBirth = sc.birthDay?.let { b -> maxOf(0, today - b) / 7 }, attested = sc.attested, blockIfYes = sc.blockIfYes,
+            weeksSinceBirth = sc.birthDay?.let { b -> maxOf(0, today - b) / 7 }, attested = sc.attested, blockIfYes = sc.blockIfYes, attestNotOk = sc.attestNotOk,
             previouslyVigorous = sc.previouslyVigorous, alreadyDoingImpact = sc.alreadyDoingImpact, supineUncomfortable = sc.supineUncomfortable,
             impactChecksPassed = sc.impactChecksPassed, flare = sc.flare, impactOptIn = sc.impactOptIn) }) }
         e?.let { f = f.copy(gym = it.gym, increments = Increments(barKg = it.inventory.barKg, smallestPlateKg = it.inventory.plates.keys.minOrNull() ?: 1.25,
@@ -275,8 +292,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         StoredCondition(id, today, controlled = if (key == HBP) null else a.status, clearance = a.clearance, clearanceDay = if (a.clearance.isEmpty()) null else today,
             subFlags = a.subFlags, pregnancyWeek = a.pregnancyWeek, pregnancyWeekDay = a.pregnancyWeek?.let { today },
             birthDay = a.weeksSinceBirth?.let { today - it * 7 }, attested = a.attested, impactChecksPassed = a.impactChecksPassed,
-            blockIfYes = a.blockIfYes || a.attestNotOk, previouslyVigorous = a.previouslyVigorous, alreadyDoingImpact = a.alreadyDoingImpact,
-            supineUncomfortable = a.supineUncomfortable, flare = a.flare, impactOptIn = a.impactOptIn)
+            blockIfYes = a.blockIfYes, attestNotOk = a.attestNotOk && !a.attested, previouslyVigorous = a.previouslyVigorous,
+            alreadyDoingImpact = a.alreadyDoingImpact, supineUncomfortable = a.supineUncomfortable, flare = a.flare, impactOptIn = a.impactOptIn)
     }.distinctBy { it.id }
 
     /** The equipment ticked by a preset (the list stays editable). */
@@ -488,9 +505,13 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     /** A8 with the next planned session. */
     private suspend fun done(sum: com.personalfitnesscoach.data.core.player.Summary): Screen = Screen.Done(sum, next = data.planToday()?.let { upcoming(it) })
 
-    /** The next session to show: today's offer, or the next planned day later this week (after today's session is done). */
+    /**
+     * The next session to show: today's offer, or the next planned day later this week that isn't done yet — a later day done early
+     * (moved forward) is not named again (SCH-002, re-check N8).
+     */
     private fun upcoming(t: TodayPlan): com.personalfitnesscoach.engine.program.PlannedDay? =
-        t.next ?: t.week.days.filter { it.weekday > Days.weekday(t.user.today) }.minByOrNull { it.weekday }
+        t.next ?: t.week.days.filter { it.weekday > Days.weekday(t.user.today) && it.weekday !in t.doneWeekdays &&
+            (it.slots.isNotEmpty() || it.conditioning.isNotEmpty()) }.minByOrNull { it.weekday }
 
     private fun sheetFor(v: com.personalfitnesscoach.data.core.player.PlayerView): WorkoutSheet? = when (v.state.sheet) {
         Sheet.CHANGE_TIME -> WorkoutSheet.ChangeTime(Math.round(v.remainingMinutes).toInt())
@@ -587,7 +608,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     suspend fun changeTime(minutes: Int) = workout { v ->
         val r = player.changeTime(minutes.coerceIn(1, 600))
-        shown(r.view, WorkoutNotice.Replanned(r.changes))
+        shown(r.view, WorkoutNotice.Replanned(r.changes, r.shortestSafeMinutes))
     }
 
     suspend fun openRedFlag() = workout { v -> Screen.Workout(player.openSheet(Sheet.RED_FLAG), WorkoutSheet.RedFlag()) }
@@ -709,7 +730,9 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
                 birthDay = if (sameBirth) oBirth else nBirth)
         }
         try { onboarding.conditions(merged) } catch (e: OnboardingException) { return@act s.copy(problem = e.problem) }
-        Screen.Settings(settingsModel())
+        // FL-001: a condition that rules out a goal or the weight features changes them now, and the user is told (re-check N2).
+        val change = onboarding.reconcileGoals()
+        Screen.Settings(settingsModel(change?.let { SettingsFlow.GoalsChanged(it.removed, it.priorities, it.weightFeaturesOff) }))
     }
 
     /** SAF-001: the user confirms a doctor said they can exercise; conservative or moderate-only mode from the screening ends. */

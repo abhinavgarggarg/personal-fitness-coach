@@ -47,6 +47,8 @@ import kotlinx.coroutines.launch
  *
  * [run] is for buttons: a second tap while one is still being handled is dropped (a fast double tap never logs a set twice, NFR-03).
  * [edit] is for typing and ticking answers: every change is kept, in order.
+ * [fromSystem] is for what the phone hands back — a file picker's or permission dialog's result, the return to the foreground: never
+ * dropped and never blocking a tap (re-check N4: the picker's result arrived while the foreground refresh was running and was lost).
  */
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class Actions(scope: CoroutineScope, val controller: AppController, dispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(1),
@@ -54,7 +56,8 @@ class Actions(scope: CoroutineScope, val controller: AppController, dispatcher: 
     /** One call after another, in order (a single-thread view of the default pool; tests pass the main thread). */
     private val ordered = CoroutineScope(scope.coroutineContext + dispatcher)
     private val pending = java.util.concurrent.atomic.AtomicBoolean(false)
-    @Volatile private var lastDoneMs = 0L
+    /** When the last tap finished (uptime); far in the past at first, so the first tap is never taken for a double tap. */
+    @Volatile private var lastDoneMs = Long.MIN_VALUE / 2
 
     fun run(block: suspend AppController.() -> Unit) {
         // A second tap within a moment of the last one finishing is a double tap on what is now a different button (R5-10).
@@ -70,6 +73,11 @@ class Actions(scope: CoroutineScope, val controller: AppController, dispatcher: 
     }
 
     fun edit(block: suspend AppController.() -> Unit) {
+        ordered.launch { controller.block() }
+    }
+
+    /** A result from the system or the app's lifecycle: always run, in order, outside the double-tap guard. */
+    fun fromSystem(block: suspend AppController.() -> Unit) {
         ordered.launch { controller.block() }
     }
 }

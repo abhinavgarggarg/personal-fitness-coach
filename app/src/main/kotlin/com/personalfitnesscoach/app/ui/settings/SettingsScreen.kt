@@ -67,42 +67,39 @@ fun SettingsScreen(m: SettingsModel) {
     BackHandler { a.run { closeSettings() } }
 
     val askSteps = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) a.run { setStepTracking(true) } else stepsDenied = true
+        if (granted) a.fromSystem { setStepTracking(true) } else stepsDenied = true
     }
     val exportTo = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri: Uri? ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val pw = exportPassword.toCharArray()
-        exportPassword = ""
-        exportPassword2 = ""
-        a.run {
+        // The password typed before the picker opened is held by the controller (it survives the screen being rebuilt).
+        val pw = a.controller.takePickerPassword()
+        if (uri == null) { pw?.fill(' '); return@rememberLauncherForActivityResult }
+        a.fromSystem {
             val ok = try {
                 val bytes = exportBytes(pw)
                 context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(bytes) } != null
-            } catch (e: Exception) { false } finally { pw.fill(' ') }
+            } catch (e: Exception) { false } finally { pw?.fill(' ') }
             if (ok) exported() else { failed = true; settingsFlow(null) }
         }
     }
     val pickBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
-        a.run {
+        a.fromSystem {
             val bytes = try { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } } catch (e: Exception) { null }
             if (bytes == null) { unreadable = true; settingsFlow(null) } else inspectBackup(bytes)
         }
     }
-    var restoreToken by remember { mutableStateOf<Int?>(null) }
     val safetyTo = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri: Uri? ->
-        val token = restoreToken
-        if (uri == null || token == null) return@rememberLauncherForActivityResult
-        val pw = safetyPassword.toCharArray()
-        safetyPassword = ""
-        a.run {
+        val pw = a.controller.takePickerPassword()
+        val token = a.controller.pendingRestoreToken()
+        if (uri == null || token == null) { pw?.fill(' '); return@rememberLauncherForActivityResult }
+        a.fromSystem {
             try {
                 restore(token, pw) { _, bytes -> context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(bytes) } ?: error("could not write the copy") }
-            } finally { pw.fill(' ') }
+            } finally { pw?.fill(' ') }
         }
     }
 
-    val askAlerts = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> a.run { openSettings() } }
+    val askAlerts = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> a.fromSystem { openSettings() } }
 
     ScreenColumn(stringResource(R.string.settings_title)) {
         // Phase 2 section 11: the rest timer can't buzz while locked without notifications (R5-21).
@@ -129,6 +126,15 @@ fun SettingsScreen(m: SettingsModel) {
         SectionTitle(stringResource(R.string.set_conditions_title))
         Body(stringResource(R.string.set_conditions_body))
         SecondaryButton(stringResource(R.string.set_conditions_edit), { a.run { openConditionsEditor() } })
+        // FL-001: what the new answers changed in the goals and weight features (re-check N2).
+        (m.flow as? SettingsFlow.GoalsChanged)?.let { g ->
+            InfoCard(stringResource(R.string.set_goals_changed_title), Tone.WARN) {
+                if (g.removed.isNotEmpty()) Body(stringResource(R.string.set_goals_changed_body,
+                    g.now.joinToString(", ") { context.getString(Labels.goal(it)) }))
+                if (g.weightFeaturesOff) Body(stringResource(R.string.set_goals_weight_off))
+                SmallAction(stringResource(R.string.action_close), { a.run { settingsFlow(null) } })
+            }
+        }
         if (m.screeningGuidance) InfoCard(stringResource(R.string.set_screening_guidance), Tone.WARN)
         val rescreen = m.flow as? SettingsFlow.Rescreen
         if (rescreen == null) SecondaryButton(stringResource(R.string.set_rescreen), { a.run { openRescreen() } })
@@ -188,8 +194,13 @@ fun SettingsScreen(m: SettingsModel) {
                 val mismatch = exportPassword.isNotEmpty() && exportPassword != exportPassword2
                 if (mismatch && exportPassword2.isNotEmpty()) Note(stringResource(R.string.set_backup_password_mismatch))
                 Note(stringResource(R.string.set_backup_password_note))
-                PrimaryButton(stringResource(R.string.set_backup_choose), { failed = false; exportTo.launch(BackupFormat.fileName(Days.of(java.time.LocalDate.now()))) },
-                    enabled = !mismatch)
+                PrimaryButton(stringResource(R.string.set_backup_choose), {
+                    failed = false
+                    a.controller.holdPickerPassword(exportPassword.toCharArray())
+                    exportPassword = ""
+                    exportPassword2 = ""
+                    exportTo.launch(BackupFormat.fileName(Days.of(java.time.LocalDate.now())))
+                }, enabled = !mismatch)
                 SecondaryButton(stringResource(R.string.action_cancel), { exportPassword = ""; exportPassword2 = ""; a.run { settingsFlow(null) } })
             }
             SettingsFlow.Exported -> InfoCard(stringResource(R.string.set_backup_done), Tone.GOOD)
@@ -219,7 +230,8 @@ fun SettingsScreen(m: SettingsModel) {
                 Text(stringResource(R.string.restore_safety))
                 PasswordField(stringResource(R.string.restore_safety_password), safetyPassword) { safetyPassword = it }
                 PrimaryButton(stringResource(R.string.restore_go), {
-                    restoreToken = f.token
+                    a.controller.holdPickerPassword(safetyPassword.toCharArray())
+                    safetyPassword = ""
                     safetyTo.launch("before-restore-" + BackupFormat.fileName(Days.of(java.time.LocalDate.now())))
                 })
                 SecondaryButton(stringResource(R.string.action_cancel), { a.run { settingsFlow(null) } })

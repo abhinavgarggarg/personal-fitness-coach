@@ -431,7 +431,7 @@ private fun PlanStep(s: Screen.Onboarding) {
 private fun AlertsStep() {
     val a = LocalActions.current
     val context = LocalContext.current
-    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> a.run { submitOnboarding() } }
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> a.fromSystem { submitOnboarding() } }
     Heading(stringResource(R.string.onb_alerts_title))
     Body(stringResource(R.string.onb_alerts_body))
     PrimaryButton(stringResource(R.string.onb_alerts_allow), {
