@@ -25,12 +25,18 @@ REGISTRY = ROOT / "engine/src/main/kotlin/com/personalfitnesscoach/engine/regist
 PLACEHOLDER = re.compile(r"%(\d+)\$")
 
 
+DUPLICATES = []
+
+
 def strings():
     out = {}
     for f in sorted(RES.glob("*.xml")):
         for e in ET.parse(f).getroot().findall("string"):
             text = "".join(e.itertext())
             idx = [int(i) for i in PLACEHOLDER.findall(text)]
+            # Android refuses to build with a name defined twice (Part 6: action_back), so it is caught here first.
+            if e.get("name") in out:
+                DUPLICATES.append(f"{f.name}: {e.get('name')}")
             out[e.get("name")] = (max(idx) if idx else 0, f.name, text)
     return out
 
@@ -80,6 +86,8 @@ def main():
                 if args != want:
                     errors.append(f"{f.relative_to(ROOT)}: {fn}(R.string.{name}) passes {args} value(s), the string has {want} placeholder(s)")
     used |= set(re.findall(r"@string/(\w+)", MANIFEST.read_text(encoding="utf-8")))
+    for d in DUPLICATES:
+        errors.append(f"string defined more than once: {d}")
     for name in sorted(used - set(defined)):
         errors.append(f"missing string: {name}")
     for name in sorted(set(defined) - used):

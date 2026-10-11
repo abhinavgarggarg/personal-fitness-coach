@@ -165,6 +165,36 @@ class ScreenshotsTest {
         shot("safety-stop")
         step { closeToToday() }
         shot("today-paused")
+        // Part 6: the tabs (History, Progress, Coach) and the settings editors.
+        step { confirmStopResolved() }
+        step { openTab(com.personalfitnesscoach.app.flow.Tab.HISTORY) }
+        shot("history")
+        (c.screen.value as? Screen.History)?.items?.firstOrNull()?.let { item -> step { openSession(item.workoutId) } }
+        shot("history-session")
+        step { openTab(com.personalfitnesscoach.app.flow.Tab.PROGRESS) }
+        step { openBodyEntry(waist = false) }
+        step { changeBodyEntry(com.personalfitnesscoach.app.flow.BodyEntry.Weight(84.0)) }
+        step { saveBodyEntry() }
+        shot("progress")
+        (c.screen.value as? Screen.Progress)?.overview?.lifts?.firstOrNull()?.let { l -> step { openExercise(l.exerciseId) }; shot("progress-exercise") }
+        step { openTab(com.personalfitnesscoach.app.flow.Tab.COACH) }
+        shot("coach")
+        step { askSuggested(com.personalfitnesscoach.data.core.coach.Question.WHAT_IT_TRAINS) }
+        shot("coach-answer")
+        step { editCoachText("Should I take creatine?") }
+        step { askCoach() }
+        shot("coach-referral")
+        step { openWhy("TIER_CAPPED_BY_SLEEP", listOf("RDY-005", "RDY-001")) }
+        shot("coach-why")
+        step { closeWhy() }
+        step { editCoachText("Why is today's session lighter?") }
+        step { prepareGeminiShare() }
+        shot("coach-ask-gemini")
+        step { closeGeminiShare() }
+        step { openTab(com.personalfitnesscoach.app.flow.Tab.TODAY) }
+        step { openSettings() }
+        step { openProfileEditor(com.personalfitnesscoach.app.flow.ProfileSection.GOALS) }
+        shot("settings-goals")
     }
 
 }

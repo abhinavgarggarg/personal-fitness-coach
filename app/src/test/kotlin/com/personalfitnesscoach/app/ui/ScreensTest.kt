@@ -222,6 +222,58 @@ class ScreensTest {
         assertEquals(OnboardingStep.WELCOME, (c.screen.value as Screen.Onboarding).step)
     }
 
+    @Test fun `Part 6 - History, Progress and Coach open from the tab bar and the coach answers a suggested question`() {
+        val c = launch { onboardQuickly(it) }
+        tap(s(R.string.tab_history))
+        assertTrue(c.screen.value is Screen.History)
+        shown(s(R.string.hist_empty))
+        assertTouchTargets()
+        tap(s(R.string.tab_progress))
+        assertTrue(c.screen.value is Screen.Progress)
+        tap(s(R.string.prog_add_weight))
+        shown(s(R.string.prog_weight_entry))
+        assertTouchTargets()
+        tap(s(R.string.action_cancel))
+        tap(s(R.string.tab_coach))
+        assertTrue(c.screen.value is Screen.Coach)
+        assertTouchTargets()
+        tap(s(R.string.q_what_it_trains))
+        assertTrue((c.screen.value as Screen.Coach).model.answer != null)
+        shown(s(R.string.action_why))
+        tap(s(R.string.action_why))
+        shown(s(R.string.why_title))
+        tap(s(R.string.action_back))
+        tap(s(R.string.gemini_ask))
+        shown(s(R.string.gemini_intro))
+        assertTouchTargets()
+        tap(s(R.string.action_cancel))
+        tap(s(R.string.tab_today))
+        assertTrue(c.screen.value is Screen.Today)
+    }
+
+    @Test fun `Part 6 - settings open the goal editor with the onboarding page and a theme choice`() {
+        val c = launch { onboardQuickly(it) }
+        tap(s(R.string.action_settings))
+        shown(s(R.string.set_training))
+        shown(s(R.string.theme_dark))
+        tap(s(R.string.set_goals))
+        assertTrue(c.screen.value is Screen.EditProfile)
+        shown(s(R.string.onb_goal_title))
+        assertTouchTargets()
+        tap(s(R.string.action_cancel))
+        assertTrue(c.screen.value is Screen.Settings)
+    }
+
+    @Config(sdk = [35], fontScale = 2.0f)
+    @Test fun `200 percent text - the coach still shows every question and the tab bar`() {
+        val c = launch { onboardQuickly(it) }
+        tap(s(R.string.tab_coach))
+        shown(s(R.string.q_how_hard))
+        shown(s(R.string.tab_history))
+        assertTouchTargets()
+        assertTrue(c.screen.value is Screen.Coach)
+    }
+
     @Config(sdk = [35], fontScale = 2.0f)
     @Test fun `200 percent text - the check-in and the workout still show every control`() {
         val c = launch { onboardQuickly(it) }
