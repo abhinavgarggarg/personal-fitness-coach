@@ -51,6 +51,7 @@ import com.personalfitnesscoach.engine.program.SlotRole
 import com.personalfitnesscoach.engine.program.SlotSpec
 import com.personalfitnesscoach.engine.program.SrpePrompt
 import com.personalfitnesscoach.engine.program.WeekPlanner
+import com.personalfitnesscoach.data.core.engine.forExercise
 import com.personalfitnesscoach.engine.progression.Autoregulation
 import com.personalfitnesscoach.engine.progression.Calibration
 import com.personalfitnesscoach.engine.progression.CalibrationStep
@@ -502,7 +503,7 @@ class SessionPlayer(private val d: PfcData) {
             lastHardEffortAtMs = if (t.kind == SetKind.WARMUP) next.lastHardEffortAtMs else now, sheet = null)
         next = touch(w, next)
         d.sessions.logSet(rowId, newSet, next.encode())
-        d.decisions.append(dec, w.day, w.id)
+        d.decisions.append(dec.map { it.forExercise(lift.exercise.id) }, w.day, w.id)
         val built = build(d.sessions.load(w.id)!!, next)
         // What is now on screen (the block after the lifts once the last set is logged) sets the next idle allowance (re-check N1).
         val allowance = allowanceFor(built)

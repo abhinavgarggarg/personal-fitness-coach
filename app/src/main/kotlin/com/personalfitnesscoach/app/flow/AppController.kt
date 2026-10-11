@@ -315,6 +315,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     // ======================================================================================================== today
     private suspend fun today(): Screen {
         val dd = data
+        // A workout in progress is where Today leads (no second check-in or start while it runs; review R6-05).
+        player.view()?.let { return Screen.Workout(it, sheetFor(it)) }
         val t = dd.planToday() ?: return onboardingScreen(onboarding.step() ?: OnboardingStep.WELCOME)
         return Screen.Today(todayModel(t))
     }
@@ -405,7 +407,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val dd = data
         val t = dd.planToday() ?: return@act null
         val next = t.next ?: return@act null
-        if (todayModel(t).painStop) return@act null
+        if (dd.trainingStopped(t.user.today)) return@act null
         val prev = dd.docs.get(ReadinessRecord, dayKey(t.user.today))
         Screen.CheckIn(CheckInForm(sleep = prev?.checkIn?.sleep ?: 3, energy = prev?.checkIn?.energy ?: 3, soreness = prev?.checkIn?.soreness ?: 3,
             stress = prev?.checkIn?.stress ?: 3, sleepHours = prev?.checkIn?.sleepHours, minutes = prev?.minutesAvailable ?: t.user.profile.sessionMinutes), next)
@@ -439,6 +441,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
                                 extra: List<com.personalfitnesscoach.engine.core.Decision> = emptyList()): Screen {
         val dd = data
         val t = dd.planToday() ?: return today()
+        // SAF-002/003: no preview (so no start) on a day the pain gate or a warning sign stopped, however it was reached (review R6-03).
+        if (dd.trainingStopped(t.user.today)) return today()
         val planned = t.week.days.firstOrNull { it.weekday == day.weekday && it.template == day.template } ?: day
         val g = dd.generateSession(t, planned, tier, minutes, express = express, awayFromGym = away)
         g.workout.safetyStop?.let { return Screen.Stop(it) }
@@ -485,7 +489,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     suspend fun startWorkout() = act {
         val s = current() as? Screen.Preview ?: return@act null
         val g: GeneratedSession = s.model.session
-        if (g.workout.items.isEmpty() && g.workout.conditioning.isEmpty()) return@act today()
+        player.view()?.let { return@act Screen.Workout(it, sheetFor(it)) }
+        if (data.trainingStopped() || (g.workout.items.isEmpty() && g.workout.conditioning.isEmpty())) return@act today()
         data.startSession(g)
         Screen.Workout(player.view()!!)
     }
@@ -828,6 +833,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     /** The four tabs (Phase 2 section 5). Each opens at its top screen. */
     suspend fun openTab(tab: Tab) = act {
         loadTheme()
+        player.view()?.let { return@act Screen.Workout(it, sheetFor(it)) }
         when (tab) {
             Tab.TODAY -> today()
             Tab.HISTORY -> historyScreen(HISTORY_WEEKS)
@@ -838,7 +844,12 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     private suspend fun historyScreen(weeks: Int): Screen {
         val today = data.clock.today()
-        return Screen.History(insights.history(today - 7 * weeks, today), weeks)
+        var w = weeks
+        // After a long break the newest sessions are older than 12 weeks: the list reaches back to them rather than looking empty (R6-10).
+        val latest = insights.latestBefore(today + 1)
+        if (latest != null && latest < today - 7 * w) w = (today - latest) / 7 + 1
+        val from = today - 7 * w
+        return Screen.History(insights.history(from, today), w, insights.latestBefore(from) != null)
     }
 
     /** H1: older sessions, 12 weeks at a time. */
@@ -877,9 +888,16 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         insights.session(s.detail.item.workoutId)?.let { Screen.SessionDetail(it) } ?: historyScreen(HISTORY_WEEKS)
     }
 
-    suspend fun deleteEditedSet() = act {
+    /** Delete asks once more: the set is gone for good and the plan is rebuilt without it. */
+    suspend fun askDeleteSet() = act(showBusy = false) {
         val s = current() as? Screen.SessionDetail ?: return@act null
         val e = s.edit ?: return@act null
+        s.copy(edit = e.copy(confirmDelete = true))
+    }
+
+    suspend fun deleteEditedSet() = act {
+        val s = current() as? Screen.SessionDetail ?: return@act null
+        val e = s.edit?.takeIf { it.confirmDelete } ?: return@act null
         insights.deleteSet(e.setId)
         insights.session(s.detail.item.workoutId)?.let { Screen.SessionDetail(it) } ?: historyScreen(HISTORY_WEEKS)
     }
@@ -889,7 +907,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val s = current() as? Screen.Progress ?: return@act null
         if (s.overview.body == null) return@act null
         val last = data.docs.all(WeightRecord).maxByOrNull { it.day }?.kg
-        s.copy(entry = if (waist) BodyEntry.Waist(emptyList()) else BodyEntry.Weight(last ?: 75.0), problem = false)
+        s.copy(entry = if (waist) BodyEntry.Waist(emptyList()) else BodyEntry.Weight(last), problem = false)
     }
 
     suspend fun changeBodyEntry(entry: BodyEntry) = act(showBusy = false) {
@@ -901,7 +919,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val s = current() as? Screen.Progress ?: return@act null
         try {
             when (val e = s.entry ?: return@act null) {
-                is BodyEntry.Weight -> insights.logWeight(e.kg)
+                is BodyEntry.Weight -> insights.logWeight(e.kg ?: return@act s.copy(problem = true))
                 is BodyEntry.Waist -> if (e.readings.isEmpty()) return@act s.copy(problem = true) else insights.logWaist(e.readings)
             }
         } catch (x: IllegalArgumentException) {
@@ -964,13 +982,20 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     /** "Why?" for a decision shown on another screen (Today, preview, summary, a workout notice): opens the coach at it. */
     suspend fun openWhy(reason: String, ruleIds: List<String>) = act {
         val model = (current() as? Screen.Coach)?.model ?: CoachModel(back = backTarget())
-        Screen.Coach(model.copy(why = coach.why(reason, ruleIds), answer = null, share = null, warning = null))
+        // The answer stays underneath: closing "Why?" returns to it (review R6-13).
+        Screen.Coach(model.copy(why = coach.why(reason, ruleIds), share = null, warning = null))
     }
 
     /** Closes "Why?": back to the answer it came from, or to the screen it was opened from. */
     suspend fun closeWhy() = act {
         val s = current() as? Screen.Coach ?: return@act null
         if (s.model.answer == null && s.model.back != null) backFrom(s.model.back) else s.copy(model = s.model.copy(why = null))
+    }
+
+    /** Closes the warning-signs list without reporting: back to the coach as it was (its way back included). */
+    suspend fun closeWarning() = act(showBusy = false) {
+        val s = current() as? Screen.Coach ?: return@act null
+        s.copy(model = s.model.copy(warning = null))
     }
 
     /** Leaves the coach: back to the screen it was opened from (the preview, a workout), or Today. */
@@ -990,7 +1015,17 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     /** What a coach answer may do: open a screen, or ask the engine (SAF-009). Nothing here sets sets, reps or loads. */
     suspend fun coachAction(action: com.personalfitnesscoach.data.core.coach.CoachAction) = act {
         val dd = data
-        dd.decisions.append(listOf(com.personalfitnesscoach.engine.core.Decision(DecisionKind.SAFETY, listOf(com.personalfitnesscoach.engine.registry.RuleIds.SAF_009),
+        val toEngine = action is com.personalfitnesscoach.data.core.coach.CoachAction.ShorterSession || action == com.personalfitnesscoach.data.core.coach.CoachAction.EasierLevel
+        val intoSession = toEngine || action == com.personalfitnesscoach.data.core.coach.CoachAction.OpenPreview ||
+            action == com.personalfitnesscoach.data.core.coach.CoachAction.OpenCheckIn
+        if (intoSession) {
+            // One guard for every way the coach leads towards a session (review R6-03/05): a workout already running, or a day the pain
+            // gate or a warning sign stopped, goes back to that instead.
+            player.view()?.let { return@act Screen.Workout(it, sheetFor(it)) }
+            if (dd.trainingStopped()) return@act today()
+        }
+        // Only a request that asks the engine for a change is logged (review R6-15).
+        if (toEngine) dd.decisions.append(listOf(com.personalfitnesscoach.engine.core.Decision(DecisionKind.SAFETY, listOf(com.personalfitnesscoach.engine.registry.RuleIds.SAF_009),
             com.personalfitnesscoach.engine.core.ReasonKey.COACH_REQUEST, inputs = mapOf("action" to action.javaClass.simpleName))))
         val t = dd.planToday()
         val rec = t?.let { dd.docs.get(ReadinessRecord, dayKey(it.user.today)) }
@@ -1015,7 +1050,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
                 if (rec == null) openCheckInScreen(t) else preview(next, rec.tier, rec.minutesAvailable ?: t.user.profile.sessionMinutes, express = false, away = false)
             }
             com.personalfitnesscoach.data.core.coach.CoachAction.OpenProgress -> Screen.Progress(insights.overview())
-            com.personalfitnesscoach.data.core.coach.CoachAction.OpenWarningSigns -> (current() as? Screen.Coach)?.let { it.copy(model = it.model.copy(warning = emptySet())) }
+            com.personalfitnesscoach.data.core.coach.CoachAction.OpenWarningSigns, com.personalfitnesscoach.data.core.coach.CoachAction.CheckWarningSigns ->
+                (current() as? Screen.Coach)?.let { it.copy(model = it.model.copy(warning = emptySet())) }
             is com.personalfitnesscoach.data.core.coach.CoachAction.AskAbout -> {
                 val s = current() as? Screen.Coach ?: return@act null
                 s.copy(model = s.model.copy(answer = coach.answer(action.question, action.exerciseId), exerciseId = action.exerciseId))
@@ -1026,8 +1062,12 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     /** T2 from elsewhere (the coach): the check-in for the next planned session, with the minutes asked for when given. */
     private suspend fun openCheckInScreen(t: TodayPlan, minutes: Int? = null): Screen {
         val next = t.next ?: return today()
-        if (todayModel(t).painStop) return today()
-        return Screen.CheckIn(CheckInForm(minutes = (minutes ?: t.user.profile.sessionMinutes).coerceIn(10, 180)), next)
+        if (data.trainingStopped(t.user.today)) return today()
+        // Today's answers are filled in, as from Today (a fresh form could undo a low-readiness morning; review R6-04).
+        val prev = data.docs.get(ReadinessRecord, dayKey(t.user.today))
+        return Screen.CheckIn(CheckInForm(sleep = prev?.checkIn?.sleep ?: 3, energy = prev?.checkIn?.energy ?: 3, soreness = prev?.checkIn?.soreness ?: 3,
+            stress = prev?.checkIn?.stress ?: 3, sleepHours = prev?.checkIn?.sleepHours,
+            minutes = (minutes ?: prev?.minutesAvailable ?: t.user.profile.sessionMinutes).coerceIn(10, 180)), next)
     }
 
     suspend fun pickWarningSign(symptom: String, on: Boolean) = act(showBusy = false) {
@@ -1048,6 +1088,11 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     /** D-045: the exact content shared with Gemini, shown first. */
     suspend fun prepareGeminiShare() = act {
         val s = current() as? Screen.Coach ?: return@act null
+        // Symptoms, medicines, medical questions, pain and illness get the referral, not a share (SAF-009, review R6-06).
+        if (com.personalfitnesscoach.data.core.coach.GeminiShare.blocked(s.model.text) != null) {
+            val m = coach.match(s.model.text)
+            return@act s.copy(model = s.model.copy(answer = coach.answer(m, s.model.exerciseId), share = null, why = null, warning = null))
+        }
         s.copy(model = s.model.copy(share = com.personalfitnesscoach.data.core.coach.GeminiShare(data).content(s.model.text), why = null, warning = null))
     }
 
@@ -1058,6 +1103,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     // ------------------------------------------------------------------------------------------------ settings editors (D-086)
     suspend fun openProfileEditor(section: ProfileSection) = act {
+        // Not while a workout runs: the running session would not follow the new plan (review R6-05).
+        player.view()?.let { return@act Screen.Workout(it, sheetFor(it)) }
         form = loadForm()
         Screen.EditProfile(section, form, null, if (section == ProfileSection.GOALS) onboarding.goalOptions(form.weightFeaturesOff).value else null)
     }
@@ -1075,6 +1122,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     suspend fun saveProfile() = act {
         val s = current() as? Screen.EditProfile ?: return@act null
         val dd = data
+        player.view()?.let { return@act Screen.Workout(it, sheetFor(it)) }
         val f = form
         val p = dd.docs.get(Profile) ?: return@act null
         try {

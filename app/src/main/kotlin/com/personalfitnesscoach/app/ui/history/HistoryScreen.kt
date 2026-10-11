@@ -59,7 +59,7 @@ fun HistoryScreen(s: Screen.History) {
     ScreenColumn(stringResource(R.string.hist_title)) {
         if (s.items.isEmpty()) Body(stringResource(R.string.hist_empty))
         s.items.forEach { HistoryRow(it) }
-        if (s.items.isNotEmpty()) SmallAction(stringResource(R.string.hist_more), { a.run { moreHistory() } })
+        if (s.hasOlder) SmallAction(stringResource(R.string.hist_more), { a.run { moreHistory() } })
     }
 }
 
@@ -68,7 +68,7 @@ private fun HistoryRow(item: HistoryItem) {
     val a = LocalActions.current
     val busy = LocalBusy.current
     val title = stringResource(R.string.hist_row, dateText(item.day), stringResource(Labels.template(item.template)))
-    val detail = if (item.outcome == SessionOutcome.SKIPPED) stringResource(R.string.hist_row_skipped, stringResource(Labels.outcome(item.outcome)))
+    val detail = if (item.outcome == SessionOutcome.SKIPPED) stringResource(Labels.outcome(item.outcome))
         else stringResource(R.string.hist_row_detail, stringResource(Labels.outcome(item.outcome)), minutes(item.minutes ?: 0.0), item.sets)
     Column(Modifier.fillMaxWidth().heightIn(min = SecondaryHeight)
         .clickable(enabled = !busy && item.outcome != SessionOutcome.SKIPPED, role = Role.Button) { a.run { openSession(item.workoutId) } }
@@ -157,9 +157,16 @@ private fun EditSet(e: SetEdit, problem: Boolean) {
                 { a.edit { changeSetEdit { it.copy(rir = ((it.rir ?: 2.0) + 1.0).coerceAtMost(10.0)) } } }, minusEnabled = rir > 0.0, plusEnabled = rir < 10.0)
         }
         if (problem) Body(stringResource(R.string.edit_problem))
-        PrimaryButton(stringResource(R.string.action_save), { a.run { saveSetEdit() } })
-        Note(stringResource(R.string.edit_delete_note))
-        SecondaryButton(stringResource(R.string.action_delete), { a.run { deleteEditedSet() } })
-        SecondaryButton(stringResource(R.string.action_cancel), { a.run { cancelSetEdit() } })
+        if (e.confirmDelete) {
+            // Asked once more: a deleted set can't be brought back (review R6-12).
+            Body(stringResource(R.string.edit_delete_confirm))
+            PrimaryButton(stringResource(R.string.action_delete), { a.run { deleteEditedSet() } })
+            SecondaryButton(stringResource(R.string.edit_delete_keep), { a.edit { changeSetEdit { it.copy(confirmDelete = false) } } })
+        } else {
+            PrimaryButton(stringResource(R.string.action_save), { a.run { saveSetEdit() } })
+            Note(stringResource(R.string.edit_delete_note))
+            SecondaryButton(stringResource(R.string.action_delete), { a.edit { askDeleteSet() } })
+            SecondaryButton(stringResource(R.string.action_cancel), { a.run { cancelSetEdit() } })
+        }
     }
 }

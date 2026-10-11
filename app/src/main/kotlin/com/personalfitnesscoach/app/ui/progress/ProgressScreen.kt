@@ -73,7 +73,9 @@ fun ProgressScreen(s: Screen.Progress) {
                 Body(stringResource(R.string.prog_week_line, dateText(w.weekStartDay), w.completed, w.planned, minutes(w.equivalentMinutes)) +
                     if (w.whoFloorMet) " · " + stringResource(R.string.prog_week_met) else "")
             }
-            Body(stringResource(R.string.prog_streak, o.streak.current, o.streak.best))
+            // ADH-001: the run of weeks only once there is one, and the weeks trained this year, which never go down.
+            if (o.streak.best > 0) Body(stringResource(R.string.prog_streak, o.streak.current, o.streak.best))
+            if (o.streak.weeksTrainedThisYear > 0) Body(stringResource(R.string.prog_weeks_year, o.streak.weeksTrainedThisYear))
             Body(stringResource(R.string.prog_sessions, o.sessionsCompleted))
             Body(stringResource(R.string.prog_who_weeks, o.whoWeeks))
         }
@@ -102,9 +104,9 @@ fun ProgressScreen(s: Screen.Progress) {
                 }
                 is BodyEntry.Weight -> InfoCard(stringResource(R.string.prog_add_weight)) {
                     // Once a day at most, so typing is fine here; the last weight is filled in.
-                    NumberField(stringResource(R.string.prog_weight_entry), e.kg, { v -> if (v != null) a.edit { changeBodyEntry(BodyEntry.Weight(v)) } })
+                    NumberField(stringResource(R.string.prog_weight_entry), e.kg, { v -> a.edit { changeBodyEntry(BodyEntry.Weight(v)) } })
                     if (s.problem) Body(stringResource(R.string.prog_entry_problem))
-                    PrimaryButton(stringResource(R.string.action_save), { a.run { saveBodyEntry() } })
+                    PrimaryButton(stringResource(R.string.action_save), { a.run { saveBodyEntry() } }, enabled = e.kg != null)
                     SecondaryButton(stringResource(R.string.action_cancel), { a.run { closeBodyEntry() } })
                 }
                 is BodyEntry.Waist -> InfoCard(stringResource(R.string.prog_add_waist)) {

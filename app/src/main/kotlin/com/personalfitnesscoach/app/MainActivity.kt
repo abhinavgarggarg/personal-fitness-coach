@@ -8,6 +8,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.personalfitnesscoach.app.flow.Screen
+import com.personalfitnesscoach.app.flow.restEndsAtMs
 import com.personalfitnesscoach.app.platform.RestAlerts
 import com.personalfitnesscoach.app.ui.PfcApp
 import com.personalfitnesscoach.app.ui.theme.PfcTheme
@@ -44,7 +45,7 @@ class MainActivity : ComponentActivity() {
         RestAlerts.appVisible = false
         // Hidden during a rest: the countdown shows in a notification until the alarm buzzes.
         val s = app.controller.screen.value
-        val end = (s as? Screen.Workout)?.view?.restEndsAtMs
+        val end = s.restEndsAtMs()
         if (end != null && end > System.currentTimeMillis()) RestAlerts.showCountdown(this, end)
         super.onStop()
     }

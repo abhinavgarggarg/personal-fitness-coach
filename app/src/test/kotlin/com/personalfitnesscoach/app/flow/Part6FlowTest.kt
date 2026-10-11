@@ -102,6 +102,10 @@ class Part6FlowTest {
         c.cancelSetEdit()
         c.startSetEdit(set.setId)
         c.deleteEditedSet()
+        assertTrue("delete asks once more first (R6-12)", (c.s() as Screen.SessionDetail).detail.exercises.flatMap { it.sets }.any { it.setId == set.setId })
+        c.askDeleteSet()
+        assertTrue((c.s() as Screen.SessionDetail).edit!!.confirmDelete)
+        c.deleteEditedSet()
         assertTrue((c.s() as Screen.SessionDetail).detail.exercises.flatMap { it.sets }.none { it.setId == set.setId })
     }
 

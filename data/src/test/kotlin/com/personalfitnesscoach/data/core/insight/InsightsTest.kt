@@ -147,4 +147,73 @@ class InsightsTest {
         assertTrue(ins.excluded().isEmpty())
         try { ins.setExcluded("not-an-exercise", true); fail("unknown exercise accepted") } catch (e: IllegalArgumentException) { }
     }
+
+    // ------------------------------------------------------------------------------------------------ Part 6 review regressions
+    @Test fun `R6-12 a correction without a change logs nothing, a user-added set keeps its mark, and the log is dated today`() = runBlocking {
+        val (d, clock, p) = setup()
+        session(d, clock, p)
+        val ins = Insights(d)
+        val w = ins.session(ins.history(Fixtures.MONDAY, Fixtures.MONDAY).single().workoutId)!!
+        val set = w.exercises.flatMap { it.sets }.first { it.kind == SetKind.WORKING && (it.loadKg ?: 0.0) > 0 }
+        val snap = d.store.snapshot()
+        assertFalse(ins.correctSet(set.setId, set.loadKg, set.reps, set.seconds, set.rir))
+        assertEquals("saving without a change writes nothing", snap, d.store.snapshot())
+        // A week later a set of that session is corrected: logged today, with the session, and shown with it.
+        clock.setDay(Fixtures.MONDAY + 7, hour = 9)
+        assertTrue(ins.correctSet(set.setId, set.loadKg, (set.reps ?: 0) + 1, set.seconds, set.rir))
+        val edit = d.decisions.forDay(Fixtures.MONDAY + 7).single { it.reason == "HISTORY_EDITED" }
+        assertEquals(w.item.workoutId, edit.workoutId)
+        assertTrue(ins.session(w.item.workoutId)!!.decisions.any { it.seq == edit.seq })
+        // A set the user added stays marked as added after a correction (SAF-006 trail).
+        val row = d.sessions.load(w.item.workoutId)!!.exercises.flatMap { it.sets }.first { it.id == set.setId }
+        assertEquals("ADJUSTED", row.deviation)
+    }
+
+    @Test fun `R6-09 milestones stay once earned, calibration is not a finished block, and a session after missed ones is welcomed back`() = runBlocking {
+        val (d, clock, p) = setup()
+        session(d, clock, p)
+        clock.setDay(Fixtures.MONDAY + 2, hour = 8)
+        session(d, clock, p)
+        // Planned days pass without training, then a session: "welcome back" (ADH-002 1.1.0).
+        clock.setDay(Fixtures.MONDAY + 11, hour = 8)
+        d.onAppOpen()
+        session(d, clock, p)
+        val o = Insights(d).overview(Fixtures.MONDAY + 11)
+        assertTrue("achievements: ${o.achievements}", Achievement.WELCOME_BACK in o.achievements)
+        // Block 1 started (calibration done): no "block completed" yet.
+        d.docs.update(com.personalfitnesscoach.data.core.model.ProgramRecord) { it!!.copy(blockIndex = 1) }
+        val o1 = Insights(d).overview(Fixtures.MONDAY + 11)
+        assertTrue(Achievement.CALIBRATION_DONE in o1.achievements)
+        assertFalse(Achievement.BLOCK_COMPLETED in o1.achievements)
+        d.docs.update(com.personalfitnesscoach.data.core.model.ProgramRecord) { it!!.copy(blockIndex = 2) }
+        assertTrue(Achievement.BLOCK_COMPLETED in Insights(d).overview(Fixtures.MONDAY + 11).achievements)
+        // The activity goal met in the first week (2 strength days, 150+ minutes) stays earned after a quieter week.
+        val ws = com.personalfitnesscoach.data.core.model.WeekSummary
+        d.docs.put(ws, com.personalfitnesscoach.data.core.model.WeekSummary(Fixtures.MONDAY, 1, 3, 2, equivalentMinutes = 200.0))
+        d.docs.put(ws, com.personalfitnesscoach.data.core.model.WeekSummary(Fixtures.MONDAY + 7, 2, 3, 0, equivalentMinutes = 10.0))
+        val o2 = Insights(d).overview(Fixtures.MONDAY + 15)
+        assertTrue(o2.weeks.first { it.weekStartDay == Fixtures.MONDAY }.whoFloorMet)
+        assertFalse(o2.weeks.last().whoFloorMet)
+        assertTrue(Achievement.WHO_FLOOR_WEEK in o2.achievements)
+    }
+
+    @Test fun `R6-11 the weight chart shows weekly averages, not single readings`() = runBlocking {
+        val (d, _, _) = setup()
+        val ins = Insights(d)
+        ins.logWeight(90.0, Fixtures.MONDAY - 6)
+        ins.logWeight(91.0, Fixtures.MONDAY - 5)
+        ins.logWeight(89.0, Fixtures.MONDAY)
+        val w = ins.overview(Fixtures.MONDAY).body!!.weights
+        assertEquals(2, w.size)
+        assertEquals(90.5, w[0].kg, 0.01)
+        assertEquals(89.0, w[1].kg, 0.01)
+    }
+
+    @Test fun `R6-10 the newest session before a long break is found`() = runBlocking {
+        val (d, clock, p) = setup()
+        session(d, clock, p)
+        val ins = Insights(d)
+        assertEquals(Fixtures.MONDAY, ins.latestBefore(Fixtures.MONDAY + 120))
+        assertNull(ins.latestBefore(Fixtures.MONDAY))
+    }
 }

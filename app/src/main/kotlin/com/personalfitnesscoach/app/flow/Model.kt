@@ -77,7 +77,8 @@ sealed interface Screen {
 
     // ---------------------------------------------------------------------------------------------------- Part 6 tabs
     /** H1: finished sessions, newest first. */
-    data class History(val items: List<com.personalfitnesscoach.data.core.insight.HistoryItem>, val weeks: Int) : Screen
+    /** `hasOlder`: sessions exist before the weeks shown ("Show older sessions" is offered; review R6-10). */
+    data class History(val items: List<com.personalfitnesscoach.data.core.insight.HistoryItem>, val weeks: Int, val hasOlder: Boolean = false) : Screen
 
     /** H2: one session with every set; a set can be corrected or deleted (FS-5, rebuilt and logged). */
     data class SessionDetail(val detail: com.personalfitnesscoach.data.core.insight.SessionDetail, val edit: SetEdit? = null,
@@ -102,20 +103,31 @@ sealed interface Screen {
 enum class Tab { TODAY, HISTORY, PROGRESS, COACH }
 
 /** The tab a screen belongs to (null = no tab bar). */
+/** The rest still running behind this screen: the workout's own, or the workout's under a "Why?" opened from it (the alarm stays set). */
+fun Screen.restEndsAtMs(): Long? = when (this) {
+    is Screen.Workout -> view.restEndsAtMs
+    is Screen.Coach -> (model.back as? Screen.Workout)?.view?.restEndsAtMs
+    else -> null
+}
+
 fun Screen.tab(): Tab? = when (this) {
     is Screen.Today -> Tab.TODAY
     is Screen.History, is Screen.SessionDetail -> Tab.HISTORY
     is Screen.Progress, is Screen.ExerciseDetail -> Tab.PROGRESS
-    is Screen.Coach -> Tab.COACH
+    // Opened over a workout (a "Why?" during the session): workout mode has no tabs (Phase 2 section 5; review R6-05).
+    is Screen.Coach -> if (model.back is Screen.Workout || model.back is Screen.Resume) null else Tab.COACH
     else -> null
 }
 
 /** A past set being corrected (steppers, not typing; NewSet ranges apply). */
-data class SetEdit(val setId: Long, val exerciseId: String, val kind: String, val loadKg: Double?, val reps: Int?, val seconds: Int?, val rir: Double?)
+data class SetEdit(val setId: Long, val exerciseId: String, val kind: String, val loadKg: Double?, val reps: Int?, val seconds: Int?, val rir: Double?,
+                   /** Delete asks once more before the set is removed (it can't be undone; review R6-12). */
+                   val confirmDelete: Boolean = false)
 
 /** FL-005 entries from Progress. */
 sealed interface BodyEntry {
-    data class Weight(val kg: Double) : BodyEntry
+    /** Null until a number is typed (no made-up starting weight; review R6-14). */
+    data class Weight(val kg: Double?) : BodyEntry
     /** Up to three readings, averaged. */
     data class Waist(val readings: List<Double>) : BodyEntry
 }

@@ -88,7 +88,7 @@ data class StepDay(val day: Int, val steps: Int)
 
 data class BodyLine(
     val weight: WeightTrend,
-    /** Readings of the last 12 weeks, oldest first (P1 chart). */
+    /** Weekly averages of the last 12 weeks, oldest first (P1 chart; the day is the week's Monday). */
     val weights: List<WeightEntry>,
     val waistCm: Double?,
     val waistDay: Int?,
@@ -153,20 +153,28 @@ class Insights(private val d: PfcData) {
                 SetLine(s.id, s.setIndex, s.kind, s.loadKg, s.reps, s.seconds, s.rir, FormCheck.valueOf(s.formCheck))
             })
         }
-        SessionDetail(item(w), ex, d.decisions.forWorkout(w.id, w.day), editable = w.row.status == Status.DONE)
+        // The session's own decisions, and corrections made to it later (logged on the day they were made, R6-12).
+        val decisions = d.docs.between(com.personalfitnesscoach.data.core.model.DecisionEntry, w.day, maxOf(w.day, d.clock.today())).filter { it.workoutId == w.id }
+        SessionDetail(item(w), ex, decisions, editable = w.row.status == Status.DONE)
     }
 
     /**
      * FS-5: a set of a finished workout is corrected; every exercise's state is rebuilt from the logged sets and the change is logged
      * ("Why?"). The same ranges as logging apply (NewSet), and a set only belongs to its own exercise.
      */
-    suspend fun correctSet(setId: Long, loadKg: Double?, reps: Int?, seconds: Int?, rir: Double?) = d.store.transaction {
+    suspend fun correctSet(setId: Long, loadKg: Double?, reps: Int?, seconds: Int?, rir: Double?): Boolean = d.store.transaction {
         val (w, e, s) = locate(setId)
-        val set = NewSet(s.setIndex, s.kind, loadKg, reps, seconds, s.metres, rir, s.rpe, FormCheck.valueOf(s.formCheck), "ADJUSTED")
+        // Saving without a change changes nothing and logs nothing (review R6-12).
+        if (s.loadKg == loadKg && s.reps == reps && s.seconds == seconds && s.rir == rir) return@transaction false
+        // A set the user added keeps that mark (SAF-006 trail); any other corrected set is marked as adjusted.
+        val deviation = if (s.deviation == "USER_ADDED") s.deviation else "ADJUSTED"
+        val set = NewSet(s.setIndex, s.kind, loadKg, reps, seconds, s.metres, rir, s.rpe, FormCheck.valueOf(s.formCheck), deviation)
         d.correctPastSet(setId, e.row.id, set)
+        // Logged today (with the session's id), so the coach's last-two-weeks answers include a correction to an older session.
         d.decisions.append(listOf(Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_001, RuleIds.INT_004), ReasonKey.HISTORY_EDITED,
             inputs = mapOf("exercise" to e.exerciseId, "before" to listOf(s.loadKg, s.reps, s.seconds, s.rir)),
-            outputs = mapOf("after" to listOf(loadKg, reps, seconds, rir)))), w.day, w.id)
+            outputs = mapOf("after" to listOf(loadKg, reps, seconds, rir)))), d.clock.today(), w.id)
+        true
     }
 
     suspend fun deleteSet(setId: Long) = d.store.transaction {
@@ -174,7 +182,12 @@ class Insights(private val d: PfcData) {
         d.deletePastSet(setId)
         d.decisions.append(listOf(Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_001, RuleIds.INT_004), ReasonKey.HISTORY_EDITED,
             inputs = mapOf("exercise" to e.exerciseId, "before" to listOf(s.loadKg, s.reps, s.seconds, s.rir)), outputs = mapOf("deleted" to true))),
-            w.day, w.id)
+            d.clock.today(), w.id)
+    }
+
+    /** The day of the newest finished or skipped session before `day`, if any (H1 "show older", review R6-10). */
+    suspend fun latestBefore(day: Int): Int? = d.store.transaction {
+        d.sessions.between(Int.MIN_VALUE / 2, day - 1).filter { it.row.status == Status.DONE || it.row.status == Status.SKIPPED }.maxOfOrNull { it.day }
     }
 
     private suspend fun locate(setId: Long): Triple<StoredWorkout, com.personalfitnesscoach.data.core.session.StoredExercise, com.personalfitnesscoach.data.core.store.SetRow> {
@@ -199,19 +212,25 @@ class Insights(private val d: PfcData) {
         val weeks = summaries.map { s -> WeekLine(s.weekStartDay, s.planned, s.completed, s.equivalentMinutes, strengthDays(all, s.weekStartDay)) }
         val streak = Streak.compute(summaries.map { WeekRecord(it.planned, it.completed, Days.date(it.weekStartDay).year) }, Days.date(today).year)
         val records = points.values.sumOf { records(it) }
+        // Milestones stay once earned (review R6-09): the activity goal in any finished week; a block finished after the calibration
+        // block (block 0 is always CALIBRATE, PER-003); "welcome back" for a session after missed planned ones (ADH-002 1.1.0).
+        val doneDays = all.map { it.day }.distinct().sorted()
+        val back = doneDays.zipWithNext().any { (a, b) -> d.bridge.missedPlannedSince(a, b) > 0 }
         val achievements = Achievements.earned(AchievementInput(
             sessionsCompleted = all.size,
             calibrationDone = (program?.blockIndex ?: 0) > 0,
             newRecords = records,
-            blocksCompleted = program?.blockIndex ?: 0,
-            whoFloorMetThisWeek = weeks.lastOrNull()?.whoFloorMet == true,
-            firstAfterMiss = false,
+            blocksCompleted = ((program?.blockIndex ?: 0) - 1).coerceAtLeast(0),
+            whoFloorMetThisWeek = weeks.any { it.whoFloorMet },
+            firstAfterMiss = back,
         ))
         val settings = d.docs.get(SettingsRecord) ?: SettingsRecord()
         val body = if (settings.weightFeaturesOff) null else {
             val b = d.bridge.body(today)
-            BodyLine(b.weight, d.docs.between(WeightRecord, today - 7 * 12, today).sortedBy { it.day }.map { WeightEntry(it.day, it.kg) },
-                b.waistCm, b.waistDay, b.waistDue)
+            // FL-005: the chart shows weekly averages, not single readings (day-to-day changes are mostly water; review R6-11).
+            val weekly = d.docs.between(WeightRecord, Days.weekStart(today) - 7 * 11, today).groupBy { Days.weekStart(it.day) }.toSortedMap()
+                .map { (ws, r) -> WeightEntry(ws, Math.round(r.map { it.kg }.average() * 10) / 10.0) }
+            BodyLine(b.weight, weekly, b.waistCm, b.waistDay, b.waistDue)
         }
         val steps = if (settings.stepTracking || d.docs.between(StepsRecord, today - 6, today).isNotEmpty())
             d.docs.between(StepsRecord, today - 6, today).sortedBy { it.day }.map { StepDay(it.day, it.steps) } else emptyList()

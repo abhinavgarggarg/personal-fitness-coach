@@ -168,9 +168,9 @@ class AppControllerTest {
         assertTrue(c.s() is Screen.Stop)
         c.refreshToday()
         assertNotNull((c.s() as Screen.Today).model.stopOpen)
-        // Later the same day: still stopped.
-        c.openCheckIn(); c.submitCheckIn()
-        assertTrue(c.s() is Screen.Stop)
+        // Later the same day: still stopped — the check-in doesn't open again (review R6-03).
+        c.openCheckIn()
+        assertNotNull((c.s() as Screen.Today).model.stopOpen)
         // Next day the user confirms it was reviewed; the first session back is LIGHT.
         w.clock.advanceDays(1)
         c.refreshToday()

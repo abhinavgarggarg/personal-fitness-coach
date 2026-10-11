@@ -306,6 +306,7 @@ object Labels {
         com.personalfitnesscoach.data.core.coach.OutOfScope.DIET -> R.string.oos_diet
         com.personalfitnesscoach.data.core.coach.OutOfScope.MEDICAL -> R.string.oos_medical
         com.personalfitnesscoach.data.core.coach.OutOfScope.PAIN -> R.string.oos_pain
+        com.personalfitnesscoach.data.core.coach.OutOfScope.ILLNESS -> R.string.oos_illness
     }
 
     fun theme(t: com.personalfitnesscoach.data.core.model.Theme): Int = when (t) {

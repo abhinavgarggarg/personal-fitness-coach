@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import com.personalfitnesscoach.app.flow.tab
+import com.personalfitnesscoach.app.flow.restEndsAtMs
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -112,8 +113,8 @@ fun PfcApp(actions: Actions) {
             c.clearError()
         }
     }
-    // The end-of-rest alarm follows the workout's rest (A2); any other screen leaves no alarm behind.
-    val restEnd = (screen as? Screen.Workout)?.view?.restEndsAtMs
+    // The end-of-rest alarm follows the workout's rest (A2), also under a "Why?" opened from it; any other screen leaves no alarm behind.
+    val restEnd = screen.restEndsAtMs()
     LaunchedEffect(restEnd) {
         if (restEnd != null && restEnd > System.currentTimeMillis()) RestAlerts.schedule(context, restEnd) else RestAlerts.cancel(context)
     }

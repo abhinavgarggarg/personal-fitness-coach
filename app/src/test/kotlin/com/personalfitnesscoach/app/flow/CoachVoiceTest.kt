@@ -51,10 +51,14 @@ class CoachVoiceTest {
         assertTrue(coach.size >= 40)
         coach.forEach { (name, text) -> assertTrue("$name is ${text.length} characters", text.length <= 260) }
         // SAF-009 referrals name someone who can help (and the urgent one says to stop and call).
-        for (k in listOf("oos_medication", "oos_supplements", "oos_diet", "oos_medical", "oos_pain")) {
+        for (k in listOf("oos_medication", "oos_supplements", "oos_diet", "oos_medical", "oos_pain", "oos_illness")) {
             assertTrue(k, Regex("doctor|pharmacist|dietitian|physiotherapist").containsMatchIn(strings.getValue(k)))
         }
         assertTrue(strings.getValue("oos_urgent").contains("stop exercising now") && strings.getValue("oos_urgent").contains("%1\$s"))
+        // The suggested minutes question and the answer use the same number (review R6-07).
+        assertTrue(strings.getValue("q_only_n_minutes").contains(com.personalfitnesscoach.data.core.coach.Coach.SUGGESTED_MINUTES.toString()))
+        // Every confidence level has plain words (review R6-16).
+        for (k in listOf("why_conf_high", "why_conf_moderate", "why_conf_limited", "why_conf_expert", "why_conf_product")) assertTrue(k, strings.getValue(k).isNotBlank())
         // ADH-001/002: missed, partial and stopped sessions are described neutrally, and a streak is never "lost".
         val neutral = strings.filterKeys { it.startsWith("today_welcome") || it.startsWith("hist_outcome") || it.startsWith("hist_detail_stopped") ||
             it.startsWith("prog_streak") || it.startsWith("today_streak") || it.startsWith("ach_") }

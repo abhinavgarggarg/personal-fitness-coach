@@ -37,9 +37,10 @@ enum class Question(val suggested: Boolean = true) {
 
 /**
  * SAF-009: what the coach does not answer. It refers to a professional (and, for symptoms, to the warning-signs guidance) and adds
- * nothing of its own — no diagnosis, no medicine, supplement or diet advice. Pain gets the app's own route (SAF-003/004).
+ * nothing of its own — no diagnosis, no medicine, supplement or diet advice. Pain and illness get the app's own route (SAF-003/004,
+ * the check-in's illness questions).
  */
-enum class OutOfScope { URGENT_SYMPTOMS, MEDICATION, SUPPLEMENTS, DIET, MEDICAL, PAIN }
+enum class OutOfScope { URGENT_SYMPTOMS, MEDICATION, MEDICAL, ILLNESS, PAIN, SUPPLEMENTS, DIET }
 
 /** What a typed question was understood as. Nothing in the text is ever executed: it only selects one of the fixed answers. */
 data class Match(val question: Question?, val outOfScope: OutOfScope?, val minutes: Int?, val exerciseId: String?, val suggestions: List<Question>)
@@ -55,6 +56,8 @@ sealed interface CoachAction {
     data object OpenPreview : CoachAction
     data object OpenProgress : CoachAction
     data object OpenWarningSigns : CoachAction
+    /** The same warning signs, offered quietly under an answer the coach could not place (unknown or non-English text, review R6-01). */
+    data object CheckWarningSigns : CoachAction
     /** Ask the same question about another exercise. */
     data class AskAbout(val question: Question, val exerciseId: String) : CoachAction
 }
@@ -91,7 +94,27 @@ data class CoachAnswer(
 
 /** "Why?" for one decision: its plain line (by reason key), and each rule with its title and confidence label. */
 data class Why(val reason: String, val rules: List<RuleRef>)
-data class RuleRef(val id: String, val title: String?, val confidence: String?)
+data class RuleRef(val id: String, val title: String?, val confidence: String?) {
+    /** The registry's confidence label as a level the screen words plainly (review R6-16). */
+    val evidence: Evidence? get() = Evidence.of(confidence)
+}
+
+/** The registry's five confidence labels (Phase 1 evidence scale). */
+enum class Evidence {
+    HIGH, MODERATE, LIMITED, EXPERT, PRODUCT;
+
+    companion object {
+        fun of(label: String?): Evidence? = when {
+            label == null -> null
+            label.startsWith("High") -> HIGH
+            label.startsWith("Moderate") -> MODERATE
+            label.startsWith("Limited") -> LIMITED
+            label.startsWith("Expert") -> EXPERT
+            label.startsWith("Product") -> PRODUCT
+            else -> null
+        }
+    }
+}
 
 /**
  * The Tier 1 coach (Phase 2 section 9, FS-9; SAF-009, COACH-001): offline and deterministic. It explains decisions the engine already
@@ -105,29 +128,103 @@ class Coach(private val d: PfcData) {
     fun match(text: String): Match = Companion.match(text)
 
     companion object {
+        /** The minutes in the suggested question "I only have 40 minutes" (q_only_n_minutes). */
+        const val SUGGESTED_MINUTES = 40
+
         /** Lower-case words only; anything else in the text is ignored (prompt injection is just more words, SAF-009). */
         private fun norm(t: String) = (" " + t.lowercase().replace('’', '\'').replace(Regex("[^a-z0-9' ]+"), " ") + " ")
             .replace("'s ", " ").replace("'", "").replace(Regex("\\s+"), " ").trim().let { " $it " }
 
+        private fun words(t: String): List<String> = t.trim().split(' ').filter { it.isNotEmpty() }
+
+        /**
+         * Out of scope (SAF-009), checked before any question and in this order, so a symptom always wins. A key is a word, a word stem
+         * ending in `*` ("faint*" also finds "fainted") or a phrase of them. Urgent and pain words also match one typing slip of the same
+         * length ("pian", "chets"; a swapped pair of letters, or one wrong letter in a longer word) — never a shorter or longer word, so
+         * "train" is not "strain" (review R6-01/02).
+         */
         private val OUT: List<Pair<OutOfScope, List<String>>> = listOf(
-            OutOfScope.URGENT_SYMPTOMS to listOf("chest pain", "chest tight", "chest pressure", "faint", "passed out", "can't breathe", "cannot breathe",
-                "short of breath", "dizzy", "palpitation", "heart racing", "heart is racing", "numb face", "slurred", "one side weak", "blacked out"),
-            OutOfScope.MEDICATION to listOf("medication", "medicine", "medicines", "pill", "pills", "tablet", "tablets", "insulin", "metformin", "ibuprofen",
-                "paracetamol", "painkiller", "painkillers", "steroid", "steroids", "drug", "drugs", "prescription", "beta blocker", "statin"),
-            OutOfScope.SUPPLEMENTS to listOf("supplement", "supplements", "protein powder", "creatine", "pre workout", "preworkout", "vitamin", "vitamins",
-                "bcaa", "whey", "fat burner", "fat burners", "caffeine pill"),
-            OutOfScope.DIET to listOf("diet", "dieting", "calorie", "calories", "eat", "eating", "food", "foods", "meal", "meals", "fasting", "keto", "carb",
-                "carbs", "macros", "protein intake", "how much protein", "deficit", "snack"),
-            OutOfScope.MEDICAL to listOf("diagnose", "diagnosis", "torn", "fracture", "broken bone", "disease", "blood pressure reading", "blood sugar",
-                "sugar level", "what is wrong with", "is it serious", "tendinitis", "hernia", "slipped disc", "scan", "mri", "x ray"),
-            OutOfScope.PAIN to listOf("hurts", "hurt", "pain", "painful", "ache", "aching", "sore knee", "sore back", "sore shoulder", "injured", "injury"),
+            OutOfScope.URGENT_SYMPTOMS to listOf("faint*", "pass* out", "black* out", "blackout*", "collaps*", "dizz*", "lighthead*", "light headed",
+                "palpitat*", "breathless*", "short of breath", "shortness of breath", "out of breath", "cant breathe", "cannot breathe", "can not breathe",
+                "trouble breathing", "difficulty breathing", "hard to breathe", "struggling to breathe", "cant catch my breath", "heart attack",
+                "a stroke", "having a stroke", "had a stroke", "stroke symptoms", "numb", "numbness", "one side of my face", "one side of my body",
+                "weak on one side", "weakness on one side", "numb on one side", "one sided weakness", "one sided numbness", "face droop*",
+                "drooping face", "slurr*", "cant speak", "cannot speak",
+                "trouble speaking", "severe headache", "sudden headache", "worst headache", "severe pain", "sudden pain", "irregular heart*",
+                "heart racing", "racing heart", "heart pounding", "pounding heart", "heart flutter*", "skipped beat*", "skipping beat*", "angina"),
+            OutOfScope.MEDICATION to listOf("medication*", "medicine*", "meds", "pill", "pills", "tablets", "insulin", "metformin", "ibuprofen",
+                "aspirin", "paracetamol", "acetaminophen", "painkiller*", "pain killer*", "steroid*", "drug", "drugs", "prescri*", "beta blocker*",
+                "blocker*", "statin*", "antidepress*", "inhaler*", "blood thinner*", "warfarin", "dose", "dosage", "side effect*", "antibiotic*",
+                "birth control", "hrt", "injection*", "ozempic", "semaglutide", "wegovy"),
+            OutOfScope.MEDICAL to listOf("diagnos*", "pregnan*", "postpartum", "post partum", "gave birth", "had a baby", "after birth", "surger*",
+                "surgical", "operation", "doctor*", "gp", "physio*", "physician", "specialist", "cardiolog*", "hospital*", "diabet*", "hypertens*",
+                "blood pressure", "high bp", "asthma*", "arthrit*", "osteopor*", "osteopen*", "heart condition", "heart disease", "heart problem*",
+                "cancer", "chemo*", "epilep*", "seizure*", "copd", "kidney*", "thyroid*", "cholesterol", "blood sugar", "sugar level*", "fractur*",
+                "torn", "tore", "broken bone*", "broken arm", "broken leg", "broken wrist", "broken toe", "broken finger", "broken rib*", "broke my",
+                "disease*", "hernia*", "herniated", "slipped disc", "bulging disc", "disc bulge", "scan", "mri", "x ray", "xray", "is it serious",
+                "what is wrong", "whats wrong", "tendin*", "sciatica", "concussion*", "stitches", "health condition", "medical*", "cardiac",
+                "pins and needles", "condition"),
+            OutOfScope.ILLNESS to listOf("sick", "illness", "feel ill", "feeling ill", "im ill", "am ill", "been ill", "flu", "fever*", "covid*",
+                "a cold", "head cold", "infection*", "sore throat", "virus", "cough*", "runny nose", "temperature", "vomit*", "nause*", "diarrh*",
+                "stomach bug"),
+            OutOfScope.PAIN to listOf("hurt*", "pain*", "ache*", "aching", "achy", "sore*", "injur*", "pulled", "strain*", "sprain*", "tweak*",
+                "twinge*", "pinched", "pinching", "swollen", "swelling", "cramp*", "popped", "popping", "gave out", "gives way", "buckl*", "tender", "stiff*",
+                "bruis*", "headache*", "backache*"),
+            OutOfScope.SUPPLEMENTS to listOf("supplement*", "protein powder", "protein shake*", "creatine", "pre workout", "preworkout", "vitamin*",
+                "multivitamin*", "bcaa*", "whey", "fat burner*", "caffeine pill*", "collagen", "fish oil", "omega*", "magnesium", "zinc",
+                "ashwagandha", "test booster*", "electrolyte*"),
+            OutOfScope.DIET to listOf("diet*", "calori*", "eat", "eating", "ate", "food*", "meal*", "fasting", "keto", "carb*", "macro*", "protein",
+                "nutrition*", "nutrient*", "deficit", "surplus", "snack*", "breakfast", "lunch", "dinner", "alcohol", "beer", "wine", "drink*",
+                "hydrat*", "sugar"),
         )
+
+        /** Words typed with one slip still count for these (same length only). "stroke" is left out: "strike" and "strobe" are too close. */
+        private val TYPO_TOPICS = setOf(OutOfScope.URGENT_SYMPTOMS, OutOfScope.PAIN)
+
+        /** Chest or heart with a word of pain or pressure is a warning sign, however it is put ("my chest is tight", "pain in my chest"). */
+        private val CHEST = listOf("chest", "heart")
+        private val CHEST_FEELING = listOf("pain*", "hurt*", "tight*", "pressure", "ache*", "aching", "squeez*", "heavy", "heaviness", "sore*",
+            "burn*", "discomfort", "weird", "funny", "strange", "racing", "pounding", "flutter*", "irregular", "fast")
+        /** Exercise names and plain workout words with "chest" in them are not the chest itself ("my shoulder hurts on chest press"). */
+        private val CHEST_EXERCISE = Regex(" chest (press|fly|flye|flies|supported|day|exercise|exercises|workout|muscles|muscle|stretch|dip|dips) ")
+
+        /** One pair of neighbouring letters swapped ("pian"), or — when `sub` — one wrong letter in a word of 6 letters or more ("palpatations"). */
+        private fun near(word: String, key: String, sub: Boolean): Boolean {
+            if (word == key) return true
+            if (word.length != key.length || key.length < 4) return false
+            val diff = word.indices.filter { word[it] != key[it] }
+            if (diff.size == 2 && diff[1] == diff[0] + 1 && word[diff[0]] == key[diff[1]] && word[diff[1]] == key[diff[0]]) return true
+            return sub && diff.size == 1 && key.length >= 6
+        }
+
+        private fun part(word: String, key: String, typos: Boolean, sub: Boolean): Boolean {
+            val stem = key.endsWith('*')
+            val k = key.removeSuffix("*")
+            return if (stem) word.startsWith(k) || (typos && word.length >= k.length && near(word.take(k.length), k, sub))
+            else word == k || (typos && k != "stroke" && near(word, k, sub))
+        }
+
+        /** Whether the words contain the key (one word, or a phrase of consecutive words). */
+        private fun has(ws: List<String>, key: String, typos: Boolean, sub: Boolean = false): Boolean {
+            val parts = key.split(' ')
+            if (parts.size > ws.size) return false
+            return (0..ws.size - parts.size).any { i -> parts.indices.all { j -> part(ws[i + j], parts[j], typos, sub) } }
+        }
+
+        /** The out-of-scope topic of a text, if any (SAF-009); urgent symptoms first. */
+        fun outOfScope(text: String): OutOfScope? {
+            val t = norm(text)
+            val ws = words(t)
+            val chestWords = words(CHEST_EXERCISE.replace(t, " "))
+            if (CHEST.any { c -> has(chestWords, c, typos = true) } && CHEST_FEELING.any { f -> has(chestWords, f, typos = true) }) return OutOfScope.URGENT_SYMPTOMS
+            return OUT.firstOrNull { (topic, keys) -> keys.any { k -> has(ws, k, topic in TYPO_TOPICS, sub = topic == OutOfScope.URGENT_SYMPTOMS) } }?.first
+        }
 
         /** Phrase → weight per question. Phrases win over single words. */
         private val KEYS: Map<Question, List<Pair<String, Int>>> = mapOf(
             Question.WHY_THIS_EXERCISE to listOf("why am i doing" to 4, "why this exercise" to 4, "why do i do" to 3, "why is this exercise" to 4,
                 "why this" to 2, "point of this" to 3, "why do i have to" to 3, "why exercise" to 2),
-            Question.WHAT_IT_TRAINS to listOf("what does this exercise train" to 5, "what does it train" to 5, "what does this train" to 5, "train" to 1,
+            Question.WHAT_IT_TRAINS to listOf("what does this exercise train" to 5, "what does it train" to 5, "what does this train" to 5, "what does" to 2, "train" to 1,
                 "which muscles" to 4, "what muscles" to 4, "muscle" to 2, "muscles" to 2, "work on" to 1, "target" to 1, "good for" to 2),
             Question.CAN_I_REPLACE to listOf("replace" to 4, "swap" to 4, "instead" to 2, "substitute" to 4, "alternative" to 3, "another exercise" to 3,
                 "don't like" to 2, "dont like" to 2, "busy" to 2, "occupied" to 3, "taken" to 1, "change the exercise" to 3, "different exercise" to 3),
@@ -158,9 +255,7 @@ class Coach(private val d: PfcData) {
             val minutes = Regex(" (\\d{1,3}) ?(?:minutes|minute|mins|min) ").find(t)?.groupValues?.get(1)?.toIntOrNull()
                 ?: Regex(" only have (\\d{1,3}) ").find(t)?.groupValues?.get(1)?.toIntOrNull()
             val exercise = exerciseIn(t)
-            OUT.firstOrNull { (_, words) -> words.any { w -> t.contains(norm(w)) } }?.let { (topic, _) ->
-                return Match(null, topic, minutes, exercise, emptyList())
-            }
+            outOfScope(text)?.let { return Match(null, it, minutes, exercise, emptyList()) }
             val scores = KEYS.mapValues { (_, ks) -> ks.sumOf { (k, w) -> if (t.contains(norm(k))) w else 0 } }.toMutableMap()
             if (minutes != null) scores[Question.ONLY_N_MINUTES] = (scores[Question.ONLY_N_MINUTES] ?: 0) + 4
             if (exercise != null) for (q in listOf(Question.WHY_THIS_EXERCISE, Question.WHAT_IT_TRAINS, Question.CAN_I_REPLACE)) scores[q] = (scores[q] ?: 0) + 1
@@ -185,7 +280,8 @@ class Coach(private val d: PfcData) {
      */
     suspend fun answer(m: Match, exerciseId: String? = m.exerciseId): CoachAnswer = d.store.transaction {
         m.outOfScope?.let { return@transaction outOfScope(it) }
-        val q = m.question ?: return@transaction CoachAnswer(null, null, emptyList(), emptyList(), emptyList(), m.suggestions)
+        // Not understood (or not English): the closest questions, and the warning signs within reach in case it was about feeling unwell.
+        val q = m.question ?: return@transaction CoachAnswer(null, null, emptyList(), emptyList(), listOf(CoachAction.CheckWarningSigns), m.suggestions)
         answer(q, exerciseId, m.minutes)
     }
 
@@ -206,7 +302,7 @@ class Coach(private val d: PfcData) {
                 val core = t?.program?.coreLifts?.values?.contains(ex.id) == true
                 CoachAnswer(q, null, listOf(Fact.ExerciseRole(ex.id, slot?.spec?.role, slot?.main == true, ex.pattern, core, prefs?.favourites?.contains(ex.id) == true),
                     Fact.Decisions(decisions("SLOT_", "CORE_LIFT", "ACCESSORY_", "SWAP", exercise = ex.id))),
-                    listOf("ADH-003", "PAT-001", "SUB-002", "GEN-001").filter { Registry.titles.containsKey(it) },
+                    listOf("ADH-003", "PAT-001", "SUB-002").filter { Registry.titles.containsKey(it) },
                     others.map { CoachAction.AskAbout(q, it) })
             }
             Question.WHAT_IT_TRAINS -> {
@@ -239,9 +335,11 @@ class Coach(private val d: PfcData) {
             }
             Question.ONLY_N_MINUTES -> {
                 val usual = t?.user?.profile?.sessionMinutes ?: 60
-                val n = (minutes ?: (usual / 2)).coerceIn(10, 120)
+                // The suggested question says 40 minutes; a typed one gives its own number (review R6-07).
+                val n = (minutes ?: SUGGESTED_MINUTES).coerceIn(10, 180)
+                // SAF-009 "shorter session": only offered when it is shorter than usual; longer is not something the coach asks for.
                 CoachAnswer(q, null, listOf(Fact.Minutes(n, usual)), listOf("TIME-001", "TIME-002", "TIME-004"),
-                    if (t?.next != null) listOf(CoachAction.ShorterSession(n)) else emptyList())
+                    if (t?.next != null && n < usual) listOf(CoachAction.ShorterSession(n)) else emptyList())
             }
             Question.TIRED_TODAY -> {
                 val ci = d.docs.get(ReadinessRecord, dayKey(today))
@@ -308,6 +406,8 @@ class Coach(private val d: PfcData) {
     private fun outOfScope(o: OutOfScope): CoachAnswer = when (o) {
         OutOfScope.URGENT_SYMPTOMS -> CoachAnswer(null, o, emptyList(), listOf(RuleIds.SAF_002, RuleIds.SAF_009), listOf(CoachAction.OpenWarningSigns))
         OutOfScope.PAIN -> CoachAnswer(null, o, emptyList(), listOf(RuleIds.SAF_003, RuleIds.SAF_004, RuleIds.SAF_009), listOf(CoachAction.OpenCheckIn))
+        // SAF-007: the check-in asks about illness and rests or lightens the day; the coach says nothing about the illness itself.
+        OutOfScope.ILLNESS -> CoachAnswer(null, o, emptyList(), listOf(RuleIds.SAF_007, RuleIds.SAF_009), listOf(CoachAction.OpenCheckIn))
         else -> CoachAnswer(null, o, emptyList(), listOf(RuleIds.SAF_009), emptyList())
     }
 

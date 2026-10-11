@@ -206,6 +206,16 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
     /** The user confirms red-flag symptoms resolved or were reviewed (SAF-002); training resumes with a LIGHT session. */
     suspend fun confirmStopResolved(): Boolean = store.transaction { checkIns.confirmStopResolved() }
 
+    /**
+     * No training today: the pain gate ended the day (SAF-003) or a red-flag stop waits for the user's confirmation (SAF-002). Every way
+     * into a session checks this — the check-in, the preview and the coach's requests (review R6-03).
+     */
+    suspend fun trainingStopped(day: Int = clock.today()): Boolean = store.transaction {
+        val stop = docs.get(com.personalfitnesscoach.data.core.model.SafetyStopRecord)
+        (stop != null && stop.confirmedDay == null) || docs.between(com.personalfitnesscoach.data.core.model.PainRecord, day, day)
+            .any { it.resolvedDay == null && com.personalfitnesscoach.engine.safety.PainGate.assess(it.report).value.endSession }
+    }
+
     /** A new step-counter reading (only kept while step tracking is on, D-062). */
     suspend fun recordStepReading(atMs: Long, elapsedMs: Long, counter: Long, bootCount: Int? = null) = store.transaction {
         if (docs.get(SettingsRecord)?.stepTracking != true) return@transaction

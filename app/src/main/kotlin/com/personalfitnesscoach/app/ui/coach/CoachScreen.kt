@@ -16,7 +16,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import com.personalfitnesscoach.R
 import com.personalfitnesscoach.app.flow.CoachModel
-import com.personalfitnesscoach.app.flow.Tab
 import com.personalfitnesscoach.app.ui.Body
 import com.personalfitnesscoach.app.ui.CheckRow
 import com.personalfitnesscoach.app.ui.InfoCard
@@ -34,6 +33,7 @@ import com.personalfitnesscoach.app.ui.text.ReasonTexts
 import com.personalfitnesscoach.app.ui.workout.exerciseName
 import com.personalfitnesscoach.data.core.coach.CoachAction
 import com.personalfitnesscoach.data.core.coach.CoachAnswer
+import com.personalfitnesscoach.data.core.coach.Evidence
 import com.personalfitnesscoach.data.core.coach.Fact
 import com.personalfitnesscoach.data.core.coach.GeminiShare
 import com.personalfitnesscoach.data.core.coach.OutOfScope
@@ -50,7 +50,7 @@ import com.personalfitnesscoach.engine.registry.P
 @Composable
 fun CoachScreen(m: CoachModel) {
     val a = LocalActions.current
-    BackHandler { a.run { when { m.share != null -> closeGeminiShare(); m.why != null -> closeWhy(); else -> closeCoach() } } }
+    BackHandler { a.run { when { m.share != null -> closeGeminiShare(); m.why != null -> closeWhy(); m.warning != null -> closeWarning(); else -> closeCoach() } } }
     ScreenColumn(stringResource(R.string.coach_title)) {
         m.why?.let { WhyPanel(it); return@ScreenColumn }
         m.share?.let { SharePanel(it); return@ScreenColumn }
@@ -87,10 +87,8 @@ private fun AnswerCard(ans: CoachAnswer) {
         ans.question?.let { q -> ans.facts.forEach { FactText(q, it) } }
         ans.suggestions.forEach { q -> SmallAction(stringResource(Labels.question(q)), { a.run { askSuggested(q) } }) }
         ans.actions.forEach { act -> ActionButton(act) }
-        if (ans.rules.isNotEmpty()) {
-            Note(stringResource(R.string.coach_rules, ans.rules.joinToString(", ")))
-            SmallAction(stringResource(R.string.action_why), { a.run { openWhy(ans.question?.name ?: ans.outOfScope?.name ?: "", ans.rules) } })
-        }
+        // The rules themselves, with their titles and how sure the evidence is, are one tap away (no rule codes on the answer; R6-16).
+        if (ans.rules.isNotEmpty()) SmallAction(stringResource(R.string.action_why), { a.run { openWhy(ans.question?.name ?: ans.outOfScope?.name ?: "", ans.rules) } })
     }
 }
 
@@ -114,9 +112,12 @@ private fun FactText(q: Question, f: Fact) {
             Body(stringResource(R.string.coach_trains_pattern, stringResource(Labels.pattern(f.pattern))))
         }
         is Fact.Replacements -> {
-            Body(stringResource(R.string.coach_replace_yes, exerciseName(f.exerciseId)))
+            // "Yes" only when there is something to swap to (review R6-16).
             if (f.options.isEmpty()) Body(stringResource(R.string.coach_replace_none))
-            else Body(stringResource(R.string.coach_replace_options, f.options.joinToString(", ") { exerciseName(it) }))
+            else {
+                Body(stringResource(R.string.coach_replace_yes, exerciseName(f.exerciseId)))
+                Body(stringResource(R.string.coach_replace_options, f.options.joinToString(", ") { exerciseName(it) }))
+            }
         }
         is Fact.TodayLevel -> {
             val tier = f.tier
@@ -135,7 +136,7 @@ private fun FactText(q: Question, f: Fact) {
                 }
             }
         }
-        is Fact.Minutes -> Body(stringResource(R.string.coach_minutes, f.minutes, f.usual))
+        is Fact.Minutes -> Body(stringResource(if (f.minutes < f.usual) R.string.coach_minutes else R.string.coach_minutes_fits, f.minutes, f.usual))
         is Fact.Improved -> {
             Body(stringResource(R.string.coach_improved_sessions, f.sessionsThisMonth, f.sessionsLastMonth))
             val up = f.liftsUp.map { l ->
@@ -181,6 +182,7 @@ private fun ActionButton(act: CoachAction) {
         CoachAction.OpenPreview -> SecondaryButton(stringResource(R.string.coach_preview_go), { a.run { coachAction(act) } })
         CoachAction.OpenProgress -> SecondaryButton(stringResource(R.string.coach_progress_go), { a.run { coachAction(act) } })
         CoachAction.OpenWarningSigns -> PrimaryButton(stringResource(R.string.oos_urgent_go), { a.run { coachAction(act) } })
+        CoachAction.CheckWarningSigns -> SmallAction(stringResource(R.string.coach_unwell_go), { a.run { coachAction(act) } })
         is CoachAction.AskAbout -> SmallAction(stringResource(R.string.coach_ask_about, exerciseName(act.exerciseId)), { a.run { coachAction(act) } })
     }
 }
@@ -193,10 +195,23 @@ private fun WhyPanel(w: Why) {
     val known = com.personalfitnesscoach.engine.core.ReasonKey.entries.any { it.name == w.reason }
     if (known) Body(stringResource(ReasonTexts.of(w.reason)))
     w.rules.forEach { r ->
-        Text(stringResource(R.string.why_rule, r.id, r.title ?: r.id), style = MaterialTheme.typography.titleMedium)
-        r.confidence?.let { Note(stringResource(R.string.why_confidence, it)) }
+        Text(r.title ?: r.id, style = MaterialTheme.typography.titleMedium)
+        val id = stringResource(R.string.why_rule_id, r.id)
+        val sure = confidence(r.evidence)
+        Note(if (sure != null) stringResource(R.string.why_rule, id, stringResource(R.string.why_confidence, sure)) else id)
     }
     SecondaryButton(stringResource(R.string.action_back), { a.run { closeWhy() } })
+}
+
+/** The registry's confidence levels in plain words (review R6-16). */
+@Composable
+private fun confidence(e: Evidence?): String? = when (e) {
+    null -> null
+    Evidence.HIGH -> stringResource(R.string.why_conf_high)
+    Evidence.MODERATE -> stringResource(R.string.why_conf_moderate)
+    Evidence.LIMITED -> stringResource(R.string.why_conf_limited)
+    Evidence.EXPERT -> stringResource(R.string.why_conf_expert)
+    Evidence.PRODUCT -> stringResource(R.string.why_conf_product)
 }
 
 /** SAF-002 from the coach: tick what applies now; any sign stops training (and ends a workout in progress). */
@@ -210,7 +225,7 @@ private fun WarningPanel(picked: Set<String>) {
         CheckRow(label, id in picked, { on -> a.edit { pickWarningSign(id, on) } })
     }
     PrimaryButton(stringResource(R.string.warn_go), { a.run { reportWarningSigns() } }, enabled = picked.isNotEmpty())
-    SecondaryButton(stringResource(R.string.action_cancel), { a.run { openTab(Tab.COACH) } })
+    SecondaryButton(stringResource(R.string.action_cancel), { a.run { closeWarning() } })
 }
 
 /** D-045: the exact text first, then the share sheet (straight to Gemini when it is installed). */

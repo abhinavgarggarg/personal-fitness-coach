@@ -29,22 +29,34 @@ class GeminiShare(private val d: PfcData) {
     companion object {
         const val GEMINI_PACKAGE = "com.google.android.apps.bard"
         const val MAX_QUESTION = 500
+
+        /**
+         * Questions that are not passed on (SAF-009, review R6-06): symptoms, medicines, medical questions, pain and illness go to a
+         * professional (or the app's own pain and illness checks), not to a general chatbot. Diet and supplement questions may be asked.
+         */
+        val NOT_SHARED: Set<OutOfScope> = setOf(OutOfScope.URGENT_SYMPTOMS, OutOfScope.MEDICATION, OutOfScope.MEDICAL, OutOfScope.PAIN, OutOfScope.ILLNESS)
+
+        fun blocked(question: String): OutOfScope? = Coach.outOfScope(question)?.takeIf { it in NOT_SHARED }
     }
 
     suspend fun content(question: String): ShareContent = d.store.transaction {
         val today = d.clock.today()
         val t = d.planToday()
-        val day = t?.next
+        // A day the pain gate or a warning sign stopped has no session to describe (and its reason is not shared).
+        val stopped = d.trainingStopped(today)
+        val day = if (stopped) null else t?.next
         val ci = d.docs.get(ReadinessRecord, dayKey(today))
         val reasons = d.decisions.forDay(today).sortedBy { it.seq }.map { it.reason }.filter { it in SHAREABLE_REASONS }
         ShareContent(
             template = day?.template,
-            minutes = t?.user?.profile?.sessionMinutes,
-            tier = ci?.tier,
+            // The minutes chosen at today's check-in, else the usual length.
+            minutes = day?.let { ci?.minutesAvailable ?: t?.user?.profile?.sessionMinutes },
+            tier = if (stopped) null else ci?.tier,
             exercises = day?.slots?.map { it.exercise.id }?.distinct().orEmpty(),
-            reasons = reasons.distinct().take(6),
+            reasons = if (stopped) emptyList() else reasons.distinct().take(6),
             gentleMode = t?.user?.flaggedScreen == true,
-            question = question.trim().take(MAX_QUESTION),
+            // Checked here too, not only on the screen: a question that is not shared is left out.
+            question = question.trim().take(MAX_QUESTION).takeIf { blocked(it) == null } ?: "",
         )
     }
 }

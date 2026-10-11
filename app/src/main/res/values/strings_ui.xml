@@ -601,7 +601,6 @@
     <string name="hist_more">Show older sessions</string>
     <string name="hist_row">%1$s · %2$s</string>
     <string name="hist_row_detail">%1$s · %2$s min · sets: %3$d</string>
-    <string name="hist_row_skipped">%1$s · not done</string>
     <string name="hist_outcome_done">Done</string>
     <string name="hist_outcome_partial">Ended early</string>
     <string name="hist_outcome_stopped">Stopped: warning sign</string>
@@ -625,6 +624,8 @@
     <string name="edit_rir">Reps left in reserve: %1$s</string>
     <string name="edit_problem">That set can\'t be saved: the numbers are outside what can be logged.</string>
     <string name="edit_delete_note">Deleting a set also works your targets out again.</string>
+    <string name="edit_delete_confirm">Delete this set for good? It can\'t be undone.</string>
+    <string name="edit_delete_keep">Keep it</string>
 
     <!-- Progress (P1, P2) -->
     <string name="prog_title">Progress</string>
@@ -641,6 +642,7 @@
     <string name="prog_week_line">Week of %1$s · sessions %2$d of %3$d · %4$s active min</string>
     <string name="prog_week_met">Goal met</string>
     <string name="prog_streak">Weeks in a row: %1$d · best %2$d</string>
+    <string name="prog_weeks_year">Weeks you trained this year: %1$d</string>
     <string name="prog_sessions">Sessions done: %1$d</string>
     <string name="prog_who_weeks">Weeks meeting the activity goal: %1$d</string>
     <string name="prog_achievements">Milestones</string>
@@ -706,7 +708,6 @@
     <string name="coach_ask_about">Ask about %1$s</string>
     <string name="coach_unknown">I\'m not sure what you mean. Did you mean one of these?</string>
     <string name="coach_not_yet">There isn\'t enough history for this yet. It fills in as you train.</string>
-    <string name="coach_rules">Based on: %1$s</string>
     <string name="coach_role_main">%1$s is a main lift in this session.</string>
     <string name="coach_role_accessory">%1$s supports the main lifts in this session.</string>
     <string name="coach_role_other">%1$s is part of your plan.</string>
@@ -724,7 +725,9 @@
     <string name="coach_today_plain">Nothing special changed today: it\'s your plan as set.</string>
     <string name="coach_changes">What changed:</string>
     <string name="coach_volume_none">Nothing has reduced your training in the last two weeks.</string>
-    <string name="coach_minutes">The app can fit today\'s session into %1$d minutes (you usually train %2$d). Lower-priority work goes first; the warm-up and cool-down stay.</string>
+    <string name="coach_minutes">The app can fit today\'s session into %1$d minutes (you usually train %2$d). Lower-priority work is cut first; the warm-up and cool-down stay.</string>
+    <string name="coach_minutes_fits">Today\'s session is planned for about %2$d minutes, so it already fits in %1$d.</string>
+    <string name="coach_unwell_go">Feeling unwell? Check the warning signs</string>
     <string name="coach_minutes_go">Fit today\'s session to %1$d minutes</string>
     <string name="coach_tired">On a tired day the check-in lowers the level for you, and you can always choose an easier one. Easy movement often helps; if you feel unwell, rest today.</string>
     <string name="coach_easier_go">Choose an easier level</string>
@@ -754,10 +757,17 @@
     <string name="oos_supplements">I don\'t give advice on supplements. A doctor or a registered dietitian can help.</string>
     <string name="oos_diet">This app doesn\'t give food or diet advice. A registered dietitian or your doctor can help with eating.</string>
     <string name="oos_medical">I can\'t assess or diagnose medical problems. Please see a doctor or a physiotherapist.</string>
+    <string name="oos_illness">If you feel ill, tell today\'s check-in: it asks about illness and makes the day lighter or a rest day. If you have a fever or it gets worse, see a doctor.</string>
     <string name="oos_pain">If something hurts during a workout, tap Something hurts: the app stops or changes that exercise. Before training, tell the check-in. If pain lasts, see a physiotherapist or a doctor.</string>
     <string name="why_title">Why?</string>
     <string name="why_rule">%1$s · %2$s</string>
-    <string name="why_confidence">Confidence: %1$s</string>
+    <string name="why_confidence">How sure: %1$s</string>
+    <string name="why_rule_id">Rule %1$s</string>
+    <string name="why_conf_high">strong research evidence</string>
+    <string name="why_conf_moderate">good research evidence</string>
+    <string name="why_conf_limited">some research evidence</string>
+    <string name="why_conf_expert">common coaching practice</string>
+    <string name="why_conf_product">a choice made for this app, not a research finding</string>
     <string name="warn_title">Warning signs</string>
     <string name="warn_intro">Tick what you have right now. Training stops until the symptoms have gone or a doctor has checked them.</string>
     <string name="warn_go">Stop and get guidance</string>
@@ -771,7 +781,7 @@
     <string name="gemini_text_intro">I use an offline training app that plans my workouts. Please explain in plain language; the app\'s plan stays as it is.</string>
     <string name="gemini_text_today">Today: %1$s, about %2$d minutes, level %3$s.</string>
     <string name="gemini_text_today_no_level">Today: %1$s, about %2$d minutes.</string>
-    <string name="gemini_text_rest">No session is planned today.</string>
+    <string name="gemini_text_rest">No training session today.</string>
     <string name="gemini_text_exercises">Exercises: %1$s.</string>
     <string name="gemini_text_reasons">The app changed today\'s plan because: %1$s</string>
     <string name="gemini_text_gentle">The app is in a gentle mode for me.</string>

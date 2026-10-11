@@ -70,6 +70,12 @@ object ExerciseProgress {
 
     fun apply(state: ExerciseState, ex: Exercise, done: StoredExercise, day: Int, ctx: ProgressContext, known: KnownNumber?,
               recent: List<StoredExercise> = listOf(done)): EngineResult<ExposureOutcome> {
+        val r = exposure(state, ex, done, day, ctx, known, recent)
+        return EngineResult(r.value, r.decisions.map { it.forExercise(ex.id) })
+    }
+
+    private fun exposure(state: ExerciseState, ex: Exercise, done: StoredExercise, day: Int, ctx: ProgressContext, known: KnownNumber?,
+                         recent: List<StoredExercise>): EngineResult<ExposureOutcome> {
         require(state.exerciseId == ex.id && done.exerciseId == ex.id) { "exercise mismatch" }
         val d = ArrayList<Decision>()
         val item = done.doc
@@ -167,3 +173,9 @@ object ExerciseProgress {
         return EngineResult(ExposureOutcome(s, ladder), d)
     }
 }
+
+/**
+ * The exercise a decision is about, kept in its inputs, so "Why did my target change?" finds the decisions of one exercise
+ * (the engine's progression results don't name it; review R6-08).
+ */
+fun Decision.forExercise(exerciseId: String): Decision = if (inputs.containsKey("exercise")) this else copy(inputs = inputs + ("exercise" to exerciseId))
