@@ -117,10 +117,13 @@ fun SessionDetailScreen(s: Screen.SessionDetail) {
 
 @Composable
 private fun setText(set: SetLine): String {
+    val load = set.loadKg
+    val reps = set.reps
+    val secs = set.seconds
     val value = when {
-        set.loadKg != null && set.loadKg > 0 && set.reps != null -> stringResource(R.string.hist_set_value_load, kg(set.loadKg), set.reps)
-        set.seconds != null -> stringResource(R.string.hist_set_value_secs, set.seconds)
-        set.reps != null -> stringResource(R.string.hist_set_value_reps, set.reps)
+        load != null && load > 0 && reps != null -> stringResource(R.string.hist_set_value_load, kg(load), reps)
+        secs != null -> stringResource(R.string.hist_set_value_secs, secs)
+        reps != null -> stringResource(R.string.hist_set_value_reps, reps)
         else -> "-"
     } + (set.rir?.let { stringResource(R.string.hist_set_rir, minutes(it)) } ?: "")
     return when (set.kind) {

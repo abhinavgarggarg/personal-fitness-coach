@@ -84,7 +84,7 @@ private fun AnswerCard(ans: CoachAnswer) {
             else stringResource(Labels.outOfScope(o)) }
         ?: stringResource(R.string.coach_unknown)
     InfoCard(title, tone) {
-        if (ans.question != null) ans.facts.forEach { FactText(ans.question, it) }
+        ans.question?.let { q -> ans.facts.forEach { FactText(q, it) } }
         ans.suggestions.forEach { q -> SmallAction(stringResource(Labels.question(q)), { a.run { askSuggested(q) } }) }
         ans.actions.forEach { act -> ActionButton(act) }
         if (ans.rules.isNotEmpty()) {
@@ -118,8 +118,11 @@ private fun FactText(q: Question, f: Fact) {
             if (f.options.isEmpty()) Body(stringResource(R.string.coach_replace_none))
             else Body(stringResource(R.string.coach_replace_options, f.options.joinToString(", ") { exerciseName(it) }))
         }
-        is Fact.TodayLevel -> Body(if (f.checkedIn && f.tier != null) stringResource(R.string.coach_today_level, stringResource(Labels.tier(f.tier)))
-            else stringResource(R.string.coach_today_no_checkin))
+        is Fact.TodayLevel -> {
+            val tier = f.tier
+            Body(if (f.checkedIn && tier != null) stringResource(R.string.coach_today_level, stringResource(Labels.tier(tier)))
+                else stringResource(R.string.coach_today_no_checkin))
+        }
         is Fact.Decisions -> {
             val a = LocalActions.current
             if (f.entries.isEmpty()) {
@@ -135,13 +138,16 @@ private fun FactText(q: Question, f: Fact) {
         is Fact.Minutes -> Body(stringResource(R.string.coach_minutes, f.minutes, f.usual))
         is Fact.Improved -> {
             Body(stringResource(R.string.coach_improved_sessions, f.sessionsThisMonth, f.sessionsLastMonth))
-            if (f.liftsUp.isNotEmpty()) Body(stringResource(R.string.coach_improved_up, f.liftsUp.joinToString(", ") { l ->
-                stringResource(R.string.coach_lift_up, exerciseName(l.exerciseId), String.format(java.util.Locale.getDefault(), "%.0f", l.changePct)) }))
+            val up = f.liftsUp.map { l ->
+                stringResource(R.string.coach_lift_up, exerciseName(l.exerciseId), String.format(java.util.Locale.getDefault(), "%.0f", l.changePct)) }
+            if (up.isNotEmpty()) Body(stringResource(R.string.coach_improved_up, up.joinToString(", ")))
             if (f.liftsFlat > 0) Body(stringResource(R.string.coach_improved_flat, f.liftsFlat))
             Body(stringResource(R.string.coach_improved_weeks, f.whoWeeks, f.streakWeeks))
         }
         is Fact.Focus -> {
-            if (f.block != null && f.weeksLeftInBlock != null) Body(stringResource(R.string.coach_focus_block, stringResource(Labels.block(f.block)), f.weeksLeftInBlock))
+            val block = f.block
+            val left = f.weeksLeftInBlock
+            if (block != null && left != null) Body(stringResource(R.string.coach_focus_block, stringResource(Labels.block(block)), left))
             f.next?.let { Body(stringResource(R.string.coach_focus_next, stringResource(Labels.weekday(it.weekday)), stringResource(Labels.template(it.template)))) }
             f.lastWeekMinutes?.let { Body(stringResource(R.string.coach_focus_minutes, minutes(it))) }
             f.stepTarget?.let { Body(stringResource(R.string.coach_focus_steps, java.text.NumberFormat.getIntegerInstance().format(it))) }
@@ -225,13 +231,16 @@ private fun SharePanel(c: ShareContent) {
 private fun shareText(c: ShareContent): String {
     val lines = ArrayList<String>()
     lines += stringResource(R.string.gemini_text_intro)
-    if (c.template != null) {
-        val name = stringResource(Labels.template(c.template))
-        lines += if (c.tier != null) stringResource(R.string.gemini_text_today, name, c.minutes ?: 60, stringResource(Labels.tier(c.tier)))
+    val template = c.template
+    val tier = c.tier
+    if (template != null) {
+        val name = stringResource(Labels.template(template))
+        lines += if (tier != null) stringResource(R.string.gemini_text_today, name, c.minutes ?: 60, stringResource(Labels.tier(tier)))
             else stringResource(R.string.gemini_text_today_no_level, name, c.minutes ?: 60)
         if (c.exercises.isNotEmpty()) lines += stringResource(R.string.gemini_text_exercises, c.exercises.joinToString(", ") { exerciseName(it) })
     } else lines += stringResource(R.string.gemini_text_rest)
-    if (c.reasons.isNotEmpty()) lines += stringResource(R.string.gemini_text_reasons, c.reasons.joinToString(" ") { stringResource(ReasonTexts.of(it)) })
+    val reasons = c.reasons.map { stringResource(ReasonTexts.of(it)) }
+    if (reasons.isNotEmpty()) lines += stringResource(R.string.gemini_text_reasons, reasons.joinToString(" "))
     if (c.gentleMode) lines += stringResource(R.string.gemini_text_gentle)
     lines += if (c.question.isNotBlank()) stringResource(R.string.gemini_text_question, c.question) else stringResource(R.string.gemini_text_no_question)
     return lines.joinToString("\n\n")

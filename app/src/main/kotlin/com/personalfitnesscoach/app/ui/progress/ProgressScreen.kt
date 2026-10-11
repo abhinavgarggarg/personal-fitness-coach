@@ -91,7 +91,9 @@ fun ProgressScreen(s: Screen.Progress) {
             if (b.weights.size >= 2) Sparkline(b.weights.map { it.kg }, stringResource(R.string.prog_chart_desc, stringResource(R.string.prog_body),
                 b.weights.joinToString(", ") { kg(it.kg) }))
             if (b.weight.rateCheckIn) InfoCard(stringResource(R.string.prog_weight_check_in), Tone.WARN)
-            Body(if (b.waistCm != null && b.waistDay != null) stringResource(R.string.prog_waist, kg(b.waistCm), dateText(b.waistDay)) else stringResource(R.string.prog_waist_none))
+            val waist = b.waistCm
+            val waistDay = b.waistDay
+            Body(if (waist != null && waistDay != null) stringResource(R.string.prog_waist, kg(waist), dateText(waistDay)) else stringResource(R.string.prog_waist_none))
             if (b.waistDue) Note(stringResource(R.string.prog_waist_due))
             when (val e = s.entry) {
                 null -> {

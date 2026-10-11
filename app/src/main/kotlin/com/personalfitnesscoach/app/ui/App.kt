@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -154,7 +156,7 @@ private fun TabBar(current: com.personalfitnesscoach.app.flow.Tab) {
     val a = LocalActions.current
     val busy = LocalBusy.current
     androidx.compose.material3.Surface(tonalElevation = 3.dp) {
-        androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.navigationBars)) {
+        androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)) {
             com.personalfitnesscoach.app.flow.Tab.entries.forEach { tab ->
                 val label = stringResource(when (tab) {
                     com.personalfitnesscoach.app.flow.Tab.TODAY -> R.string.tab_today
