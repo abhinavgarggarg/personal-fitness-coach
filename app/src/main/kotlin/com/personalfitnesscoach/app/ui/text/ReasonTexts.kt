@@ -164,6 +164,8 @@ object ReasonTexts {
         ReasonKey.AWAY_FROM_GYM -> R.string.reason_away_from_gym
         ReasonKey.RANGE_REDUCED -> R.string.reason_range_reduced
         ReasonKey.BONE_LOADING_BLOCK -> R.string.reason_bone_loading_block
+        ReasonKey.HISTORY_EDITED -> R.string.reason_history_edited
+        ReasonKey.COACH_REQUEST -> R.string.reason_coach_request
     }
 
     fun of(name: String): Int = ReasonKey.entries.firstOrNull { it.name == name }?.let { of(it) } ?: R.string.reason_unknown

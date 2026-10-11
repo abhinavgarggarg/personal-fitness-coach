@@ -160,4 +160,6 @@
     <string name="reason_away_from_gym">Training away from the gym: exercises use only what you have with you.</string>
     <string name="reason_range_reduced">Use a shorter range of movement today, keeping the stretched end.</string>
     <string name="reason_bone_loading_block">A short bone-loading block is part of today\'s session.</string>
+    <string name="reason_history_edited">You corrected a set in your history, so your estimated maxes and next targets were worked out again.</string>
+    <string name="reason_coach_request">You asked the coach for a change; the plan was checked against the same safety rules before it was shown.</string>
 </resources>
