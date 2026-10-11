@@ -54,7 +54,11 @@ fun DoneScreen(s: Screen.Done) {
         val changes = Reasons.nextTime(sum.decisions.map { it.reason })
         if (changes.isNotEmpty()) {
             SectionTitle(stringResource(R.string.done_changes))
-            changes.forEach { Note(stringResource(ReasonTexts.of(it))) }
+            changes.forEach { r ->
+                Note(stringResource(ReasonTexts.of(r)))
+                val d = sum.decisions.first { it.reason == r }
+                com.personalfitnesscoach.app.ui.SmallAction(stringResource(R.string.action_why), { a.run { openWhy(r, d.ruleIds) } })
+            }
         }
         when {
             s.rated -> InfoCard(stringResource(R.string.done_rated), Tone.GOOD)

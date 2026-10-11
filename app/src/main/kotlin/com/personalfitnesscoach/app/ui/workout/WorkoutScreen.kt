@@ -164,7 +164,10 @@ private fun SafetyRow(v: PlayerView) {
 @Composable
 private fun Notice(n: WorkoutNotice, v: PlayerView) {
     when (n) {
-        is WorkoutNotice.LoadChanged -> InfoCard(stringResource(ReasonTexts.of(n.decision.reason)))
+        is WorkoutNotice.LoadChanged -> InfoCard(stringResource(ReasonTexts.of(n.decision.reason))) {
+            val a = LocalActions.current
+            com.personalfitnesscoach.app.ui.SmallAction(stringResource(R.string.action_why), { a.run { openWhy(n.decision.reason.name, n.decision.ruleIds) } })
+        }
         is WorkoutNotice.Replanned -> InfoCard(stringResource(R.string.wk_changes)) {
             if (n.changes.isEmpty()) Text(stringResource(R.string.wk_no_changes))
             n.changes.forEach { c -> Text(changeText(c, v.conditioning)) }

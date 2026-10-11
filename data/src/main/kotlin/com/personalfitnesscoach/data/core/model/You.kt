@@ -284,7 +284,8 @@ enum class Theme { SYSTEM, LIGHT, DARK }
 /** App settings (no personal data) plus the backup reminder state (Phase 2 section 12). */
 data class SettingsRecord(
     val units: Units = Units.KG,
-    val theme: Theme = Theme.SYSTEM,
+    /** Master prompt A9: dark by default (gym lighting), light or the phone's setting on request. */
+    val theme: Theme = Theme.DARK,
     /** D-062: step tracking is off until the user turns it on (and grants activity recognition). */
     val stepTracking: Boolean = false,
     val lastExportDay: Int? = null,

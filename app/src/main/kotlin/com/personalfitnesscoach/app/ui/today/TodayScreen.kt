@@ -89,7 +89,10 @@ fun TodayScreen(m: TodayModel) {
                 PrimaryButton(stringResource(R.string.today_start), { a.run { openCheckIn() } })
             }
         }
-        m.reasons.forEach { r -> Note(stringResource(ReasonTexts.of(r.reason))) }
+        m.reasons.forEach { r ->
+            Note(stringResource(ReasonTexts.of(r.reason)))
+            SmallAction(stringResource(R.string.action_why), { a.run { openWhy(r.reason, r.ruleIds) } })
+        }
 
         // LOAD-002: a finished session still waiting for its rating.
         m.rateWorkoutId?.let { id ->

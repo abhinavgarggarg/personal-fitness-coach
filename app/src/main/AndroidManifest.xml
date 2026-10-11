@@ -21,6 +21,12 @@
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
+    <!-- D-045 Ask Gemini: lets the app see whether the Gemini app is installed, to share straight to it (Android 11+ package
+         visibility). Not a permission: the app still has no internet access, and nothing comes back. -->
+    <queries>
+        <package android:name="com.google.android.apps.bard" />
+    </queries>
+
     <!-- Android backup (Phase 2 section 12): the database and settings, end-to-end encrypted on Android 9+ by the screen lock. -->
     <application
         android:name=".app.PfcApplication"

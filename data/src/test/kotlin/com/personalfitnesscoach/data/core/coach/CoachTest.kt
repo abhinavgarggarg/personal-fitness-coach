@@ -185,6 +185,7 @@ class CoachTest {
         val c = Coach(d)
         val entry = d.decisions.forDay(Fixtures.MONDAY).first { it.ruleIds.isNotEmpty() }
         val why = c.why(entry)
+        assertEquals(entry.reason, why.reason)
         assertEquals(entry.ruleIds.distinct(), why.rules.map { it.id })
         assertTrue(why.rules.all { it.title != null && it.confidence != null })
         assertEquals(entry, c.decision(entry.seq))

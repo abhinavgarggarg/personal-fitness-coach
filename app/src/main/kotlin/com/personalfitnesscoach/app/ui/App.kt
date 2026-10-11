@@ -6,6 +6,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.personalfitnesscoach.app.flow.tab
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -110,7 +117,7 @@ fun PfcApp(actions: Actions) {
     }
 
     CompositionLocalProvider(LocalBusy provides busy, LocalActions provides actions) {
-        Scaffold(snackbarHost = { SnackbarHost(snack) }) { padding ->
+        Scaffold(snackbarHost = { SnackbarHost(snack) }, bottomBar = { screen.tab()?.let { TabBar(it) } }) { padding ->
             Box(Modifier.fillMaxSize().padding(padding).imePadding()) {
                 when (val s = screen) {
                     Screen.Loading -> LoadingScreen()
@@ -126,6 +133,46 @@ fun PfcApp(actions: Actions) {
                     is Screen.Settings -> SettingsScreen(s.model)
                     is Screen.PainDay -> com.personalfitnesscoach.app.ui.workout.PainDayScreen(s.outcome)
                     is Screen.EditConditions -> com.personalfitnesscoach.app.ui.settings.EditConditionsScreen(s)
+                    is Screen.History -> com.personalfitnesscoach.app.ui.history.HistoryScreen(s)
+                    is Screen.SessionDetail -> com.personalfitnesscoach.app.ui.history.SessionDetailScreen(s)
+                    is Screen.Progress -> com.personalfitnesscoach.app.ui.progress.ProgressScreen(s)
+                    is Screen.ExerciseDetail -> com.personalfitnesscoach.app.ui.progress.ExerciseDetailScreen(s)
+                    is Screen.Coach -> com.personalfitnesscoach.app.ui.coach.CoachScreen(s.model)
+                    is Screen.EditProfile -> com.personalfitnesscoach.app.ui.settings.EditProfileScreen(s)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The four tabs (Phase 2 section 5): Today, History, Progress, Coach. Text labels, each at least 56 dp tall (the look and the icons come
+ * with CR-007); the current tab is marked for TalkBack too.
+ */
+@Composable
+private fun TabBar(current: com.personalfitnesscoach.app.flow.Tab) {
+    val a = LocalActions.current
+    val busy = LocalBusy.current
+    androidx.compose.material3.Surface(tonalElevation = 3.dp) {
+        androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.navigationBars)) {
+            com.personalfitnesscoach.app.flow.Tab.entries.forEach { tab ->
+                val label = stringResource(when (tab) {
+                    com.personalfitnesscoach.app.flow.Tab.TODAY -> R.string.tab_today
+                    com.personalfitnesscoach.app.flow.Tab.HISTORY -> R.string.tab_history
+                    com.personalfitnesscoach.app.flow.Tab.PROGRESS -> R.string.tab_progress
+                    com.personalfitnesscoach.app.flow.Tab.COACH -> R.string.tab_coach
+                })
+                val selected = tab == current
+                androidx.compose.material3.TextButton(
+                    onClick = { if (!selected) a.run { openTab(tab) } }, enabled = !busy,
+                    modifier = Modifier.weight(1f).heightIn(min = PrimaryHeight)
+                        .semantics { this.selected = selected; role = androidx.compose.ui.semantics.Role.Tab },
+                ) {
+                    androidx.compose.material3.Text(label, style = if (selected) androidx.compose.material3.MaterialTheme.typography.titleSmall
+                        else androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.Bold else null,
+                        color = if (selected) androidx.compose.material3.MaterialTheme.colorScheme.primary
+                        else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
             }
         }

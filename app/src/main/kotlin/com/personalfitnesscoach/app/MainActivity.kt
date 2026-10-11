@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.personalfitnesscoach.app.flow.Screen
 import com.personalfitnesscoach.app.platform.RestAlerts
 import com.personalfitnesscoach.app.ui.PfcApp
@@ -16,7 +19,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { PfcTheme { PfcApp(app.actions) } }
+        setContent {
+            // Master prompt A9: dark by default; light or the phone's setting when chosen in Settings.
+            val theme by app.controller.theme.collectAsState()
+            val dark = when (theme) {
+                com.personalfitnesscoach.data.core.model.Theme.DARK -> true
+                com.personalfitnesscoach.data.core.model.Theme.LIGHT -> false
+                com.personalfitnesscoach.data.core.model.Theme.SYSTEM -> isSystemInDarkTheme()
+            }
+            PfcTheme(dark = dark) { PfcApp(app.actions) }
+        }
     }
 
     override fun onStart() {

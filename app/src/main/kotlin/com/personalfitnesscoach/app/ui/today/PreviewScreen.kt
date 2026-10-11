@@ -17,6 +17,7 @@ import com.personalfitnesscoach.app.ui.PrimaryButton
 import com.personalfitnesscoach.app.ui.ScreenColumn
 import com.personalfitnesscoach.app.ui.SecondaryButton
 import com.personalfitnesscoach.app.ui.SectionTitle
+import com.personalfitnesscoach.app.ui.SmallAction
 import com.personalfitnesscoach.app.ui.Stepper
 import com.personalfitnesscoach.app.ui.SwitchRow
 import com.personalfitnesscoach.app.ui.Tone
@@ -86,7 +87,11 @@ fun PreviewScreen(m: PreviewModel) {
         val why = Reasons.shown(m.reasons.map { it.reason.name })
         if (why.isNotEmpty()) {
             SectionTitle(stringResource(R.string.preview_why))
-            why.forEach { Note(stringResource(ReasonTexts.of(it))) }
+            why.forEach { r ->
+                Note(stringResource(ReasonTexts.of(r)))
+                val d = m.reasons.first { it.reason.name == r }
+                SmallAction(stringResource(R.string.action_why), { a.run { openWhy(r, d.ruleIds) } })
+            }
         }
         SecondaryButton(stringResource(R.string.preview_back_today), { a.run { closeToToday() } })
         if (m.minutes < P.TIME_002.express_below_minutes) Note(stringResource(R.string.reason_time_express_offered))

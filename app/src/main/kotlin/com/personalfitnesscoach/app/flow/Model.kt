@@ -74,7 +74,68 @@ sealed interface Screen {
     data class Stop(val stop: SafetyStop) : Screen
 
     data class Settings(val model: SettingsModel) : Screen
+
+    // ---------------------------------------------------------------------------------------------------- Part 6 tabs
+    /** H1: finished sessions, newest first. */
+    data class History(val items: List<com.personalfitnesscoach.data.core.insight.HistoryItem>, val weeks: Int) : Screen
+
+    /** H2: one session with every set; a set can be corrected or deleted (FS-5, rebuilt and logged). */
+    data class SessionDetail(val detail: com.personalfitnesscoach.data.core.insight.SessionDetail, val edit: SetEdit? = null,
+                             val problem: Boolean = false) : Screen
+
+    /** P1: lifts, weeks, streak, achievements, body and steps; `entry` is the open weight or waist entry. */
+    data class Progress(val overview: com.personalfitnesscoach.data.core.insight.ProgressOverview, val entry: BodyEntry? = null,
+                        val problem: Boolean = false) : Screen
+
+    /** P2: one exercise over time, with like and "don't suggest". */
+    data class ExerciseDetail(val history: com.personalfitnesscoach.data.core.insight.ExerciseHistory) : Screen
+
+    /** C1: suggested questions, a typed question, the answer, "Why?" and Ask Gemini. */
+    data class Coach(val model: CoachModel) : Screen
+
+    /** Settings → goals, week, gym or injuries: the onboarding page for that part, with the stored answers (D-086). */
+    data class EditProfile(val section: ProfileSection, val form: OnboardingForm, val problem: OnboardingProblem? = null,
+                           val goals: GoalOptions? = null) : Screen
 }
+
+/** The four tabs (Phase 2 section 5); workout mode and onboarding have none. */
+enum class Tab { TODAY, HISTORY, PROGRESS, COACH }
+
+/** The tab a screen belongs to (null = no tab bar). */
+fun Screen.tab(): Tab? = when (this) {
+    is Screen.Today -> Tab.TODAY
+    is Screen.History, is Screen.SessionDetail -> Tab.HISTORY
+    is Screen.Progress, is Screen.ExerciseDetail -> Tab.PROGRESS
+    is Screen.Coach -> Tab.COACH
+    else -> null
+}
+
+/** A past set being corrected (steppers, not typing; NewSet ranges apply). */
+data class SetEdit(val setId: Long, val exerciseId: String, val kind: String, val loadKg: Double?, val reps: Int?, val seconds: Int?, val rir: Double?)
+
+/** FL-005 entries from Progress. */
+sealed interface BodyEntry {
+    data class Weight(val kg: Double) : BodyEntry
+    /** Up to three readings, averaged. */
+    data class Waist(val readings: List<Double>) : BodyEntry
+}
+
+enum class ProfileSection { GOALS, SCHEDULE, EQUIPMENT, INJURIES }
+
+data class CoachModel(
+    val text: String = "",
+    val answer: com.personalfitnesscoach.data.core.coach.CoachAnswer? = null,
+    /** The exercise the answer is about (the coach was opened from it, or the user picked another). */
+    val exerciseId: String? = null,
+    /** "Why?" for one decision, opened from Today, the preview, the summary or the answer. */
+    val why: com.personalfitnesscoach.data.core.coach.Why? = null,
+    /** D-045: the exact text shared to Gemini, shown before sharing. */
+    val share: com.personalfitnesscoach.data.core.coach.ShareContent? = null,
+    /** SAF-002 from the coach: the warning-sign list, picked so far. */
+    val warning: Set<String>? = null,
+    /** Where the coach was opened from, to go back there (a screen without a tab, e.g. the preview). */
+    val back: Screen? = null,
+)
 
 // ============================================================================================================ onboarding
 /** Answers being given on the current onboarding step (saved when the step is submitted). */
@@ -280,6 +341,12 @@ data class SettingsModel(
     val screeningGuidance: Boolean = false,
     /** Android 13+: notifications are off, so the rest timer can't buzz while the phone is locked. */
     val alertsOff: Boolean = false,
+    val theme: com.personalfitnesscoach.data.core.model.Theme = com.personalfitnesscoach.data.core.model.Theme.DARK,
+    /** SUB-002: exercises the user asked never to be suggested (undo here). */
+    val excludedExercises: List<String> = emptyList(),
+    /** FL-001: weight and waist tracking is off (switchable here when the goals allow it). */
+    val weightFeaturesOff: Boolean = false,
+    val weightFeaturesAllowed: Boolean = true,
 )
 
 /** One condition's doctor's-OK scopes (each scope unlocks only itself, SAF-010). `rule` is the table's clearance kind. */
@@ -304,4 +371,6 @@ sealed interface SettingsFlow {
     data class Erase(val confirmations: Int) : SettingsFlow
     /** SAF-001 re-screen: the eight questions again; `result` once saved. */
     data class Rescreen(val answers: Map<ScreeningQuestion, Boolean> = emptyMap(), val result: ScreeningResult? = null) : SettingsFlow
+    /** A profile section was saved (goals, week, gym or injuries). */
+    data class ProfileSaved(val section: ProfileSection) : SettingsFlow
 }

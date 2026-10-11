@@ -90,7 +90,7 @@ data class CoachAnswer(
 )
 
 /** "Why?" for one decision: its plain line (by reason key), and each rule with its title and confidence label. */
-data class Why(val entry: DecisionEntry, val rules: List<RuleRef>)
+data class Why(val reason: String, val rules: List<RuleRef>)
 data class RuleRef(val id: String, val title: String?, val confidence: String?)
 
 /**
@@ -311,8 +311,10 @@ class Coach(private val d: PfcData) {
         else -> CoachAnswer(null, o, emptyList(), listOf(RuleIds.SAF_009), emptyList())
     }
 
-    /** "Why?" for one stored decision: its rules with title and confidence (Phase 2 section 9). */
-    fun why(entry: DecisionEntry): Why = Why(entry, entry.ruleIds.distinct().map { RuleRef(it, Registry.titles[it], Registry.confidence[it]) })
+    /** "Why?" for one decision (stored or just made): its rules with title and confidence (Phase 2 section 9). */
+    fun why(reason: String, ruleIds: List<String>): Why = Why(reason, ruleIds.distinct().map { RuleRef(it, Registry.titles[it], Registry.confidence[it]) })
+
+    fun why(entry: DecisionEntry): Why = why(entry.reason, entry.ruleIds)
 
     suspend fun decision(seq: Long): DecisionEntry? = d.store.transaction {
         d.docs.get(com.personalfitnesscoach.data.core.model.DecisionEntry, seq.toString().padStart(19, '0'))

@@ -109,6 +109,29 @@ fun SettingsScreen(m: SettingsModel) {
             })
         }
 
+        // ------------------------------------------------------------------ your training (D-086): goals, week, gym, injuries
+        SectionTitle(stringResource(R.string.set_training))
+        if (m.flow is SettingsFlow.ProfileSaved) InfoCard(stringResource(R.string.set_profile_saved), Tone.GOOD)
+        com.personalfitnesscoach.app.flow.ProfileSection.entries.forEach { section ->
+            SecondaryButton(stringResource(Labels.section(section)), { a.run { openProfileEditor(section) } })
+        }
+        // FL-001: weight and waist tracking, only when the goals and health answers allow it.
+        if (m.weightFeaturesAllowed) SwitchRow(stringResource(R.string.set_weight_features), !m.weightFeaturesOff, { on -> a.run { setWeightFeatures(on) } })
+        else Note(stringResource(R.string.set_weight_features_blocked))
+        SectionTitle(stringResource(R.string.set_skipped))
+        if (m.excludedExercises.isEmpty()) Note(stringResource(R.string.set_skipped_none))
+        m.excludedExercises.forEach { id ->
+            Body(com.personalfitnesscoach.app.ui.workout.exerciseName(id))
+            SmallAction(stringResource(R.string.set_skipped_undo), { a.run { setExcluded(id, false) } })
+        }
+
+        // ------------------------------------------------------------------ appearance (master prompt A9: dark by default)
+        SectionTitle(stringResource(R.string.set_appearance))
+        listOf(com.personalfitnesscoach.data.core.model.Theme.DARK, com.personalfitnesscoach.data.core.model.Theme.LIGHT,
+            com.personalfitnesscoach.data.core.model.Theme.SYSTEM).forEach { t ->
+            com.personalfitnesscoach.app.ui.RadioRow(stringResource(Labels.theme(t)), m.theme == t, { a.run { setTheme(t) } })
+        }
+
         // ------------------------------------------------------------------ steps
         SectionTitle(stringResource(R.string.set_steps))
         if (!m.stepCounterAvailable) Note(stringResource(R.string.set_steps_unavailable))

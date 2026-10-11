@@ -137,6 +137,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     suspend fun start() = act {
         val dd = data
         dd.onAppOpen()
+        loadTheme()
         syncSteps()
         home()
     }
@@ -667,7 +668,9 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         }
         val guidance = scr != null && com.personalfitnesscoach.engine.safety.Screening.evaluate(scr.answers, scr.clearanceConfirmedDay != null).value.clinicianGuidance
         return SettingsModel(s.stepTracking, platform.stepCounterAvailable, s.units, s.lastExportDay, flow, appVersion, Registry.VERSION, Library.VERSION,
-            GeneratedConditions.VERSION, needs, scr?.clearanceConfirmedDay, clearances, guidance, !platform.alertsAllowed)
+            GeneratedConditions.VERSION, needs, scr?.clearanceConfirmedDay, clearances, guidance, !platform.alertsAllowed, s.theme,
+            (dd.docs.get(PreferencesRecord) ?: PreferencesRecord()).excludedIds.sorted(), s.weightFeaturesOff,
+            onboarding.goalOptions(false).value.weightFeatures)
     }
 
     /** SAF-001 re-screen from Settings (12-monthly, or when health changes; the only way out of question 5's guidance). */
@@ -812,7 +815,303 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     suspend fun closeSettings() = act { home() }
 
+    // ======================================================================================================== tabs (Part 6)
+    private val insights get() = com.personalfitnesscoach.data.core.insight.Insights(data)
+    private val coach get() = com.personalfitnesscoach.data.core.coach.Coach(data)
+
+    private val _theme = MutableStateFlow(com.personalfitnesscoach.data.core.model.Theme.DARK)
+    /** Master prompt A9: dark by default; the screens follow this (Settings → appearance). */
+    val theme: StateFlow<com.personalfitnesscoach.data.core.model.Theme> = _theme
+
+    private suspend fun loadTheme() { _theme.value = (d?.docs?.get(SettingsRecord) ?: SettingsRecord()).theme }
+
+    /** The four tabs (Phase 2 section 5). Each opens at its top screen. */
+    suspend fun openTab(tab: Tab) = act {
+        loadTheme()
+        when (tab) {
+            Tab.TODAY -> today()
+            Tab.HISTORY -> historyScreen(HISTORY_WEEKS)
+            Tab.PROGRESS -> Screen.Progress(insights.overview())
+            Tab.COACH -> Screen.Coach(CoachModel())
+        }
+    }
+
+    private suspend fun historyScreen(weeks: Int): Screen {
+        val today = data.clock.today()
+        return Screen.History(insights.history(today - 7 * weeks, today), weeks)
+    }
+
+    /** H1: older sessions, 12 weeks at a time. */
+    suspend fun moreHistory() = act {
+        val s = current() as? Screen.History ?: return@act null
+        historyScreen(s.weeks + HISTORY_WEEKS)
+    }
+
+    // ------------------------------------------------------------------------------------------------ history (H2)
+    suspend fun openSession(workoutId: Long) = act { insights.session(workoutId)?.let { Screen.SessionDetail(it) } }
+
+    suspend fun startSetEdit(setId: Long) = act {
+        val s = current() as? Screen.SessionDetail ?: return@act null
+        if (!s.detail.editable) return@act null
+        val (e, set) = s.detail.exercises.firstNotNullOfOrNull { e -> e.sets.firstOrNull { it.setId == setId }?.let { e to it } } ?: return@act null
+        s.copy(edit = SetEdit(set.setId, e.exerciseId, set.kind, set.loadKg, set.reps, set.seconds, set.rir), problem = false)
+    }
+
+    suspend fun changeSetEdit(change: (SetEdit) -> SetEdit) = act(showBusy = false) {
+        val s = current() as? Screen.SessionDetail ?: return@act null
+        val e = s.edit ?: return@act null
+        s.copy(edit = change(e), problem = false)
+    }
+
+    suspend fun cancelSetEdit() = act { (current() as? Screen.SessionDetail)?.copy(edit = null, problem = false) }
+
+    /** FS-5: the corrected set is saved, every exercise is rebuilt from the log and the change is logged. Impossible values are refused. */
+    suspend fun saveSetEdit() = act {
+        val s = current() as? Screen.SessionDetail ?: return@act null
+        val e = s.edit ?: return@act null
+        try {
+            insights.correctSet(e.setId, e.loadKg, e.reps, e.seconds, e.rir)
+        } catch (x: IllegalArgumentException) {
+            return@act s.copy(problem = true)
+        }
+        insights.session(s.detail.item.workoutId)?.let { Screen.SessionDetail(it) } ?: historyScreen(HISTORY_WEEKS)
+    }
+
+    suspend fun deleteEditedSet() = act {
+        val s = current() as? Screen.SessionDetail ?: return@act null
+        val e = s.edit ?: return@act null
+        insights.deleteSet(e.setId)
+        insights.session(s.detail.item.workoutId)?.let { Screen.SessionDetail(it) } ?: historyScreen(HISTORY_WEEKS)
+    }
+
+    // ------------------------------------------------------------------------------------------------ progress (P1, P2)
+    suspend fun openBodyEntry(waist: Boolean) = act {
+        val s = current() as? Screen.Progress ?: return@act null
+        if (s.overview.body == null) return@act null
+        val last = data.docs.all(WeightRecord).maxByOrNull { it.day }?.kg
+        s.copy(entry = if (waist) BodyEntry.Waist(emptyList()) else BodyEntry.Weight(last ?: 75.0), problem = false)
+    }
+
+    suspend fun changeBodyEntry(entry: BodyEntry) = act(showBusy = false) {
+        val s = current() as? Screen.Progress ?: return@act null
+        s.copy(entry = entry, problem = false)
+    }
+
+    suspend fun saveBodyEntry() = act {
+        val s = current() as? Screen.Progress ?: return@act null
+        try {
+            when (val e = s.entry ?: return@act null) {
+                is BodyEntry.Weight -> insights.logWeight(e.kg)
+                is BodyEntry.Waist -> if (e.readings.isEmpty()) return@act s.copy(problem = true) else insights.logWaist(e.readings)
+            }
+        } catch (x: IllegalArgumentException) {
+            return@act s.copy(problem = true)
+        } catch (x: IllegalStateException) {
+            return@act s.copy(entry = null)
+        }
+        Screen.Progress(insights.overview())
+    }
+
+    suspend fun closeBodyEntry() = act { (current() as? Screen.Progress)?.copy(entry = null, problem = false) }
+
+    suspend fun openExercise(exerciseId: String) = act { if (Library[exerciseId] == null) null else Screen.ExerciseDetail(insights.exercise(exerciseId)) }
+
+    suspend fun setFavourite(exerciseId: String, on: Boolean) = act {
+        insights.setFavourite(exerciseId, on)
+        refreshExerciseOrSettings(exerciseId)
+    }
+
+    /** SUB-002 "don't suggest this"; undone from the exercise or from Settings. */
+    suspend fun setExcluded(exerciseId: String, on: Boolean) = act {
+        insights.setExcluded(exerciseId, on)
+        refreshExerciseOrSettings(exerciseId)
+    }
+
+    private suspend fun refreshExerciseOrSettings(exerciseId: String): Screen = when (current()) {
+        is Screen.Settings -> Screen.Settings(settingsModel())
+        else -> Screen.ExerciseDetail(insights.exercise(exerciseId))
+    }
+
+    // ------------------------------------------------------------------------------------------------ coach (C1, SAF-009, COACH-001)
+    /** Opens the coach, optionally about one exercise (from the workout, the preview or an exercise's page). */
+    suspend fun openCoach(exerciseId: String? = null) = act {
+        Screen.Coach(CoachModel(exerciseId = exerciseId, back = backTarget()))
+    }
+
+    /** The screen to return to when the coach closes (not the coach itself, nor a tab's top screen reached from the tab bar). */
+    private fun backTarget(): Screen? = current().takeIf { it !is Screen.Coach && it !is Screen.Loading }
+
+    suspend fun editCoachText(text: String) = act(showBusy = false) {
+        val s = current() as? Screen.Coach ?: return@act null
+        s.copy(model = s.model.copy(text = text.take(com.personalfitnesscoach.data.core.coach.GeminiShare.MAX_QUESTION)))
+    }
+
+    /** A typed question: matched offline to a fixed answer (FS-9); the text itself is never acted on. */
+    suspend fun askCoach() = act {
+        val s = current() as? Screen.Coach ?: return@act null
+        if (s.model.text.isBlank()) return@act null
+        val m = coach.match(s.model.text)
+        s.copy(model = s.model.copy(answer = coach.answer(m, m.exerciseId ?: s.model.exerciseId), why = null, share = null, warning = null))
+    }
+
+    /** A suggested question, or the same question about another exercise. */
+    suspend fun askSuggested(q: com.personalfitnesscoach.data.core.coach.Question, exerciseId: String? = null) = act {
+        val s = current() as? Screen.Coach ?: return@act null
+        val ex = exerciseId ?: s.model.exerciseId
+        s.copy(model = s.model.copy(answer = coach.answer(q, ex), exerciseId = ex, why = null, share = null, warning = null))
+    }
+
+    /** "Why?" for a decision shown on another screen (Today, preview, summary, a workout notice): opens the coach at it. */
+    suspend fun openWhy(reason: String, ruleIds: List<String>) = act {
+        val model = (current() as? Screen.Coach)?.model ?: CoachModel(back = backTarget())
+        Screen.Coach(model.copy(why = coach.why(reason, ruleIds), answer = null, share = null, warning = null))
+    }
+
+    /** Closes "Why?": back to the answer it came from, or to the screen it was opened from. */
+    suspend fun closeWhy() = act {
+        val s = current() as? Screen.Coach ?: return@act null
+        if (s.model.answer == null && s.model.back != null) backFrom(s.model.back) else s.copy(model = s.model.copy(why = null))
+    }
+
+    /** Leaves the coach: back to the screen it was opened from (the preview, a workout), or Today. */
+    suspend fun closeCoach() = act {
+        val s = current() as? Screen.Coach ?: return@act null
+        s.model.back?.let { backFrom(it) } ?: today()
+    }
+
+    /** A workout is read again (time has passed); other screens are shown as they were. */
+    private suspend fun backFrom(b: Screen): Screen = when (b) {
+        is Screen.Workout -> player.view()?.let { Screen.Workout(it) } ?: today()
+        is Screen.Today -> today()
+        is Screen.ExerciseDetail -> Screen.ExerciseDetail(insights.exercise(b.history.exerciseId))
+        else -> b
+    }
+
+    /** What a coach answer may do: open a screen, or ask the engine (SAF-009). Nothing here sets sets, reps or loads. */
+    suspend fun coachAction(action: com.personalfitnesscoach.data.core.coach.CoachAction) = act {
+        val dd = data
+        dd.decisions.append(listOf(com.personalfitnesscoach.engine.core.Decision(DecisionKind.SAFETY, listOf(com.personalfitnesscoach.engine.registry.RuleIds.SAF_009),
+            com.personalfitnesscoach.engine.core.ReasonKey.COACH_REQUEST, inputs = mapOf("action" to action.javaClass.simpleName))))
+        val t = dd.planToday()
+        val rec = t?.let { dd.docs.get(ReadinessRecord, dayKey(it.user.today)) }
+        when (action) {
+            is com.personalfitnesscoach.data.core.coach.CoachAction.ShorterSession -> {
+                val next = t?.next ?: return@act today()
+                if (rec == null) openCheckInScreen(t, minutes = action.minutes)
+                else preview(next, rec.tier, action.minutes.coerceIn(10, 180), express = action.minutes < P.TIME_002.express_below_minutes, away = false)
+            }
+            com.personalfitnesscoach.data.core.coach.CoachAction.EasierLevel -> {
+                val next = t?.next ?: return@act today()
+                if (rec == null) return@act openCheckInScreen(t)
+                // RDY-007: an easier level is always allowed; the check-in is saved again with the choice and the engine re-plans.
+                val out = dd.checkIns.record(t.user, rec.checkIn, rec.minutesAvailable, rec.redFlags, rec.illnessSymptoms, requestedTier = rec.tier.stepDown())
+                dd.decisions.append(out.decisions)
+                out.safetyStop?.let { return@act Screen.Stop(it) }
+                preview(next, out.record.tier, rec.minutesAvailable ?: t.user.profile.sessionMinutes, express = false, away = false)
+            }
+            com.personalfitnesscoach.data.core.coach.CoachAction.OpenCheckIn -> t?.let { openCheckInScreen(it) } ?: today()
+            com.personalfitnesscoach.data.core.coach.CoachAction.OpenPreview -> {
+                val next = t?.next ?: return@act today()
+                if (rec == null) openCheckInScreen(t) else preview(next, rec.tier, rec.minutesAvailable ?: t.user.profile.sessionMinutes, express = false, away = false)
+            }
+            com.personalfitnesscoach.data.core.coach.CoachAction.OpenProgress -> Screen.Progress(insights.overview())
+            com.personalfitnesscoach.data.core.coach.CoachAction.OpenWarningSigns -> (current() as? Screen.Coach)?.let { it.copy(model = it.model.copy(warning = emptySet())) }
+            is com.personalfitnesscoach.data.core.coach.CoachAction.AskAbout -> {
+                val s = current() as? Screen.Coach ?: return@act null
+                s.copy(model = s.model.copy(answer = coach.answer(action.question, action.exerciseId), exerciseId = action.exerciseId))
+            }
+        }
+    }
+
+    /** T2 from elsewhere (the coach): the check-in for the next planned session, with the minutes asked for when given. */
+    private suspend fun openCheckInScreen(t: TodayPlan, minutes: Int? = null): Screen {
+        val next = t.next ?: return today()
+        if (todayModel(t).painStop) return today()
+        return Screen.CheckIn(CheckInForm(minutes = (minutes ?: t.user.profile.sessionMinutes).coerceIn(10, 180)), next)
+    }
+
+    suspend fun pickWarningSign(symptom: String, on: Boolean) = act(showBusy = false) {
+        val s = current() as? Screen.Coach ?: return@act null
+        val w = s.model.warning ?: return@act null
+        s.copy(model = s.model.copy(warning = if (on) w + symptom else w - symptom))
+    }
+
+    /** SAF-002 from the coach: any warning sign stops training until confirmed (and ends a workout in progress). */
+    suspend fun reportWarningSigns() = act {
+        val s = current() as? Screen.Coach ?: return@act null
+        val w = s.model.warning?.takeIf { it.isNotEmpty() } ?: return@act null
+        val stop = (if (player.view() != null) player.redFlag(w) else data.reportRedFlag(w)) ?: return@act null
+        platform.cancelAlerts()
+        Screen.Stop(stop)
+    }
+
+    /** D-045: the exact content shared with Gemini, shown first. */
+    suspend fun prepareGeminiShare() = act {
+        val s = current() as? Screen.Coach ?: return@act null
+        s.copy(model = s.model.copy(share = com.personalfitnesscoach.data.core.coach.GeminiShare(data).content(s.model.text), why = null, warning = null))
+    }
+
+    suspend fun closeGeminiShare() = act {
+        val s = current() as? Screen.Coach ?: return@act null
+        s.copy(model = s.model.copy(share = null))
+    }
+
+    // ------------------------------------------------------------------------------------------------ settings editors (D-086)
+    suspend fun openProfileEditor(section: ProfileSection) = act {
+        form = loadForm()
+        Screen.EditProfile(section, form, null, if (section == ProfileSection.GOALS) onboarding.goalOptions(form.weightFeaturesOff).value else null)
+    }
+
+    suspend fun editProfile(change: (OnboardingForm) -> OnboardingForm) = act(showBusy = false) {
+        val s = current() as? Screen.EditProfile ?: return@act null
+        form = change(form)
+        s.copy(form = form, problem = null, goals = if (s.section == ProfileSection.GOALS) onboarding.goalOptions(form.weightFeaturesOff).value else null)
+    }
+
+    /**
+     * Saves one profile section with the onboarding rules: goals (FL-001 offered goals only), week (FREQ), gym and machines (PROG-003,
+     * MOD-001; exercise states rebuilt for the new loads) or injuries (IND-001, old dates kept). The plan follows at once.
+     */
+    suspend fun saveProfile() = act {
+        val s = current() as? Screen.EditProfile ?: return@act null
+        val dd = data
+        val f = form
+        val p = dd.docs.get(Profile) ?: return@act null
+        try {
+            when (s.section) {
+                ProfileSection.GOALS -> onboarding.goal(f.goals, f.weightFeaturesOff, p.focusMuscles)
+                ProfileSection.SCHEDULE -> onboarding.schedule(f.daysPerWeek, f.availableDays, f.preferredDays, f.sessionMinutes)
+                ProfileSection.EQUIPMENT -> {
+                    onboarding.equipment(f.gym, f.increments.inventory(), dd.docs.get(EquipmentRecord)?.homeKit ?: emptySet(), f.excludedModalities)
+                    dd.bridge.user()?.let { dd.progress.rebuild(it) }
+                }
+                ProfileSection.INJURIES -> onboarding.limitations(f.joints)
+            }
+        } catch (e: OnboardingException) {
+            return@act s.copy(problem = e.problem)
+        }
+        Screen.Settings(settingsModel(SettingsFlow.ProfileSaved(s.section)))
+    }
+
+    /** Master prompt A9: dark (default), light, or the phone's setting. */
+    suspend fun setTheme(theme: com.personalfitnesscoach.data.core.model.Theme) = act {
+        data.docs.update(SettingsRecord) { (it ?: SettingsRecord()).copy(theme = theme) }
+        loadTheme()
+        Screen.Settings(settingsModel())
+    }
+
+    /** FL-001: weight and waist tracking on or off (on only when the goals and conditions allow it). */
+    suspend fun setWeightFeatures(on: Boolean) = act {
+        val dd = data
+        val allowed = onboarding.goalOptions(false).value.weightFeatures
+        if (on && !allowed) return@act null
+        dd.docs.update(SettingsRecord) { (it ?: SettingsRecord()).copy(weightFeaturesOff = !on) }
+        Screen.Settings(settingsModel())
+    }
+
     companion object {
+        /** H1 shows 12 weeks at a time. */
+        const val HISTORY_WEEKS = 12
         const val HBP = "hbp"
         /** Decisions that explain today's tier and limits (the one-line "why" on Today); routine ones (validator passed …) are left out. */
         val TODAY_REASONS: Set<String> = setOf(

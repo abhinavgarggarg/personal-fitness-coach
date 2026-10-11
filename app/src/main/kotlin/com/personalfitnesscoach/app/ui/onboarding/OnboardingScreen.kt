@@ -84,7 +84,7 @@ fun OnboardingScreen(s: Screen.Onboarding) {
             OnboardingStep.SCREENING -> ScreeningStep(s.form, edit)
             OnboardingStep.ABOUT_YOU -> AboutYou(s.form, s.screening, edit)
             OnboardingStep.CONDITIONS -> ConditionsStep(s.form, edit)
-            OnboardingStep.GOAL -> GoalStep(s, edit)
+            OnboardingStep.GOAL -> GoalStep(s.form, s.goals, edit)
             OnboardingStep.SCHEDULE -> ScheduleStep(s.form, edit)
             OnboardingStep.EQUIPMENT -> EquipmentStep(s.form, a.controller, edit)
             OnboardingStep.LIMITATIONS -> LimitationsStep(s.form, edit)
@@ -291,9 +291,7 @@ private fun ColumnScope.ConditionFollowUps(key: String, e: ConditionEntry?, c: C
 
 // ================================================================================================ O6 goal (FL-001)
 @Composable
-private fun GoalStep(s: Screen.Onboarding, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
-    val f = s.form
-    val options = s.goals
+internal fun GoalStep(f: OnboardingForm, options: com.personalfitnesscoach.engine.program.GoalOptions?, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
     Heading(stringResource(R.string.onb_goal_title))
     Body(stringResource(R.string.onb_goal_intro))
     val offered = options?.offered ?: emptyList()
@@ -318,7 +316,7 @@ private fun GoalStep(s: Screen.Onboarding, edit: ((OnboardingForm) -> Onboarding
 
 // ================================================================================================ O4 schedule
 @Composable
-private fun ScheduleStep(f: OnboardingForm, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
+internal fun ScheduleStep(f: OnboardingForm, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
     Heading(stringResource(R.string.onb_sched_title))
     Stepper(stringResource(R.string.onb_days_per_week, f.daysPerWeek), { edit { it.copy(daysPerWeek = (it.daysPerWeek - 1).coerceAtLeast(1)) } },
         { edit { it.copy(daysPerWeek = (it.daysPerWeek + 1).coerceAtMost(6)) } }, minusEnabled = f.daysPerWeek > 1, plusEnabled = f.daysPerWeek < 6)
@@ -340,7 +338,7 @@ private fun WeekdayChips(selected: Set<Int>, enabledDays: Set<Int> = (0..6).toSe
 
 // ================================================================================================ O5 equipment (PROG-003, MOD-001)
 @Composable
-private fun EquipmentStep(f: OnboardingForm, c: AppController, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
+internal fun EquipmentStep(f: OnboardingForm, c: AppController, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
     Heading(stringResource(R.string.onb_equip_title))
     Body(stringResource(R.string.onb_equip_intro))
     ChipGroup(GymPreset.entries, { it == f.gymPreset }, { stringResource(Labels.preset(it)) }, { p -> edit { it.copy(gymPreset = p, gym = c.preset(p)) } })
@@ -375,7 +373,7 @@ private fun EquipmentStep(f: OnboardingForm, c: AppController, edit: ((Onboardin
 
 // ================================================================================================ O7 limitations (IND-001)
 @Composable
-private fun LimitationsStep(f: OnboardingForm, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
+internal fun LimitationsStep(f: OnboardingForm, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
     Heading(stringResource(R.string.onb_limits_title))
     Body(stringResource(R.string.onb_limits_intro))
     Joint.entries.forEach { j ->

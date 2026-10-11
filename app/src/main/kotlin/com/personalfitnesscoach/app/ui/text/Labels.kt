@@ -229,5 +229,97 @@ object Labels {
     )
 
     /** A readable form of an ID with no string (never shown for the IDs above). */
+    fun pattern(p: com.personalfitnesscoach.engine.model.Pattern): Int = when (p) {
+        com.personalfitnesscoach.engine.model.Pattern.SQUAT -> R.string.pat_squat
+        com.personalfitnesscoach.engine.model.Pattern.HINGE -> R.string.pat_hinge
+        com.personalfitnesscoach.engine.model.Pattern.LUNGE -> R.string.pat_lunge
+        com.personalfitnesscoach.engine.model.Pattern.HORIZONTAL_PUSH -> R.string.pat_horizontal_push
+        com.personalfitnesscoach.engine.model.Pattern.HORIZONTAL_PULL -> R.string.pat_horizontal_pull
+        com.personalfitnesscoach.engine.model.Pattern.VERTICAL_PUSH -> R.string.pat_vertical_push
+        com.personalfitnesscoach.engine.model.Pattern.VERTICAL_PULL -> R.string.pat_vertical_pull
+        com.personalfitnesscoach.engine.model.Pattern.LOADED_CARRY -> R.string.pat_loaded_carry
+        com.personalfitnesscoach.engine.model.Pattern.ROTATION -> R.string.pat_rotation
+        com.personalfitnesscoach.engine.model.Pattern.ANTI_EXTENSION -> R.string.pat_anti_extension
+        com.personalfitnesscoach.engine.model.Pattern.ANTI_ROTATION -> R.string.pat_anti_rotation
+        com.personalfitnesscoach.engine.model.Pattern.ANTI_LATERAL_FLEXION -> R.string.pat_anti_lateral_flexion
+        com.personalfitnesscoach.engine.model.Pattern.ISOLATION -> R.string.pat_isolation
+    }
+
+    fun muscle(m: com.personalfitnesscoach.engine.model.Muscle): Int = when (m) {
+        com.personalfitnesscoach.engine.model.Muscle.CHEST -> R.string.mus_chest
+        com.personalfitnesscoach.engine.model.Muscle.LATS -> R.string.mus_lats
+        com.personalfitnesscoach.engine.model.Muscle.UPPER_BACK -> R.string.mus_upper_back
+        com.personalfitnesscoach.engine.model.Muscle.FRONT_DELTS -> R.string.mus_front_delts
+        com.personalfitnesscoach.engine.model.Muscle.SIDE_DELTS -> R.string.mus_side_delts
+        com.personalfitnesscoach.engine.model.Muscle.REAR_DELTS -> R.string.mus_rear_delts
+        com.personalfitnesscoach.engine.model.Muscle.BICEPS -> R.string.mus_biceps
+        com.personalfitnesscoach.engine.model.Muscle.TRICEPS -> R.string.mus_triceps
+        com.personalfitnesscoach.engine.model.Muscle.QUADS -> R.string.mus_quads
+        com.personalfitnesscoach.engine.model.Muscle.HAMSTRINGS -> R.string.mus_hamstrings
+        com.personalfitnesscoach.engine.model.Muscle.GLUTES -> R.string.mus_glutes
+        com.personalfitnesscoach.engine.model.Muscle.CALVES -> R.string.mus_calves
+        com.personalfitnesscoach.engine.model.Muscle.ADDUCTORS -> R.string.mus_adductors
+        com.personalfitnesscoach.engine.model.Muscle.CORE -> R.string.mus_core
+        com.personalfitnesscoach.engine.model.Muscle.FOREARMS -> R.string.mus_forearms
+    }
+
+    fun achievement(a: com.personalfitnesscoach.engine.program.Achievement): Int = when (a) {
+        com.personalfitnesscoach.engine.program.Achievement.FIRST_SESSION -> R.string.ach_first_session
+        com.personalfitnesscoach.engine.program.Achievement.CALIBRATION_DONE -> R.string.ach_calibration_done
+        com.personalfitnesscoach.engine.program.Achievement.PERSONAL_RECORD -> R.string.ach_personal_record
+        com.personalfitnesscoach.engine.program.Achievement.BLOCK_COMPLETED -> R.string.ach_block_completed
+        com.personalfitnesscoach.engine.program.Achievement.SESSIONS_10 -> R.string.ach_sessions_10
+        com.personalfitnesscoach.engine.program.Achievement.SESSIONS_25 -> R.string.ach_sessions_25
+        com.personalfitnesscoach.engine.program.Achievement.SESSIONS_50 -> R.string.ach_sessions_50
+        com.personalfitnesscoach.engine.program.Achievement.SESSIONS_100 -> R.string.ach_sessions_100
+        com.personalfitnesscoach.engine.program.Achievement.WHO_FLOOR_WEEK -> R.string.ach_who_floor_week
+        com.personalfitnesscoach.engine.program.Achievement.WELCOME_BACK -> R.string.ach_welcome_back
+    }
+
+    fun outcome(o: com.personalfitnesscoach.data.core.insight.SessionOutcome): Int = when (o) {
+        com.personalfitnesscoach.data.core.insight.SessionOutcome.DONE -> R.string.hist_outcome_done
+        com.personalfitnesscoach.data.core.insight.SessionOutcome.PARTIAL -> R.string.hist_outcome_partial
+        com.personalfitnesscoach.data.core.insight.SessionOutcome.STOPPED -> R.string.hist_outcome_stopped
+        com.personalfitnesscoach.data.core.insight.SessionOutcome.SKIPPED -> R.string.hist_outcome_skipped
+    }
+
+    fun question(q: com.personalfitnesscoach.data.core.coach.Question): Int = when (q) {
+        com.personalfitnesscoach.data.core.coach.Question.WHY_THIS_EXERCISE -> R.string.q_why_this_exercise
+        com.personalfitnesscoach.data.core.coach.Question.WHAT_IT_TRAINS -> R.string.q_what_it_trains
+        com.personalfitnesscoach.data.core.coach.Question.CAN_I_REPLACE -> R.string.q_can_i_replace
+        com.personalfitnesscoach.data.core.coach.Question.WHY_TODAY_DIFFERENT -> R.string.q_why_today_different
+        com.personalfitnesscoach.data.core.coach.Question.WHY_LESS_VOLUME -> R.string.q_why_less_volume
+        com.personalfitnesscoach.data.core.coach.Question.ONLY_N_MINUTES -> R.string.q_only_n_minutes
+        com.personalfitnesscoach.data.core.coach.Question.TIRED_TODAY -> R.string.q_tired_today
+        com.personalfitnesscoach.data.core.coach.Question.IMPROVED_THIS_MONTH -> R.string.q_improved_this_month
+        com.personalfitnesscoach.data.core.coach.Question.FOCUS_NEXT -> R.string.q_focus_next
+        com.personalfitnesscoach.data.core.coach.Question.WHY_TARGET_CHANGED -> R.string.q_why_target_changed
+        com.personalfitnesscoach.data.core.coach.Question.WHY_LIGHTER_WEEK -> R.string.q_why_lighter_week
+        com.personalfitnesscoach.data.core.coach.Question.HOW_HARD -> R.string.q_how_hard
+        com.personalfitnesscoach.data.core.coach.Question.HARDER -> R.string.q_harder
+    }
+
+    fun outOfScope(o: com.personalfitnesscoach.data.core.coach.OutOfScope): Int = when (o) {
+        com.personalfitnesscoach.data.core.coach.OutOfScope.URGENT_SYMPTOMS -> R.string.oos_urgent
+        com.personalfitnesscoach.data.core.coach.OutOfScope.MEDICATION -> R.string.oos_medication
+        com.personalfitnesscoach.data.core.coach.OutOfScope.SUPPLEMENTS -> R.string.oos_supplements
+        com.personalfitnesscoach.data.core.coach.OutOfScope.DIET -> R.string.oos_diet
+        com.personalfitnesscoach.data.core.coach.OutOfScope.MEDICAL -> R.string.oos_medical
+        com.personalfitnesscoach.data.core.coach.OutOfScope.PAIN -> R.string.oos_pain
+    }
+
+    fun theme(t: com.personalfitnesscoach.data.core.model.Theme): Int = when (t) {
+        com.personalfitnesscoach.data.core.model.Theme.DARK -> R.string.theme_dark
+        com.personalfitnesscoach.data.core.model.Theme.LIGHT -> R.string.theme_light
+        com.personalfitnesscoach.data.core.model.Theme.SYSTEM -> R.string.theme_system
+    }
+
+    fun section(s: com.personalfitnesscoach.app.flow.ProfileSection): Int = when (s) {
+        com.personalfitnesscoach.app.flow.ProfileSection.GOALS -> R.string.set_goals
+        com.personalfitnesscoach.app.flow.ProfileSection.SCHEDULE -> R.string.set_schedule
+        com.personalfitnesscoach.app.flow.ProfileSection.EQUIPMENT -> R.string.set_equipment
+        com.personalfitnesscoach.app.flow.ProfileSection.INJURIES -> R.string.set_injuries
+    }
+
     fun fallback(id: String): String = id.replace('_', ' ').replaceFirstChar { it.uppercase() }
 }
