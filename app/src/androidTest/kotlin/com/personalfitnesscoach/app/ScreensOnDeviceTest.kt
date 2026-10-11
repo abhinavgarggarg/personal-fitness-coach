@@ -84,6 +84,33 @@ class ScreensOnDeviceTest {
         tapThenWait(s(R.string.sheet_end_discard)) { c.screen.value is Screen.Today }
     }
 
+    /** Part 6 on the phone: the tab bar, the coach answering offline with "Why?", Ask Gemini showing its text, History and Progress. */
+    @Test fun theTabsAndTheCoachWorkOnTheDevice() {
+        val c = controller()
+        runBlocking {
+            c.start(); c.submitOnboarding()
+            c.editOnboarding { it.copy(screening = ScreeningQuestion.entries.associateWith { q -> q == ScreeningQuestion.REGULARLY_ACTIVE }) }; c.submitOnboarding()
+            c.editOnboarding { it.copy(birthYear = 1985, months = ExperienceBand.ONE_TO_3_YEARS, comfortable = setOf("squat", "hinge", "press", "row")) }; c.submitOnboarding()
+            c.editOnboarding { it.copy(noneOfThese = true) }; c.submitOnboarding()
+            c.submitOnboarding(); c.submitOnboarding()
+            c.editOnboarding { it.copy(gym = c.preset(GymPreset.FULL_GYM)) }; c.submitOnboarding()
+            repeat(4) { c.submitOnboarding() }
+        }
+        val actions = Actions(CoroutineScope(SupervisorJob()), c, doubleTapMs = 0)
+        compose.setContent { PfcTheme { PfcApp(actions) } }
+        tapThenWait(s(R.string.tab_coach)) { c.screen.value is Screen.Coach }
+        tapThenWait(s(R.string.q_what_it_trains)) { (c.screen.value as? Screen.Coach)?.model?.answer != null }
+        tapThenWait(s(R.string.action_why)) { (c.screen.value as? Screen.Coach)?.model?.why != null }
+        tapThenWait(s(R.string.action_back)) { (c.screen.value as? Screen.Coach)?.model?.why == null }
+        tapThenWait(s(R.string.gemini_ask)) { (c.screen.value as? Screen.Coach)?.model?.share != null }
+        // The exact text is shown before anything leaves the app; Gemini isn't on the test phones, so the share sheet is offered.
+        compose.waitUntil(10_000) { compose.onAllNodesWithText(s(R.string.gemini_share_any)).fetchSemanticsNodes().isNotEmpty() }
+        tapThenWait(s(R.string.action_cancel)) { (c.screen.value as? Screen.Coach)?.model?.share == null }
+        tapThenWait(s(R.string.tab_history)) { c.screen.value is Screen.History }
+        tapThenWait(s(R.string.tab_progress)) { c.screen.value is Screen.Progress }
+        tapThenWait(s(R.string.tab_today)) { c.screen.value is Screen.Today }
+    }
+
     @Test fun theEndOfRestAlarmFires() {
         val before = RestAlerts.fired
         RestAlerts.schedule(ctx, System.currentTimeMillis() + 3_000)
