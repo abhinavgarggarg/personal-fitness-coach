@@ -145,12 +145,12 @@ class Coach(private val d: PfcData) {
          */
         private val OUT: List<Pair<OutOfScope, List<String>>> = listOf(
             OutOfScope.URGENT_SYMPTOMS to listOf("faint*", "pass* out", "black* out", "blackout*", "collaps*", "dizz*", "lighthead*", "light headed",
-                "palpitat*", "breathless*", "short of breath", "shortness of breath", "cant breathe", "cannot breathe", "can not breathe",
+                "dizy*", "dizi*", "palpitat*", "breathless*", "short of breath", "shortness of breath", "cant breathe", "cannot breathe", "can not breathe",
                 "trouble breathing", "difficulty breathing", "hard to breathe", "struggling to breathe", "cant catch my breath", "heart attack",
                 "a stroke", "having a stroke", "had a stroke", "stroke symptoms", "numb", "numbness", "tingl*", "cant feel my", "cannot feel my",
                 "one side of my face", "one side of my body", "weak on one side", "weakness on one side", "numb on one side", "one sided weakness",
                 "one sided numbness", "face droop*", "drooping face", "slurr*", "cant speak", "cannot speak", "trouble speaking", "blurred vision",
-                "blurry vision", "lost my vision", "double vision", "feel confused", "feeling confused", "confusion", "severe headache",
+                "blurry vision", "lost my vision", "double vision", "feel confused", "feeling confused", "severe headache",
                 "sudden headache", "worst headache", "severe pain", "sudden pain", "irregular heart*", "heart racing", "racing heart",
                 "heart pounding", "pounding heart", "heart flutter*", "heart beating fast", "heart is beating fast", "fast heartbeat",
                 "skipped beat*", "skipping beat*", "angina"),
@@ -169,9 +169,9 @@ class Coach(private val d: PfcData) {
             OutOfScope.ILLNESS to listOf("sick", "illness", "feel ill", "feeling ill", "im ill", "am ill", "been ill", "flu", "fever*", "covid*",
                 "a cold", "head cold", "got a cold", "have a cold", "infection*", "sore throat", "virus", "cough*", "runny nose", "temperature",
                 "vomit*", "threw up", "throw up", "throwing up", "nause*", "diarrh*", "stomach bug"),
-            OutOfScope.PAIN to listOf("hurt*", "pain*", "ache*", "aching", "achy", "sore*", "injur*", "pulled my", "pulled a", "pulled something",
+            OutOfScope.PAIN to listOf("hurt*", "pain", "pains", "painful*", "ache*", "aching", "achy", "sore*", "injur*", "pulled my", "pulled a", "pulled something",
                 "strain*", "sprain*", "tweaked my", "tweaked a", "tweaked it", "tweaked something", "twinge*", "pinched", "pinching", "swollen",
-                "swelling", "cramp*", "popped", "popping", "gave out", "gives way", "buckl*", "tender", "stiff", "stiffness", "bruis*", "headache*",
+                "swelling", "cramp", "cramps", "cramping", "cramped up", "a cramp", "popped", "popping", "gave out", "gives way", "buckl*", "tender", "stiff", "stiffness", "bruis*", "headache*",
                 "backache*"),
             OutOfScope.SUPPLEMENTS to listOf("supplement*", "protein powder", "protein shake*", "creatine", "pre workout", "preworkout", "vitamin*",
                 "multivitamin*", "bcaa*", "whey", "fat burner*", "caffeine pill*", "collagen", "fish oil", "omega*", "magnesium", "zinc",
@@ -195,18 +195,19 @@ class Coach(private val d: PfcData) {
          * "heavy" and "burning" count when the chest feels that way ("my chest feels heavy"), not for a heavy chest session (re-check N2).
          * Pain down the left arm or in the jaw is treated the same way (re-check N3).
          */
-        private val CHEST = listOf("chest", "heart")
-        private val CHEST_FEELING = listOf("pain*", "hurt*", "tight*", "pressure", "ache*", "aching", "squeez*", "heaviness", "discomfort", "weird",
+        private val CHEST = listOf("chest", "heart", "hart")
+        private val CHEST_FEELING = listOf("pain", "pains", "painful*", "hurt*", "tight*", "pressure", "ache*", "aching", "squeez*", "heaviness", "discomfort", "weird",
             "funny", "strange", "racing", "pounding", "flutter*", "irregular")
         private val CHEST_FELT = listOf("heavy", "burning", "sore")
         private val REFERRED = listOf("down my left arm", "down my arm", "into my left arm", "into my arm", "jaw")
-        private val REFERRED_FEELING = listOf("pain*", "hurt*", "ache*", "aching", "numb*", "tingl*", "heaviness", "pressure")
+        private val REFERRED_FEELING = listOf("pain", "pains", "painful*", "hurt*", "ache*", "aching", "numb*", "tingl*", "heaviness", "pressure")
 
         /** Everyday phrases that only look like a topic. */
         private val BENIGN = listOf("sick of", "sick and tired", "cold gym", "cold day", "cold morning", "cold weather", "cold outside", "cold today",
             "medicine ball", "deficit", "stiff leg", "stiff legged", "chest press", "chest presses", "chest fly", "chest flye", "chest flyes",
             "chest flies", "chest flys", "chest supported", "chest dip", "chest dips", "chest day", "chest exercise", "chest exercises", "chest workout", "chest session",
-            "chest muscles", "chest muscle", "chest stretch", "heart rate zone", "heart rate zones", "training dose", "lunch break")
+            "chest muscles", "chest muscle", "chest stretch", "heart rate zone", "heart rate zones", "training dose", "lunch break", "confused about",
+            "confused by", "confused with")
 
         /** Library exercise names, longest first, as typed text would show them (singular and plural). */
         private val EXERCISE_NAMES: List<String> by lazy {
@@ -244,7 +245,8 @@ class Coach(private val d: PfcData) {
 
         private fun near(word: String, key: String, typo: Typo): Boolean = when {
             word == key -> true
-            typo == Typo.NONE || key == "stroke" -> false
+            // A slip never changes the first letter ("fantastic", "ain't" and "faith" are not "faint"; final re-check).
+            typo == Typo.NONE || key == "stroke" || word.isEmpty() || key.isEmpty() || word[0] != key[0] -> false
             swapped(word, key) -> true
             typo == Typo.EDIT && key.length >= 5 -> distance(word, key) <= 1 && (word.length != key.length || key.length >= 7)
             else -> false
@@ -256,9 +258,12 @@ class Coach(private val d: PfcData) {
             if (word.startsWith(k)) return true
             if (typo == Typo.NONE) return false
             if (k.length < 5) return word.length <= k.length + 1 && word.length >= k.length && near(word.take(k.length), k, Typo.TRANS)
-            // A longer stem: the start of the word with the slip in it ("fiantd", "palpatations").
-            return (k.length - 1..k.length + 1).any { n -> n <= word.length && near(word.take(n), k, typo) }
+            // A longer stem: the start of the word with the slip in it, followed by a usual ending only ("fiantd", "fanted",
+            // "palpatations" — not "fantasy", "slurp" or "lighthearted"; final re-check).
+            return (k.length - 1..k.length + 1).any { n -> n <= word.length && word.drop(n) in ENDINGS && near(word.take(n), k, typo) }
         }
+
+        private val ENDINGS = setOf("", "s", "d", "ed", "ing", "y", "ness", "e", "es", "ion", "ions", "ly")
 
         /** Whether the words contain the key (one word, or a phrase of consecutive words). */
         private fun has(ws: List<String>, key: String, typo: Typo = Typo.NONE): Boolean {
@@ -271,8 +276,11 @@ class Coach(private val d: PfcData) {
         fun outOfScope(text: String): OutOfScope? {
             val ws = words(cleaned(norm(text)))
             val chest = CHEST.any { has(ws, it, Typo.TRANS) }
-            if (chest && (CHEST_FEELING.any { has(ws, it, Typo.EDIT) } ||
-                    (CHEST_FELT.any { has(ws, it, Typo.EDIT) } && (has(ws, "feel*") || has(ws, "felt"))))) return OutOfScope.URGENT_SYMPTOMS
+            // "heavy", "burning", "sore" count when the chest is said to feel that way, close together ("my chest feels heavy").
+            val chestAt = ws.indices.filter { i -> CHEST.any { part(ws[i], it, Typo.TRANS) } }
+            val feelAt = ws.indices.filter { i -> part(ws[i], "feel*", Typo.NONE) || ws[i] == "felt" }
+            val felt = chestAt.any { c -> feelAt.any { f -> kotlin.math.abs(c - f) <= 3 } }
+            if (chest && (CHEST_FEELING.any { has(ws, it, Typo.EDIT) } || (felt && CHEST_FELT.any { has(ws, it, Typo.EDIT) }))) return OutOfScope.URGENT_SYMPTOMS
             if (REFERRED.any { has(ws, it, Typo.TRANS) } && REFERRED_FEELING.any { has(ws, it, Typo.EDIT) }) return OutOfScope.URGENT_SYMPTOMS
             return OUT.firstOrNull { (topic, keys) -> keys.any { k -> has(ws, k, TYPOS[topic] ?: Typo.NONE) } }?.first
         }

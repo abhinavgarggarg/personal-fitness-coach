@@ -352,4 +352,15 @@ class CoachTest {
         assertEquals(OutOfScope.MEDICAL, Coach.outOfScope("breastfeeding, how hard should it feel"))
         assertEquals(Question.WHY_LESS_VOLUME, Coach.match("Why did the app reduce my training?").question)
     }
+
+    @Test fun `R6 final re-check everyday words are not taken for warning signs, and a few more slips are caught`() {
+        val fine = listOf("I feel fantastic today, can I go harder", "I have faith in the plan, what next", "I ain't tired today", "fantasy football later",
+            "can I slurp a coffee before", "a lighthearted session please", "sorry for the confusion, how hard should the last set feel",
+            "I feel confused about the deload, why is this a lighter week", "I feel strong, can I go heavy on chest today?", "the gym is cramped",
+            "can I paint my garage after training")
+        val wrong = fine.mapNotNull { t -> Coach.outOfScope(t)?.let { "$t → $it" } }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+        for (t in listOf("I feel dizy", "my hart is racing", "I fanted at the gym", "I collasped", "I keep fianting", "chest pian", "my chest feels heavy"))
+            assertEquals(t, OutOfScope.URGENT_SYMPTOMS, Coach.outOfScope(t))
+    }
 }
