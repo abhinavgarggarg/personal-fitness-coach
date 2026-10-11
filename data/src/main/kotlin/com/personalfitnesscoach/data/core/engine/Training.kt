@@ -143,7 +143,10 @@ class CheckIns(private val docs: Docs, private val bridge: EngineBridge, private
         // SAF-002: new red flags start a stop that lasts until confirmed.
         var stop = RedFlags.check(redFlags).also { d += it.decisions }.value
         stop?.let { startStop(it, today) }
-        val illness = RedFlags.illnessGate(illnessSymptoms).also { d += it.decisions }.value
+        // SAF-007: illness reported earlier today stays for the day; a later check-in (from Today or the coach) can add, never remove
+        // (re-check N1: a fresh form could otherwise lift an illness cap).
+        val ill = illnessSymptoms + docs.get(ReadinessRecord, dayKey(today))?.illnessSymptoms.orEmpty()
+        val illness = RedFlags.illnessGate(ill).also { d += it.decisions }.value
         val gate = bridge.gate(u, program).also { d += it.decisions }
         if (stop == null) stop = gate.stop
         var tier = gate.cap(r.tier)
@@ -151,7 +154,7 @@ class CheckIns(private val docs: Docs, private val bridge: EngineBridge, private
         if (stop != null) tier = Tier.RECOVERY
         val locked = stop != null || illness != null || gate.locked || u.flaggedScreen || bridge.painToday(today).first.isNotEmpty()
         val chosen = requestedTier?.let { Readiness.userChoice(tier, it, locked).also { x -> d += x.decisions }.value }?.takeIf { it != tier }
-        val rec = ReadinessRecord(today, checkIn, minutesAvailable, r.rRaw, r.r, tier, chosen, signals.map { it.name }.toSet(), redFlags, illnessSymptoms,
+        val rec = ReadinessRecord(today, checkIn, minutesAvailable, r.rRaw, r.r, tier, chosen, signals.map { it.name }.toSet(), redFlags, ill,
             clock.nowMs())
         docs.put(ReadinessRecord, rec)
         // DEL-002 between block ends: enough signals now → the rest of this week is a deload (the block clock waits for it).

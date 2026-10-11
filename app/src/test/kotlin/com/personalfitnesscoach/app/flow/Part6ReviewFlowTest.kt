@@ -207,4 +207,29 @@ class Part6ReviewFlowTest {
         c.coachAction(CoachAction.ShorterSession(30))
         assertTrue(data().decisions.forDay(monday).any { it.reason == "COACH_REQUEST" })
     }
+
+    @Test fun `R6 re-check N1 illness reported in the morning stays for the day, from Today or from the coach`() = runBlocking {
+        val c = controller()
+        onboard(c)
+        c.openCheckIn()
+        c.editCheckIn { it.copy(illness = setOf("fever")) }
+        c.submitCheckIn()
+        val morning = (c.s() as Screen.Preview).model.tier
+        assertEquals(Tier.RECOVERY, morning)
+        c.closeToToday()
+        c.openTab(Tab.COACH)
+        c.editCoachText("I have a fever, can I do 20 min?")
+        c.askCoach()
+        val a = (c.s() as Screen.Coach).model.answer!!
+        assertEquals(OutOfScope.ILLNESS, a.outOfScope)
+        c.coachAction(a.actions.single())
+        assertEquals("filled in", setOf("fever"), (c.s() as Screen.CheckIn).form.illness)
+        // Even with the illness unticked, the day stays at the illness level.
+        c.editCheckIn { it.copy(illness = emptySet()) }
+        c.submitCheckIn()
+        assertEquals(Tier.RECOVERY, (c.s() as Screen.Preview).model.tier)
+        c.closeToToday()
+        c.openCheckIn()
+        assertEquals(setOf("fever"), (c.s() as Screen.CheckIn).form.illness)
+    }
 }

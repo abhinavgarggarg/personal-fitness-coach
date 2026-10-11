@@ -96,7 +96,8 @@ fun ProgressScreen(s: Screen.Progress) {
             val waist = b.waistCm
             val waistDay = b.waistDay
             Body(if (waist != null && waistDay != null) stringResource(R.string.prog_waist, kg(waist), dateText(waistDay)) else stringResource(R.string.prog_waist_none))
-            if (b.waistDue) Note(stringResource(R.string.prog_waist_due))
+            // "Time to measure again" only after a first measurement (the line above already says there is none yet).
+            if (b.waistDue && waist != null) Note(stringResource(R.string.prog_waist_due))
             when (val e = s.entry) {
                 null -> {
                     SecondaryButton(stringResource(R.string.prog_add_weight), { a.run { openBodyEntry(waist = false) } })

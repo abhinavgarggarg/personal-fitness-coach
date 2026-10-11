@@ -139,85 +139,142 @@ class Coach(private val d: PfcData) {
 
         /**
          * Out of scope (SAF-009), checked before any question and in this order, so a symptom always wins. A key is a word, a word stem
-         * ending in `*` ("faint*" also finds "fainted") or a phrase of them. Urgent and pain words also match one typing slip of the same
-         * length ("pian", "chets"; a swapped pair of letters, or one wrong letter in a longer word) — never a shorter or longer word, so
-         * "train" is not "strain" (review R6-01/02).
+         * ending in `*` ("faint*" also finds "fainted") or a phrase of them. Exercise names from the library and a few everyday phrases
+         * are taken out of the text first ("medicine ball throw", "sick of lunges"), and typing slips are allowed for warning signs and
+         * pain words (see [Typo]; review R6-01/02, re-check N2/N3).
          */
         private val OUT: List<Pair<OutOfScope, List<String>>> = listOf(
             OutOfScope.URGENT_SYMPTOMS to listOf("faint*", "pass* out", "black* out", "blackout*", "collaps*", "dizz*", "lighthead*", "light headed",
-                "palpitat*", "breathless*", "short of breath", "shortness of breath", "out of breath", "cant breathe", "cannot breathe", "can not breathe",
+                "palpitat*", "breathless*", "short of breath", "shortness of breath", "cant breathe", "cannot breathe", "can not breathe",
                 "trouble breathing", "difficulty breathing", "hard to breathe", "struggling to breathe", "cant catch my breath", "heart attack",
-                "a stroke", "having a stroke", "had a stroke", "stroke symptoms", "numb", "numbness", "one side of my face", "one side of my body",
-                "weak on one side", "weakness on one side", "numb on one side", "one sided weakness", "one sided numbness", "face droop*",
-                "drooping face", "slurr*", "cant speak", "cannot speak",
-                "trouble speaking", "severe headache", "sudden headache", "worst headache", "severe pain", "sudden pain", "irregular heart*",
-                "heart racing", "racing heart", "heart pounding", "pounding heart", "heart flutter*", "skipped beat*", "skipping beat*", "angina"),
+                "a stroke", "having a stroke", "had a stroke", "stroke symptoms", "numb", "numbness", "tingl*", "cant feel my", "cannot feel my",
+                "one side of my face", "one side of my body", "weak on one side", "weakness on one side", "numb on one side", "one sided weakness",
+                "one sided numbness", "face droop*", "drooping face", "slurr*", "cant speak", "cannot speak", "trouble speaking", "blurred vision",
+                "blurry vision", "lost my vision", "double vision", "feel confused", "feeling confused", "confusion", "severe headache",
+                "sudden headache", "worst headache", "severe pain", "sudden pain", "irregular heart*", "heart racing", "racing heart",
+                "heart pounding", "pounding heart", "heart flutter*", "heart beating fast", "heart is beating fast", "fast heartbeat",
+                "skipped beat*", "skipping beat*", "angina"),
             OutOfScope.MEDICATION to listOf("medication*", "medicine*", "meds", "pill", "pills", "tablets", "insulin", "metformin", "ibuprofen",
                 "aspirin", "paracetamol", "acetaminophen", "painkiller*", "pain killer*", "steroid*", "drug", "drugs", "prescri*", "beta blocker*",
-                "blocker*", "statin*", "antidepress*", "inhaler*", "blood thinner*", "warfarin", "dose", "dosage", "side effect*", "antibiotic*",
+                "blocker*", "statin*", "antidepress*", "inhaler*", "blood thinner*", "warfarin", "side effect*", "antibiotic*",
                 "birth control", "hrt", "injection*", "ozempic", "semaglutide", "wegovy"),
-            OutOfScope.MEDICAL to listOf("diagnos*", "pregnan*", "postpartum", "post partum", "gave birth", "had a baby", "after birth", "surger*",
-                "surgical", "operation", "doctor*", "gp", "physio*", "physician", "specialist", "cardiolog*", "hospital*", "diabet*", "hypertens*",
-                "blood pressure", "high bp", "asthma*", "arthrit*", "osteopor*", "osteopen*", "heart condition", "heart disease", "heart problem*",
-                "cancer", "chemo*", "epilep*", "seizure*", "copd", "kidney*", "thyroid*", "cholesterol", "blood sugar", "sugar level*", "fractur*",
-                "torn", "tore", "broken bone*", "broken arm", "broken leg", "broken wrist", "broken toe", "broken finger", "broken rib*", "broke my",
-                "disease*", "hernia*", "herniated", "slipped disc", "bulging disc", "disc bulge", "scan", "mri", "x ray", "xray", "is it serious",
-                "what is wrong", "whats wrong", "tendin*", "sciatica", "concussion*", "stitches", "health condition", "medical*", "cardiac",
-                "pins and needles", "condition"),
+            OutOfScope.MEDICAL to listOf("diagnos*", "pregnan*", "postpartum", "post partum", "gave birth", "had a baby", "after birth",
+                "breastfeed*", "breast feeding", "surger*", "surgical", "operation", "doctor*", "gp", "physio*", "physician", "specialist",
+                "cardiolog*", "hospital*", "diabet*", "hypertens*", "blood pressure", "high bp", "asthma*", "arthrit*", "osteopor*", "osteopen*",
+                "heart condition", "heart disease", "heart problem*", "cancer", "chemo*", "epilep*", "seizure*", "copd", "kidney*", "thyroid*",
+                "cholesterol", "blood sugar", "sugar level*", "fractur*", "torn", "tore", "broken bone*", "broken arm", "broken leg", "broken wrist",
+                "broken toe", "broken finger", "broken rib*", "broke my", "disease*", "hernia*", "herniated", "slipped disc", "bulging disc",
+                "disc bulge", "scan", "mri", "x ray", "xray", "is it serious", "what is wrong", "whats wrong", "tendin*", "sciatica", "concussion*",
+                "stitches", "health condition", "medical*", "cardiac", "pins and needles", "condition"),
             OutOfScope.ILLNESS to listOf("sick", "illness", "feel ill", "feeling ill", "im ill", "am ill", "been ill", "flu", "fever*", "covid*",
-                "a cold", "head cold", "infection*", "sore throat", "virus", "cough*", "runny nose", "temperature", "vomit*", "nause*", "diarrh*",
-                "stomach bug"),
-            OutOfScope.PAIN to listOf("hurt*", "pain*", "ache*", "aching", "achy", "sore*", "injur*", "pulled", "strain*", "sprain*", "tweak*",
-                "twinge*", "pinched", "pinching", "swollen", "swelling", "cramp*", "popped", "popping", "gave out", "gives way", "buckl*", "tender", "stiff*",
-                "bruis*", "headache*", "backache*"),
+                "a cold", "head cold", "got a cold", "have a cold", "infection*", "sore throat", "virus", "cough*", "runny nose", "temperature",
+                "vomit*", "threw up", "throw up", "throwing up", "nause*", "diarrh*", "stomach bug"),
+            OutOfScope.PAIN to listOf("hurt*", "pain*", "ache*", "aching", "achy", "sore*", "injur*", "pulled my", "pulled a", "pulled something",
+                "strain*", "sprain*", "tweaked my", "tweaked a", "tweaked it", "tweaked something", "twinge*", "pinched", "pinching", "swollen",
+                "swelling", "cramp*", "popped", "popping", "gave out", "gives way", "buckl*", "tender", "stiff", "stiffness", "bruis*", "headache*",
+                "backache*"),
             OutOfScope.SUPPLEMENTS to listOf("supplement*", "protein powder", "protein shake*", "creatine", "pre workout", "preworkout", "vitamin*",
                 "multivitamin*", "bcaa*", "whey", "fat burner*", "caffeine pill*", "collagen", "fish oil", "omega*", "magnesium", "zinc",
                 "ashwagandha", "test booster*", "electrolyte*"),
             OutOfScope.DIET to listOf("diet*", "calori*", "eat", "eating", "ate", "food*", "meal*", "fasting", "keto", "carb*", "macro*", "protein",
-                "nutrition*", "nutrient*", "deficit", "surplus", "snack*", "breakfast", "lunch", "dinner", "alcohol", "beer", "wine", "drink*",
-                "hydrat*", "sugar"),
+                "nutrition*", "nutrient*", "calorie deficit", "surplus", "snack*", "alcohol", "beer", "wine", "drink*", "hydrat*", "sugar"),
         )
 
-        /** Words typed with one slip still count for these (same length only). "stroke" is left out: "strike" and "strobe" are too close. */
-        private val TYPO_TOPICS = setOf(OutOfScope.URGENT_SYMPTOMS, OutOfScope.PAIN)
+        /**
+         * How far a typed word may be from a key: [TRANS] a swapped pair of neighbouring letters ("pian"); [EDIT] also one letter missing
+         * or extra for keys of 5 letters or more ("presure", "tighht"), and one wrong letter only for keys of 7 or more ("palpatations") —
+         * a wrong letter in a short word is too often another word ("single" is not "tingl…", "facing" is not "racing"). A 4-letter stem
+         * allows a slip only in a word at most one letter longer, so "panicked" is not "pain" (re-check N2). "stroke" is never matched
+         * loosely ("strike", "strobe").
+         */
+        private enum class Typo { NONE, TRANS, EDIT }
+        private val TYPOS = mapOf(OutOfScope.URGENT_SYMPTOMS to Typo.EDIT, OutOfScope.PAIN to Typo.TRANS)
 
-        /** Chest or heart with a word of pain or pressure is a warning sign, however it is put ("my chest is tight", "pain in my chest"). */
+        /**
+         * Chest or heart with a word of pain or pressure is a warning sign, however it is put ("my chest is tight", "pain in my chest");
+         * "heavy" and "burning" count when the chest feels that way ("my chest feels heavy"), not for a heavy chest session (re-check N2).
+         * Pain down the left arm or in the jaw is treated the same way (re-check N3).
+         */
         private val CHEST = listOf("chest", "heart")
-        private val CHEST_FEELING = listOf("pain*", "hurt*", "tight*", "pressure", "ache*", "aching", "squeez*", "heavy", "heaviness", "sore*",
-            "burn*", "discomfort", "weird", "funny", "strange", "racing", "pounding", "flutter*", "irregular", "fast")
-        /** Exercise names and plain workout words with "chest" in them are not the chest itself ("my shoulder hurts on chest press"). */
-        private val CHEST_EXERCISE = Regex(" chest (press|fly|flye|flies|supported|day|exercise|exercises|workout|muscles|muscle|stretch|dip|dips) ")
+        private val CHEST_FEELING = listOf("pain*", "hurt*", "tight*", "pressure", "ache*", "aching", "squeez*", "heaviness", "discomfort", "weird",
+            "funny", "strange", "racing", "pounding", "flutter*", "irregular")
+        private val CHEST_FELT = listOf("heavy", "burning", "sore")
+        private val REFERRED = listOf("down my left arm", "down my arm", "into my left arm", "into my arm", "jaw")
+        private val REFERRED_FEELING = listOf("pain*", "hurt*", "ache*", "aching", "numb*", "tingl*", "heaviness", "pressure")
 
-        /** One pair of neighbouring letters swapped ("pian"), or — when `sub` — one wrong letter in a word of 6 letters or more ("palpatations"). */
-        private fun near(word: String, key: String, sub: Boolean): Boolean {
-            if (word == key) return true
-            if (word.length != key.length || key.length < 4) return false
-            val diff = word.indices.filter { word[it] != key[it] }
-            if (diff.size == 2 && diff[1] == diff[0] + 1 && word[diff[0]] == key[diff[1]] && word[diff[1]] == key[diff[0]]) return true
-            return sub && diff.size == 1 && key.length >= 6
+        /** Everyday phrases that only look like a topic. */
+        private val BENIGN = listOf("sick of", "sick and tired", "cold gym", "cold day", "cold morning", "cold weather", "cold outside", "cold today",
+            "medicine ball", "deficit", "stiff leg", "stiff legged", "chest press", "chest presses", "chest fly", "chest flye", "chest flyes",
+            "chest flies", "chest flys", "chest supported", "chest dip", "chest dips", "chest day", "chest exercise", "chest exercises", "chest workout", "chest session",
+            "chest muscles", "chest muscle", "chest stretch", "heart rate zone", "heart rate zones", "training dose", "lunch break")
+
+        /** Library exercise names, longest first, as typed text would show them (singular and plural). */
+        private val EXERCISE_NAMES: List<String> by lazy {
+            (Library.all.map { it.name } + com.personalfitnesscoach.engine.library.GeneratedLibrary.drills.map { it.name }).map { norm(it).trim() }.filter { it.isNotEmpty() }.distinct()
+                .sortedByDescending { it.length }
         }
 
-        private fun part(word: String, key: String, typos: Boolean, sub: Boolean): Boolean {
-            val stem = key.endsWith('*')
+        /** The text with exercise names and everyday phrases taken out (so "medicine ball throw" is not about medicine). */
+        private fun cleaned(t: String): String {
+            var x = t
+            for (n in EXERCISE_NAMES) if (x.contains(" $n")) x = x.replace(Regex(" ${Regex.escape(n)}s? "), "  ")
+            for (b in BENIGN) x = x.replace(" $b ", "  ")
+            return x.replace(Regex("\\s+"), " ")
+        }
+
+        /** Optimal string alignment distance, capped at 2 (only "0, 1 or more" matters here). */
+        private fun distance(a: String, b: String): Int {
+            if (kotlin.math.abs(a.length - b.length) > 1) return 2
+            val d = Array(a.length + 1) { IntArray(b.length + 1) }
+            for (i in 0..a.length) d[i][0] = i
+            for (j in 0..b.length) d[0][j] = j
+            for (i in 1..a.length) for (j in 1..b.length) {
+                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
+                d[i][j] = minOf(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+                if (i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1]) d[i][j] = minOf(d[i][j], d[i - 2][j - 2] + 1)
+            }
+            return d[a.length][b.length]
+        }
+
+        private fun swapped(word: String, key: String): Boolean {
+            if (word.length != key.length || key.length < 4) return false
+            val diff = word.indices.filter { word[it] != key[it] }
+            return diff.size == 2 && diff[1] == diff[0] + 1 && word[diff[0]] == key[diff[1]] && word[diff[1]] == key[diff[0]]
+        }
+
+        private fun near(word: String, key: String, typo: Typo): Boolean = when {
+            word == key -> true
+            typo == Typo.NONE || key == "stroke" -> false
+            swapped(word, key) -> true
+            typo == Typo.EDIT && key.length >= 5 -> distance(word, key) <= 1 && (word.length != key.length || key.length >= 7)
+            else -> false
+        }
+
+        private fun part(word: String, key: String, typo: Typo): Boolean {
+            if (!key.endsWith('*')) return near(word, key, typo)
             val k = key.removeSuffix("*")
-            return if (stem) word.startsWith(k) || (typos && word.length >= k.length && near(word.take(k.length), k, sub))
-            else word == k || (typos && k != "stroke" && near(word, k, sub))
+            if (word.startsWith(k)) return true
+            if (typo == Typo.NONE) return false
+            if (k.length < 5) return word.length <= k.length + 1 && word.length >= k.length && near(word.take(k.length), k, Typo.TRANS)
+            // A longer stem: the start of the word with the slip in it ("fiantd", "palpatations").
+            return (k.length - 1..k.length + 1).any { n -> n <= word.length && near(word.take(n), k, typo) }
         }
 
         /** Whether the words contain the key (one word, or a phrase of consecutive words). */
-        private fun has(ws: List<String>, key: String, typos: Boolean, sub: Boolean = false): Boolean {
+        private fun has(ws: List<String>, key: String, typo: Typo = Typo.NONE): Boolean {
             val parts = key.split(' ')
             if (parts.size > ws.size) return false
-            return (0..ws.size - parts.size).any { i -> parts.indices.all { j -> part(ws[i + j], parts[j], typos, sub) } }
+            return (0..ws.size - parts.size).any { i -> parts.indices.all { j -> part(ws[i + j], parts[j], typo) } }
         }
 
         /** The out-of-scope topic of a text, if any (SAF-009); urgent symptoms first. */
         fun outOfScope(text: String): OutOfScope? {
-            val t = norm(text)
-            val ws = words(t)
-            val chestWords = words(CHEST_EXERCISE.replace(t, " "))
-            if (CHEST.any { c -> has(chestWords, c, typos = true) } && CHEST_FEELING.any { f -> has(chestWords, f, typos = true) }) return OutOfScope.URGENT_SYMPTOMS
-            return OUT.firstOrNull { (topic, keys) -> keys.any { k -> has(ws, k, topic in TYPO_TOPICS, sub = topic == OutOfScope.URGENT_SYMPTOMS) } }?.first
+            val ws = words(cleaned(norm(text)))
+            val chest = CHEST.any { has(ws, it, Typo.TRANS) }
+            if (chest && (CHEST_FEELING.any { has(ws, it, Typo.EDIT) } ||
+                    (CHEST_FELT.any { has(ws, it, Typo.EDIT) } && (has(ws, "feel*") || has(ws, "felt"))))) return OutOfScope.URGENT_SYMPTOMS
+            if (REFERRED.any { has(ws, it, Typo.TRANS) } && REFERRED_FEELING.any { has(ws, it, Typo.EDIT) }) return OutOfScope.URGENT_SYMPTOMS
+            return OUT.firstOrNull { (topic, keys) -> keys.any { k -> has(ws, k, TYPOS[topic] ?: Typo.NONE) } }?.first
         }
 
         /** Phrase → weight per question. Phrases win over single words. */
@@ -231,7 +288,8 @@ class Coach(private val d: PfcData) {
             Question.WHY_TODAY_DIFFERENT to listOf("today different" to 5, "different today" to 5, "why is today" to 4, "today's workout" to 2,
                 "todays workout" to 2, "today" to 1, "changed today" to 4, "why easier" to 3, "why lighter today" to 4, "why modified" to 4, "why light" to 3),
             Question.WHY_LESS_VOLUME to listOf("volume" to 4, "fewer sets" to 5, "less sets" to 5, "less work" to 3, "reduced" to 2, "cut my" to 2,
-                "fewer exercises" to 4, "why so few" to 4, "reduce my volume" to 5),
+                "fewer exercises" to 4, "why so few" to 4, "reduce my volume" to 5,
+                "reduce my training" to 5, "reduced my training" to 5, "reduce" to 2),
             Question.ONLY_N_MINUTES to listOf("minutes" to 3, "minute" to 3, "mins" to 3, "min" to 2, "only have" to 3, "short on time" to 5,
                 "no time" to 4, "quick" to 2, "hurry" to 3, "in a rush" to 4, "less time" to 4, "short session" to 4),
             Question.TIRED_TODAY to listOf("tired" to 5, "exhausted" to 5, "sleepy" to 4, "no energy" to 5, "low energy" to 5, "fatigued" to 5,

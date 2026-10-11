@@ -326,4 +326,30 @@ class CoachTest {
         assertNull(s.template); assertNull(s.tier); assertNull(s.minutes)
         assertTrue(s.exercises.isEmpty() && s.reasons.isEmpty())
     }
+
+    @Test fun `R6 re-check N2 ordinary training questions are not referred`() {
+        val notReferred = listOf("Can I go heavy on chest today?", "I want a heavy chest session", "how fast should my heart rate be during cardio",
+            "I get out of breath on the bike, is that normal", "Why am I doing the medicine ball scoop toss?", "What does the Medicine ball rotational throw train?",
+            "Can I replace the deficit push-up?", "I train at lunch, I only have 30 minutes", "training before breakfast, how hard should it feel",
+            "why am I doing stiff leg deadlifts", "I pulled 140 kg on deadlift today", "can I tweak my plan", "I'm a bit panicked about heavy squats",
+            "what's my training dose", "I'm sick of lunges", "it's a cold gym today", "Can I swap the single-arm standing cable row?",
+            "What does the single leg glute bridge train?", "I feel the burn in my chest on flyes", "chest day tomorrow?", "can I do chest press instead of push ups")
+        val wrong = notReferred.mapNotNull { t -> Coach.outOfScope(t)?.let { "$t → $it" } }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+        // Sore after training, or an arm that aches after curls, goes to the pain route, not the emergency card.
+        assertEquals(OutOfScope.PAIN, Coach.outOfScope("my chest is sore from bench yesterday"))
+        assertEquals(OutOfScope.PAIN, Coach.outOfScope("my left arm aches after curls"))
+        // Ask Gemini keeps a question that only names an exercise.
+        assertNull(GeminiShare.blocked("How do I do the medicine ball scoop toss?"))
+    }
+
+    @Test fun `R6 re-check N3 N4 more warning signs, illness and pregnancy words, and every suggested question typed`() {
+        val urgent = listOf("chest is tighht", "I feel chest presure", "tingling in my arm", "I can't feel my arm", "blurred vision", "I feel confused",
+            "pain down my left arm", "my jaw hurts", "my chest feels heavy", "my heart is beating fast and won't calm down")
+        val missed = urgent.filter { Coach.outOfScope(it) != OutOfScope.URGENT_SYMPTOMS }
+        assertTrue("not urgent: $missed", missed.isEmpty())
+        assertEquals(OutOfScope.ILLNESS, Coach.outOfScope("I threw up this morning"))
+        assertEquals(OutOfScope.MEDICAL, Coach.outOfScope("breastfeeding, how hard should it feel"))
+        assertEquals(Question.WHY_LESS_VOLUME, Coach.match("Why did the app reduce my training?").question)
+    }
 }

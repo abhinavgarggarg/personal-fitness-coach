@@ -410,7 +410,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         if (dd.trainingStopped(t.user.today)) return@act null
         val prev = dd.docs.get(ReadinessRecord, dayKey(t.user.today))
         Screen.CheckIn(CheckInForm(sleep = prev?.checkIn?.sleep ?: 3, energy = prev?.checkIn?.energy ?: 3, soreness = prev?.checkIn?.soreness ?: 3,
-            stress = prev?.checkIn?.stress ?: 3, sleepHours = prev?.checkIn?.sleepHours, minutes = prev?.minutesAvailable ?: t.user.profile.sessionMinutes), next)
+            stress = prev?.checkIn?.stress ?: 3, sleepHours = prev?.checkIn?.sleepHours, minutes = prev?.minutesAvailable ?: t.user.profile.sessionMinutes,
+            illness = prev?.illnessSymptoms.orEmpty()), next)
     }
 
     suspend fun editCheckIn(change: (CheckInForm) -> CheckInForm) = act(showBusy = false) {
@@ -1067,7 +1068,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         val prev = data.docs.get(ReadinessRecord, dayKey(t.user.today))
         return Screen.CheckIn(CheckInForm(sleep = prev?.checkIn?.sleep ?: 3, energy = prev?.checkIn?.energy ?: 3, soreness = prev?.checkIn?.soreness ?: 3,
             stress = prev?.checkIn?.stress ?: 3, sleepHours = prev?.checkIn?.sleepHours,
-            minutes = (minutes ?: prev?.minutesAvailable ?: t.user.profile.sessionMinutes).coerceIn(10, 180)), next)
+            minutes = (minutes ?: prev?.minutesAvailable ?: t.user.profile.sessionMinutes).coerceIn(10, 180), illness = prev?.illnessSymptoms.orEmpty()), next)
     }
 
     suspend fun pickWarningSign(symptom: String, on: Boolean) = act(showBusy = false) {
