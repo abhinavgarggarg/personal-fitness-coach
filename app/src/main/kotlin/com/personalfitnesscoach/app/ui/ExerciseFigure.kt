@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
@@ -35,6 +36,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.personalfitnesscoach.app.figure.Bounds
 import com.personalfitnesscoach.app.figure.ExerciseFigures
@@ -134,12 +137,16 @@ fun ExerciseFigure(figure: Figure, description: String, modifier: Modifier = Mod
     val raster = remember(figure, muscles, alignEnd) { FigureRaster() }
     Canvas(modifier.semantics { contentDescription = description; role = Role.Image }) {
         val t = picture?.value?.let { (k, n) -> figure.timing.t(k.toDouble() / n + figure.loopStart) } ?: figure.still
-        drawImage(raster.render(this, t) { drawSculpt(Sculptor.sculpt(figure.frame(t), front, t, muscles), camera, alignEnd) })
+        val image = raster.render(this, t) { drawSculpt(Sculptor.sculpt(figure.frame(t), front, t, muscles), camera, alignEnd) }
+        drawImage(image, dstSize = IntSize(size.width.toInt(), size.height.toInt()), filterQuality = FilterQuality.Low)
     }
 }
 
-/** How many new pictures a second the moving figure shows: smooth for a slow rep, and half the work of the screen's own rate. */
-internal const val FIGURE_FPS = 30
+/** How many new pictures a second the moving figure shows: smooth for a slow rep (film runs at 24), and little work for the phone. */
+internal const val FIGURE_FPS = 24
+
+/** The picture is drawn at this fraction of the screen's resolution and scaled up smoothly: the shading hides it, the work halves. */
+internal const val RASTER_SCALE = 0.75f
 
 /**
  * The figure is drawn on the processor into a picture the size of its space, then shown (D-105). Its many shaded, curved shapes are
@@ -153,14 +160,14 @@ internal class FigureRaster {
     private var drawn = Double.NaN
 
     fun render(on: DrawScope, t: Double, paint: DrawScope.() -> Unit): ImageBitmap {
-        val w = on.size.width.toInt().coerceAtLeast(1); val h = on.size.height.toInt().coerceAtLeast(1)
+        val w = (on.size.width * RASTER_SCALE).toInt().coerceAtLeast(1); val h = (on.size.height * RASTER_SCALE).toInt().coerceAtLeast(1)
         var b = bitmap
         if (b == null || b.width != w || b.height != h) {
             b = ImageBitmap(w, h); bitmap = b; canvas = androidx.compose.ui.graphics.Canvas(b); drawn = Double.NaN
         }
         if (drawn != t) {
             b.asAndroidBitmap().eraseColor(android.graphics.Color.TRANSPARENT)
-            scope.draw(on, on.layoutDirection, canvas!!, Size(w.toFloat(), h.toFloat())) { paint() }
+            scope.draw(Density(on.density * RASTER_SCALE, on.fontScale), on.layoutDirection, canvas!!, Size(w.toFloat(), h.toFloat())) { paint() }
             drawn = t
         }
         return b
@@ -288,4 +295,4 @@ private fun DrawScope.drawProp(s: Shape, scale: Float, o: (P) -> Offset) {
 }
 
 /** The halo's rings: how wide, and how strong. */
-private val HALO = listOf(16.dp to 0.035f, 10.dp to 0.05f, 5.dp to 0.06f)
+private val HALO = listOf(12.dp to 0.045f, 5.dp to 0.06f)

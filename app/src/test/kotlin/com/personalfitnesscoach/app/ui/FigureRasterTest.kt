@@ -27,13 +27,14 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class FigureRasterTest {
-    private val w = 900; private val h = 690   // the workout card's figure on a 2.75× phone
+    // The workout card's figure on a 2.75× phone (900 × 690 on the screen), drawn at the app's picture scale.
+    private val w = (900 * RASTER_SCALE).toInt(); private val h = (690 * RASTER_SCALE).toInt()
 
     private fun picture(id: String, t: Double, muscles: Set<Muscle>, bitmap: ImageBitmap = ImageBitmap(w, h)): ImageBitmap {
         val fig = ExerciseFigures.of(id)!!
         val camera = Sculptor.camera(fig)
         bitmap.asAndroidBitmap().eraseColor(0)
-        CanvasDrawScope().draw(Density(2.75f), LayoutDirection.Ltr, Canvas(bitmap), Size(w.toFloat(), h.toFloat())) {
+        CanvasDrawScope().draw(Density(2.75f * RASTER_SCALE), LayoutDirection.Ltr, Canvas(bitmap), Size(w.toFloat(), h.toFloat())) {
             drawSculpt(Sculptor.sculpt(fig.frame(t), fig is FrontFigure, t, muscles), camera, false)
         }
         return bitmap
@@ -53,9 +54,9 @@ class FigureRasterTest {
             val primary = Library[id]!!.primary
             val lit = picture(id, 1.0, primary)
             val body = count(lit) { r, g, b, a -> a > 200 && r > 200 && g > 200 && b > 200 }
-            assertTrue("$id: a light body is drawn ($body pixels)", body > 5_000)
+            assertTrue("$id: a light body is drawn ($body pixels)", body > 3_000)
             val glowing = count(lit) { r, g, b, a -> warm(r, g, b, a) }
-            assertTrue("$id: the working muscles glow ($glowing warm pixels)", glowing > 2_000)
+            assertTrue("$id: the working muscles glow ($glowing warm pixels)", glowing > 1_000)
             val plain = count(picture(id, 1.0, emptySet())) { r, g, b, a -> warm(r, g, b, a) }
             assertTrue("$id: without muscles, far less warm colour ($plain vs $glowing)", plain * 2 < glowing)
         }
@@ -70,7 +71,7 @@ class FigureRasterTest {
         val start = System.nanoTime()
         for (i in 0 until n) picture("back-squat", i.toDouble() / n, primary, b)
         val ms = (System.nanoTime() - start) / 1e6 / n
-        println("METRIC sculpted figure, 900 x 690 picture: %.1f ms each".format(ms))
+        println("METRIC sculpted figure, %d x %d picture: %.1f ms each".format(w, h, ms))
         // A generous bound for a shared test machine: the point is to catch a drawing that became many times slower.
         assertTrue("a picture took %.1f ms".format(ms), ms < 40)
     }
