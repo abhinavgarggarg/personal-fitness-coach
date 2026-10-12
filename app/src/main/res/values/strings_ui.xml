@@ -208,6 +208,8 @@
     <string name="greet_evening">Good evening,</string>
     <!-- The date under the greeting (java.time pattern): "Monday 12 October". -->
     <string name="today_date_pattern" translatable="false">EEEE d MMMM</string>
+    <!-- The language of the date under the greeting: the language of this file's words (a translation changes it with them). -->
+    <string name="date_language" translatable="false">en-GB</string>
     <string name="today_ring_value">%1$d/%2$d</string>
     <string name="today_ring_unit">sessions</string>
     <string name="today_ring_desc">This week: %1$d of %2$d sessions done</string>
@@ -215,6 +217,8 @@
     <string name="today_week_left">%1$d done, %2$d to go. One session at a time.</string>
     <string name="today_week_all_done">Every planned session is done this week.</string>
     <string name="tile_steps">steps</string>
+    <string name="tile_steps_goal">of %1$s</string>
+    <string name="tile_best">best %1$d</string>
     <string name="tile_streak">weeks in a row</string>
     <string name="tile_year">weeks this year</string>
     <string name="tile_sessions">sessions</string>

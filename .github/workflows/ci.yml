@@ -46,6 +46,9 @@ jobs:
           python3 -I tools/gen_reason_texts.py --check
           python3 -I tools/check_strings.py
 
+      - name: Colour contrast of the Glow theme (NFR-08, D-099)
+        run: python3 -I tools/check_contrast.py
+
       - name: No destructive database migration (Phase 2 data rule 2)
         run: |
           if grep -rn "fallbackToDestructiveMigration\|DestructiveMigration" --include=*.kt --include=*.kts app data engine; then

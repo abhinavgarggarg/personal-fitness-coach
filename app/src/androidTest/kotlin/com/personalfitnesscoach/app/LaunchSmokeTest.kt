@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -29,7 +30,7 @@ class LaunchSmokeTest {
         // A fresh install shows the welcome screen; a phone that already finished onboarding shows Today (its tab is an icon with this name).
         compose.waitUntil(20_000) {
             compose.onAllNodesWithText(welcome).fetchSemanticsNodes().isNotEmpty() ||
-                compose.onAllNodes(hasContentDescription(today)).fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodes(hasContentDescription(today) and isSelected()).fetchSemanticsNodes().isNotEmpty()
         }
         if (compose.onAllNodesWithText(welcome).fetchSemanticsNodes().isNotEmpty()) compose.onNodeWithText(ctx.getString(R.string.app_name)).assertIsDisplayed()
     }

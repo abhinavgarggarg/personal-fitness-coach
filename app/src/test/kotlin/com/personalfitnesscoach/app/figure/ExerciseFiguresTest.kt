@@ -78,6 +78,76 @@ class ExerciseFiguresTest {
         }
     }
 
+    /** Review R7-01: a hand or foot that reaches for a point gets there in every key position (start, middle, end). */
+    @Test
+    fun everyReachLandsOnItsTarget() {
+        val misses = ArrayList<String>()
+        for (e in Library.all) {
+            val f = ExerciseFigures.of(e.id) as? SideFigure ?: continue
+            for (t in f.keyframes) for ((actual, wanted) in f.reaches(t)) {
+                if (actual.dist(wanted) > 3.0) misses += "${e.id} t=$t misses by ${"%.0f".format(actual.dist(wanted))}"
+            }
+        }
+        assertTrue("reaches that miss: $misses", misses.isEmpty())
+    }
+
+    /** Review R7-04: nothing snaps or jumps during a rep: between two close moments every point of the picture moves only a little. */
+    @Test
+    fun nothingJumpsDuringTheRep() {
+        val jumps = ArrayList<String>()
+        for (e in Library.all) {
+            val f = ExerciseFigures.of(e.id)!!
+            var before = points(f.frame(0.0))
+            for (i in 1..200) {
+                val now = points(f.frame(i / 200.0))
+                assertEquals(e.id, before.size, now.size)
+                val most = before.indices.maxOf { before[it].dist(now[it]) }
+                if (most > 15.0) { jumps += "${e.id} at t=${i / 200.0}: ${"%.0f".format(most)}"; break }
+                before = now
+            }
+        }
+        assertTrue("jumps: $jumps", jumps.isEmpty())
+    }
+
+    private fun points(f: Frame): List<P> = f.shapes.flatMap { s ->
+        when (s) {
+            is Shape.Bone -> listOf(s.a, s.b)
+            is Shape.Dot -> listOf(s.c)
+            is Shape.Poly -> s.points
+            is Shape.Box -> s.corners
+            is Shape.Stroke -> listOf(s.a, s.b)
+        }
+    }
+
+    /** Review R7-06: a deadlift's start has the weight on the floor (that is the picture shown standing still). */
+    @Test
+    fun deadliftsStartWithTheWeightOnTheFloor() {
+        for (id in listOf("deadlift", "trap-bar-deadlift", "kb-deadlift")) {
+            val f = ExerciseFigures.of(id)!!
+            val lowest = f.frame(f.still).shapes.filter { it is Shape.Dot && it.kind == Kind.WEIGHT }.minOf { (it as Shape.Dot).let { d -> d.c.y - d.r } }
+            assertTrue("$id: the weight is ${"%.0f".format(lowest)} above the floor", lowest in -4.0..12.0)
+        }
+    }
+
+    /** Review R7-04: in the overhead triceps extension the hands lower behind the head, never through it or in front of the face. */
+    @Test
+    fun overheadExtensionStaysBehindTheHead() {
+        val f = ExerciseFigures.of("db-overhead-triceps-extension") as SideFigure
+        for (i in 0..50) {
+            val s = f.skeleton(i / 50.0)
+            assertTrue("t=${i / 50.0}", s.nWrist.dist(s.head) > Body.HEAD + 4 && (s.nWrist.x < s.head.x + 4 || s.nWrist.y > s.head.y + Body.HEAD))
+        }
+    }
+
+    /** Review R7-06: the single-leg Romanian deadlift holds the weight in the hand opposite the standing (near) leg. */
+    @Test
+    fun singleLegRdlHoldsTheWeightOpposite() {
+        for (id in listOf("db-single-leg-rdl", "kb-single-leg-rdl")) {
+            val shapes = ExerciseFigures.of(id)!!.frame(1.0).shapes
+            assertTrue(id, shapes.any { (it is Shape.Dot || it is Shape.Bone) && it.layer == Layer.FAR && (it as? Shape.Dot)?.kind == Kind.WEIGHT || (it as? Shape.Bone)?.kind == Kind.WEIGHT && it.layer == Layer.FAR })
+        }
+    }
+
     @Test
     fun theLoopStartsAtTheStillPosition() {
         for (e in Library.all) {

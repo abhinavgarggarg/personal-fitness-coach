@@ -250,26 +250,22 @@ data class SideFigure(
     override val still: Double = 1.0,
 ) : Figure {
 
-    private fun mix(a: Limb, b: Limb, t: Double): Limb = when {
+    /**
+     * Blends two positions of one limb. Two angle positions blend their angles; two reaches measured from the same place with the same
+     * bend blend their targets (so a hand that moves with the shoulder keeps doing so). Anything else — a fixed point and a point
+     * measured from the shoulder, a reach and an angle position, different bends — blends where the hand or foot actually is, in the
+     * room, so the limb moves smoothly instead of snapping or reaching for a wrong point (review R7-01, R7-04).
+     */
+    private fun mix(a: Limb, b: Limb, t: Double, pa: Pose, pb: Pose, arm: Boolean): Limb = when {
         a is Limb.Angles && b is Limb.Angles -> Limb.Angles(lerp(a.a, b.a, t), lerp(a.b, b.b, t), lerp(a.end, b.end, t), a.rel)
-        a is Limb.Reach && b is Limb.Reach -> Limb.Reach(lerp(a.target, b.target, t), a.bend, lerp(a.end, b.end, t), a.from)
-        else -> if (t < 0.5) a else b
+        a is Limb.Reach && b is Limb.Reach && a.from == b.from && a.bend == b.bend ->
+            Limb.Reach(lerp(a.target, b.target, t), a.bend, lerp(a.end, b.end, t), a.from)
+        else -> Limb.Reach(lerp(endPoint(a, pa, arm), endPoint(b, pb, arm), t), (a as? Limb.Reach)?.bend ?: (b as Limb.Reach).bend,
+            lerp(a.end, b.end, t), null)
     }
 
-    fun pose(t: Double): Pose {
-        if (mid != null) return if (t < 0.5) between(start, mid, t * 2) else between(mid, end, t * 2 - 1)
-        return between(start, end, t)
-    }
-
-    private fun between(a: Pose, b: Pose, t: Double) = Pose(
-        lerp(a.torso, b.torso, t), lerp(a.neck, b.neck, t),
-        mix(a.near, b.near, t), mix(a.far, b.far, t), mix(a.nearArm, b.nearArm, t), mix(a.farArm, b.farArm, t),
-        lerp(a.hip, b.hip, t),
-    )
-
-    fun skeleton(t: Double): Skeleton {
-        val p = pose(t)
-        // 1. The hip: from the anchor (an anchored leg must be given by its angles).
+    /** The hip and the shoulder of a pose (from its anchor), before any limb is placed. */
+    private fun base(p: Pose): Pair<P, P> {
         val hip = when (anchor) {
             Anchor.HIP -> p.hip
             Anchor.NEAR_ANKLE, Anchor.NEAR_KNEE -> {
@@ -279,25 +275,55 @@ data class SideFigure(
                 anchorAt - joint
             }
         }
-        val shoulder = at(hip, p.torso, Body.TORSO)
+        return hip to at(hip, p.torso, Body.TORSO)
+    }
+
+    private fun target(l: Limb.Reach, hip: P, shoulder: P) = when (l.from) {
+        Joint.HIP -> hip + l.target
+        Joint.SHOULDER -> shoulder + l.target
+        else -> l.target
+    }
+
+    /** Where a limb's hand or foot is in a pose (for a reach: the point it reaches for). */
+    private fun endPoint(l: Limb, p: Pose, arm: Boolean): P {
+        val (hip, shoulder) = base(p)
+        return when (l) {
+            is Limb.Reach -> target(l, hip, shoulder)
+            is Limb.Angles -> if (arm) {
+                val off = if (l.rel) p.torso - 90.0 else 0.0
+                at(at(shoulder, l.a + off, Body.UPPER_ARM), l.b + off, Body.FOREARM)
+            } else at(at(hip, l.a, Body.THIGH), l.b, Body.SHIN)
+        }
+    }
+
+    fun pose(t: Double): Pose {
+        if (mid != null) return if (t < 0.5) between(start, mid, t * 2) else between(mid, end, t * 2 - 1)
+        return between(start, end, t)
+    }
+
+    private fun between(a: Pose, b: Pose, t: Double) = Pose(
+        lerp(a.torso, b.torso, t), lerp(a.neck, b.neck, t),
+        mix(a.near, b.near, t, a, b, arm = false), mix(a.far, b.far, t, a, b, arm = false),
+        mix(a.nearArm, b.nearArm, t, a, b, arm = true), mix(a.farArm, b.farArm, t, a, b, arm = true),
+        lerp(a.hip, b.hip, t),
+    )
+
+    fun skeleton(t: Double): Skeleton {
+        val p = pose(t)
+        val (hip, shoulder) = base(p)
         val headDir = p.torso + p.neck
         val neckTop = at(shoulder, headDir, Body.NECK)
         val head = at(neckTop, headDir, Body.HEAD)
-        fun target(l: Limb.Reach) = when (l.from) {
-            Joint.HIP -> hip + l.target
-            Joint.SHOULDER -> shoulder + l.target
-            else -> l.target
-        }
         fun leg(l: Limb): Pair<P, P> = when (l) {
             is Limb.Angles -> at(hip, l.a, Body.THIGH).let { k -> k to at(k, l.b, Body.SHIN) }
-            is Limb.Reach -> reach(hip, target(l), Body.THIGH, Body.SHIN, l.bend)
+            is Limb.Reach -> reach(hip, target(l, hip, shoulder), Body.THIGH, Body.SHIN, l.bend)
         }
         fun arm(l: Limb): Pair<P, P> = when (l) {
             is Limb.Angles -> {
                 val off = if (l.rel) p.torso - 90.0 else 0.0
                 at(shoulder, l.a + off, Body.UPPER_ARM).let { e -> e to at(e, l.b + off, Body.FOREARM) }
             }
-            is Limb.Reach -> reach(shoulder, target(l), Body.UPPER_ARM, Body.FOREARM, l.bend)
+            is Limb.Reach -> reach(shoulder, target(l, hip, shoulder), Body.UPPER_ARM, Body.FOREARM, l.bend)
         }
         val (nk, na) = leg(p.near)
         val (fk, fa) = leg(p.far)
@@ -305,6 +331,18 @@ data class SideFigure(
         val (fe, fw) = arm(p.farArm)
         return Skeleton(hip, shoulder, neckTop, head, nk, na, p.near.end, fk, fa, p.far.end, ne, nw, fe, fw, p.torso)
     }
+
+    /** For tests: each hand and foot that reaches for a point, as (where it is, where it was meant to be), at a point t. */
+    fun reaches(t: Double): List<Pair<P, P>> {
+        val p = pose(t)
+        val s = skeleton(t)
+        val (hip, shoulder) = base(p)
+        return listOf(p.near to s.nAnkle, p.far to s.fAnkle, p.nearArm to s.nWrist, p.farArm to s.fWrist)
+            .mapNotNull { (l, actual) -> (l as? Limb.Reach)?.let { actual to target(it, hip, shoulder) } }
+    }
+
+    /** The keyframes' points: 0, the middle position (when there is one) and 1. */
+    val keyframes: List<Double> get() = if (mid != null) listOf(0.0, 0.5, 1.0) else listOf(0.0, 1.0)
 
     override fun frame(t: Double): Frame {
         val s = skeleton(t)

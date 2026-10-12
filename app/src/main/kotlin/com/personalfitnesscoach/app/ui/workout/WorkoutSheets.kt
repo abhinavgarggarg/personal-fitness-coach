@@ -43,6 +43,7 @@ import com.personalfitnesscoach.app.ui.Tone
 import com.personalfitnesscoach.app.ui.kg
 import com.personalfitnesscoach.app.ui.text.Labels
 import com.personalfitnesscoach.app.ui.theme.Numerals
+import com.personalfitnesscoach.app.ui.theme.grownAtMost
 import com.personalfitnesscoach.data.core.player.PlayerView
 import com.personalfitnesscoach.data.core.session.ConditioningItem
 import com.personalfitnesscoach.engine.registry.P
@@ -187,7 +188,7 @@ private fun IntervalTimer(index: Int, c: ConditioningItem) {
             fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         p.label?.let { Body(it) }
         val left = ((leftMs + 999) / 1000).coerceAtLeast(0)
-        Text(stringResource(R.string.wk_rest_left, (left / 60).toInt(), (left % 60).toInt()), style = Numerals)
+        Text(stringResource(R.string.wk_rest_left, (left / 60).toInt(), (left % 60).toInt()), style = Numerals.grownAtMost(1f), maxLines = 1)
         if (p.rounds > 1) Note(stringResource(R.string.timer_round, p.round, p.rounds))
         if (c.interval == null && c.circuit == null) Note(stringResource(R.string.timer_steady, stringResource(Labels.zone(c.zone))))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

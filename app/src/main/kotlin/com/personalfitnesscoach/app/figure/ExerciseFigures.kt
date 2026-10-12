@@ -120,7 +120,7 @@ object ExerciseFigures {
 
     // ------------------------------------------------------------------------------------------------ hinge
     private fun deadlift(plate: Boolean = true, trap: Boolean = false, kb: Boolean = false, db: Boolean = false) = SideFigure(
-        start = Pose(torso = if (trap) 38.0 else 26.0, near = L(if (trap) -22.0 else -14.0, -104.0), nearArm = HANG),
+        start = Pose(torso = if (trap) 34.0 else 26.0, near = L(if (trap) -10.0 else -14.0, if (trap) -112.0 else -104.0), nearArm = HANG),
         end = Pose(torso = 90.0, near = STAND, nearArm = HANG),
         props = when {
             kb -> listOf(Prop.Kettlebell(NEAR_WRIST, 2.0, -12.0))
@@ -183,20 +183,31 @@ object ExerciseFigures {
         guide = Guide.Through(NEAR_ANKLE, SHOULDER, 1.05),
     )
 
-    private fun gluteBridge(singleLeg: Boolean = false, sliders: Boolean = false) = SideFigure(
+    /**
+     * Slider hamstring curl: shoulders on the floor, hips held up the whole time (the library's listed mistake is letting them drop,
+     * review R7-06); the heels slide out to nearly straight legs and back in under the knees.
+     */
+    private fun sliderCurl() = SideFigure(
+        anchor = Anchor.HIP,
+        start = Pose(torso = 189.5, neck = -10.0, hip = P(-6.0, 36.0), near = W(126.0, 14.0, 1, 60.0), nearArm = W(10.0, 9.0, -1)),
+        end = Pose(torso = 215.0, neck = -20.0, hip = P(-19.6, 71.3), near = W(60.0, 14.0, 1, 50.0), nearArm = W(10.0, 9.0, -1)),
+        props = listOf(Prop.Pad(NEAR_ANKLE, 0.0, 26.0, 6.0, dx = -2.0, dy = -12.0)),
+        guide = Guide.Through(SHOULDER, HIP, 1.0),
+    )
+
+    private fun gluteBridge(singleLeg: Boolean = false) = SideFigure(
         anchor = Anchor.HIP,
         start = Pose(
-            torso = 180.0, neck = -10.0, hip = P(-4.0, 22.0), near = W(if (sliders) 140.0 else 60.0, 14.0, 1, if (sliders) 60.0 else 0.0),
-            far = if (singleLeg) L(28.0, 28.0, 50.0) else W(if (sliders) 140.0 else 60.0, 14.0, 1, if (sliders) 60.0 else 0.0),
+            torso = 180.0, neck = -10.0, hip = P(-4.0, 22.0), near = W(60.0, 14.0, 1),
+            far = if (singleLeg) L(28.0, 28.0, 50.0) else W(60.0, 14.0, 1),
             nearArm = W(10.0, 9.0, -1),
         ),
         end = Pose(
-            torso = 215.0, neck = -20.0, hip = P(-19.6, 71.3), near = W(60.0, 14.0, 1, if (sliders) 50.0 else 0.0),
-            far = if (singleLeg) L(35.0, 35.0, 50.0) else W(60.0, 14.0, 1, if (sliders) 50.0 else 0.0),
+            torso = 215.0, neck = -20.0, hip = P(-19.6, 71.3), near = W(60.0, 14.0, 1),
+            far = if (singleLeg) L(35.0, 35.0, 50.0) else W(60.0, 14.0, 1),
             nearArm = W(10.0, 9.0, -1),
         ),
-        props = if (sliders) listOf(Prop.Pad(NEAR_ANKLE, 0.0, 26.0, 6.0, dx = -2.0, dy = -12.0)) else emptyList(),
-        guide = if (singleLeg || sliders) null else Guide.Through(SHOULDER, NEAR_KNEE, 1.0),
+        guide = if (singleLeg) null else Guide.Through(SHOULDER, NEAR_KNEE, 1.0),
     )
 
     private fun scoopToss() = SideFigure(
@@ -231,7 +242,7 @@ object ExerciseFigures {
     )
 
     private fun stepUp(h: Hold) = SideFigure(
-        start = Pose(torso = 70.0, near = L(-18.0, -104.0), far = W(-60.0, 12.0, 1), nearArm = holdArms(h, false)),
+        start = Pose(torso = 70.0, near = L(-18.0, -104.0), far = W(-60.0, 20.0, 1, -30.0), nearArm = holdArms(h, false)),
         end = Pose(torso = 88.0, near = STAND, far = L(-8.0, -96.0, -10.0), nearArm = holdArms(h, false)),
         anchorAt = P(0.0, 72.0),
         props = listOf(Prop.Block(-36.0, 0.0, 110.0, 60.0)) + holdProps(h),
@@ -351,8 +362,8 @@ object ExerciseFigures {
     )
 
     private fun pikePushUp(elevated: Boolean) = if (elevated) SideFigure(
-        start = Pose(torso = -84.0, near = L(234.0, 234.0, -40.0), nearArm = W(62.0, 8.0, -1)),
-        end = Pose(torso = -78.0, near = L(214.0, 214.0, -40.0), nearArm = W(62.0, 8.0, -1)),
+        start = Pose(torso = -84.0, near = L(226.0, 226.0, -40.0), nearArm = W(74.0, 8.0, -1)),
+        end = Pose(torso = -78.0, near = L(214.0, 214.0, -40.0), nearArm = W(74.0, 8.0, -1)),
         anchorAt = P(-40.0, 86.0),
         props = listOf(Prop.Block(-90.0, 0.0, 80.0, 60.0)),
     ) else SideFigure(
@@ -377,8 +388,8 @@ object ExerciseFigures {
     )
 
     private fun kbRow() = SideFigure(
-        start = Pose(torso = 30.0, near = L(-100.0, -100.0, 0.0), far = L(-44.0, -96.0), nearArm = S(0.0, -100.0, 1), farArm = W(80.0, 92.0, 1)),
-        end = Pose(torso = 30.0, near = L(-100.0, -100.0, 0.0), far = L(-44.0, -96.0), nearArm = S(-34.0, -42.0, 1), farArm = W(80.0, 92.0, 1)),
+        start = Pose(torso = 30.0, near = L(-100.0, -100.0, 0.0), far = L(-44.0, -96.0), nearArm = S(0.0, -100.0, 1), farArm = W(42.0, 112.0, 1)),
+        end = Pose(torso = 30.0, near = L(-100.0, -100.0, 0.0), far = L(-44.0, -96.0), nearArm = S(-34.0, -42.0, 1), farArm = W(42.0, 112.0, 1)),
         anchorAt = P(-40.0, 12.0),
         props = listOf(Prop.Kettlebell(NEAR_WRIST)),
         guide = Guide.Through(HIP, SHOULDER),
@@ -394,7 +405,7 @@ object ExerciseFigures {
     private fun seatedCableRow(machine: Boolean = false) = SideFigure(
         anchor = Anchor.HIP,
         start = Pose(torso = if (machine) 84.0 else 72.0, hip = P(0.0, if (machine) 86.0 else 50.0),
-            near = if (machine) L(0.0, -90.0) else W(128.0, 44.0, 1, 70.0), nearArm = W(112.0, if (machine) 150.0 else 104.0, -1)),
+            near = if (machine) L(0.0, -90.0) else W(128.0, 44.0, 1, 70.0), nearArm = W(if (machine) 108.0 else 112.0, if (machine) 152.0 else 104.0, -1)),
         end = Pose(torso = if (machine) 96.0 else 92.0, hip = P(0.0, if (machine) 86.0 else 50.0),
             near = if (machine) L(0.0, -90.0) else W(128.0, 44.0, 1, 70.0), nearArm = S(26.0, -48.0, -1)),
         props = (if (machine) SEAT + listOf(Prop.Block(70.0, 150.0, 20.0, 60.0), Prop.Rail(P(150.0, 0.0), P(150.0, 250.0)))
@@ -403,13 +414,13 @@ object ExerciseFigures {
     )
 
     private fun standingRow(band: Boolean, oneArm: Boolean) = SideFigure(
-        start = Pose(torso = 82.0, near = L(-70.0, -84.0), far = W(-70.0, 22.0, 1, -40.0), nearArm = W(120.0, 190.0, -1), farArm = if (oneArm) HANG else W(120.0, 190.0, -1)),
+        start = Pose(torso = 82.0, near = L(-70.0, -84.0), far = W(-70.0, 22.0, 1, -40.0), nearArm = S(96.0, -30.0, -1), farArm = if (oneArm) HANG else S(96.0, -30.0, -1)),
         end = Pose(torso = 86.0, near = L(-70.0, -84.0), far = W(-70.0, 22.0, 1, -40.0), nearArm = S(22.0, -50.0, -1), farArm = if (oneArm) HANG else S(22.0, -50.0, -1)),
         props = listOf(Prop.Line(NEAR_WRIST, P(220.0, 190.0), band = band)) + if (band) emptyList() else listOf(Prop.Rail(P(230.0, 0.0), P(230.0, 300.0))),
     )
 
     private fun facePull() = SideFigure(
-        start = Pose(torso = 86.0, near = L(-70.0, -84.0), far = W(-70.0, 22.0, 1, -40.0), nearArm = W(110.0, 252.0, -1)),
+        start = Pose(torso = 86.0, near = L(-70.0, -84.0), far = W(-70.0, 22.0, 1, -40.0), nearArm = S(96.0, 24.0, 1)),
         end = Pose(torso = 88.0, near = L(-70.0, -84.0), far = W(-70.0, 22.0, 1, -40.0), nearArm = S(8.0, 28.0, 1)),
         props = listOf(Prop.Line(NEAR_WRIST, P(220.0, 262.0)), Prop.Rail(P(230.0, 0.0), P(230.0, 320.0))),
     )
@@ -441,14 +452,14 @@ object ExerciseFigures {
     )
 
     private fun halfKneelingPulldown() = SideFigure(
-        start = halfKneel(86.0, W(120.0, 270.0, -1)),
+        start = halfKneel(86.0, S(70.0, 72.0, -1)),
         end = halfKneel(90.0, S(18.0, -10.0, -1)),
         anchorAt = P(60.0, 12.0),
         props = listOf(Prop.Line(NEAR_WRIST, P(160.0, 320.0)), Prop.Rail(P(175.0, 0.0), P(175.0, 330.0))),
     )
 
     private fun pullUp(extra: List<Prop> = emptyList(), negative: Boolean = false, knees: Boolean = false): SideFigure {
-        val bottom = Pose(torso = 96.0, hip = P(-14.0, 172.0), near = L(-96.0, if (knees) 186.0 else -140.0), nearArm = W(0.0, 362.0, -1))
+        val bottom = Pose(torso = 96.0, hip = P(-14.0, 178.0), near = L(-96.0, if (knees) 186.0 else -140.0), nearArm = W(0.0, 362.0, -1))
         val top = Pose(torso = 96.0, hip = P(-12.0, 252.0), near = L(-94.0, if (knees) 186.0 else -140.0), nearArm = W(0.0, 362.0, -1))
         return SideFigure(
             anchor = Anchor.HIP,
@@ -472,9 +483,9 @@ object ExerciseFigures {
     // ------------------------------------------------------------------------------------------------ rotation (chops in side view)
     private fun chop(hold: List<Prop>, kneel: Boolean, lift: Boolean = false, cable: P? = null): SideFigure {
         val high = S(-30.0, 90.0, 1)
-        val low = S(80.0, -70.0, -1)
+        val low = S(76.0, -66.0, -1)
         val fromP = if (lift) S(-40.0, -90.0, 1) else high
-        val toP = if (lift) S(70.0, 80.0, -1) else low
+        val toP = if (lift) S(66.0, 74.0, -1) else low
         fun pose(arm: Limb, torso: Double) = if (kneel) halfKneel(torso, arm, arm) else Pose(torso = torso, near = L(-80.0, -96.0), far = L(-104.0, -88.0), nearArm = arm, farArm = arm)
         return SideFigure(
             start = pose(fromP, if (lift) 70.0 else 94.0),
@@ -530,14 +541,14 @@ object ExerciseFigures {
         val r = if (bar) 28.0 else 15.0
         return if (standing) SideFigure(
             start = Pose(torso = -78.0, near = L(-96.0, -92.0, -20.0), nearArm = W(64.0, r, 1)),
-            end = Pose(torso = 12.0, near = L(-170.0, -170.0, -50.0), nearArm = W(330.0, r, 1)),
+            end = Pose(torso = 12.0, near = L(-170.0, -170.0, -50.0), nearArm = W(316.0, r, 1)),
             anchorAt = P(0.0, 26.0),
             props = listOf(Prop.Wheel(NEAR_WRIST, r)),
             guide = Guide.Through(NEAR_ANKLE, SHOULDER, 1.0),
         ) else SideFigure(
             anchor = Anchor.NEAR_KNEE,
             anchorAt = P(0.0, 10.0),
-            start = Pose(torso = if (bar) 38.0 else 26.0, near = L(-92.0, 180.0, 180.0), nearArm = W(if (bar) 74.0 else 82.0, r, 1)),
+            start = Pose(torso = if (bar) 33.0 else 22.0, near = L(-92.0, 180.0, 180.0), nearArm = W(if (bar) 74.0 else 82.0, r, 1)),
             end = Pose(torso = 10.0, near = L(-150.0, 180.0, 180.0), nearArm = W(240.0, r, 1)),
             props = listOf(if (bar) Prop.Plate(NEAR_WRIST, r = r) else Prop.Wheel(NEAR_WRIST, r)),
             guide = Guide.Through(NEAR_KNEE, SHOULDER, 1.0),
@@ -574,9 +585,11 @@ object ExerciseFigures {
     )
 
     private fun highPlank(tap: Boolean, row: Boolean): SideFigure {
-        val a = 25.0
+        // A straight body from the toes, at the angle that puts the shoulders straight-armed over the hands (on dumbbells: higher).
+        val handsY = if (row) 20.0 else 8.0
+        val a = Math.toDegrees(kotlin.math.asin((handsY + 99.0 - 24.0) / (Body.THIGH + Body.SHIN + Body.TORSO)))
         val body = L(180.0 + a, 180.0 + a, -62.0 + a)
-        val hands = W(56.0, if (row) 20.0 else 8.0, -1)
+        val hands = W(-150.0 + (Body.THIGH + Body.SHIN + Body.TORSO) * kotlin.math.cos(Math.toRadians(a)) - 3.0, handsY, -1)
         return SideFigure(
             start = Pose(torso = a, near = body, nearArm = hands, farArm = hands),
             end = Pose(torso = a, near = body, nearArm = if (tap) S(-6.0, -14.0, -1) else S(-30.0, -44.0, 1), farArm = hands),
@@ -613,7 +626,7 @@ object ExerciseFigures {
             val legs = if (kneeling) FLimb(180.0 + lean, 180.0 + lean, 1.0, 0.05) else FLimb(180.0 + lean, 180.0 + lean)
             return FrontPose(hip = hip, lean = lean, rightLeg = legs, leftLeg = legs,
                 leftArm = FLimb(-90.0, 0.0, 1.0, 0.35),
-                rightArm = if (reachIn) FLimb(-130.0, -150.0) else FLimb(lean + 80.0, lean + 80.0))
+                rightArm = if (reachIn) FLimb(230.0, 210.0) else FLimb(lean + 80.0, lean + 80.0))
         }
         return FrontFigure(
             start = pose(0.0, false),
@@ -637,8 +650,9 @@ object ExerciseFigures {
 
     private fun overheadExtension() = SideFigure(
         anchor = Anchor.HIP,
+        // The forearm lowers behind the head and comes back up (−104° → −262°, never in front of the face; review R7-04).
         start = seated(94.0, L(104.0, -104.0)),
-        end = seated(94.0, L(104.0, 98.0)),
+        end = seated(94.0, L(104.0, -262.0)),
         props = SEAT + backrest(94.0) + Prop.Dumbbell(NEAR_WRIST, view = DbView.UPRIGHT, dy = 6.0),
     )
 
@@ -701,15 +715,29 @@ object ExerciseFigures {
             if (extension) emptyList() else listOf(Prop.Pad(NEAR_KNEE, 0.0, 30.0, 12.0, dx = -24.0, dy = 18.0)),
     )
 
-    private fun calfRaise(machine: Boolean) = SideFigure(
-        anchor = Anchor.HIP,
-        start = Pose(torso = 90.0, hip = P(0.0, Body.HIP_H + if (machine) 0.0 else 50.0), near = L(-90.0, -90.0, if (machine) 0.0 else 14.0),
-            far = if (machine) STAND else L(-90.0, -150.0, -10.0), nearArm = if (machine) R(80.0, 100.0) else HANG, farArm = if (machine) R(80.0, 100.0) else L(-60.0, -10.0)),
-        end = Pose(torso = 90.0, hip = P(0.0, Body.HIP_H + 22.0 + if (machine) 0.0 else 50.0), near = L(-90.0, -90.0, -26.0),
-            far = if (machine) L(-90.0, -90.0, -26.0) else L(-90.0, -150.0, -10.0), nearArm = if (machine) R(80.0, 100.0) else HANG, farArm = if (machine) R(80.0, 100.0) else L(-60.0, -10.0)),
-        props = if (machine) listOf(Prop.Pad(SHOULDER, 0.0, 36.0, 12.0, dy = 14.0), Prop.Rail(P(-50.0, 0.0), P(-50.0, 300.0)), Prop.Block(-30.0, 0.0, 80.0, 6.0))
-        else listOf(Prop.Block(-60.0, 0.0, 74.0, 50.0), Prop.Dumbbell(NEAR_WRIST), Prop.Rail(P(70.0, 0.0), P(70.0, 160.0))),
-    )
+    /**
+     * Rising onto the ball of the foot (the toes stay where they are: the hip rises by what the turned foot lifts the ankle). On a step,
+     * the ball of the foot is on its edge and the heel hangs off behind, dropping below it at the start (review R7-06).
+     */
+    private fun calfRaise(machine: Boolean): SideFigure {
+        val step = if (machine) 0.0 else 50.0
+        val down = if (machine) 0.0 else 14.0
+        // The ankle sits so the ball of the foot (the underside of the toe end, see foot()) rests on the floor or the step.
+        fun ankle(turn: Double): Double {
+            val r = Math.toRadians(turn)
+            return step + 1.0 - (24.0 * kotlin.math.sin(r) - 7.5 * kotlin.math.cos(r) - 5.5)
+        }
+        fun pose(turn: Double) = Pose(torso = 90.0, hip = P(0.0, ankle(turn) + Body.SHIN + Body.THIGH), near = L(-90.0, -90.0, turn),
+            far = if (machine) L(-90.0, -90.0, turn) else L(-90.0, -150.0, -10.0),
+            nearArm = if (machine) R(80.0, 100.0) else HANG, farArm = if (machine) R(80.0, 100.0) else L(-60.0, -10.0))
+        return SideFigure(
+            anchor = Anchor.HIP,
+            start = pose(down),
+            end = pose(-26.0),
+            props = if (machine) listOf(Prop.Pad(SHOULDER, 0.0, 36.0, 12.0, dy = 14.0), Prop.Rail(P(-50.0, 0.0), P(-50.0, 300.0)))
+            else listOf(Prop.Block(12.0, 0.0, 80.0, step), Prop.Dumbbell(NEAR_WRIST), Prop.Rail(P(100.0, 0.0), P(100.0, 160.0))),
+        )
+    }
 
     private fun adductor() = FrontFigure(
         start = FrontPose(hip = P(0.0, 96.0), rightLeg = FLimb(-160.0, -96.0, 0.55, 0.86), leftLeg = FLimb(-20.0, -84.0, 0.55, 0.86)),
@@ -774,11 +802,11 @@ object ExerciseFigures {
             "romanian-deadlift" to rdl(Prop.Plate(NEAR_WRIST, r = 28.0)),
             "barbell-hip-thrust" to hipThrust(listOf(Prop.Plate(HIP, 4.0, 22.0, r = 30.0))),
             "db-romanian-deadlift" to rdl(Prop.Dumbbell(NEAR_WRIST)),
-            "db-single-leg-rdl" to singleLegRdl(Prop.Dumbbell(NEAR_WRIST)),
+            "db-single-leg-rdl" to singleLegRdl(Prop.Dumbbell(FAR_WRIST)),
             "db-hip-thrust" to hipThrust(listOf(Prop.Dumbbell(HIP, 4.0, 22.0))),
             "kb-swing" to swing(Prop.Kettlebell(NEAR_WRIST, along = true)),
             "kb-deadlift" to deadlift(kb = true),
-            "kb-single-leg-rdl" to singleLegRdl(Prop.Kettlebell(NEAR_WRIST)),
+            "kb-single-leg-rdl" to singleLegRdl(Prop.Kettlebell(FAR_WRIST)),
             "cable-pull-through" to pullThrough(),
             "machine-hip-thrust" to hipThrust(listOf(Prop.Pad(HIP, 0.0, 50.0, 14.0, dy = 22.0)), machine = true),
             "back-extension" to backExtension(),
@@ -913,7 +941,7 @@ object ExerciseFigures {
             "pec-deck" to fly(machine = true),
             "leg-extension" to legMachine(extension = true),
             "leg-curl" to legMachine(extension = false),
-            "slider-hamstring-curl" to gluteBridge(sliders = true),
+            "slider-hamstring-curl" to sliderCurl(),
             "calf-raise-machine" to calfRaise(machine = true),
             "db-single-leg-calf-raise" to calfRaise(machine = false),
             "hip-adductor-machine" to adductor(),

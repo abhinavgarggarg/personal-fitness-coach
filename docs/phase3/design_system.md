@@ -21,29 +21,34 @@ Chosen by the Product Owner on 12 October 2026 (D-099) from four directions on t
 | Glass card | white 5.5% on the background, 1 dp white 10% border | white, 1 dp #DCE3EC border | Cards, tiles, chips, the tab bar |
 | Text | #F4F7FB | #0E1726 | Headings and body text |
 | Muted text | #9DB0C6 | #4F5F73 | Notes and labels |
-| Warm (main) | #FF6B2C, gradient #FF5A1F → #FF6B2C → #FF9248 | #E8551C | The main button, the active tab, today's ring, the current week, selected answers |
-| Cool | #2DE2D0, links #5BE7D9 | #0B7F75 | Done states, coach answers, "Why?" links, goals met |
-| Caution | #FFB020 (tint 10%) | #9A6200 | "Something hurts", things to watch |
-| Alert | #FF5A6E (tint 12%) | #C2253C | "Warning signs", stops |
+| Warm (accent) | #FF6B2C | #E8551C | The active tab, rings, the current day, selected answers, glows |
+| Main button | gradient #D9480F → #EE6424, white words | the same | Start, Done as planned, I'm ready |
+| Cool | #2DE2D0 | #0E9C90 | Done marks, the coach's answers, goals met, form guides |
+| Link | #5BE7D9 | #0A7268 | "Why?" and other text actions |
+| Caution | words #FFCF7A on #FFB020 at 10% | words #8A5600 on #FFB020 at 12% | "Something hurts", things to watch |
+| Alert | words #FF9DAA on #FF5A6E at 12% | words #B4203A on #FF5A6E at 10% | "Warning signs", stops |
+
+Every pair a screen uses is checked by `tools/check_contrast.py` (in CI): words at least 4.5:1, large words and icons at least 3:1. The white words on the main button are 18 sp extra bold (large text) and keep 3:1 or better from one end of the gradient to the other.
 
 ## Type
 - **Font:** Plus Jakarta Sans, built into the app so it works offline. It uses the SIL Open Font License; the licence ships in `assets/licenses/`.
-- **Numbers (set targets, rest timer):** 76 sp, ExtraBold, tight letter-spacing.
+- **Numbers (set targets, timers):** 76 sp, ExtraBold, tight letter-spacing; the rest timer inside its ring is 60 sp.
 - **Screen titles:** 26 sp, ExtraBold.
-- **Card titles:** 20 sp, ExtraBold.
+- **Card and section titles:** 22 sp, ExtraBold.
 - **Body:** 16 sp, Medium.
-- **Labels and notes:** 14 sp, SemiBold.
+- **Labels and notes:** 13–14 sp, Medium or SemiBold.
+- **Large text (200%):** every word grows with the phone's text size. The very large numbers grow only up to their own size (they are already bigger than body text at 200%, and a weight like "102.5" must not break in the middle); the medium numbers grow up to 1.4 times. Rows of three (safety buttons, tiles) and the week's days wrap onto more lines rather than cut words.
 
 ## Shapes
 - **Cards:** 22 dp corners.
 - **Chips and small buttons:** 16 dp corners.
 - **Main buttons and the tab bar:** fully rounded pills; the tab bar floats above the bottom edge.
-- **Progress:** rings with round caps; bars with rounded tops.
+- **Progress:** rings with round caps; bars with rounded ends.
 
 ## Glow, motion and touch
-- **Glow:** a soft blurred halo in the warm colour behind the main button, the active tab marker and the progress rings. It is drawn once, never animated.
-- **Motion:** 150–250 ms ease for screens and cards. The exercise animations loop slowly (about 4 s per rep), and they become still pictures when the phone's "remove animations" setting is on.
-- **Touch:** a short tick when a set is logged; the existing buzz when a rest ends. Nothing vibrates otherwise.
+- **Glow:** a soft warm halo behind the main button, the active tab marker and the progress rings (still), and behind the exercise figures (it moves with the figure).
+- **Motion:** the exercise figures loop slowly (about 4 s per rep) and the rest ring runs down; screens change at once, without sliding. The figures stand still when the phone's "remove animations" setting is on.
+- **Touch:** a short tick when a set is logged (it follows the phone's touch-feedback setting); the existing buzz when a rest ends. Nothing else vibrates.
 
 ## Icons
 - **Style:** simple 2 dp line icons drawn in the app, with no icon library.
@@ -55,14 +60,14 @@ Chosen by the Product Owner on 12 October 2026 (D-099) from four directions on t
 ## Exercise pictures (CR-004)
 - **Figures:** one original figure for every exercise in the library (157), light grey on a dark "studio" card with a soft warm halo. The far arm and leg are drawn darker and a little behind, so left and right read apart. Equipment is drawn simply: plates, dumbbells, kettlebells, benches, boxes, cables (thin lines to a pulley), bands (teal), bars and machine frames.
 - **How they are made:** each figure is computed from a few joint angles for the start and the end of one rep (or a point a hand or foot reaches for), with fixed segment lengths, so every exercise shares one style and nothing is a copied picture. Most are seen from the side; movements across the body (lateral raises, flyes, side planks, shrugs, the Pallof press) are seen from the front. Code: `app/figure/` (plain Kotlin, tested on the computer), drawn by `ui/ExerciseFigure.kt`.
-- **Motion:** start → end → start in a slow loop (about 4 s; 5 s for holds, under 2 s for steps and carries, a quick move for jumps and swings). The loop starts at the end position, and the figure stands still at the end position when the phone's "remove animations" setting is on.
+- **Motion:** start → end → start in a slow loop (about 4 s; 5 s for holds, under 2 s for steps and carries, a quick move for jumps and swings). The loop begins at the figure's "still" position, which is also the picture shown when the phone's "remove animations" setting is on: the end of the rep for most exercises, the start where it tells more (a deadlift or a pull-through starts with the weight low; a sit-to-stand starts seated).
 - **Form point:** a dashed line in the cool colour for the main form point where one applies: a flat back on hinges and rows, a straight body on planks and push-ups.
-- **Checked by tests:** every library exercise has a figure (and no figure is left over); no part of the body sinks through the floor at any point of the rep; arms and legs never change length; every picture fits a card.
+- **Checked by tests:** every library exercise has a figure (and no figure is left over); no part of the body sinks through the floor at any point of the rep; arms and legs never change length; a hand or foot that reaches for a point (a bar, a handle, the floor) gets there in every key position; nothing jumps between two moments of the rep; deadlifts start with the weight on the floor; every picture fits a card.
 - **Where:** the Today workout card (the session's first exercise) and the workout screen (the current exercise, with its first coaching cue on the card).
 - **No photos:** the app has no photo library and no internet. The figures are original drawings, not copies.
 
 ## Screens (Part 7)
-- **Today:** "Good morning," and the date with a round settings button; anything that needs attention first; this week's ring (sessions done out of planned) with a line of words; tiles for steps (when counted), the session's minutes and the run of weeks (once there is one); the workout on a studio card with its first exercise moving; one glowing Start; each reason as a glass row with its "Why?"; the week as seven glass day tiles.
+- **Today:** "Good morning," and the date with a round settings button; anything that needs attention first; this week's ring (sessions done out of planned) with a line of words; tiles for steps (when counted, with the day's target) and the run of weeks (once there is one, with the best run); the workout on a studio card with its first exercise moving on the right and its name and minutes on the left; one glowing Start; each reason as a glass row with its "Why?"; the week as seven glass day tiles.
 - **Workout:** the exercise on a studio card; the set as "Set 2 of 3" with dots, and the target as very large numbers ("60 kg × 8 reps"); "Done as planned" glowing; the effort answers as large glass buttons; the rest as a ring with the time inside, ±30 s and skip; "Something hurts" (amber), "Warning signs" (red) and "Change time" as tinted pills in a bar that never scrolls away.
 - **Coach:** the question as a warm bubble on the right, the answer as a glass bubble with a teal edge on the left; suggested questions as full-width glass rows.
 - **Progress:** tiles for the run of weeks, weeks this year and sessions; weekly minutes as rounded bars (warm, teal once the 150-minute goal is met) with the goal as a dashed line; strength lines in the warm colour with a soft fill.

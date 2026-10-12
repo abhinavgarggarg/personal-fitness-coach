@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.personalfitnesscoach.R
+import com.personalfitnesscoach.app.ui.theme.grownAtMost
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
@@ -328,14 +329,15 @@ fun IconRoundButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label
  */
 @Composable
 fun StatTile(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, value: String, label: String, description: String,
-             modifier: Modifier = Modifier) {
+             modifier: Modifier = Modifier, sub: String? = null) {
     Column(modifier.glass(RoundedTile).padding(horizontal = 8.dp, vertical = 12.dp)
         .clearAndSetSemantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         androidx.compose.material3.Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
-        Text(value, style = com.personalfitnesscoach.app.ui.theme.NumeralsSmall.copy(fontSize = 24.sp, lineHeight = 30.sp), color = Glass.text,
-            textAlign = TextAlign.Center)
+        Text(value, style = com.personalfitnesscoach.app.ui.theme.NumeralsSmall.copy(fontSize = 24.sp, lineHeight = 30.sp).grownAtMost(1f),
+            color = Glass.text, textAlign = TextAlign.Center, maxLines = 1)
         Text(label, style = MaterialTheme.typography.labelMedium, color = Glass.muted, textAlign = TextAlign.Center)
+        sub?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = Glass.muted, textAlign = TextAlign.Center) }
     }
 }
 
@@ -418,7 +420,7 @@ fun NumberField(label: String, value: Double?, onValue: (Double?) -> Unit, modif
         singleLine = true,
         shape = ChipShape,
         colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(focusedBorderColor = Glass.warm, unfocusedBorderColor = Glass.glassBorder,
-            focusedContainerColor = Glass.glass, unfocusedContainerColor = Glass.glass, cursorColor = Glass.warm, focusedLabelColor = Glass.warm,
+            focusedContainerColor = Glass.glass, unfocusedContainerColor = Glass.glass, cursorColor = Glass.warm, focusedLabelColor = Glass.text,
             unfocusedLabelColor = Glass.muted, focusedTextColor = Glass.text, unfocusedTextColor = Glass.text),
         keyboardOptions = KeyboardOptions(keyboardType = if (decimals) KeyboardType.Decimal else KeyboardType.Number),
         modifier = modifier.fillMaxWidth(),

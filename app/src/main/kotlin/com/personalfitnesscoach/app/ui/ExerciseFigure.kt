@@ -1,6 +1,5 @@
 package com.personalfitnesscoach.app.ui
 
-import android.graphics.BlurMaskFilter
 import android.provider.Settings
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -24,9 +23,6 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.Role
@@ -118,21 +114,11 @@ private fun DrawScope.drawFigure(frame: Frame, camera: Bounds, alignEnd: Boolean
     fun o(p: P) = Offset(ox + p.x.toFloat() * scale, floorY - p.y.toFloat() * scale)
     val shapes = frame.shapes.sortedBy { it.layer.ordinal }
 
-    // The floor line, then a soft warm halo behind the body (drawn once per frame, blurred).
+    // The floor line, then a soft warm halo behind the body: three wide, faint strokes per body part (no blur filter, so it looks the
+    // same on every phone and costs little per frame; review R7-12).
     drawLine(Studio.floor, Offset(0f, floorY), Offset(size.width, floorY), strokeWidth = 2.dp.toPx())
-    drawIntoCanvas { c ->
-        val paint = android.graphics.Paint().apply {
-            isAntiAlias = true
-            style = android.graphics.Paint.Style.STROKE
-            strokeCap = android.graphics.Paint.Cap.ROUND
-            color = Studio.halo.copy(alpha = 0.42f).toArgb()
-            maskFilter = BlurMaskFilter(9.dp.toPx(), BlurMaskFilter.Blur.NORMAL)
-        }
-        for (s in shapes) if (s is Shape.Bone && s.kind == Kind.BODY && (s.layer == Layer.BODY || s.layer == Layer.NEAR)) {
-            paint.strokeWidth = s.width.toFloat() * scale + 8.dp.toPx()
-            val a = o(s.a); val b = o(s.b)
-            c.nativeCanvas.drawLine(a.x, a.y, b.x, b.y, paint)
-        }
+    for ((extra, alpha) in HALO) for (s in shapes) if (s is Shape.Bone && s.kind == Kind.BODY && (s.layer == Layer.BODY || s.layer == Layer.NEAR)) {
+        drawLine(Studio.halo.copy(alpha = alpha), o(s.a), o(s.b), strokeWidth = s.width.toFloat() * scale + extra.toPx(), cap = StrokeCap.Round)
     }
     for (s in shapes) {
         when (s) {
@@ -155,6 +141,9 @@ private fun DrawScope.drawFigure(frame: Frame, camera: Bounds, alignEnd: Boolean
         }
     }
 }
+
+/** The halo's rings: how much wider than the body part, and how strong. */
+private val HALO = listOf(16.dp to 0.07f, 10.dp to 0.09f, 5.dp to 0.12f)
 
 private fun colour(k: Kind, l: Layer): Color = when {
     k == Kind.WEIGHT && l == Layer.FAR -> Studio.farWeight

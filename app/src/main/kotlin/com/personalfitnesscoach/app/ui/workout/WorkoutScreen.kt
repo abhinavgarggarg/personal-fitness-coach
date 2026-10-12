@@ -73,6 +73,7 @@ import com.personalfitnesscoach.app.ui.minutes
 import com.personalfitnesscoach.app.ui.text.ReasonTexts
 import com.personalfitnesscoach.app.ui.theme.Numerals
 import com.personalfitnesscoach.app.ui.theme.NumeralsSmall
+import com.personalfitnesscoach.app.ui.theme.grownAtMost
 import com.personalfitnesscoach.data.core.player.LiftEntry
 import com.personalfitnesscoach.data.core.player.LiftView
 import com.personalfitnesscoach.data.core.player.PlayerView
@@ -103,6 +104,9 @@ fun WorkoutScreen(s: Screen.Workout) {
         onDispose { view.keepScreenOn = false }
     }
     BackHandler { if (s.sheet != null) a.run { closeSheet() } else a.run { openEnd() } }
+    // The rest's full length, kept here so the ring doesn't refill after ±30 s or after a sheet was open (review R7-13).
+    val restLength = remember { RestLength() }
+    v.restEndsAtMs?.let { restLength.follow(it, v.lifts.sumOf { l -> l.sets.size }) }
     val sheet = s.sheet
     if (sheet != null) {
         WorkoutSheetPanel(v, sheet)
@@ -116,7 +120,7 @@ fun WorkoutScreen(s: Screen.Workout) {
             InfoCard(stringResource(R.string.wk_paused), Tone.WARN) { PrimaryButton(stringResource(R.string.wk_resume), { a.run { resume() } }) }
         }
         s.notice?.let { Notice(it, v) }
-        v.restEndsAtMs?.let { end -> RestPanel(end, v) }
+        v.restEndsAtMs?.let { end -> RestPanel(end, v, restLength.totalMs) }
         when (val step = v.step) {
             is Step.Warmup -> StagePanel(stringResource(R.string.wk_warmup_title), stringResource(R.string.wk_warmup_body, minutes(step.minutes)), step.drills,
                 Stage.WARMUP)
@@ -157,12 +161,14 @@ private fun TopRow(v: PlayerView) {
 @Composable
 private fun SafetyRow(v: PlayerView) {
     val a = LocalActions.current
+    // Three side by side (icon above the words); at large text sizes one per line, so no word is ever broken (review R7-11).
+    val roomy = androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.3f
     FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = 3) {
+        verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = if (roomy) 3 else 1) {
         val current = (v.step as? Step.Lift)?.lift?.rowId
-        TonalPill(stringResource(R.string.wk_hurts), { a.run { openHurts(current) } }, Modifier.weight(1f), PfcIcons.Hurts, Tone.WARN, stacked = true)
-        TonalPill(stringResource(R.string.wk_red_flag), { a.run { openRedFlag() } }, Modifier.weight(1f), PfcIcons.Warning, Tone.ALERT, stacked = true)
-        TonalPill(stringResource(R.string.wk_change_time), { a.run { openChangeTime() } }, Modifier.weight(1f), PfcIcons.Time, stacked = true)
+        TonalPill(stringResource(R.string.wk_hurts), { a.run { openHurts(current) } }, Modifier.weight(1f), PfcIcons.Hurts, Tone.WARN, stacked = roomy)
+        TonalPill(stringResource(R.string.wk_red_flag), { a.run { openRedFlag() } }, Modifier.weight(1f), PfcIcons.Warning, Tone.ALERT, stacked = roomy)
+        TonalPill(stringResource(R.string.wk_change_time), { a.run { openChangeTime() } }, Modifier.weight(1f), PfcIcons.Time, stacked = roomy)
     }
 }
 
@@ -188,7 +194,7 @@ private fun Notice(n: WorkoutNotice, v: PlayerView) {
 // ============================================================================================================ rest (A2)
 /** The rest countdown: ±30 s and skip; when it ends the phone buzzes and the next set is shown. Read out by TalkBack as it changes. */
 @Composable
-private fun RestPanel(endsAtMs: Long, v: PlayerView) {
+private fun RestPanel(endsAtMs: Long, v: PlayerView, totalMs: Long) {
     val a = LocalActions.current
     val context = LocalContext.current
     // Counted on the phone's elapsed-time clock from the moment the rest is shown (Phase 2 section 11): changing the time of day never
@@ -207,7 +213,29 @@ private fun RestPanel(endsAtMs: Long, v: PlayerView) {
         }
     }
     val next = (v.step as? Step.Lift)?.lift?.exercise?.name
-    RestCountdown(leftMs, startLeft, next, { a.run { adjustRest(-30) } }, { a.run { adjustRest(30) } }, { a.run { skipRest() } })
+    RestCountdown(leftMs, totalMs, next, { a.run { adjustRest(-30) } }, { a.run { adjustRest(30) } }, { a.run { skipRest() } })
+}
+
+/**
+ * How long the current rest is in all: set when a rest starts (a new set was logged), and moved by exactly as much as the end moves
+ * when the user adds or takes away 30 s. Plain bookkeeping, not screen state.
+ */
+private class RestLength {
+    private var setsLogged = -1
+    private var endsAtMs = 0L
+    var totalMs = 1L
+        private set
+
+    fun follow(endsAt: Long, sets: Int) {
+        if (sets != setsLogged) {
+            setsLogged = sets
+            endsAtMs = endsAt
+            totalMs = (endsAt - System.currentTimeMillis()).coerceAtLeast(1)
+        } else if (endsAt != endsAtMs) {
+            totalMs = (totalMs + (endsAt - endsAtMs)).coerceAtLeast(1)
+            endsAtMs = endsAt
+        }
+    }
 }
 
 /** The rest as a ring that empties as it runs down, the time in big numbers, ±30 s and skip; "Rest over" when it ends. */
@@ -219,12 +247,10 @@ internal fun RestCountdown(leftMs: Long, totalMs: Long, next: String?, onMinus: 
             if (left > 0) {
                 Text(stringResource(R.string.wk_rest_title), style = MaterialTheme.typography.titleMedium, color = Glass.muted)
                 // The number stays the size of the ring at any text size (it is already huge); everything else grows with the text.
-                val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
                 ProgressRing((leftMs.toFloat() / totalMs.coerceAtLeast(1)).coerceIn(0f, 1f), 216.dp, 14.dp) {
                     // Not a live region: TalkBack would read every second (R5-18); the end of the rest is announced instead.
                     Text(stringResource(R.string.wk_rest_left, (left / 60).toInt(), (left % 60).toInt()),
-                        style = Numerals.copy(fontSize = (60f / fontScale.coerceAtLeast(1f)).sp, lineHeight = (64f / fontScale.coerceAtLeast(1f)).sp),
-                        color = Glass.text)
+                        style = Numerals.copy(fontSize = 60.sp, lineHeight = 64.sp).grownAtMost(1f), color = Glass.text, maxLines = 1)
                 }
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
                     maxItemsInEachRow = 3) {
@@ -305,7 +331,13 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
     fun entry(rir: Double?): LiftEntry = if (t.unit == DoseUnit.SECONDS) LiftEntry(load, null, amount, rir, form) else LiftEntry(load, amount, null, rir, form)
     // A loaded set needs its weight: an emptied weight field never saves a set as bodyweight (R5-22).
     val canLog = t.load == null || load != null
-    fun logIt(rir: Double?) { a.run { log(l.rowId, entry(rir), expected = t) } }
+    // A short tick confirms the set (D-099 "touch"); it follows the phone's own touch-feedback setting.
+    val view = LocalView.current
+    fun logIt(rir: Double?) {
+        view.performHapticFeedback(if (android.os.Build.VERSION.SDK_INT >= 30) android.view.HapticFeedbackConstants.CONFIRM
+            else android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+        a.run { log(l.rowId, entry(rir), expected = t) }
+    }
 
     if (t.askForm) {
         Text(stringResource(R.string.wk_form_q), style = MaterialTheme.typography.bodyLarge)
@@ -367,24 +399,32 @@ private fun TargetCard(t: SetTarget, l: LiftView) {
             }
         }
         // "60 kg × 8 reps" in big numbers (Phase 2 A1); the parts wrap onto a new line at large text sizes.
-        // The weight and "× reps" are two groups: when they don't fit on one line, "× 10 reps" moves down as a whole.
-        FlowRow(verticalArrangement = Arrangement.Center, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            val load = t.load
-            Row(Modifier.alignByBaseline(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (load != null) {
-                    Text(kg(load), style = Numerals, color = g.text, modifier = Modifier.alignByBaseline())
-                    Text(stringResource(R.string.unit_kg_alone), style = MaterialTheme.typography.titleMedium, color = g.muted, modifier = Modifier.alignByBaseline())
-                } else {
-                    Text(stringResource(R.string.bodyweight), style = NumeralsSmall, color = g.text, modifier = Modifier.alignByBaseline())
-                }
-            }
-            Row(Modifier.alignByBaseline(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(TIMES, style = NumeralsSmall, color = g.muted, modifier = Modifier.alignByBaseline())
-                Text(doseText(t.reps, t.unit, t.perSide), style = NumeralsSmall, color = g.text, modifier = Modifier.alignByBaseline())
-            }
-        }
+        TargetNumbers(t.load, doseText(t.reps, t.unit, t.perSide))
         t.targetRir?.let { r ->
             Note(if (r <= 0.0) stringResource(R.string.to_failure) else stringResource(R.string.rir_target, kg(r)))
+        }
+    }
+}
+
+/**
+ * "60 kg × 8 reps" in big numbers (Phase 2 A1). The weight and "× reps" are two groups: when they don't fit on one line, "× 8 reps"
+ * moves down as a whole; the numbers stop growing at their own size, so "102.5" never breaks (review R7-03, D-103).
+ */
+@Composable
+internal fun TargetNumbers(load: Double?, dose: String) {
+    val g = Glass
+    FlowRow(verticalArrangement = Arrangement.Center, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.alignByBaseline(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (load != null) {
+                Text(kg(load), style = Numerals.grownAtMost(1f), color = g.text, maxLines = 1, modifier = Modifier.alignByBaseline())
+                Text(stringResource(R.string.unit_kg_alone), style = MaterialTheme.typography.titleMedium, color = g.muted, modifier = Modifier.alignByBaseline())
+            } else {
+                Text(stringResource(R.string.bodyweight), style = NumeralsSmall.grownAtMost(1.4f), color = g.text, modifier = Modifier.alignByBaseline())
+            }
+        }
+        Row(Modifier.alignByBaseline(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(TIMES, style = NumeralsSmall.grownAtMost(1.4f), color = g.muted, modifier = Modifier.alignByBaseline())
+            Text(dose, style = NumeralsSmall.grownAtMost(1.4f), color = g.text, modifier = Modifier.alignByBaseline())
         }
     }
 }

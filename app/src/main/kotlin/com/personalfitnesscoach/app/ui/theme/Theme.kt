@@ -22,8 +22,8 @@ import com.personalfitnesscoach.R
 /**
  * The "Glow" look (D-099, `docs/phase3/design_system.md`): deep navy, frosted-glass cards, an orange-to-teal glow for what matters, big
  * white numbers. Dark by default (NFR-09: gyms are bright and phones are held at arm's length), light on request. Text keeps at least
- * 4.5:1 contrast (NFR-08); white on the orange button is bold and at least 18 sp (large text, 3:1 or better). Colour is never the only
- * signal: every state also has words.
+ * 4.5:1 contrast (NFR-08); white on the orange button is bold and at least 18 sp (large text, 3:1 or better across the whole gradient).
+ * `tools/check_contrast.py` checks every pair in CI. Colour is never the only signal: every state also has words.
  */
 @Immutable
 data class GlowColors(
@@ -59,7 +59,8 @@ val DarkGlow = GlowColors(
     bgTop = Color(0xFF101A2B), bgMid = Color(0xFF0A101C), bgBottom = Color(0xFF080D17),
     glass = Color(0x0EFFFFFF), glassStrong = Color(0x17FFFFFF), glassBorder = Color(0x1AFFFFFF),
     text = Color(0xFFF4F7FB), muted = Color(0xFF9DB0C6),
-    warm = Color(0xFFFF6B2C), warmStart = Color(0xFFFF5A1F), warmEnd = Color(0xFFFF9248), onWarm = Color(0xFFFFFFFF),
+    // The button runs warmStart → warmEnd, dark enough for its white words (large bold text, ≥ 3:1; review R7-02); warm is the accent.
+    warm = Color(0xFFFF6B2C), warmStart = Color(0xFFD9480F), warmEnd = Color(0xFFEE6424), onWarm = Color(0xFFFFFFFF),
     cool = Color(0xFF2DE2D0), link = Color(0xFF5BE7D9),
     caution = Color(0xFFFFCF7A), cautionTint = Color(0x1AFFB020),
     alert = Color(0xFFFF9DAA), alertTint = Color(0x1FFF5A6E),
@@ -71,8 +72,8 @@ val LightGlow = GlowColors(
     bgTop = Color(0xFFF4F7FB), bgMid = Color(0xFFF1F4F9), bgBottom = Color(0xFFEEF2F7),
     glass = Color(0xFFFFFFFF), glassStrong = Color(0xFFF6F8FB), glassBorder = Color(0xFFDCE3EC),
     text = Color(0xFF0E1726), muted = Color(0xFF4F5F73),
-    warm = Color(0xFFE8551C), warmStart = Color(0xFFD9480F), warmEnd = Color(0xFFF26B2A), onWarm = Color(0xFFFFFFFF),
-    cool = Color(0xFF0E9C90), link = Color(0xFF0B7F75),
+    warm = Color(0xFFE8551C), warmStart = Color(0xFFD9480F), warmEnd = Color(0xFFEE6424), onWarm = Color(0xFFFFFFFF),
+    cool = Color(0xFF0E9C90), link = Color(0xFF0A7268),
     caution = Color(0xFF8A5600), cautionTint = Color(0x1FFFB020),
     alert = Color(0xFFB4203A), alertTint = Color(0x1AFF5A6E),
     bar = Color(0xF2FFFFFF),
@@ -160,6 +161,18 @@ val Numerals = TextStyle(fontFamily = Jakarta, fontSize = 76.sp, lineHeight = 80
 
 /** Medium numbers: tiles, the second number of a target. */
 val NumeralsSmall = TextStyle(fontFamily = Jakarta, fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp)
+
+/**
+ * This style, growing with the phone's text size only up to [maxScale] times. The big numbers are already larger than body text at
+ * 200%, and at twice their size "102.5 kg" or a 25:00 timer would break in the middle of the number (review R7-03, D-103).
+ */
+@Composable
+fun TextStyle.grownAtMost(maxScale: Float): TextStyle {
+    val scale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+    if (scale <= maxScale) return this
+    val k = maxScale / scale
+    return copy(fontSize = fontSize * k, lineHeight = if (lineHeight.isSp) lineHeight * k else lineHeight)
+}
 
 @Composable
 fun PfcTheme(dark: Boolean = true, content: @Composable () -> Unit) {

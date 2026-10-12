@@ -279,6 +279,27 @@ class ScreensTest {
         assertTrue(c.screen.value is Screen.Coach)
     }
 
+    /** Review R7-03: at 200% text the set target's weight stays on one line ("102.5" never breaks), and so do the timer's digits. */
+    @Config(sdk = [35], fontScale = 2.0f)
+    @Test fun `200 percent text - a heavy target and a long timer keep their numbers whole`() {
+        compose.setContent {
+            PfcTheme {
+                androidx.compose.foundation.layout.Column {
+                    com.personalfitnesscoach.app.ui.workout.TargetNumbers(102.5, s(R.string.reps_exact, 10))
+                    com.personalfitnesscoach.app.ui.workout.RestCountdown(25 * 60_000L, 25 * 60_000L, null, {}, {}, {})
+                }
+            }
+        }
+        compose.waitForIdle()
+        for (text in listOf("102.5", s(R.string.wk_rest_left, 25, 0))) {
+            val node = compose.onAllNodes(named(text))[0].fetchSemanticsNode()
+            val layouts = ArrayList<androidx.compose.ui.text.TextLayoutResult>()
+            node.config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+            assertEquals("$text on one line", 1, layouts.single().lineCount)
+            assertTrue("$text fits its width", !layouts.single().didOverflowWidth)
+        }
+    }
+
     @Config(sdk = [35], fontScale = 2.0f)
     @Test fun `200 percent text - the check-in and the workout still show every control`() {
         val c = launch { onboardQuickly(it) }
