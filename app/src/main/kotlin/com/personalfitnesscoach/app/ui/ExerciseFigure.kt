@@ -124,7 +124,6 @@ fun ExerciseFigure(exerciseId: String, description: String, modifier: Modifier =
 @Composable
 fun ExerciseFigure(figure: Figure, description: String, modifier: Modifier = Modifier, alignEnd: Boolean = false, muscles: Set<Muscle> = emptySet()) {
     val still = animationsOff()
-    val camera = remember(figure) { Sculptor.camera(figure) }
     val front = figure is FrontFigure
     // The rep as a picture number, FIGURE_FPS a second: the figure is redrawn only when the picture changes (holds included).
     val picture = if (still) null else {
@@ -137,10 +136,15 @@ fun ExerciseFigure(figure: Figure, description: String, modifier: Modifier = Mod
     val raster = remember(figure, muscles, alignEnd) { FigureRaster() }
     Canvas(modifier.semantics { contentDescription = description; role = Role.Image }) {
         val t = picture?.value?.let { (k, n) -> figure.timing.t(k.toDouble() / n + figure.loopStart) } ?: figure.still
+        // The camera is worked out once per figure, when it is first drawn, and kept: composing a screen stays quick (Part 8).
+        val camera = CAMERAS.getOrPut(figure) { Sculptor.camera(figure) }
         val image = raster.render(this, t) { drawSculpt(Sculptor.sculpt(figure.frame(t), front, t, muscles), camera, alignEnd) }
         drawImage(image, dstSize = IntSize(size.width.toInt(), size.height.toInt()), filterQuality = FilterQuality.Low)
     }
 }
+
+/** Each figure's camera, worked out on its first drawing. */
+private val CAMERAS = java.util.concurrent.ConcurrentHashMap<Figure, Bounds>()
 
 /** How many new pictures a second the moving figure shows: smooth for a slow rep (film runs at 24), and little work for the phone. */
 internal const val FIGURE_FPS = 24

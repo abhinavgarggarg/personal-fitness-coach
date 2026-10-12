@@ -28,7 +28,9 @@ class LaunchSmokeTest {
         val welcome = ctx.getString(R.string.onb_welcome_title)
         val today = ctx.getString(R.string.tab_today)
         // A fresh install shows the welcome screen; a phone that already finished onboarding shows Today (its tab is an icon with this name).
+        // The screen is read only once it has settled (Part 8).
         compose.waitUntil(20_000) {
+            compose.waitForIdle()
             compose.onAllNodesWithText(welcome).fetchSemanticsNodes().isNotEmpty() ||
                 compose.onAllNodes(hasContentDescription(today) and isSelected()).fetchSemanticsNodes().isNotEmpty()
         }

@@ -57,12 +57,23 @@ class ScreensOnDeviceTest {
     /** A control's words, or the spoken name of an icon-only control (the tab bar, the settings button; D-099). */
     private fun named(text: String) = hasText(text) or hasContentDescription(text)
 
+    /**
+     * Reads the screen only once it has settled: the app's own work (the controller on its thread, a new screen being laid out) is
+     * finished first, so the test never reads the screen while the phone is still building it (CR-008 known limit, Part 8).
+     */
+    private fun present(text: String): Boolean {
+        compose.waitForIdle()
+        return compose.onAllNodes(named(text)).fetchSemanticsNodes().isNotEmpty()
+    }
+
     private fun tapThenWait(text: String, until: () -> Boolean) {
-        compose.waitUntil(10_000) { compose.onAllNodes(named(text)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { present(text) }
         val n = compose.onAllNodes(named(text))[0]
         runCatching { n.performScrollTo() }
+        compose.waitForIdle()
         n.performClick()
-        compose.waitUntil(15_000, until)
+        compose.waitUntil(15_000) { compose.waitForIdle(); until() }
+        compose.waitForIdle()
     }
 
     @Test fun aWorkoutStartsFromTodayThroughTheScreens() {
@@ -109,7 +120,7 @@ class ScreensOnDeviceTest {
         tapThenWait(s(R.string.action_back)) { (c.screen.value as? Screen.Coach)?.model?.why == null }
         tapThenWait(s(R.string.gemini_ask)) { (c.screen.value as? Screen.Coach)?.model?.share != null }
         // The exact text is shown before anything leaves the app; Gemini isn't on the test phones, so the share sheet is offered.
-        compose.waitUntil(10_000) { compose.onAllNodesWithText(s(R.string.gemini_share_any)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.waitForIdle(); compose.onAllNodesWithText(s(R.string.gemini_share_any)).fetchSemanticsNodes().isNotEmpty() }
         tapThenWait(s(R.string.action_cancel)) { (c.screen.value as? Screen.Coach)?.model?.share == null }
         tapThenWait(s(R.string.tab_history)) { c.screen.value is Screen.History }
         tapThenWait(s(R.string.tab_progress)) { c.screen.value is Screen.Progress }
