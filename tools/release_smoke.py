@@ -126,6 +126,14 @@ class Smoke:
         adb("shell", "input", "swipe", str(self.w // 2), str(int(self.h * 0.72)), str(self.w // 2), str(int(self.h * 0.30)), "350")
         time.sleep(0.8)
 
+    def hide_keyboard(self):
+        """Closes the on-screen keyboard (it would take the swipes). Back is pressed only while the keyboard shows, so the step stays."""
+        for _ in range(3):
+            if "mInputShown=true" not in adb("shell", "dumpsys", "input_method"):
+                return
+            adb("shell", "input", "keyevent", "4")
+            time.sleep(1)
+
     def scroll_top(self):
         """A new step may open where the last one was scrolled to: back to its top."""
         for _ in range(6):
@@ -197,8 +205,7 @@ class Smoke:
         field, _ = self.wait_any([S["onb_birth_year"]])
         self.tap(field)
         adb("shell", "input", "text", "1985")
-        adb("shell", "input", "keyevent", "111")  # Escape closes the keyboard without leaving the screen
-        time.sleep(1)
+        self.hide_keyboard()
         self.tap_text(S["exp_1_3"], enabled=False)
         self.tap_text(S["action_continue"])
         self.wait_any([S["onb_cond_title"], S["onb_cond_none"]])

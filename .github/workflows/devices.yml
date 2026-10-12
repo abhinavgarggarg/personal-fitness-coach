@@ -7,6 +7,11 @@ name: Devices
 
 on:
   workflow_dispatch:
+    inputs:
+      release_smoke_only:
+        description: "Run only the release build smoke test"
+        type: boolean
+        default: false
   schedule:
     - cron: "17 3 * * 0" # Sundays 03:17 UTC
   push:
@@ -17,6 +22,7 @@ permissions:
 
 jobs:
   emulator:
+    if: ${{ !inputs.release_smoke_only }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:

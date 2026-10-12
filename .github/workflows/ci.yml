@@ -70,7 +70,7 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon :engine:test :engine:jacocoTestReport 2>&1 | tee gradle-engine.log
           python3 -I tools/ci_summary.py "Engine tests=engine/build/test-results/test/*.xml"
-          python3 -I tools/coverage_summary.py engine/build/reports/jacoco/test/jacocoTestReport.xml
+          python3 -I tools/coverage_summary.py engine/build/reports/jacoco/test/jacocoTestReport.xml --min 90
 
       - name: Rule coverage report
         run: |
