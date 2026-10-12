@@ -4,7 +4,13 @@ import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.dp
 import com.personalfitnesscoach.app.flow.AppController
 import com.personalfitnesscoach.app.flow.ConditionAnswers
 import com.personalfitnesscoach.app.flow.ExperienceBand
@@ -197,4 +203,76 @@ class ScreenshotsTest {
         shot("settings-goals")
     }
 
+    private fun outDir(): Boolean {
+        val dir = System.getenv("PFC_SCREENSHOTS")
+        if (dir.isNullOrBlank()) return false
+        out = File(dir).also { it.mkdirs() }
+        return true
+    }
+
+    /** Part 7: the rest ring (a rest still running can't be reached with the fixed clock above) and Today in the light theme. */
+    @Test fun restAndLight() {
+        assumeTrue("set PFC_SCREENSHOTS to an output folder", outDir())
+        n = 80
+        val clock = FixedClock(0, ZoneId.of("UTC")).also { it.setDay(monday, hour = 18) }
+        val c = AppController({ PfcData(InMemoryRowStore(), clock, "1.0.0") }, NoPlatform(), "1.0.0")
+        runBlocking {
+            c.start(); c.submitOnboarding()
+            c.editOnboarding { it.copy(screening = ScreeningQuestion.entries.associateWith { q -> q == ScreeningQuestion.REGULARLY_ACTIVE }) }; c.submitOnboarding()
+            c.editOnboarding { it.copy(birthYear = 1984, months = ExperienceBand.ONE_TO_3_YEARS, comfortable = setOf("squat", "hinge", "press", "row")) }; c.submitOnboarding()
+            c.editOnboarding { it.copy(noneOfThese = true) }; c.submitOnboarding()
+            c.submitOnboarding(); c.submitOnboarding()
+            c.editOnboarding { it.copy(gym = c.preset(GymPreset.FULL_GYM), gymPreset = GymPreset.FULL_GYM) }; c.submitOnboarding()
+            repeat(4) { c.submitOnboarding() }
+        }
+        val actions = Actions(CoroutineScope(SupervisorJob()), c, Dispatchers.Main, doubleTapMs = 0)
+        var light by androidx.compose.runtime.mutableStateOf(false)
+        compose.setContent {
+            if (!light) PfcTheme {
+                GlowBackground(androidx.compose.ui.Modifier.fillMaxSize()) {
+                    androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.padding(20.dp)) {
+                        com.personalfitnesscoach.app.ui.workout.RestCountdown(75_000, 120_000, "Barbell back squat", {}, {}, {})
+                    }
+                }
+            } else PfcTheme(dark = false) { PfcApp(actions) }
+        }
+        shot("workout-rest")
+        light = true
+        compose.waitForIdle()
+        shot("today-light-evening")
+    }
+
+    /** CR-004: every exercise's figure at the end of its rep, as drawn on the screens (four pictures, 42 exercises each). */
+    @Test fun everyExerciseFigure() {
+        assumeTrue("set PFC_SCREENSHOTS to an output folder", outDir())
+        n = 90
+        val all = com.personalfitnesscoach.engine.library.Library.all
+        var page by androidx.compose.runtime.mutableStateOf(0)
+        compose.setContent {
+            PfcTheme {
+                GlowBackground(androidx.compose.ui.Modifier.fillMaxSize()) {
+                    androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.padding(8.dp),
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+                        all.drop(page * 42).take(42).chunked(3).forEach { row ->
+                            androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+                                row.forEach { e ->
+                                    StudioCard(androidx.compose.ui.Modifier.size(124.dp, 152.dp)) {
+                                        ExerciseFigure(e.id, e.name, androidx.compose.ui.Modifier.matchParentSize().padding(bottom = 18.dp))
+                                        androidx.compose.material3.Text(e.name, style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                            color = androidx.compose.ui.graphics.Color(0xFFC6D3E2), maxLines = 1,
+                                            modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomStart).padding(6.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (p in 0 until (all.size + 41) / 42) {
+            page = p
+            compose.waitForIdle()
+            shot("figures-${p + 1}")
+        }
+    }
 }

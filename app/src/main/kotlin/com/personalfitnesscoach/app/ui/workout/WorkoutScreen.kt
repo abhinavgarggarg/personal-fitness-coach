@@ -206,14 +206,21 @@ private fun RestPanel(endsAtMs: Long, v: PlayerView) {
             delay(250)
         }
     }
+    val next = (v.step as? Step.Lift)?.lift?.exercise?.name
+    RestCountdown(leftMs, startLeft, next, { a.run { adjustRest(-30) } }, { a.run { adjustRest(30) } }, { a.run { skipRest() } })
+}
+
+/** The rest as a ring that empties as it runs down, the time in big numbers, ±30 s and skip; "Rest over" when it ends. */
+@Composable
+internal fun RestCountdown(leftMs: Long, totalMs: Long, next: String?, onMinus: () -> Unit, onPlus: () -> Unit, onSkip: () -> Unit) {
     val left = ((leftMs + 999) / 1000).coerceAtLeast(0)
     GlassCard {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             if (left > 0) {
                 Text(stringResource(R.string.wk_rest_title), style = MaterialTheme.typography.titleMedium, color = Glass.muted)
-                // The ring empties as the rest runs down; the number stays the size of the ring at any text size (it is already huge).
+                // The number stays the size of the ring at any text size (it is already huge); everything else grows with the text.
                 val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
-                ProgressRing((leftMs.toFloat() / startLeft.coerceAtLeast(1)).coerceIn(0f, 1f), 216.dp, 14.dp) {
+                ProgressRing((leftMs.toFloat() / totalMs.coerceAtLeast(1)).coerceIn(0f, 1f), 216.dp, 14.dp) {
                     // Not a live region: TalkBack would read every second (R5-18); the end of the rest is announced instead.
                     Text(stringResource(R.string.wk_rest_left, (left / 60).toInt(), (left % 60).toInt()),
                         style = Numerals.copy(fontSize = (60f / fontScale.coerceAtLeast(1f)).sp, lineHeight = (64f / fontScale.coerceAtLeast(1f)).sp),
@@ -221,15 +228,15 @@ private fun RestPanel(endsAtMs: Long, v: PlayerView) {
                 }
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
                     maxItemsInEachRow = 3) {
-                    TonalPill(stringResource(R.string.wk_rest_minus), { a.run { adjustRest(-30) } }, Modifier.weight(1f))
-                    TonalPill(stringResource(R.string.wk_rest_plus), { a.run { adjustRest(30) } }, Modifier.weight(1f))
-                    TonalPill(stringResource(R.string.wk_rest_skip), { a.run { skipRest() } }, Modifier.weight(1f))
+                    TonalPill(stringResource(R.string.wk_rest_minus), onMinus, Modifier.weight(1f))
+                    TonalPill(stringResource(R.string.wk_rest_plus), onPlus, Modifier.weight(1f))
+                    TonalPill(stringResource(R.string.wk_rest_skip), onSkip, Modifier.weight(1f))
                 }
             } else {
                 Text(stringResource(R.string.wk_rest_over), style = MaterialTheme.typography.titleLarge, color = Glass.cool,
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive })
             }
-            (v.step as? Step.Lift)?.lift?.let { l -> Note(stringResource(R.string.wk_next, l.exercise.name)) }
+            next?.let { Note(stringResource(R.string.wk_next, it)) }
         }
     }
 }
