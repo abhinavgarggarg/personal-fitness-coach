@@ -215,7 +215,6 @@
     <string name="today_week_left">%1$d done, %2$d to go. One session at a time.</string>
     <string name="today_week_all_done">Every planned session is done this week.</string>
     <string name="tile_steps">steps</string>
-    <string name="tile_minutes">min session</string>
     <string name="tile_streak">weeks in a row</string>
     <string name="tile_year">weeks this year</string>
     <string name="tile_sessions">sessions</string>

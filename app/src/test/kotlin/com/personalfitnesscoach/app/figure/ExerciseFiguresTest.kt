@@ -79,6 +79,17 @@ class ExerciseFiguresTest {
     }
 
     @Test
+    fun theLoopStartsAtTheStillPosition() {
+        for (e in Library.all) {
+            val f = ExerciseFigures.of(e.id)!!
+            assertEquals(e.id, f.still, f.timing.t(f.loopStart), 1e-9)
+        }
+        // A deadlift rests on its start (the bar on the floor), a squat on its end (the bottom).
+        assertEquals(0.0, ExerciseFigures.of("deadlift")!!.still, 0.0)
+        assertEquals(1.0, ExerciseFigures.of("back-squat")!!.still, 0.0)
+    }
+
+    @Test
     fun theTimingHoldsAndReturns() {
         for (timing in listOf(Timing.NORMAL, Timing.HOLD, Timing.STEP, Timing.FAST)) {
             assertEquals(0.0, timing.t(0.0), 1e-9)

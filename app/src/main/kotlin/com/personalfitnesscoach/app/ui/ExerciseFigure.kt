@@ -103,7 +103,7 @@ fun ExerciseFigure(figure: Figure, description: String, modifier: Modifier = Mod
         loop.animateFloat(0f, 1f, infiniteRepeatable(tween((figure.timing.seconds * 1000).toInt(), easing = LinearEasing)), label = "rep")
     }
     Canvas(modifier.semantics { contentDescription = description; role = Role.Image }) {
-        val t = u?.value?.let { figure.timing.t(it.toDouble() + figure.timing.peak) } ?: 1.0
+        val t = u?.value?.let { figure.timing.t(it.toDouble() + figure.loopStart) } ?: figure.still
         drawFigure(figure.frame(t), camera, alignEnd)
     }
 }

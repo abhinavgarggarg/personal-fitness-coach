@@ -106,6 +106,7 @@ object ExerciseFigures {
         end = Pose(torso = 88.0, near = STAND, nearArm = FOLDED),
         props = listOf(Prop.Block(-118.0, 0.0, 72.0, 70.0), Prop.Rail(P(-118.0, 70.0), P(-128.0, 170.0))),
         timing = Timing.FAST,
+        still = 0.0,
     )
 
     private fun boxJump() = SideFigure(
@@ -128,6 +129,7 @@ object ExerciseFigures {
             else -> emptyList()
         },
         guide = Guide.Through(HIP, SHOULDER),
+        still = 0.0,
     )
 
     private fun rdl(hold: Prop?) = SideFigure(
@@ -166,6 +168,7 @@ object ExerciseFigures {
         end = Pose(torso = 90.0, near = STAND, nearArm = L(-80.0, -70.0)),
         props = listOf(Prop.Line(MID_WRIST, P(-150.0, 18.0)), Prop.Rail(P(-160.0, 0.0), P(-160.0, 300.0))),
         guide = Guide.Through(HIP, SHOULDER),
+        still = 0.0,
     )
 
     private fun backExtension() = SideFigure(

@@ -38,6 +38,7 @@ import com.personalfitnesscoach.app.ui.Glass
 import com.personalfitnesscoach.app.ui.GlassCard
 import com.personalfitnesscoach.app.ui.PfcIcons
 import com.personalfitnesscoach.app.ui.StatTile
+import com.personalfitnesscoach.app.ui.TileRow
 import com.personalfitnesscoach.app.ui.glass
 import com.personalfitnesscoach.app.ui.InfoCard
 import com.personalfitnesscoach.app.ui.LocalActions
@@ -83,7 +84,7 @@ fun ProgressScreen(s: Screen.Progress) {
             Note(stringResource(R.string.prog_weeks_intro))
             // ADH-001: the run of weeks only once there is one, and the weeks trained this year, which never go down.
             val g = Glass
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            TileRow(1 + (if (o.streak.best > 0) 1 else 0) + (if (o.streak.weeksTrainedThisYear > 0) 1 else 0)) {
                 if (o.streak.best > 0) StatTile(PfcIcons.Flame, g.warm, o.streak.current.toString(), stringResource(R.string.tile_streak),
                     stringResource(R.string.prog_streak, o.streak.current, o.streak.best), Modifier.weight(1f))
                 if (o.streak.weeksTrainedThisYear > 0) StatTile(PfcIcons.Trophy, g.cool, o.streak.weeksTrainedThisYear.toString(), stringResource(R.string.tile_year),

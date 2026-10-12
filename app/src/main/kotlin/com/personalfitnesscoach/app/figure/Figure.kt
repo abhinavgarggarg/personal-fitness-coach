@@ -181,6 +181,15 @@ sealed interface Figure {
     val timing: Timing
     fun frame(t: Double): Frame
 
+    /**
+     * The position shown standing still (animations off) and where the loop starts: 1 = the end of the rep (most exercises), 0 = the
+     * start, when the start tells more (a deadlift's start is the bar on the floor; its end is just standing).
+     */
+    val still: Double get() = 1.0
+
+    /** Where in the loop (0–1) to begin, so the first picture is the [still] position. */
+    val loopStart: Double get() = if (still < 0.5) timing.holdStart / 2 else timing.peak
+
     /** The box that holds every frame: the camera never moves during the animation. */
     fun camera(): Bounds = (0..12).map { frame(it / 12.0).extent() }.reduce { a, b -> a.union(b) }
 }
@@ -238,6 +247,7 @@ data class SideFigure(
     override val timing: Timing = Timing.NORMAL,
     /** An optional middle position (a foot lifted in a step, the top of a jump): start → mid → end. */
     val mid: Pose? = null,
+    override val still: Double = 1.0,
 ) : Figure {
 
     private fun mix(a: Limb, b: Limb, t: Double): Limb = when {

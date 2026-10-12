@@ -160,9 +160,9 @@ private fun SafetyRow(v: PlayerView) {
     FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = 3) {
         val current = (v.step as? Step.Lift)?.lift?.rowId
-        TonalPill(stringResource(R.string.wk_hurts), { a.run { openHurts(current) } }, Modifier.weight(1f), PfcIcons.Hurts, Tone.WARN)
-        TonalPill(stringResource(R.string.wk_red_flag), { a.run { openRedFlag() } }, Modifier.weight(1f), PfcIcons.Warning, Tone.ALERT)
-        TonalPill(stringResource(R.string.wk_change_time), { a.run { openChangeTime() } }, Modifier.weight(1f), PfcIcons.Time)
+        TonalPill(stringResource(R.string.wk_hurts), { a.run { openHurts(current) } }, Modifier.weight(1f), PfcIcons.Hurts, Tone.WARN, stacked = true)
+        TonalPill(stringResource(R.string.wk_red_flag), { a.run { openRedFlag() } }, Modifier.weight(1f), PfcIcons.Warning, Tone.ALERT, stacked = true)
+        TonalPill(stringResource(R.string.wk_change_time), { a.run { openChangeTime() } }, Modifier.weight(1f), PfcIcons.Time, stacked = true)
     }
 }
 
@@ -367,16 +367,21 @@ private fun TargetCard(t: SetTarget, l: LiftView) {
             }
         }
         // "60 kg × 8 reps" in big numbers (Phase 2 A1); the parts wrap onto a new line at large text sizes.
-        FlowRow(verticalArrangement = Arrangement.Center, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // The weight and "× reps" are two groups: when they don't fit on one line, "× 10 reps" moves down as a whole.
+        FlowRow(verticalArrangement = Arrangement.Center, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             val load = t.load
-            if (load != null) {
-                Text(kg(load), style = Numerals, color = g.text, modifier = Modifier.alignByBaseline())
-                Text(stringResource(R.string.unit_kg_alone), style = MaterialTheme.typography.titleMedium, color = g.muted, modifier = Modifier.alignByBaseline())
-            } else {
-                Text(stringResource(R.string.bodyweight), style = NumeralsSmall, color = g.text, modifier = Modifier.alignByBaseline())
+            Row(Modifier.alignByBaseline(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (load != null) {
+                    Text(kg(load), style = Numerals, color = g.text, modifier = Modifier.alignByBaseline())
+                    Text(stringResource(R.string.unit_kg_alone), style = MaterialTheme.typography.titleMedium, color = g.muted, modifier = Modifier.alignByBaseline())
+                } else {
+                    Text(stringResource(R.string.bodyweight), style = NumeralsSmall, color = g.text, modifier = Modifier.alignByBaseline())
+                }
             }
-            Text(TIMES, style = NumeralsSmall, color = g.muted, modifier = Modifier.alignByBaseline())
-            Text(doseText(t.reps, t.unit, t.perSide), style = NumeralsSmall, color = g.text, modifier = Modifier.alignByBaseline())
+            Row(Modifier.alignByBaseline(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(TIMES, style = NumeralsSmall, color = g.muted, modifier = Modifier.alignByBaseline())
+                Text(doseText(t.reps, t.unit, t.perSide), style = NumeralsSmall, color = g.text, modifier = Modifier.alignByBaseline())
+            }
         }
         t.targetRir?.let { r ->
             Note(if (r <= 0.0) stringResource(R.string.to_failure) else stringResource(R.string.rir_target, kg(r)))

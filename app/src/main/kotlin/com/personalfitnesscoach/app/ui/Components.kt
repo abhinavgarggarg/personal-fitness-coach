@@ -347,7 +347,7 @@ private val RoundedTile = androidx.compose.foundation.shape.RoundedCornerShape(2
  */
 @Composable
 fun TonalPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
-              tone: Tone = Tone.NEUTRAL, enabled: Boolean = true, centred: Boolean = true) {
+              tone: Tone = Tone.NEUTRAL, enabled: Boolean = true, centred: Boolean = true, stacked: Boolean = false) {
     val g = Glass
     val on = enabled && !LocalBusy.current
     val (veil, edge, ink) = when (tone) {
@@ -355,12 +355,31 @@ fun TonalPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
         Tone.WARN -> Triple(g.cautionTint, g.caution.copy(alpha = 0.55f), g.caution)
         Tone.ALERT -> Triple(g.alertTint, g.alert.copy(alpha = 0.6f), g.alert)
     }
+    if (stacked) {
+        // The icon above the words: three pills side by side keep whole words on a phone (no "Somethin / g hurts").
+        Column(modifier.heightIn(min = PrimaryHeight).widthIn(min = PrimaryHeight).clip(ChipShape).background(veil).border(1.dp, edge, ChipShape)
+            .clickable(enabled = on, role = Role.Button, onClick = onClick).padding(horizontal = 6.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
+            if (icon != null) androidx.compose.material3.Icon(icon, contentDescription = null, tint = if (on) ink else g.muted, modifier = Modifier.size(20.dp))
+            Text(text, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = if (on) ink else g.muted, textAlign = TextAlign.Center)
+        }
+        return
+    }
     Row(modifier.heightIn(min = PrimaryHeight).widthIn(min = PrimaryHeight).clip(ChipShape).background(veil).border(1.dp, edge, ChipShape)
         .clickable(enabled = on, role = Role.Button, onClick = onClick).padding(horizontal = if (centred) 12.dp else 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp, if (centred) Alignment.CenterHorizontally else Alignment.Start)) {
         if (icon != null) androidx.compose.material3.Icon(icon, contentDescription = null, tint = if (on) ink else g.muted, modifier = Modifier.size(18.dp))
         Text(text, style = MaterialTheme.typography.labelLarge, color = if (on) ink else g.muted, textAlign = if (centred) TextAlign.Center else TextAlign.Start)
+    }
+}
+
+/** Tiles in a row of three equal slots, so one or two tiles keep the same size as three. */
+@Composable
+fun TileRow(count: Int, modifier: Modifier = Modifier, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        content()
+        repeat((3 - count).coerceAtLeast(0)) { Spacer(Modifier.weight(1f)) }
     }
 }
 

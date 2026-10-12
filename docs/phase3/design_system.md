@@ -53,5 +53,16 @@ Chosen by the Product Owner on 12 October 2026 (D-099) from four directions on t
 - **Labels:** the tab bar shows icons only, as in the chosen look. Each icon has its spoken name for TalkBack, and the current tab is marked.
 
 ## Exercise pictures (CR-004)
-- **Figures:** original figures, light grey on a dark "studio" card with a warm halo. They move from the start to the end of the rep and back, with the main form point marked in the cool colour. They are drawn from joint angles, so every exercise shares one style and works offline.
+- **Figures:** one original figure for every exercise in the library (157), light grey on a dark "studio" card with a soft warm halo. The far arm and leg are drawn darker and a little behind, so left and right read apart. Equipment is drawn simply: plates, dumbbells, kettlebells, benches, boxes, cables (thin lines to a pulley), bands (teal), bars and machine frames.
+- **How they are made:** each figure is computed from a few joint angles for the start and the end of one rep (or a point a hand or foot reaches for), with fixed segment lengths, so every exercise shares one style and nothing is a copied picture. Most are seen from the side; movements across the body (lateral raises, flyes, side planks, shrugs, the Pallof press) are seen from the front. Code: `app/figure/` (plain Kotlin, tested on the computer), drawn by `ui/ExerciseFigure.kt`.
+- **Motion:** start → end → start in a slow loop (about 4 s; 5 s for holds, under 2 s for steps and carries, a quick move for jumps and swings). The loop starts at the end position, and the figure stands still at the end position when the phone's "remove animations" setting is on.
+- **Form point:** a dashed line in the cool colour for the main form point where one applies: a flat back on hinges and rows, a straight body on planks and push-ups.
+- **Checked by tests:** every library exercise has a figure (and no figure is left over); no part of the body sinks through the floor at any point of the rep; arms and legs never change length; every picture fits a card.
+- **Where:** the Today workout card (the session's first exercise) and the workout screen (the current exercise, with its first coaching cue on the card).
 - **No photos:** the app has no photo library and no internet. The figures are original drawings, not copies.
+
+## Screens (Part 7)
+- **Today:** "Good morning," and the date with a round settings button; anything that needs attention first; this week's ring (sessions done out of planned) with a line of words; tiles for steps (when counted), the session's minutes and the run of weeks (once there is one); the workout on a studio card with its first exercise moving; one glowing Start; each reason as a glass row with its "Why?"; the week as seven glass day tiles.
+- **Workout:** the exercise on a studio card; the set as "Set 2 of 3" with dots, and the target as very large numbers ("60 kg × 8 reps"); "Done as planned" glowing; the effort answers as large glass buttons; the rest as a ring with the time inside, ±30 s and skip; "Something hurts" (amber), "Warning signs" (red) and "Change time" as tinted pills in a bar that never scrolls away.
+- **Coach:** the question as a warm bubble on the right, the answer as a glass bubble with a teal edge on the left; suggested questions as full-width glass rows.
+- **Progress:** tiles for the run of weeks, weeks this year and sessions; weekly minutes as rounded bars (warm, teal once the 150-minute goal is met) with the goal as a dashed line; strength lines in the warm colour with a soft fill.

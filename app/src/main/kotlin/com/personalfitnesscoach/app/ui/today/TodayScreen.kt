@@ -56,6 +56,7 @@ import com.personalfitnesscoach.app.ui.SmallAction
 import com.personalfitnesscoach.app.ui.StatTile
 import com.personalfitnesscoach.app.ui.StudioCard
 import com.personalfitnesscoach.app.ui.SwitchRow
+import com.personalfitnesscoach.app.ui.TileRow
 import com.personalfitnesscoach.app.ui.Tone
 import com.personalfitnesscoach.app.ui.text.Labels
 import com.personalfitnesscoach.app.ui.text.ReasonTexts
@@ -192,7 +193,7 @@ private fun WeekRing(m: TodayModel) {
 
 private class TileData(val icon: ImageVector, val tint: Color, val value: String, val label: String, val description: String)
 
-/** Steps (when counted), the session's minutes and the streak (once there is one: never "0 weeks" for someone just starting, ADH-001). */
+/** Steps (when counted) and the run of weeks (once there is one: never "0 weeks" for someone just starting, ADH-001); the minutes are on the workout card. */
 @Composable
 private fun Tiles(m: TodayModel) {
     val g = Glass
@@ -202,13 +203,12 @@ private fun Tiles(m: TodayModel) {
         val desc = if (target != null) stringResource(R.string.today_steps_target, steps, target) else stringResource(R.string.today_steps, steps)
         tiles += TileData(PfcIcons.Steps, g.cool, steps.toString(), stringResource(R.string.tile_steps), desc)
     }
-    val minutes = m.plan.user.profile.sessionMinutes
-    tiles += TileData(PfcIcons.Clock, g.link, minutes.toString(), stringResource(R.string.tile_minutes), stringResource(R.string.today_about_minutes, minutes))
     if (m.streak.best > 0) {
         tiles += TileData(PfcIcons.Flame, g.warm, m.streak.current.toString(), stringResource(R.string.tile_streak),
             stringResource(R.string.today_streak, m.streak.current, m.streak.best))
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    if (tiles.isEmpty()) return
+    TileRow(tiles.size) {
         tiles.forEach { t -> StatTile(t.icon, t.tint, t.value, t.label, t.description, Modifier.weight(1f)) }
     }
 }
@@ -217,9 +217,9 @@ private fun Tiles(m: TodayModel) {
 @Composable
 private fun WorkoutCard(name: String, day: PlannedDay, minutes: Int) {
     val first = day.slots.firstOrNull()?.exercise
-    StudioCard(Modifier.fillMaxWidth().heightIn(min = 188.dp)) {
+    StudioCard(Modifier.fillMaxWidth().heightIn(min = 200.dp)) {
         if (first != null) ExerciseFigure(first.id, stringResource(R.string.figure_desc, first.name),
-            Modifier.matchParentSize().padding(start = 120.dp), alignEnd = true)
+            Modifier.matchParentSize().padding(start = 96.dp), alignEnd = true)
         Column(Modifier.align(Alignment.BottomStart).padding(18.dp).widthIn(max = 220.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(name, style = MaterialTheme.typography.titleLarge, color = Color(0xFFF4F7FB))
             Text(stringResource(R.string.today_card_line, minutes, day.slots.size), style = MaterialTheme.typography.bodyMedium, color = Color(0xFFC6D3E2))
