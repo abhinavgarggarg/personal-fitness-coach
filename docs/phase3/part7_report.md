@@ -69,20 +69,20 @@ An independent reviewer found 14 problems: 3 high, 5 medium and 6 low. Its re-ch
 - Every picture fits a card.
 
 **On GitHub:**
-- **CI:** the run is green. 654 tests pass: engine 408, data 176 and app 70. The app tests include the screens with 200% text and touch targets, plus a new test that a 102.5 kg target and a 25:00 timer stay whole and full size at 200% text.
+- **CI** (run 38219232014 for the last code change, 286eed0; run 38219707286 for this report) is green. 654 tests pass: engine 408, data 176 and app 70. The app tests include the screens with 200% text and touch targets, plus a new test that a 102.5 kg target and a 25:00 timer stay whole and full size at 200% text.
 - **Other CI checks:**
   - **Contrast:** the new contrast check passes.
   - **Permissions:** unchanged, with no internet.
   - **Rule coverage:** 152/152.
   - **Build:** the debug APK built.
-- **Devices:** 9 of 9 device tests pass on each of the five emulated devices:
+- **Devices** (run 38219465877): 9 of 9 device tests pass on each of the five emulated devices:
   - Android 10, small phone;
   - Android 12;
   - Android 14 at 200% text;
   - Android 16 phone;
   - Android 16 tablet.
 
-**Screen pictures** are in `docs/phase3/screens/`:
+**Screen pictures** (Screenshots run 38219464018) are in `docs/phase3/screens/` and on the screens page (Personal Fitness Coach Screens):
 - every screen, numbers 01 to 37;
 - the rest ring (81);
 - Today in the light theme at evening (82);
