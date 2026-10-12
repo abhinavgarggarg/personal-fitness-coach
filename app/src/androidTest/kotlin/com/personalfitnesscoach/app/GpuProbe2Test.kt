@@ -77,4 +77,29 @@ class GpuProbe2Test {
         for (s in parts) for (g in s.glows) drawPath(path(s.outline), Brush.radialGradient(0f to Color(0xCCFF6B2C), 1f to Color(0x00FF6B2C),
             center = o(g.c), radius = (g.r * scale).toFloat()), alpha = 0.9f)
     }
+
+    @Test fun q1_propsOnly() = draw { o, scale, _ ->
+        for (s in frame.items.filterIsInstance<Sculpt.Prop>()) when (val sh = s.shape) {
+            is com.personalfitnesscoach.app.figure.Shape.Dot -> { val c = o(sh.c); val r = sh.r.toFloat() * scale
+                drawCircle(Brush.radialGradient(0f to Color(0xFF9DB0CC), 1f to Color(0xFF3D4F6E), center = c, radius = r * 1.4f), r, c)
+                drawCircle(Color(0x59BECDE4), r, c, style = Stroke(1.dp.toPx())) }
+            is com.personalfitnesscoach.app.figure.Shape.Bone -> drawLine(Color(0xFF6E83A6), o(sh.a), o(sh.b), strokeWidth = sh.width.toFloat() * scale, cap = StrokeCap.Round)
+            else -> Unit
+        }
+    }
+    @Test fun q2_partsFillGlowEdge() = draw { o, scale, path ->
+        for (s in parts) {
+            val p = path(s.outline)
+            drawPath(p, Brush.linearGradient(0f to Color.White, 0.5f to Color.LightGray, 1f to Color.Gray, start = o(s.lit), end = o(s.shade)))
+            for (g in s.glows) drawPath(p, Brush.radialGradient(0f to Color(0xCCFF6B2C), 1f to Color(0x00FF6B2C), center = o(g.c), radius = (g.r * scale).toFloat()), alpha = 0.9f)
+            drawPath(p, Color(0x73080C16), style = Stroke(0.8.dp.toPx()))
+        }
+    }
+    @Test fun q3_sameTwice() = draw { o, scale, path ->
+        repeat(2) { for (s in parts) {
+            val p = path(s.outline)
+            drawPath(p, Brush.linearGradient(0f to Color.White, 1f to Color.Gray, start = o(s.lit), end = o(s.shade)))
+            drawPath(p, Color(0x73080C16), style = Stroke(0.8.dp.toPx()))
+        } }
+    }
 }
