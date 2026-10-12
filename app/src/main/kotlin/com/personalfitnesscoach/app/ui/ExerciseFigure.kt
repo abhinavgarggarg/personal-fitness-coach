@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.Role
@@ -161,8 +162,10 @@ private fun DrawScope.drawSculpt(frame: SculptFrame, camera: Bounds, alignEnd: B
     if (low.isNotEmpty()) {
         val x0 = o(P(low.minOf { it.x }, 0.0)).x; val x1 = o(P(low.maxOf { it.x }, 0.0)).x
         val rx = (x1 - x0) / 2 + 18f * scale; val ry = 6f * scale + 3.dp.toPx(); val cx = (x0 + x1) / 2
-        drawOval(Brush.radialGradient(0f to Color(0x80000000), 1f to Color.Transparent, Offset(cx, floorY), rx),
-            Offset(cx - rx, floorY - ry), Size(2 * rx, 2 * ry))
+        // A round soft shadow, squashed flat onto the floor.
+        this.scale(1f, ry / rx, Offset(cx, floorY)) {
+            drawCircle(Brush.radialGradient(0f to Color(0x80000000), 1f to Color.Transparent, center = Offset(cx, floorY), radius = rx), rx, Offset(cx, floorY))
+        }
     }
 
     // A soft warm halo behind the body: wide, faint strokes along each near body part (no blur filter, so it looks the same on every
