@@ -12,6 +12,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,6 +20,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -119,17 +123,51 @@ fun ExerciseFigure(figure: Figure, description: String, modifier: Modifier = Mod
     val still = animationsOff()
     val camera = remember(figure) { Sculptor.camera(figure) }
     val front = figure is FrontFigure
-    val u = if (still) null else {
+    // The rep as a picture number, FIGURE_FPS a second: the figure is redrawn only when the picture changes (holds included).
+    val picture = if (still) null else {
         val loop = rememberInfiniteTransition(label = "figure")
-        loop.animateFloat(0f, 1f, infiniteRepeatable(tween((figure.timing.seconds * 1000).toInt(), easing = LinearEasing)), label = "rep")
+        val u = loop.animateFloat(0f, 1f, infiniteRepeatable(tween((figure.timing.seconds * 1000).toInt(), easing = LinearEasing)), label = "rep")
+        val pictures = (figure.timing.seconds * FIGURE_FPS).toInt().coerceAtLeast(1)
+        remember(figure) { derivedStateOf { (u.value * pictures).toInt() % pictures to pictures } }
     }
+    // One picture per figure and placement: a new exercise starts a new picture.
+    val raster = remember(figure, muscles, alignEnd) { FigureRaster() }
     Canvas(modifier.semantics { contentDescription = description; role = Role.Image }) {
-        val t = u?.value?.let { figure.timing.t(it.toDouble() + figure.loopStart) } ?: figure.still
-        drawSculpt(Sculptor.sculpt(figure.frame(t), front, t, muscles), camera, alignEnd)
+        val t = picture?.value?.let { (k, n) -> figure.timing.t(k.toDouble() / n + figure.loopStart) } ?: figure.still
+        drawImage(raster.render(this, t) { drawSculpt(Sculptor.sculpt(figure.frame(t), front, t, muscles), camera, alignEnd) })
     }
 }
 
-private fun DrawScope.drawSculpt(frame: SculptFrame, camera: Bounds, alignEnd: Boolean) {
+/** How many new pictures a second the moving figure shows: smooth for a slow rep, and half the work of the screen's own rate. */
+internal const val FIGURE_FPS = 30
+
+/**
+ * The figure is drawn on the processor into a picture the size of its space, then shown (D-105). Its many shaded, curved shapes are
+ * then one simple image for the graphics chip, which is steady on every phone (the software graphics of the test emulators stopped on
+ * the shapes drawn directly), and a picture is only redrawn when the figure moves.
+ */
+internal class FigureRaster {
+    private var bitmap: ImageBitmap? = null
+    private var canvas: androidx.compose.ui.graphics.Canvas? = null
+    private val scope = CanvasDrawScope()
+    private var drawn = Double.NaN
+
+    fun render(on: DrawScope, t: Double, paint: DrawScope.() -> Unit): ImageBitmap {
+        val w = on.size.width.toInt().coerceAtLeast(1); val h = on.size.height.toInt().coerceAtLeast(1)
+        var b = bitmap
+        if (b == null || b.width != w || b.height != h) {
+            b = ImageBitmap(w, h); bitmap = b; canvas = androidx.compose.ui.graphics.Canvas(b); drawn = Double.NaN
+        }
+        if (drawn != t) {
+            b.asAndroidBitmap().eraseColor(android.graphics.Color.TRANSPARENT)
+            scope.draw(on, on.layoutDirection, canvas!!, Size(w.toFloat(), h.toFloat())) { paint() }
+            drawn = t
+        }
+        return b
+    }
+}
+
+internal fun DrawScope.drawSculpt(frame: SculptFrame, camera: Bounds, alignEnd: Boolean) {
     // The camera box fits inside the padding, centred (or against the right edge), and never moves during the loop.
     val pad = size.minDimension * 0.08f
     val scale = minOf((size.width - 2 * pad) / camera.width.toFloat(), (size.height - 2 * pad) / camera.height.toFloat())
