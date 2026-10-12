@@ -30,9 +30,12 @@ class FigureRasterTest {
     // The workout card's figure on a 2.75× phone (900 × 690 on the screen), drawn at the app's picture scale.
     private val w = (900 * RASTER_SCALE).toInt(); private val h = (690 * RASTER_SCALE).toInt()
 
+    private val cameras = HashMap<String, com.personalfitnesscoach.app.figure.Bounds>()
+
+    /** As the app does: the camera is worked out once per exercise, then each picture is the frame, sculpted and drawn. */
     private fun picture(id: String, t: Double, muscles: Set<Muscle>, bitmap: ImageBitmap = ImageBitmap(w, h)): ImageBitmap {
         val fig = ExerciseFigures.of(id)!!
-        val camera = Sculptor.camera(fig)
+        val camera = cameras.getOrPut(id) { Sculptor.camera(fig) }
         bitmap.asAndroidBitmap().eraseColor(0)
         CanvasDrawScope().draw(Density(2.75f * RASTER_SCALE), LayoutDirection.Ltr, Canvas(bitmap), Size(w.toFloat(), h.toFloat())) {
             drawSculpt(Sculptor.sculpt(fig.frame(t), fig is FrontFigure, t, muscles), camera, false)
