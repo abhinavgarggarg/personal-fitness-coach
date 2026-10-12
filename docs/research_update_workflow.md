@@ -75,7 +75,7 @@ python3 -I tools/test_research_update.py                                        
 4. lists any tests still to write.
 
 The developer then:
-- updates `TC-VOL-008b`, which pins the registry version;
+- updates `TC-VOL-008b`, which pins the registry version (the app's own check, `AppLinksEngineTest`, reads it from the registry file);
 - writes the new tests;
 - runs the suite;
 - records the decision and the changelog entry.

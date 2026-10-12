@@ -120,6 +120,17 @@ jobs:
           BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)
           if unzip -l "$APK" | grep -q '\.so$'; then "${BT}zipalign" -c -P 16 -v 4 "$APK" | tail -n 3; else echo "No native libraries: compatible with 4 KB and 16 KB page sizes"; fi
 
+      - name: Release build (R8-shrunk, unsigned) - size, permissions, not debuggable (NFR-10)
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:assembleRelease 2>&1 | tee gradle-release.log
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)
+          "${BT}aapt2" dump badging "$APK" > badging.txt
+          "${BT}aapt2" dump permissions "$APK" > permissions-release.txt
+          python3 -I tools/check_permissions.py < permissions-release.txt | tail -n 1
+          python3 -I tools/check_release_apk.py "$APK" badging.txt
+
       - name: Upload debug APK
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
