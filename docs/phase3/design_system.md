@@ -46,8 +46,8 @@ Every pair a screen uses is checked by `tools/check_contrast.py` (in CI): words 
 - **Progress:** rings with round caps; bars with rounded ends.
 
 ## Glow, motion and touch
-- **Glow:** a soft warm halo behind the main button, the active tab marker and the progress rings (still), and behind the exercise figures (it moves with the figure).
-- **Motion:** the exercise figures loop slowly (about 4 s per rep) and the rest ring runs down; screens change at once, without sliding. The figures stand still when the phone's "remove animations" setting is on.
+- **Glow:** a soft warm halo behind the main button, the active tab marker and the progress rings (still), and behind the exercise figures (it moves with the figure); the exercise's working muscles glow on the figure.
+- **Motion:** the exercise figures loop slowly (about 4 s per rep, 24 pictures a second) and the rest ring runs down; screens change at once, without sliding. The figures stand still when the phone's "remove animations" setting is on.
 - **Touch:** a short tick when a set is logged (it follows the phone's touch-feedback setting); the existing buzz when a rest ends. Nothing else vibrates.
 
 ## Icons
@@ -57,14 +57,20 @@ Every pair a screen uses is checked by `tools/check_contrast.py` (in CI): words 
 - **Other:** settings (sliders), swap and check.
 - **Labels:** the tab bar shows icons only, as in the chosen look. Each icon has its spoken name for TalkBack, and the current tab is marked.
 
-## Exercise pictures (CR-004)
-- **Figures:** one original figure for every exercise in the library (157), light grey on a dark "studio" card with a soft warm halo. The far arm and leg are drawn darker and a little behind, so left and right read apart. Equipment is drawn simply: plates, dumbbells, kettlebells, benches, boxes, cables (thin lines to a pulley), bands (teal), bars and machine frames.
-- **How they are made:** each figure is computed from a few joint angles for the start and the end of one rep (or a point a hand or foot reaches for), with fixed segment lengths, so every exercise shares one style and nothing is a copied picture. Most are seen from the side; movements across the body (lateral raises, flyes, side planks, shrugs, the Pallof press) are seen from the front. Code: `app/figure/` (plain Kotlin, tested on the computer), drawn by `ui/ExerciseFigure.kt`.
+## Exercise pictures (CR-004, CR-008)
+- **Figures:** one original figure for every exercise in the library (157) on a dark "studio" card, drawn as a sculpted mannequin (D-105):
+  - shaped body parts: thigh and calf bellies, a trunk with chest, shoulder blades and glutes, a head and hands;
+  - light from the upper left, a warm rim on the shadow side and a soft contact shadow on the floor;
+  - a faint warm halo behind the body;
+  - the exercise's primary muscles glow orange, strongest at the end position of the rep.
+- **Far side:** the far arm and leg are darker and a little behind, so left and right read apart.
+- **Equipment:** shaded metal plates, dumbbells and kettlebells; benches and boxes; cables (thin lines to a pulley); bands (teal); bars; machine frames.
+- **How they are made:** each figure is computed from a few joint angles for the start and the end of one rep (or a point a hand or foot reaches for), with fixed segment lengths, so every exercise shares one style and nothing is a copied picture. Most are seen from the side; movements across the body (lateral raises, flyes, side planks, shrugs, the Pallof press) are seen from the front. Each frame's body shapes are tagged with their segment, and `app/figure/Sculpt.kt` turns them into outlines, shading directions and muscle glows. The screen draws the figure into a picture on the processor (3/4 of the screen's resolution, redrawn only when it moves, 24 times a second) and shows the picture. Code: `app/figure/` (plain Kotlin, tested on the computer), drawn by `ui/ExerciseFigure.kt`.
 - **Motion:** start → end → start in a slow loop (about 4 s; 5 s for holds, under 2 s for steps and carries, a quick move for jumps and swings). The loop begins at the figure's "still" position, which is also the picture shown when the phone's "remove animations" setting is on: the end of the rep for most exercises, the start where it tells more (a deadlift or a pull-through starts with the weight low; a sit-to-stand starts seated).
 - **Form point:** a dashed line in the cool colour for the main form point where one applies: a flat back on hinges and rows, a straight body on planks and push-ups.
-- **Checked by tests:** every library exercise has a figure (and no figure is left over); no part of the body sinks through the floor at any point of the rep; arms and legs never change length; a hand or foot that reaches for a point (a bar, a handle, the floor) gets there in every key position; nothing jumps between two moments of the rep; deadlifts start with the weight on the floor; every picture fits a card.
+- **Checked by tests:** every library exercise has a figure (and no figure is left over); no part of the body sinks through the floor at any point of the rep; arms and legs never change length; a hand or foot that reaches for a point (a bar, a handle, the floor) gets there in every key position; nothing jumps between two moments of the rep; deadlifts start with the weight on the floor; every picture fits a card. For the sculpted drawing: every body part is drawn in every frame, as a closed shape with real area; nothing sinks through the floor; far limbs go behind the body and the near arm in front; every exercise shows its working muscles; all parts are lit from the same side; the picture stays inside its camera between measured frames; the chest faces the right way.
 - **Where:** the Today workout card (the session's first exercise) and the workout screen (the current exercise, with its first coaching cue on the card).
-- **No photos:** the app has no photo library and no internet. The figures are original drawings, not copies.
+- **No photos:** the app has no photo library and no internet. The figures are original drawings, not copies. Free photo and drawing sets were checked in CR-008; none was safe to ship or covered the library (`docs/change_requests/CR-008_exercise_pictures.md`).
 
 ## Screens (Part 7)
 - **Today:** "Good morning," and the date with a round settings button; anything that needs attention first; this week's ring (sessions done out of planned) with a line of words; tiles for steps (when counted, with the day's target) and the run of weeks (once there is one, with the best run); the workout on a studio card with its first exercise moving on the right and its name and minutes on the left; one glowing Start; each reason as a glass row with its "Why?"; the week as seven glass day tiles.

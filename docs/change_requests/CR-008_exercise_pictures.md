@@ -1,6 +1,6 @@
 # CR-008: better-looking exercise pictures
 
-Date: 12 October 2026 · Requested by the Product Owner · Status: **awaiting the PO's choice**
+Date: 12 October 2026 · Requested by the Product Owner · Status: **done: option B chosen (D-105); report `docs/phase3/cr008_report.md`**
 
 ## The request
 The PO finds the Part 7 exercise figures (CR-004, D-100) not impressive enough for the app, and asked whether one of four free sources could be used instead:
