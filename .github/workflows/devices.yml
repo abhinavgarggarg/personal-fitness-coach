@@ -57,7 +57,8 @@ jobs:
           script: |
             adb shell settings put system font_scale ${{ matrix.font }}
             # One line: the results are reported (each failing test with its message) even when a test fails, then the step fails.
-            ./gradlew --no-daemon :app:connectedDebugAndroidTest; s=$?; python3 -I tools/ci_summary.py "Device tests (${{ matrix.name }})=app/build/outputs/androidTest-results/connected/**/*.xml"; exit $s
+            # The phone's crash log goes into the annotations too, since the job logs can't always be read.
+            ./gradlew --no-daemon :app:connectedDebugAndroidTest; s=$?; (adb logcat -d -b crash; adb logcat -d | grep -E "ANR in|Input dispatching|FATAL EXCEPTION|Caused by|AndroidRuntime|TestRunner: failed|Process crashed") > crash.txt 2>/dev/null; python3 -I tools/ci_summary.py "Device tests (${{ matrix.name }})=app/build/outputs/androidTest-results/connected/**/*.xml" "Crash log (${{ matrix.name }})@=crash.txt"; exit $s
 
       - name: Upload device test reports
         if: always()
