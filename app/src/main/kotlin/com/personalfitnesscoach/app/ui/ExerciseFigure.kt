@@ -129,7 +129,7 @@ fun ExerciseFigure(figure: Figure, description: String, modifier: Modifier = Mod
     }
 }
 
-private fun DrawScope.drawSculpt(frame: SculptFrame, camera: Bounds, alignEnd: Boolean) {
+internal fun DrawScope.drawSculpt(frame: SculptFrame, camera: Bounds, alignEnd: Boolean) {
     // The camera box fits inside the padding, centred (or against the right edge), and never moves during the loop.
     val pad = size.minDimension * 0.08f
     val scale = minOf((size.width - 2 * pad) / camera.width.toFloat(), (size.height - 2 * pad) / camera.height.toFloat())
