@@ -58,7 +58,7 @@ jobs:
             adb shell settings put system font_scale ${{ matrix.font }}
             # One line: the results are reported (each failing test with its message) even when a test fails, then the step fails.
             # The phone's crash log goes into the annotations too, since the job logs can't always be read.
-            ./gradlew --no-daemon :app:connectedDebugAndroidTest; s=$?; (echo "adb devices: $(timeout 10 adb devices | tail -n +2 | tr '\n' ' ')"; timeout 30 adb logcat -d | grep -E "ANR in|Input dispatching timed out|Process: com.personalfitnesscoach|SnapshotStateObserver"; timeout 30 adb logcat -d -b crash) > crash.txt 2>/dev/null; python3 -I tools/ci_summary.py "Device tests (${{ matrix.name }})=app/build/outputs/androidTest-results/connected/**/*.xml" "Crash log (${{ matrix.name }})@=crash.txt"; exit $s
+            ./gradlew --no-daemon :app:connectedDebugAndroidTest; s=$?; (echo "adb devices: $(timeout 10 adb devices | tail -n +2 | tr '\n' ' ')"; timeout 30 adb logcat -d | grep -E "ANR in com\.personalfitnesscoach|Process: com\.personalfitnesscoach|SnapshotStateObserver"; timeout 30 adb logcat -d -b crash) > crash.txt 2>/dev/null; if [ "$(grep -cv '^adb devices' crash.txt)" = "0" ] && grep -qE 'emulator-[0-9]+\s+device' crash.txt; then : > crash.txt; fi; python3 -I tools/ci_summary.py "Device tests (${{ matrix.name }})=app/build/outputs/androidTest-results/connected/**/*.xml" "Crash log (${{ matrix.name }})@=crash.txt"; exit $s
 
       - name: Upload device test reports
         if: always()

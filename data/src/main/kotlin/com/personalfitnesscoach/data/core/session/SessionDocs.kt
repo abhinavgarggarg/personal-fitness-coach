@@ -223,6 +223,8 @@ data class ItemDoc(
     val painReduced: Boolean = false,
     /** SAF-006: sets the user added beyond the prescription (confirmed past a cap, counted). */
     val addedSets: Int = 0,
+    /** TIME-002 superset (D-109): the slot key of the partner whose working sets alternate with this one's. */
+    val supersetWith: String? = null,
 ) {
     init {
         require(sets in 0..50 && !reps.isEmpty() && reps.first >= 0 && reps.last <= 1000) { "dose out of range" }
@@ -241,6 +243,7 @@ data class ItemDoc(
         flag("calibrating", calibrating); flag("main", main); put("swappedFrom", swappedFrom); flag("fromKnownNumber", fromKnownNumber)
         objs("rampSets", rampSets.map { r -> obj { put("load", r.load); range("reps", r.reps) } }); flag("reducedRange", reducedRange)
         put("calibrationCeiling", calibrationCeiling); flag("painReduced", painReduced); if (addedSets != 0) put("addedSets", addedSets)
+        if (supersetWith != null) put("supersetWith", supersetWith)
     }.toString()
 
     companion object {
@@ -252,7 +255,7 @@ data class ItemDoc(
                 o.bool("lastSetToFailure"), o.dblOrNull("load"), o.dbl("loadFactor"), o.int("restMinSec"), o.int("restDefaultSec"), o.int("restMaxSec"),
                 o.bool("calibrating"), o.bool("main"), o.strOrNull("swappedFrom"), o.bool("fromKnownNumber"),
                 o.objs("rampSets").map { r -> RampRef(r.dbl("load"), r.range("reps")) }, o.bool("reducedRange"), o.dblOrNull("calibrationCeiling"),
-                o.bool("painReduced"), o.int("addedSets", 0))
+                o.bool("painReduced"), o.int("addedSets", 0), o.strOrNull("supersetWith")?.take(64))
         }
     }
 }

@@ -436,25 +436,37 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         dd.decisions.append(out.decisions)
         out.safetyStop?.let { return@act Screen.Stop(it) }
         if (pain?.value?.endSession == true) return@act Screen.PainDay(pain.value)
-        preview(s.next, out.record.tier, f.minutes, express = false, away = f.awayFromGym, extra = pain?.decisions ?: emptyList())
+        preview(s.next, out.record.tier, f.minutes, express = false, away = f.awayFromGym, extra = pain?.decisions ?: emptyList(), autoExpress = true)
     }
 
+    /**
+     * `autoExpress`: when the minutes were just given (check-in, "I only have N minutes", the coach), a budget of 30 minutes or less that
+     * even the most shortened full session misses by more than 10% gets the 20–30-minute express session instead, with the reason
+     * (F10, ADH-004, D-109). Turning the express switch off keeps the full session.
+     */
     private suspend fun preview(day: com.personalfitnesscoach.engine.program.PlannedDay, tier: Tier, minutes: Int, express: Boolean, away: Boolean,
-                                extra: List<com.personalfitnesscoach.engine.core.Decision> = emptyList()): Screen {
+                                extra: List<com.personalfitnesscoach.engine.core.Decision> = emptyList(), autoExpress: Boolean = false): Screen {
         val dd = data
         val t = dd.planToday() ?: return today()
         // SAF-002/003: no preview (so no start) on a day the pain gate or a warning sign stopped, however it was reached (review R6-03).
         if (dd.trainingStopped(t.user.today)) return today()
         val planned = t.week.days.firstOrNull { it.weekday == day.weekday && it.template == day.template } ?: day
-        val g = dd.generateSession(t, planned, tier, minutes, express = express, awayFromGym = away)
+        var g = dd.generateSession(t, planned, tier, minutes, express = express, awayFromGym = away)
         g.workout.safetyStop?.let { return Screen.Stop(it) }
+        var why = extra
+        if (autoExpress && !express && !away && minutes <= P.ADH_004.express_minutes[1] && g.workout.items.isNotEmpty() &&
+            g.workout.plannedMinutes > minutes * 1.10) {
+            why = extra + g.decisions.filter { it.reason == com.personalfitnesscoach.engine.core.ReasonKey.TIME_NOT_FITTABLE }
+            g = dd.generateSession(t, planned, tier, minutes, express = true, awayFromGym = away)
+            g.workout.safetyStop?.let { return Screen.Stop(it) }
+        }
         val rec = dd.docs.get(ReadinessRecord, dayKey(t.user.today))
         val engineTier = rec?.engineTier ?: tier
         // RDY-007 with the same lock as the check-in, the day's safety, return and lighter-week caps included (R5-14).
         val gate = dd.bridge.gate(t.user, t.program)
         val locked = t.user.flaggedScreen || gate.locked || (rec?.illnessSymptoms?.isNotEmpty() == true) || dd.bridge.painToday(t.user.today).first.isNotEmpty()
         val options = Tier.entries.filter { it != g.workout.tier && Readiness.userChoice(engineTier, it, locked).value == it && gate.cap(it) == it }
-        return Screen.Preview(PreviewModel(g, g.workout.tier, options, extra + g.decisions, minutes))
+        return Screen.Preview(PreviewModel(g, g.workout.tier, options, why + g.decisions, minutes))
     }
 
     /** RDY-007: an easier tier always; one step harder with a warning when nothing locks it. The check-in is saved again with the choice. */
@@ -473,7 +485,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
     suspend fun previewMinutes(minutes: Int) = act {
         val s = current() as? Screen.Preview ?: return@act null
         val m = minutes.coerceIn(10, 180)
-        preview(s.model.session.day, s.model.tier, m, express = m < P.TIME_002.express_below_minutes, away = s.model.session.awayFromGym)
+        preview(s.model.session.day, s.model.tier, m, express = m < P.TIME_002.express_below_minutes, away = s.model.session.awayFromGym, autoExpress = true)
     }
 
     suspend fun previewExpress(on: Boolean) = act {
@@ -1035,7 +1047,7 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
             is com.personalfitnesscoach.data.core.coach.CoachAction.ShorterSession -> {
                 val next = t?.next ?: return@act today()
                 if (rec == null) openCheckInScreen(t, minutes = action.minutes)
-                else preview(next, rec.tier, action.minutes.coerceIn(10, 180), express = action.minutes < P.TIME_002.express_below_minutes, away = false)
+                else preview(next, rec.tier, action.minutes.coerceIn(10, 180), express = action.minutes < P.TIME_002.express_below_minutes, away = false, autoExpress = true)
             }
             com.personalfitnesscoach.data.core.coach.CoachAction.EasierLevel -> {
                 val next = t?.next ?: return@act today()
@@ -1044,12 +1056,12 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
                 val out = dd.checkIns.record(t.user, rec.checkIn, rec.minutesAvailable, rec.redFlags, rec.illnessSymptoms, requestedTier = rec.tier.stepDown())
                 dd.decisions.append(out.decisions)
                 out.safetyStop?.let { return@act Screen.Stop(it) }
-                preview(next, out.record.tier, rec.minutesAvailable ?: t.user.profile.sessionMinutes, express = false, away = false)
+                preview(next, out.record.tier, rec.minutesAvailable ?: t.user.profile.sessionMinutes, express = false, away = false, autoExpress = true)
             }
             com.personalfitnesscoach.data.core.coach.CoachAction.OpenCheckIn -> t?.let { openCheckInScreen(it) } ?: today()
             com.personalfitnesscoach.data.core.coach.CoachAction.OpenPreview -> {
                 val next = t?.next ?: return@act today()
-                if (rec == null) openCheckInScreen(t) else preview(next, rec.tier, rec.minutesAvailable ?: t.user.profile.sessionMinutes, express = false, away = false)
+                if (rec == null) openCheckInScreen(t) else preview(next, rec.tier, rec.minutesAvailable ?: t.user.profile.sessionMinutes, express = false, away = false, autoExpress = true)
             }
             com.personalfitnesscoach.data.core.coach.CoachAction.OpenProgress -> Screen.Progress(insights.overview())
             com.personalfitnesscoach.data.core.coach.CoachAction.OpenWarningSigns, com.personalfitnesscoach.data.core.coach.CoachAction.CheckWarningSigns ->

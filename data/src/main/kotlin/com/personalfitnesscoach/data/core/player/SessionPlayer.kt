@@ -105,6 +105,8 @@ data class LiftView(
     val lastTime: List<SetRow>,
     /** The calibration ramp ended today (found, stopped or capped). */
     val calibrationDone: Boolean,
+    /** The plan slot this exercise fills (a swap keeps it); supersets name their partner by it. */
+    val slotKey: String = "",
 ) {
     val finished: Boolean get() = next == null
     val workingDone: Int get() = sets.count { it.kind == SetKind.WORKING }
@@ -284,7 +286,7 @@ class SessionPlayer(private val d: PfcData) {
         val last = d.sessions.history(ex.id, w.day - 365, w.day).lastOrNull { (day, x) -> x.row.workoutId != w.id && day <= w.day }?.second?.working ?: emptyList()
         val calDone = e.row.id in s.calibrationDone
         val next = if (e.row.status == Status.SKIPPED || e.row.status == Status.DONE) null else target(ex, e, s, calDone, last.isEmpty())
-        return LiftView(e.row.id, e.row.position, ex, e.doc, e.row.status, e.sets, next, last, calDone)
+        return LiftView(e.row.id, e.row.position, ex, e.doc, e.row.status, e.sets, next, last, calDone, e.row.slotKey)
     }
 
     /** The next set of an exercise, or null when it is finished for today. */
@@ -340,7 +342,14 @@ class SessionPlayer(private val d: PfcData) {
         val balance = if (stage.ordinal <= Stage.BALANCE.ordinal) doc.balanceMinutes else 0.0
         val cool = if (stage.ordinal <= Stage.COOLDOWN.ordinal) (doc.cooldownMinutes ?: 0.0) else 0.0
         val mob = if (stage.ordinal <= Stage.COOLDOWN.ordinal) doc.mobilityMinutes else 0.0
-        return Remaining(SessionPlan(warmup, cool, WeekPlanner.planItems(day), coreMobilityMin = mob + balance + bone), open, slots, cond)
+        // Open supersets are timed as supersets (D-109): plan item i is open lift i.
+        val ids = open.mapIndexed { i, l -> l.slotKey to "$i:${l.exercise.id}" }.toMap()
+        val items = WeekPlanner.planItems(day).mapIndexed { i, item ->
+            val l = open.getOrNull(i)
+            val partner = l?.let { supersetPartner(it, open) }
+            if (l != null && partner != null) item.copy(pairedWith = ids[partner.slotKey]) else item
+        }
+        return Remaining(SessionPlan(warmup, cool, items, coreMobilityMin = mob + balance + bone), open, slots, cond)
     }
 
     // ------------------------------------------------------------------------------------------------ moving through the session
@@ -494,12 +503,15 @@ class SessionPlayer(private val d: PfcData) {
             }
         }
         val now = d.clock.nowMs()
-        val rest = when (t.kind) {
-            SetKind.WARMUP -> minOf(RAMP_REST_SEC, item.restMinSec)
-            SetKind.CALIBRATION -> item.restMinSec
+        // TIME-002 superset (D-109): after a working set, the partner's next working set follows with REST-004's rest between them.
+        val partner = if (t.kind == SetKind.WORKING) supersetPartner(lift, v.lifts)?.takeIf { it.next?.kind == SetKind.WORKING } else null
+        val rest = when {
+            t.kind == SetKind.WARMUP -> minOf(RAMP_REST_SEC, item.restMinSec)
+            t.kind == SetKind.CALIBRATION -> item.restMinSec
+            partner != null -> P.REST_004.default_s
             else -> item.restDefaultSec
         }
-        next = next.copy(currentRowId = rowId, stage = maxStage(next.stage, Stage.LIFTS, w), restStartedAtMs = now, restSec = rest,
+        next = next.copy(currentRowId = partner?.rowId ?: rowId, stage = maxStage(next.stage, Stage.LIFTS, w), restStartedAtMs = now, restSec = rest,
             lastHardEffortAtMs = if (t.kind == SetKind.WARMUP) next.lastHardEffortAtMs else now, sheet = null)
         next = touch(w, next)
         d.sessions.logSet(rowId, newSet, next.encode())
@@ -509,6 +521,17 @@ class SessionPlayer(private val d: PfcData) {
         val allowance = allowanceFor(built)
         d.sessions.saveState(w.id, next.copy(idleAllowanceMs = allowance).encode())
         LogResult(built.copy(state = built.state.copy(idleAllowanceMs = allowance)), dec, calStep, rest)
+    }
+
+    /**
+     * The superset partner of a lift (D-109): the exercise in the slot it names, naming this lift's slot back, still with work to do,
+     * and neither being calibrated (a calibration ramp needs its own rests).
+     */
+    fun supersetPartner(lift: LiftView, lifts: List<LiftView>): LiftView? {
+        val key = lift.item.supersetWith ?: return null
+        val p = lifts.firstOrNull { it.rowId != lift.rowId && it.slotKey == key && it.status != Status.SKIPPED } ?: return null
+        if (p.item.supersetWith != lift.slotKey || p.finished || p.item.calibrating || lift.item.calibrating) return null
+        return p
     }
 
     /** Rest timer controls (A2): ±30 s or skip. */
@@ -690,10 +713,14 @@ class SessionPlayer(private val d: PfcData) {
         val g = SessionGenerator.generate(one).value
         val it = g.items.firstOrNull { x -> x.slotKey == e.row.slotKey && x.exercise.id == ex.id } ?: return null
         val sets = minOf(it.sets, maxOf(1, e.doc.sets - e.doc.addedSets))
+        // A swap keeps the slot's superset when the new exercise still trains other muscles than the partner (ORD-003, D-109).
+        val partnerEx = e.doc.supersetWith?.let { key -> w.exercises.firstOrNull { x -> x.row.slotKey == key }?.let { x -> Library[x.exerciseId] } }
+        val gen = it
+        val pair = e.doc.supersetWith?.takeIf { partnerEx != null && (partnerEx.primary intersect ex.primary).isEmpty() && !gen.calibrating && !gen.main }
         return ItemDoc(it.role, it.priority, sets, it.reps, it.unit, it.perSide, it.targetRir, it.lastSetToFailure, it.load, it.loadFactor,
             it.rest.minSec, it.rest.defaultSec, it.rest.maxSec, it.calibrating, it.main, rampSets = it.warmupSets.map { r -> RampRef(r.load, r.reps) },
             reducedRange = it.range == com.personalfitnesscoach.engine.planning.RangeOfMotion.REDUCED,
-            calibrationCeiling = if (it.calibrating) req.calibrationCeilings[ex.id] else null)
+            calibrationCeiling = if (it.calibrating) req.calibrationCeilings[ex.id] else null, supersetWith = pair)
     }
 
     /**
@@ -853,7 +880,7 @@ class SessionPlayer(private val d: PfcData) {
         // The warm-up floor is already paid once the warm-up is done: the fit gets that much more, so only the remaining work competes.
         val floor = TimeBudget.warmupFloor(u.age, c.extraWarmupMin.toDouble())
         val budget = minutesLeft + if (rem.plan.warmupMin == 0.0) floor else 0.0
-        val fit = TimeBudget.fit(rem.plan, budget, u.age, 1.0, u.preferences.crowdedGym, c.extraWarmupMin.toDouble(), c.extraCooldownMin.toDouble())
+        val fit = TimeBudget.fit(rem.plan, budget, u.age, 1.0, u.preferences.crowdedGym, c.extraWarmupMin.toDouble(), c.extraCooldownMin.toDouble(), supersets = false)
         var plan = fit.value.plan
         val extra = ArrayList<String>()
         // A hard limit mid-session: below TIME-002's floors, work goes in reverse TIME-001 priority (P5…P3, then P2 conditioning, then P1

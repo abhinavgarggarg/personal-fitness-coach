@@ -148,6 +148,26 @@ class AppControllerTest {
         assertTrue((c.s() as Screen.Today).model.doneToday)
     }
 
+    @Test fun `F10 30 minutes - the session fits within 10 percent, as the express session when the full one cannot, and the switch turns it off`() = runBlocking {
+        val (_, c) = world()
+        c.openCheckIn()
+        c.submitCheckIn()
+        for (minutes in listOf(30, 25, 20)) {
+            c.previewMinutes(minutes)
+            val p = c.s() as Screen.Preview
+            val w = p.model.session.workout
+            assertTrue("$minutes min: ${w.plannedMinutes} min planned", w.plannedMinutes <= minutes * 1.10 + 1e-9)
+            if (p.model.session.express && minutes >= 20) {
+                assertTrue("$minutes min: the reason is shown", p.model.reasons.any { it.reason == ReasonKey.TIME_NOT_FITTABLE || it.reason == ReasonKey.EXPRESS_SESSION })
+                // The user's own choice wins: switched off, the full (longer) session stays.
+                c.previewExpress(false)
+                assertFalse((c.s() as Screen.Preview).model.session.express)
+                c.previewExpress(true)
+            }
+        }
+        assertNull(c.error.value)
+    }
+
     @Test fun `J3 a bad night caps the day at MODIFIED and says why`() = runBlocking {
         val (_, c) = world()
         c.openCheckIn()

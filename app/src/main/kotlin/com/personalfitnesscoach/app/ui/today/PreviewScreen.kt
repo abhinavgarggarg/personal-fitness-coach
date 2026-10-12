@@ -68,6 +68,9 @@ fun PreviewScreen(m: PreviewModel) {
                         else it.load?.let { l -> stringResource(R.string.at_load, dose, kg(l)) } ?: dose
                     Text(it.exercise.name, style = MaterialTheme.typography.titleMedium)
                     Note(stringResource(R.string.preview_sets_line, it.sets, what))
+                    w.items.firstOrNull { p -> p.slotKey == it.supersetWith && p.supersetWith == it.slotKey }?.let { p ->
+                        Note(stringResource(R.string.preview_superset, p.exercise.name))
+                    }
                 }
                 if (!w.conditioningFirst) w.conditioning.forEachIndexed { i, c -> Body(conditioningLine(c.modality, c.zone, c.workMinutes, w.intervals.getOrNull(i), w.circuits.getOrNull(i))) }
                 if (w.balanceDrills.isNotEmpty()) Body(stringResource(R.string.preview_balance, minutes(w.balanceDrills.sumOf { d -> d.seconds } / 60.0)))

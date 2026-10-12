@@ -126,6 +126,30 @@ class Smoke:
         adb("shell", "input", "swipe", str(self.w // 2), str(int(self.h * 0.72)), str(self.w // 2), str(int(self.h * 0.30)), "350")
         time.sleep(0.8)
 
+    def scroll_top(self):
+        """A new step may open where the last one was scrolled to: back to its top."""
+        for _ in range(6):
+            adb("shell", "input", "swipe", str(self.w // 2), str(int(self.h * 0.30)), str(self.w // 2), str(int(self.h * 0.80)), "250")
+        time.sleep(0.8)
+
+    def wait_any(self, texts, seconds=30):
+        """Waits until one of the texts is on screen, scrolling back to the top of the page if needed."""
+        end = time.time() + seconds
+        tries = 0
+        while time.time() < end:
+            nodes = screen()
+            for t in texts:
+                n = self.find(t, nodes)
+                if n:
+                    return n, nodes
+            if not self.dismiss_system(nodes):
+                tries += 1
+                if tries % 3 == 0:
+                    self.scroll_top()
+                else:
+                    time.sleep(1)
+        self.fail(f"none of {texts} appeared within {seconds} s")
+
     def tap_text(self, text, scrolls=25, enabled=True):
         """Scrolls down until the text is on screen (and enabled), then taps it."""
         for _ in range(scrolls):
@@ -156,7 +180,7 @@ class Smoke:
         self.step = "onboarding: health questions"
         for _ in range(12):
             nodes = screen()
-            if self.find(S["onb_about_title"], nodes):
+            if self.find(S["onb_about_title"], nodes) or self.find(S["onb_birth_year"], nodes) or self.find(S["exp_1_3"], nodes):
                 break
             for n in [n for n in nodes if n.says(S["action_no"]) and n.pkg == PKG]:
                 self.tap(n)
@@ -166,19 +190,21 @@ class Smoke:
                 self.tap(go)
             else:
                 self.scroll()
-        self.wait(S["onb_about_title"])
+        self.wait_any([S["onb_about_title"], S["onb_birth_year"], S["exp_1_3"]])
 
         self.step = "onboarding: about you"
-        field, _ = self.wait(S["onb_birth_year"])
+        self.scroll_top()
+        field, _ = self.wait_any([S["onb_birth_year"]])
         self.tap(field)
         adb("shell", "input", "text", "1985")
         adb("shell", "input", "keyevent", "111")  # Escape closes the keyboard without leaving the screen
         time.sleep(1)
         self.tap_text(S["exp_1_3"], enabled=False)
         self.tap_text(S["action_continue"])
-        self.wait(S["onb_cond_title"])
+        self.wait_any([S["onb_cond_title"], S["onb_cond_none"]])
 
         self.step = "onboarding: health conditions"
+        self.scroll_top()
         self.tap_text(S["onb_cond_none"], enabled=False)
         self.tap_text(S["action_continue"], scrolls=60)
 
@@ -204,6 +230,20 @@ class Smoke:
         self.wait(S["today_start"], 60)
         self.alive()
         print("::notice title=Release smoke::onboarding finished on Today")
+
+        self.step = "cold start (NFR-01)"
+        times = []
+        for _ in range(3):
+            adb("shell", "am", "force-stop", PKG)
+            time.sleep(2)
+            out = adb("shell", "am", "start", "-W", "-n", ACTIVITY, timeout=90)
+            m = re.search(r"TotalTime:\s*(\d+)", out)
+            if m:
+                times.append(int(m.group(1)))
+            self.wait(S["today_start"], 60)
+        if times:
+            print(f"::notice title=Measured::cold start to Today on the emulator (software graphics, R8 release): "
+                  f"{sorted(times)[len(times) // 2]} ms median of {len(times)} ({', '.join(map(str, times))} ms); the 1.5 s target is checked on the phone in UAT")
 
         self.step = "check-in"
         self.tap_text(S["today_start"])

@@ -395,6 +395,8 @@
 
     <!-- ======================================================================== workout -->
     <string name="wk_progress">%1$d min so far · about %2$d min left</string>
+    <string name="wk_superset">Superset with %1$s: alternate your sets, about %2$d seconds rest between them.</string>
+    <string name="preview_superset">Superset with %1$s, to save time</string>
     <string name="wk_pause">Pause</string>
     <string name="wk_resume">Resume</string>
     <string name="wk_paused">Paused</string>

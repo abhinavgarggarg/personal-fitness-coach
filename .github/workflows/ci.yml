@@ -68,8 +68,9 @@ jobs:
       - name: Engine tests (rules, calculators, safety kernel)
         run: |
           set -o pipefail
-          ./gradlew --no-daemon :engine:test 2>&1 | tee gradle-engine.log
+          ./gradlew --no-daemon :engine:test :engine:jacocoTestReport 2>&1 | tee gradle-engine.log
           python3 -I tools/ci_summary.py "Engine tests=engine/build/test-results/test/*.xml"
+          python3 -I tools/coverage_summary.py engine/build/reports/jacoco/test/jacocoTestReport.xml
 
       - name: Rule coverage report
         run: |
@@ -130,6 +131,12 @@ jobs:
           "${BT}aapt2" dump permissions "$APK" > permissions-release.txt
           python3 -I tools/check_permissions.py < permissions-release.txt | tail -n 1
           python3 -I tools/check_release_apk.py "$APK" badging.txt
+
+      - name: No analytics, ads or trackers - shipped libraries on the allow-list (NFR-07)
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon -q :app:dependencies --configuration releaseRuntimeClasspath > deps.txt
+          python3 -I tools/check_dependencies.py deps.txt
 
       - name: Upload debug APK
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -28,6 +28,7 @@ import com.personalfitnesscoach.engine.model.Tier
 import com.personalfitnesscoach.engine.model.Zone
 import com.personalfitnesscoach.engine.planning.DrillDose
 import com.personalfitnesscoach.engine.planning.Mobility
+import com.personalfitnesscoach.engine.planning.PlanItem
 import com.personalfitnesscoach.engine.planning.Priority
 import com.personalfitnesscoach.engine.planning.RangeOfMotion
 import com.personalfitnesscoach.engine.planning.SessionPlan
@@ -134,6 +135,11 @@ data class WorkoutItem(
     val range: RangeOfMotion,
     val calibrating: Boolean,
     val main: Boolean,
+    /**
+     * TIME-002 / ORD-003: the slot key of this item's superset partner, when the time fit paired them (both point to each other).
+     * The guided workout alternates their working sets with REST-004's rest between them.
+     */
+    val supersetWith: String? = null,
 )
 
 data class Workout(
@@ -352,13 +358,20 @@ object SessionGenerator {
         else if (c.boneLoading && tier != Tier.RECOVERY && items.isNotEmpty()) d += Decision(DecisionKind.WARMUP, listOf(RuleIds.CON_004, RuleIds.SAF_010),
             ReasonKey.BONE_LOADING_VARIANT, outputs = mapOf("variant" to null, "reason" to "pain_limits"))
         val extraMin = balanceMin + (bone?.minutes ?: 0.0)
-        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble() + extraCool, WeekPlanner.planItems(dayForFit),
+        // A weight still being found is never put in a superset: its ramp needs its own rests (D-109).
+        val planItems = WeekPlanner.planItems(dayForFit).mapIndexed { i, p -> if (items.getOrNull(i)?.calibrating == true) p.copy(supersetEligible = false) else p }
+        val plan = SessionPlan(wu.value, P.TIME_001.cooldown_min_minutes.toDouble() + extraCool, planItems,
             coreMobilityMin = mobilityMin + extraMin)
         val fit = TimeBudget.fit(plan, r.minutes.toDouble(), r.age, r.personalFactor, r.crowded,
             extraWarmupMin = extraWarm.toDouble(), extraCooldownMin = extraCool.toDouble())
         d += fit.decisions
         val byId = fit.value.plan.items.associateBy { it.id }
-        items = items.mapIndexedNotNull { idx, it -> byId["$idx:${it.exercise.id}"]?.let { p -> it.copy(sets = p.sets) } }
+        val slotOfPlanId = items.mapIndexed { idx, it -> "$idx:${it.exercise.id}" to it.slotKey }.toMap()
+        // The fit's sets, its shorter rests (TIME-002 steps 1 and 8) and its supersets (step 2) all reach the workout, so it takes the time
+        // it promised (F10, D-109).
+        items = items.mapIndexedNotNull { idx, it -> byId["$idx:${it.exercise.id}"]?.let { p ->
+            it.copy(sets = p.sets, rest = it.rest.copy(defaultSec = p.restSec.coerceIn(it.rest.minSec, maxOf(it.rest.minSec, it.rest.defaultSec))),
+                supersetWith = p.pairedWith?.let { partner -> slotOfPlanId[partner] }) } }
         conditioning = conditioning.mapIndexedNotNull { idx, c ->
             val p = byId["c$idx:${c.modality}"] ?: return@mapIndexedNotNull null
             val k = p.conditioning ?: return@mapIndexedNotNull c
@@ -384,12 +397,12 @@ object SessionGenerator {
         if (weekly.isNotEmpty()) d += Decision(DecisionKind.SAFETY, weekly, ReasonKey.PLAN_CAPPED_BY_LOAD,
             inputs = mapOf("weekShare" to Num.round2(ctx.weekShare)), outputs = mapOf("recoveryDay" to emptied))
         val v = if (emptied) EngineResult(v0.value.copy(session = v0.value.session.copy(tier = Tier.RECOVERY)), v0.decisions) else v0
-        val final = rebuild(items, v.value.session, r)
+        val final = Supersets.normalise(rebuild(items, v.value.session, r))
         val finalWarmup = v.value.session.warmupMinutes ?: warmupMin
         val finalCooldown = v.value.session.cooldownMinutes ?: fit.value.plan.cooldownMin
         val finalBone = bone?.takeIf { v.value.session.boneLoading != null }?.copy(variant = v.value.session.boneLoading!!)
         val minutes = TimeModel.minutes(SessionPlan(finalWarmup, finalCooldown,
-            WeekPlanner.planItems(r.day.copy(slots = final.map { toSlot(it) }, conditioning = v.value.session.conditioning.map { toPlanned(it) })),
+            Supersets.planItems(WeekPlanner.planItems(r.day.copy(slots = final.map { toSlot(it) }, conditioning = v.value.session.conditioning.map { toPlanned(it) })), final),
             coreMobilityMin = mobilityMin + balanceMin + (finalBone?.minutes ?: 0.0)), r.personalFactor)
         // Interval structure for each validated block: kept when the validator left the block's zone and modality alone.
         val intervals = v.value.session.conditioning.mapIndexed { j, b ->
@@ -430,8 +443,9 @@ object SessionGenerator {
         val second = slots.firstOrNull { it !== p1 && (it.spec.role == SlotRole.MAIN || it.spec.role == SlotRole.SECONDARY) &&
             it.exercise.pattern != p1?.exercise?.pattern }
         val core = slots.firstOrNull { it.spec.role == SlotRole.CORE }
-        val minutes = Express.minutes.last
-        // Smaller and smaller versions until one fits 30 minutes: core 2 → 1 set, second compound 2 → 1, core out,
+        // ADH-004's 20–30 minutes, fitted to the time given within that range (F10: 25 minutes gets a 25-minute session, not 30).
+        val minutes = r.minutes.coerceIn(Express.minutes.first, Express.minutes.last)
+        // Smaller and smaller versions until one fits: core 2 → 1 set, second compound 2 → 1, core out,
         // P1 3 → 2 sets, second compound out. The P1 lift is always kept.
         val p1Sets = p1?.let { minOf(it.sets, 3) } ?: 0
         val variants = listOf(Triple(p1Sets, 2, 2), Triple(p1Sets, 2, 1), Triple(p1Sets, 1, 1), Triple(p1Sets, 1, 0),
@@ -666,5 +680,28 @@ object AwayFromGym {
         return res + listOf(Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.EQ_003), ReasonKey.AWAY_FROM_GYM,
             inputs = mapOf("homeKit" to homeKit.sorted()), outputs = mapOf("exercises" to res.value.items.map { it.exercise.id },
                 "conditioning" to res.value.conditioning.map { it.modality.name })))
+    }
+}
+
+/** TIME-002 supersets in the workout (D-109): the time fit pairs two non-competing exercises and the guided workout alternates them. */
+object Supersets {
+    /**
+     * Keeps only pairs that still hold after the validator: both items present and pointing to each other, neither a main lift nor
+     * still being calibrated, and no shared primary muscle (ORD-003). Anything else is played on its own.
+     */
+    fun normalise(items: List<WorkoutItem>): List<WorkoutItem> {
+        val bySlot = items.associateBy { it.slotKey }
+        fun ok(a: WorkoutItem): Boolean {
+            val b = a.supersetWith?.let { bySlot[it] } ?: return false
+            return b !== a && b.supersetWith == a.slotKey && !a.main && !b.main && !a.calibrating && !b.calibrating &&
+                (a.exercise.primary intersect b.exercise.primary).isEmpty()
+        }
+        return items.map { if (it.supersetWith != null && !ok(it)) it.copy(supersetWith = null) else it }
+    }
+
+    /** The plan items of a workout (from [WeekPlanner.planItems], strength items first) with their supersets, for the time estimate. */
+    fun planItems(plan: List<PlanItem>, items: List<WorkoutItem>): List<PlanItem> {
+        val idBySlot = items.mapIndexed { i, it -> it.slotKey to "$i:${it.exercise.id}" }.toMap()
+        return plan.mapIndexed { i, p -> if (i < items.size) p.copy(pairedWith = items[i].supersetWith?.let { idBySlot[it] }) else p }
     }
 }

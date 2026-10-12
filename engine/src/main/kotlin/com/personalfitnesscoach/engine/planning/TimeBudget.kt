@@ -118,8 +118,12 @@ object TimeBudget {
      * @param extraWarmupMin / extraCooldownMin SAF-010 extras (the highest of the picked conditions): part of the floor, so time
      *   pressure never cuts them (review R3-02)
      */
+    /**
+     * `supersets = false` leaves out TIME-002 step 2 (pairing into supersets): the guided workout plays exercises one after another,
+     * so a session fitted with supersets would take longer than it promised (Part 8, F10).
+     */
     fun fit(plan: SessionPlan, minutes: Double, age: Int? = null, personalFactor: Double = 1.0, crowded: Boolean = false,
-            extraWarmupMin: Double = 0.0, extraCooldownMin: Double = 0.0): EngineResult<FitResult> {
+            extraWarmupMin: Double = 0.0, extraCooldownMin: Double = 0.0, supersets: Boolean = true): EngineResult<FitResult> {
         val express = minutes < P.TIME_002.express_below_minutes
         // P0 is never below its floor: cool-down ≥ 2 min (TIME-001), warm-up ≥ 5 min (+ age extra, WU-003/004), each + the SAF-010 extra.
         val warmupFloor = warmupFloor(age, extraWarmupMin)
@@ -130,10 +134,19 @@ object TimeBudget {
         val dropped = ArrayList<String>()
         val steps = ArrayList<String>()
         fun t() = TimeModel.minutes(cur, personalFactor)
-        fun fits() = t() <= minutes + 1e-9
+        // The last plan that did not fit: a step that cut more than needed is partly given back from it (backFill).
+        var lastOver: SessionPlan? = null
+        fun fits(): Boolean = (t() <= minutes + 1e-9).also { if (!it) lastOver = cur }
         fun items(f: (PlanItem) -> PlanItem) { cur = cur.copy(items = cur.items.map(f)) }
 
         fun done(): EngineResult<FitResult> {
+            val before = lastOver
+            if (before != null && fits()) {
+                val (filled, restored) = backFill(cur, before) { p -> TimeModel.minutes(p, personalFactor) <= minutes + 1e-9 }
+                if (filled != cur) steps += "back_fill"
+                cur = filled
+                restored.forEach { dropped.remove(it) }
+            }
             val ok = fits()
             val d = ArrayList<Decision>()
             if (steps.isNotEmpty()) d += Decision(DecisionKind.TIME_FIT, listOf(RuleIds.TIME_001, RuleIds.TIME_002, RuleIds.TIME_004),
@@ -150,8 +163,10 @@ object TimeBudget {
         steps += "rest_P4_P5_to_min"; if (fits()) return done()
 
         // 2) Pair eligible P3–P5 items into non-competing supersets.
-        cur = cur.copy(items = pairSupersets(cur.items, crowded))
-        steps += "supersets"; if (fits()) return done()
+        if (supersets) {
+            cur = cur.copy(items = pairSupersets(cur.items, crowded))
+            steps += "supersets"; if (fits()) return done()
+        }
 
         // 3) P5 to 1 set, then drop P5 items (last first).
         items { if (it.priority == Priority.P5 && !it.isConditioning && it.sets > 1) it.copy(sets = 1) else it }
@@ -264,6 +279,59 @@ object TimeBudget {
         val d = if (added.isEmpty()) emptyList() else listOf(Decision(DecisionKind.TIME_FIT, listOf(RuleIds.TIME_003, RuleIds.VOL_008),
             ReasonKey.TIME_EXTENDED, inputs = mapOf("available" to minutes), outputs = mapOf("added" to added.toList())))
         return EngineResult(cur, d)
+    }
+
+    /**
+     * Gives back, most important first, what the last compression step took beyond what was needed: one set at a time (an item that was
+     * dropped comes back with one set, in its place), then the warm-up and the conditioning toward their earlier length, then rests,
+     * while the plan still fits. Returns the plan and the ids of dropped items that came back.
+     */
+    internal fun backFill(fitted: SessionPlan, over: SessionPlan, fits: (SessionPlan) -> Boolean): Pair<SessionPlan, List<String>> {
+        var cur = fitted
+        val restored = ArrayList<String>()
+        fun tryPlan(p: SessionPlan): Boolean = fits(p).also { if (it) cur = p }
+        val order = over.items.filter { !it.isConditioning }.sortedBy { it.priority }
+        var progress = true
+        while (progress) {
+            progress = false
+            for (o in order) {
+                val now = cur.items.firstOrNull { it.id == o.id }
+                if (now == null) {
+                    // Put a dropped item back with one set, where it was.
+                    val idx = over.items.indexOfFirst { it.id == o.id }
+                    val before = over.items.take(idx).map { it.id }.toSet()
+                    val at = cur.items.indexOfLast { it.id in before } + 1
+                    val back = o.copy(sets = 1, pairedWith = null)
+                    if (tryPlan(cur.copy(items = cur.items.take(at) + back + cur.items.drop(at)))) { restored += o.id; progress = true; break }
+                } else if (now.sets < o.sets) {
+                    if (tryPlan(cur.copy(items = cur.items.map { if (it.id == o.id) it.copy(sets = it.sets + 1) else it }))) { progress = true; break }
+                }
+            }
+        }
+        if (over.warmupMin > cur.warmupMin) {
+            var w = over.warmupMin
+            while (w > cur.warmupMin + 1e-9 && !tryPlan(cur.copy(warmupMin = w))) w -= 1.0
+        }
+        for (o in over.items.filter { it.isConditioning }) {
+            val now = cur.items.firstOrNull { it.id == o.id }?.conditioning ?: continue
+            val was = o.conditioning!!
+            var c = now
+            while (c != was) {
+                val next = if (c.rounds < was.rounds) c.copy(rounds = c.rounds + 1) else if (c.workSec < was.workSec) c.copy(workSec = minOf(was.workSec, c.workSec + 60)) else was
+                if (!tryPlan(cur.copy(items = cur.items.map { if (it.id == o.id) it.copy(conditioning = next) else it }))) break
+                c = next
+            }
+        }
+        for (o in over.items.filter { !it.isConditioning }.sortedBy { it.priority }) {
+            val now = cur.items.firstOrNull { it.id == o.id } ?: continue
+            var r = now.restSec
+            while (r < o.restSec) {
+                val next = minOf(o.restSec, r + 30)
+                if (!tryPlan(cur.copy(items = cur.items.map { if (it.id == o.id) it.copy(restSec = next) else it }))) break
+                r = next
+            }
+        }
+        return cur to restored
     }
 
     private fun SessionPlan.dropLastOf(p: Priority): Pair<SessionPlan, String> {
