@@ -33,6 +33,8 @@ for arg in sys.argv[1:]:
             listed = sum(1 for c in s.iter("testcase") for _ in list(c.findall("failure")) + list(c.findall("error")))
             if int(s.get("failures", 0)) + int(s.get("errors", 0)) > listed:
                 err = " ".join(((s.findtext("system-err") or "") + " " + (s.findtext("system-out") or "")).split())[:900]
+                if not err:
+                    err = "suite XML: " + " ".join(ET.tostring(s, encoding="unicode").split())[:1500]
                 failed.append((s.get("name", "suite") + " (outside a test)", err or "no details recorded"))
             for case in s.iter("testcase"):
                 for bad in list(case.findall("failure")) + list(case.findall("error")):
