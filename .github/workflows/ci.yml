@@ -40,6 +40,9 @@ jobs:
           python3 -I tools/gen_conditions_kotlin.py --check
           python3 -I tools/check_phase1.py
           python3 -I tools/check_registry.py
+          # Research-update workflow (Part 8): the registry is the baseline plus its change sets, and the tool's own tests pass.
+          python3 -I tools/research_update.py replay --check
+          python3 -I tools/test_research_update.py
 
       - name: Screen text (every word in resources, placeholders match, reasons complete)
         run: |
@@ -70,7 +73,9 @@ jobs:
 
       - name: Rule coverage report
         run: |
-          python3 -I tools/rule_coverage.py --markdown rule-coverage.md | tee coverage.txt
+          set -o pipefail
+          # Phase 3 gate (Part 8): every rule keeps all its registry test cases; a research update cannot ship without its tests.
+          python3 -I tools/rule_coverage.py --require-all --markdown rule-coverage.md | tee coverage.txt
           echo "::notice title=Rule coverage::$(head -n 1 coverage.txt)"
 
       - name: Data layer tests (storage contract on Room, backup, engine bridge)

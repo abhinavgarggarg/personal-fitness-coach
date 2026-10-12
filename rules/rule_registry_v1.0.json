@@ -1,7 +1,7 @@
 {
-  "registry_version": "1.1.1",
-  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09",
-  "generated": "2026-10-09",
+  "registry_version": "1.1.2",
+  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 1.1.2 approved by Delegated: evidence verification only (no wording, parameter or confidence change), reported to the Product Owner at the Phase 3 gate on 2026-10-12",
+  "generated": "2026-10-12",
   "confidence_scale": [
     "High Evidence",
     "Moderate Evidence",
@@ -86,8 +86,8 @@
       "url": "https://openrepository.aut.ac.nz/items/92cefeac-7c32-44f1-bfbc-f48f4a5dd8cf/full"
     },
     "Halperin2022": {
-      "citation": "Halperin I, Malleron T, Har-Nir I, et al. Accuracy in predicting repetitions to task failure in resistance exercise: a scoping review and exploratory meta-analysis. Sports Med. 2022;52(2):377-390.",
-      "verification": "located",
+      "citation": "Halperin I, Malleron T, Har-Nir I, et al. Accuracy in predicting repetitions to task failure in resistance exercise: a scoping review and exploratory meta-analysis. Sports Med. 2022;52(2):377-390. doi:10.1007/s40279-021-01559-x",
+      "verification": "checked 2026-10-12 (abstract, Solent University repository): people underpredict repetitions to failure by about 0.95 (95% CI 0.17-1.73), with large heterogeneity; accuracy better with 12 or fewer repetitions and closer to failure; training background made no clear difference",
       "url": "https://pure.solent.ac.uk/en/publications/accuracy-in-predicting-repetitions-to-task-failure-in-resistance-/"
     },
     "Singer2024": {
@@ -226,9 +226,9 @@
       "url": "https://ekoizpen-zientifikoa.ehu.eus/documentos/5f1cda5129995265e44d37a4?lang=en"
     },
     "Bull2020": {
-      "citation": "Bull FC, Al-Ansari SS, Biddle S, et al. World Health Organization 2020 guidelines on physical activity and sedentary behaviour. Br J Sports Med. 2020;54(24):1451-1462.",
-      "verification": "located",
-      "url": "https://digibug.ugr.es/handle/10481/66573"
+      "citation": "Bull FC, Al-Ansari SS, Biddle S, et al. World Health Organization 2020 guidelines on physical activity and sedentary behaviour. Br J Sports Med. 2020;54(24):1451-1462. doi:10.1136/bjsports-2020-102955",
+      "verification": "checked 2026-10-12 (full text, Europe PMC PMC7719906): adults 150-300 min moderate or 75-150 min vigorous a week; muscle strengthening on 2 or more days; adults 65+ varied multicomponent activity emphasising functional balance and strength on 3 or more days",
+      "url": "https://doi.org/10.1136/bjsports-2020-102955"
     },
     "Garber2011": {
       "citation": "Garber CE, Blissmer B, Deschenes MR, et al. ACSM position stand: quantity and quality of exercise for developing and maintaining cardiorespiratory, musculoskeletal, and neuromotor fitness in apparently healthy adults. Med Sci Sports Exerc. 2011;43(7):1334-1359.",
@@ -236,8 +236,8 @@
       "url": "https://digitalcommons.uri.edu/kinesiology_facpubs/137"
     },
     "Riebe2015": {
-      "citation": "Riebe D, Franklin BA, Thompson PD, et al. Updating ACSM's recommendations for exercise preparticipation health screening. Med Sci Sports Exerc. 2015;47(11):2473-2479.",
-      "verification": "located",
+      "citation": "Riebe D, Franklin BA, Thompson PD, et al. Updating ACSM's recommendations for exercise preparticipation health screening. Med Sci Sports Exerc. 2015;47(11):2473-2479. doi:10.1249/MSS.0000000000000664",
+      "verification": "checked 2026-10-12 (abstract, University of Rhode Island repository): screening based on current activity, signs or symptoms and/or known cardiovascular, metabolic or renal disease, and desired intensity; risk-factor profiling dropped",
       "url": "https://digitalcommons.uri.edu/kinesiology_facpubs/180"
     },
     "Warburton2011": {
@@ -246,8 +246,8 @@
       "url": "https://hfjc.library.ubc.ca/index.php/HFJC/article/view/103"
     },
     "Fragala2019": {
-      "citation": "Fragala MS, Cadore EL, Dorgo S, et al. Resistance training for older adults: position statement from the National Strength and Conditioning Association. J Strength Cond Res. 2019;33(8):2019-2052.",
-      "verification": "located",
+      "citation": "Fragala MS, Cadore EL, Dorgo S, et al. Resistance training for older adults: position statement from the National Strength and Conditioning Association. J Strength Cond Res. 2019;33(8):2019-2052. doi:10.1519/JSC.0000000000003230",
+      "verification": "checked 2026-10-12 (record and abstract, UTEP repository); the program-design recommendations in the full text were not read",
       "url": "https://scholarworks.utep.edu/kines_papers/60"
     },
     "Behm2016": {
@@ -272,8 +272,9 @@
     },
     "LeSuer1997": {
       "citation": "LeSuer DA, McCormick JH, Mayhew JL, Wasserstein RL, Arnold MD. The accuracy of prediction equations for estimating 1-RM performance in the bench press, squat, and deadlift. J Strength Cond Res. 1997;11(4):211-213.",
-      "verification": "located",
-      "url": "https://researchconnect.suny.edu/en/publications/accuracy-of-prediction-equations-for-determining-one-repetition-m/"
+      "verification": "located; citation checked 2026-10-12 in Crossref (doi:10.1519/00124278-199711000-00001); abstract not read",
+      "url": "https://doi.org/10.1519/00124278-199711000-00001",
+      "note": "The earlier URL opened a different paper (Mayhew et al. 2008, bench press in women)."
     },
     "Brzycki1993": {
       "citation": "Brzycki M. Strength testing: predicting a one-rep max from reps-to-fatigue. J Phys Educ Recreat Dance. 1993;64(1):88-90.",
@@ -528,7 +529,7 @@
     },
     "Donnelly2009": {
       "citation": "Donnelly JE, Blair SN, Jakicic JM, Manore MM, Rankin JW, Smith BK. ACSM Position Stand. Appropriate physical activity intervention strategies for weight loss and prevention of weight regain for adults. Med Sci Sports Exerc. 2009;41(2):459-471. doi:10.1249/MSS.0b013e3181949333",
-      "verification": "checked (abstract); dose bands located",
+      "verification": "checked 2026-10-12 (abstract, Europe PMC, PMID 19127177): 150-250 min a week of moderate activity gives only modest weight loss; more than 250 min a week is associated with clinically significant loss. The body-text dose bands (225-420 min) were not read; FL-002 does not rely on them",
       "url": "https://doi.org/10.1249/MSS.0b013e3181949333"
     },
     "Jakicic2024": {
@@ -592,8 +593,8 @@
       "url": "https://doi.org/10.1016/S2468-2667(21)00302-9"
     },
     "Ding2025": {
-      "citation": "Ding D, Nguyen B, Nau T, et al. Daily steps and health outcomes in adults: a systematic review and dose-response meta-analysis. Lancet Public Health. 2025 (online 23 Jul 2025). doi:10.1016/S2468-2667(25)00164-1",
-      "verification": "located",
+      "citation": "Ding D, Nguyen B, Nau T, et al. Daily steps and health outcomes in adults: a systematic review and dose-response meta-analysis. Lancet Public Health. 2025;10(8):e668-e681. doi:10.1016/S2468-2667(25)00164-1",
+      "verification": "checked 2026-10-12 (abstract, Baker Institute repository): 7,000 vs 2,000 steps a day, all-cause mortality HR 0.53 (0.46-0.60, moderate certainty), cardiovascular disease incidence HR 0.75, dementia HR 0.62; 10,000 stays a target for more active people; no age-specific analysis",
       "url": "https://doi.org/10.1016/S2468-2667(25)00164-1"
     },
     "TudorLocke2011a": {
@@ -633,13 +634,14 @@
     },
     "IDF2006": {
       "citation": "International Diabetes Federation. The IDF consensus worldwide definition of the metabolic syndrome (ethnic-specific waist cut-offs). 2006.",
-      "verification": "located",
-      "url": ""
+      "verification": "checked 2026-10-12 through Zimmet PZ, Shaw JE, Alberti KGMM. Mainstreaming the metabolic syndrome: a definitive definition. Med J Aust 2005;183(4):175-176, written by the IDF definition's authors: South Asian and South-East Asian men >= 90 cm, women >= 80 cm; Europid men >= 94 cm, women >= 80 cm. The 2006 IDF document itself was not opened",
+      "url": "https://www.mja.com.au/journal/2005/183/4/mainstreaming-metabolic-syndrome-definitive-definition"
     },
     "WHOSTEPS": {
       "citation": "WHO STEPwise approach (STEPS) waist-circumference protocol, as summarised by the MRC Epidemiology Unit / NIHR Cambridge BRC Measurement Toolkit.",
       "verification": "located",
-      "url": ""
+      "url": "",
+      "note": "Primary source to read: WHO. Waist circumference and waist-hip ratio: report of a WHO expert consultation, Geneva, 8-11 December 2008. WHO, 2011. ISBN 9789241501491 (record checked 2026-10-12; the report's text could not be opened)."
     },
     "Greendale2019": {
       "citation": "Greendale GA, Sternfeld B, Huang M, et al. Changes in body composition and weight during the menopause transition. JCI Insight. 2019;4(5):e124865. doi:10.1172/jci.insight.124865",
@@ -762,8 +764,8 @@
       "url": ""
     },
     "ACOG20": {
-      "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 804. Obstet Gynecol. 2020;135(4). doi:10.1097/AOG.0000000000003772",
-      "verification": "located",
+      "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 804. Obstet Gynecol. 2020;135(4):e178-e188. doi:10.1097/AOG.0000000000003772",
+      "verification": "located; citation checked 2026-10-12 in Crossref (pages e178-e188); the full text could not be opened (acog.org and the publisher refused the request)",
       "url": "https://doi.org/10.1097/AOG.0000000000003772"
     },
     "CAN25": {
@@ -5739,7 +5741,7 @@
     },
     {
       "rule_id": "FL-002",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "fat_loss",
       "title": "Weekly activity target",
       "statement": "Weekly target in equivalent minutes (PH-001 accounting: Z1 + 2 × Z2/Z3 work, brisk walks per STEP-002): 200–300 for ages 30–59, 180–250 for 60–64, 150–250 for 65+, never below 150. The target is approached from last week's minutes at ≤ +15%/week (AER-003), ≤ +12%/week at 65+ (AGE-001 × 0.8); steady Z1 work, mostly walking, is the base.",
@@ -5771,7 +5773,7 @@
       ],
       "uncertainty": "Linear benefit to 300 min/week is from trials of 8+ weeks; the lower ceilings from 60 are Expert Practice (recovery and time), not evidence that older adults need less.",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-12",
       "affected_algorithms": [
         "weekly_scheduling",
         "aerobic_planning",
@@ -5781,15 +5783,12 @@
         "TC-FL-002a",
         "TC-FL-002b"
       ],
-      "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved",
-      "verification_pending": [
-        "Bull2020"
-      ]
+      "change_reason": "PATCH: Bull 2020 checked in full text: 150-300 min moderate a week for adults — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
+      "status": "approved"
     },
     {
       "rule_id": "FL-003",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "fat_loss",
       "title": "Training mix by age band",
       "statement": "The weekly mix for the fat-loss goal changes with age: strength stays at 3 days by default (2 minimum) in every band; steady Z1 cardio stays at 150–200 min; tempo (Z2) and intervals shrink with age and become low-impact only from 50; a power-emphasis slot (light load lifted fast, low impact) is added from 50; balance work starts at 50 and becomes ≥3 multicomponent days at 65+. Interval sessions need a base of regular training first, longer with age.",
@@ -5915,7 +5914,7 @@
       ],
       "uncertainty": "No trial compares age-banded exercise mixes. Floors (≥2 strength days, ≥3 multicomponent days at 65+, 150 min) are High Evidence; the band cut-points, tempo and HIIT tapers and base lengths are Expert Practice. HIIT safety data come from supervised settings.",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-12",
       "affected_algorithms": [
         "weekly_scheduling",
         "workout_generation",
@@ -5926,10 +5925,9 @@
         "TC-FL-003a",
         "TC-FL-003b"
       ],
-      "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
+      "change_reason": "PATCH: Bull 2020 checked in full text (2+ strength days; 3+ multicomponent balance and strength days at 65+); Fragala 2019 and Peterson 2011 still to read — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
       "status": "approved",
       "verification_pending": [
-        "Bull2020",
         "Fragala2019",
         "Peterson2011"
       ]
@@ -5978,7 +5976,7 @@
     },
     {
       "rule_id": "FL-005",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "fat_loss",
       "title": "Progress measures without food tracking",
       "statement": "Waist and strength are the main progress measures; weight is secondary. Waist (optional): every 2–4 weeks, midway between the lowest rib and the top of the hip bone, standing, after a normal breath out, three readings averaged; South Asian reference lines (≥90 cm men, ≥80 cm women) shown as information only. Weight (optional): daily or weekly under the same conditions; the app shows a 7-day mean and judges only 4-week trends. If the 7-day mean falls more than 1 kg/week for 3 weeks in a row, a neutral check-in suggests checking with a doctor if the user isn't trying to diet or feels unwell. No food advice.",
@@ -6009,7 +6007,7 @@
       ],
       "uncertainty": "Daily vs weekly weighing is equivalent (Moderate); averaging, the rate flag and the measuring site are Expert Practice. The Indian consensus measures just above the hip bone, not at the WHO midpoint; readings differ between sites.",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-12",
       "affected_algorithms": [
         "progress_summary",
         "coach"
@@ -6018,16 +6016,15 @@
         "TC-FL-005a",
         "TC-FL-005b"
       ],
-      "change_reason": "CR-003 / D-060: default goal 'Lose fat, keep muscle' for adults 30+ with an age-banded training mix (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
+      "change_reason": "PATCH: the South Asian waist reference lines (90 cm men, 80 cm women) confirmed by the IDF definition's authors; the WHO STEPS protocol text is still to read — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
       "status": "approved",
       "verification_pending": [
-        "IDF2006",
         "WHOSTEPS"
       ]
     },
     {
       "rule_id": "STEP-001",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "steps",
       "title": "Daily step target",
       "statement": "Daily step target by age band — 9,000 (30–49), 8,000 (50–59), 7,500 (60–64), 7,000 (65+) — reached gradually: baseline = median of the first 7 valid days (≥500 steps recorded); each week the target rises by p × last week's mean (p = 0.15 under 50, 0.10 from 50), rounded to 50 steps, between 250 and a cap (1,000 under 50, 750 at 50–59, 500 at 60–64, 400 at 65+), only if the target was met on ≥5 of 7 days; held at 3–4 days; lowered by one step after 2 weeks with ≤2 days met; no rise in a deload week or with a lower-limb pain flag; never above the band target.",
@@ -6091,7 +6088,7 @@
       ],
       "uncertainty": "Targets come from observational mortality plateaus (8,000–10,000 under 60, 6,000–8,000 from 60) measured with research devices, not phones. The progression rate is Expert Practice; adaptive goals have Limited Evidence. Steps alone barely change weight (~0.05 kg/week).",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-12",
       "affected_algorithms": [
         "daily_activity",
         "progress_summary"
@@ -6100,11 +6097,8 @@
         "TC-STEP-001a",
         "TC-STEP-001b"
       ],
-      "change_reason": "CR-005 / D-062: phone step counter (Research Update 1.1) — Research Update 1.1, approved by the Product Owner on 2026-10-09",
-      "status": "approved",
-      "verification_pending": [
-        "Ding2025"
-      ]
+      "change_reason": "PATCH: Ding 2025 checked (abstract): 7,000 steps a day already brings most of the mortality benefit — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
+      "status": "approved"
     },
     {
       "rule_id": "STEP-002",
@@ -6140,7 +6134,7 @@
     },
     {
       "rule_id": "SAF-010",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "category": "safety",
       "title": "Health-condition profiles",
       "statement": "Users may select health conditions from a versioned table (health_conditions v1.0). Each entry sets conservative limits on general fitness training: doctor's OK advice, highest zone, intervals, minimum reps in reserve, no training to failure, impact, exercise tags to avoid, joint limits, extra warm-up and cool-down, positions, prompts and condition-specific stop signs. With several conditions each control takes its most restrictive value. Control status is self-reported (not sure = not under control); the app never reads or thresholds clinical values (blood pressure, glucose, ketones). A doctor's OK is the user's statement of scope (light–moderate, vigorous, intervals) and unlocks only that scope. Prompts never name a medicine, dose, value target or diagnosis, and never claim to treat a condition. A clinician and a regulatory adviser review the table before any public release.",
@@ -6204,7 +6198,7 @@
       ],
       "uncertainty": "Benefit of exercise is High Evidence for type 2 diabetes, knee/hip osteoarthritis, high blood pressure and pregnancy; nearly every numeric cap is an Expert Practice translation of guideline intensity into app controls. Stroke, COPD and cancer entries rest on less-verified sources. Not a medical device feature: no diagnosis, no clinical values, no treatment claims (D-058).",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-12",
       "affected_algorithms": [
         "onboarding",
         "safety_validator",
@@ -6216,15 +6210,12 @@
         "TC-SAF-010a",
         "TC-SAF-010b"
       ],
-      "change_reason": "PATCH: Table reference only: health_conditions 1.0.1 encodes the breastbone sub-flag as controls, makes diabetes add-ons bring their base entries, honours 'uncomfortable lying on the back' with severe obesity, and resolves unknown IDs to conservative mode (D-069)",
-      "status": "approved",
-      "verification_pending": [
-        "Riebe2015"
-      ]
+      "change_reason": "PATCH: Riebe 2015 checked (abstract): activity level, symptoms or known disease, and intended intensity decide the screening — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
+      "status": "approved"
     },
     {
       "rule_id": "CAL-002",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "calibration",
       "title": "Starting from your own numbers",
       "statement": "A user may enter, per exercise, a recent set (weight × reps and reps in reserve) or a best lift (counted as 0 reps in reserve). An estimated 1RM comes from INT-004 only when the entry is valid (reps + RIR ≤ 12, RIR ≤ 3); the first working load is the INT-005 load from 90% of that estimate (CAL-001 known-weights start). If the user last did the exercise 14–27 days ago the estimate is reduced 10%, 28–55 days 20%, and from 56 days the entry is used only as a ceiling for a normal CAL-001 ramp (age 60+ or a flagged screen moves one band longer, as REG-004). The first session confirms it with the CAL-001 rules.",
@@ -6250,7 +6241,7 @@
       ],
       "uncertainty": "e1RM formula accuracy is Moderate (INT-004); the 90% start and the age reductions follow existing CAL-001/REG-004 values rather than direct evidence for self-reported numbers, which may be optimistic.",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-12",
       "affected_algorithms": [
         "calibration",
         "load_selection",
@@ -6260,11 +6251,10 @@
         "TC-CAL-002a",
         "TC-CAL-002b"
       ],
-      "change_reason": "CR-002 / D-059: starting weights and personal records — Research Update 1.1, approved by the Product Owner on 2026-10-09",
+      "change_reason": "PATCH: Halperin 2022 checked (abstract): predictions of reps to failure are about one rep low and better at 12 reps or fewer, as the reps + RIR <= 12 limit assumes; LeSuer 1997 citation confirmed, its abstract still to read — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
       "status": "approved",
       "verification_pending": [
-        "LeSuer1997",
-        "Halperin2022"
+        "LeSuer1997"
       ]
     },
     {
@@ -6404,16 +6394,14 @@
     }
   ],
   "verification_pending": [
-    "Donnelly2009 dose bands (full text)",
-    "Bull2020 (BJSM full text)",
-    "Ding2025 (Lancet full text)",
     "ACOG20 (CO 804 full text)",
     "ADA Standards of Care 2026, section 5 (not opened: unverified)",
     "GINA 2026 exercise section",
     "FDA General Wellness 2026 and MDCG 2019-11 rev.1 primary texts",
     "Campbell 2019 (CAM19) full text for the cancer entry's cautions",
     "Peterson2011",
-    "IDF2006",
-    "WHOSTEPS"
+    "Fragala2019 (program-design recommendations, full text)",
+    "LeSuer1997 (abstract or full text)",
+    "WHOSTEPS (WHO 2011 expert-consultation report, measuring protocol)"
   ]
 }
