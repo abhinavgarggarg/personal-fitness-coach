@@ -13,13 +13,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +44,16 @@ import com.personalfitnesscoach.app.flow.Screen
 import com.personalfitnesscoach.app.flow.WorkoutNotice
 import com.personalfitnesscoach.app.platform.RestAlerts
 import com.personalfitnesscoach.app.ui.Body
+import com.personalfitnesscoach.app.ui.ChipShape
+import com.personalfitnesscoach.app.ui.ExerciseFigure
+import com.personalfitnesscoach.app.ui.Glass
+import com.personalfitnesscoach.app.ui.GlassCard
+import com.personalfitnesscoach.app.ui.PfcIcons
+import com.personalfitnesscoach.app.ui.ProgressRing
+import com.personalfitnesscoach.app.ui.StudioCard
+import com.personalfitnesscoach.app.ui.TIMES
+import com.personalfitnesscoach.app.ui.TonalPill
+import com.personalfitnesscoach.app.ui.glass
 import com.personalfitnesscoach.app.ui.Heading
 import com.personalfitnesscoach.app.ui.InfoCard
 import com.personalfitnesscoach.app.ui.LocalActions
@@ -61,6 +72,7 @@ import com.personalfitnesscoach.app.ui.kg
 import com.personalfitnesscoach.app.ui.minutes
 import com.personalfitnesscoach.app.ui.text.ReasonTexts
 import com.personalfitnesscoach.app.ui.theme.Numerals
+import com.personalfitnesscoach.app.ui.theme.NumeralsSmall
 import com.personalfitnesscoach.data.core.player.LiftEntry
 import com.personalfitnesscoach.data.core.player.LiftView
 import com.personalfitnesscoach.data.core.player.PlayerView
@@ -145,19 +157,12 @@ private fun TopRow(v: PlayerView) {
 @Composable
 private fun SafetyRow(v: PlayerView) {
     val a = LocalActions.current
-    HorizontalDivider()
-    FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = 3) {
         val current = (v.step as? Step.Lift)?.lift?.rowId
-        OutlinedButton(onClick = { a.run { openHurts(current) } }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight)) {
-            Text(stringResource(R.string.wk_hurts))
-        }
-        OutlinedButton(onClick = { a.run { openRedFlag() } }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight)) {
-            Text(stringResource(R.string.wk_red_flag))
-        }
-        OutlinedButton(onClick = { a.run { openChangeTime() } }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight)) {
-            Text(stringResource(R.string.wk_change_time))
-        }
+        TonalPill(stringResource(R.string.wk_hurts), { a.run { openHurts(current) } }, Modifier.weight(1f), PfcIcons.Hurts, Tone.WARN)
+        TonalPill(stringResource(R.string.wk_red_flag), { a.run { openRedFlag() } }, Modifier.weight(1f), PfcIcons.Warning, Tone.ALERT)
+        TonalPill(stringResource(R.string.wk_change_time), { a.run { openChangeTime() } }, Modifier.weight(1f), PfcIcons.Time)
     }
 }
 
@@ -202,26 +207,26 @@ private fun RestPanel(endsAtMs: Long, v: PlayerView) {
         }
     }
     val left = ((leftMs + 999) / 1000).coerceAtLeast(0)
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    GlassCard {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             if (left > 0) {
-                Text(stringResource(R.string.wk_rest_title), style = MaterialTheme.typography.titleMedium)
-                // Not a live region: TalkBack would read every second (R5-18); the end of the rest is announced instead.
-                Text(stringResource(R.string.wk_rest_left, (left / 60).toInt(), (left % 60).toInt()), style = Numerals)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalButton(onClick = { a.run { adjustRest(-30) } }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight)) {
-                        Text(stringResource(R.string.wk_rest_minus))
-                    }
-                    FilledTonalButton(onClick = { a.run { adjustRest(30) } }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight)) {
-                        Text(stringResource(R.string.wk_rest_plus))
-                    }
-                    FilledTonalButton(onClick = { a.run { skipRest() } }, enabled = !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight)) {
-                        Text(stringResource(R.string.wk_rest_skip))
-                    }
+                Text(stringResource(R.string.wk_rest_title), style = MaterialTheme.typography.titleMedium, color = Glass.muted)
+                // The ring empties as the rest runs down; the number stays the size of the ring at any text size (it is already huge).
+                val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+                ProgressRing((leftMs.toFloat() / startLeft.coerceAtLeast(1)).coerceIn(0f, 1f), 216.dp, 14.dp) {
+                    // Not a live region: TalkBack would read every second (R5-18); the end of the rest is announced instead.
+                    Text(stringResource(R.string.wk_rest_left, (left / 60).toInt(), (left % 60).toInt()),
+                        style = Numerals.copy(fontSize = (60f / fontScale.coerceAtLeast(1f)).sp, lineHeight = (64f / fontScale.coerceAtLeast(1f)).sp),
+                        color = Glass.text)
+                }
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+                    maxItemsInEachRow = 3) {
+                    TonalPill(stringResource(R.string.wk_rest_minus), { a.run { adjustRest(-30) } }, Modifier.weight(1f))
+                    TonalPill(stringResource(R.string.wk_rest_plus), { a.run { adjustRest(30) } }, Modifier.weight(1f))
+                    TonalPill(stringResource(R.string.wk_rest_skip), { a.run { skipRest() } }, Modifier.weight(1f))
                 }
             } else {
-                Text(stringResource(R.string.wk_rest_over), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold,
+                Text(stringResource(R.string.wk_rest_over), style = MaterialTheme.typography.titleLarge, color = Glass.cool,
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive })
             }
             (v.step as? Step.Lift)?.lift?.let { l -> Note(stringResource(R.string.wk_next, l.exercise.name)) }
@@ -264,7 +269,17 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
     if (l.item.reducedRange) Note(stringResource(R.string.wk_reduced_range))
     if (l.item.painReduced) Note(stringResource(R.string.wk_pain_reduced))
     if (l.item.fromKnownNumber) Note(stringResource(R.string.wk_from_own_number))
-    com.personalfitnesscoach.engine.library.Library.text(l.exercise.id)?.cues?.take(2)?.forEach { Note(it) }
+    // CR-004: the exercise moving on a studio card, its main form point marked; the first cue sits on the card, the second below.
+    val cues = com.personalfitnesscoach.engine.library.Library.text(l.exercise.id)?.cues?.take(2).orEmpty()
+    StudioCard(Modifier.fillMaxWidth().heightIn(min = 196.dp)) {
+        ExerciseFigure(l.exercise.id, stringResource(R.string.figure_desc, l.exercise.name), Modifier.matchParentSize())
+        cues.firstOrNull()?.let { cue ->
+            Text(cue, style = MaterialTheme.typography.labelMedium, color = androidx.compose.ui.graphics.Color(0xFFC6D3E2),
+                modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                    .background(androidx.compose.ui.graphics.Color(0x990A101C), ChipShape).padding(horizontal = 10.dp, vertical = 4.dp))
+        }
+    }
+    cues.drop(1).forEach { Note(it) }
     val t = l.next
     if (t == null) {
         Note(stringResource(R.string.wk_ex_done))
@@ -326,20 +341,38 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
 /** The target of the next set in large numerals (Phase 2 A1). */
 @Composable
 private fun TargetCard(t: SetTarget, l: LiftView) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    val g = Glass
+    GlassCard {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(when {
                 t.kind == SetKind.WARMUP -> stringResource(R.string.wk_set_ramp, t.number, t.of)
                 t.kind == SetKind.CALIBRATION -> stringResource(R.string.wk_set_calibration, t.number)
                 t.userAdded -> stringResource(R.string.wk_set_added, t.number - (l.item.sets - l.item.addedSets))
                 else -> stringResource(R.string.wk_set_working, t.number, t.of)
-            }, style = MaterialTheme.typography.titleMedium)
-            val load = t.load?.let { stringResource(R.string.unit_kg, kg(it)) } ?: stringResource(R.string.bodyweight)
-            Text(load, style = Numerals)
-            Text(doseText(t.reps, t.unit, t.perSide), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-            t.targetRir?.let { r ->
-                Note(if (r <= 0.0) stringResource(R.string.to_failure) else stringResource(R.string.rir_target, kg(r)))
+            }, style = MaterialTheme.typography.titleMedium, color = g.text, modifier = Modifier.weight(1f))
+            // The sets of this exercise as dots: done (cool), this one (warm), still to come (glass). The words above say the same.
+            if (t.kind == SetKind.WORKING && !t.userAdded && t.of in 2..8) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (i in 1..t.of) Box(Modifier.size(10.dp).background(when {
+                    i < t.number -> g.cool
+                    i == t.number -> g.warm
+                    else -> g.glassBorder
+                }, androidx.compose.foundation.shape.CircleShape))
             }
+        }
+        // "60 kg × 8 reps" in big numbers (Phase 2 A1); the parts wrap onto a new line at large text sizes.
+        FlowRow(verticalArrangement = Arrangement.Center, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val load = t.load
+            if (load != null) {
+                Text(kg(load), style = Numerals, color = g.text, modifier = Modifier.alignByBaseline())
+                Text(stringResource(R.string.unit_kg_alone), style = MaterialTheme.typography.titleMedium, color = g.muted, modifier = Modifier.alignByBaseline())
+            } else {
+                Text(stringResource(R.string.bodyweight), style = NumeralsSmall, color = g.text, modifier = Modifier.alignByBaseline())
+            }
+            Text(TIMES, style = NumeralsSmall, color = g.muted, modifier = Modifier.alignByBaseline())
+            Text(doseText(t.reps, t.unit, t.perSide), style = NumeralsSmall, color = g.text, modifier = Modifier.alignByBaseline())
+        }
+        t.targetRir?.let { r ->
+            Note(if (r <= 0.0) stringResource(R.string.to_failure) else stringResource(R.string.rir_target, kg(r)))
         }
     }
 }
@@ -353,10 +386,13 @@ private fun EffortButtons(style: Effort.PromptStyle, includeFivePlus: Boolean, e
     val options: List<Pair<String, Double>> =
         if (includeFivePlus) listOf("0" to 0.0, "1" to 1.0, "2" to 2.0, "3" to 3.0, "4" to 4.0, five to 5.0)
         else Effort.rirOptions.map { it to (Effort.rirFromAnswer(it) ?: 4.0) }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         options.forEach { (label, rir) ->
-            FilledTonalButton(onClick = { onPick(rir) }, enabled = enabled && !LocalBusy.current, modifier = Modifier.heightIn(min = PrimaryHeight).widthIn(min = PrimaryHeight)) {
-                Text(label, style = MaterialTheme.typography.titleMedium)
+            val on = enabled && !LocalBusy.current
+            Box(Modifier.heightIn(min = PrimaryHeight).widthIn(min = PrimaryHeight).clip(ChipShape).glass(ChipShape, strong = true)
+                .clickable(enabled = on, role = androidx.compose.ui.semantics.Role.Button) { onPick(rir) }.padding(horizontal = 14.dp),
+                contentAlignment = Alignment.Center) {
+                Text(label, style = MaterialTheme.typography.titleLarge, color = if (on) Glass.text else Glass.muted)
             }
         }
     }
@@ -370,6 +406,7 @@ private fun ExerciseList(v: PlayerView) {
     val current = (v.step as? Step.Lift)?.lift?.rowId
     // Exercises can be chosen in any order once the lifts have started (never skipping the warm-up, R5-08).
     val choosing = v.stage == Stage.LIFTS
+    GlassCard(padding = 12.dp) {
     v.lifts.forEach { l ->
         val state = when {
             l.status == Status.SKIPPED -> stringResource(R.string.wk_ex_skipped)
@@ -385,5 +422,6 @@ private fun ExerciseList(v: PlayerView) {
         } else {
             SmallAction(label, { a.run { select(l.rowId) } })
         }
+    }
     }
 }

@@ -262,6 +262,9 @@ data class TodayModel(
     val backFlare: Boolean? = null,
     /** The next planned session, also after today's is done (shown as "Next: …"). */
     val upcoming: PlannedDay? = null,
+    /** The hour (0–23) on the app's clock, for the greeting (D-099); today's day number for the date line. */
+    val hour: Int = 12,
+    val today: Int = 0,
 )
 
 enum class ConservativeReason {

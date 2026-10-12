@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -24,10 +25,11 @@ class LaunchSmokeTest {
     @Test fun appStartsAndShowsTheFirstScreen() {
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         val welcome = ctx.getString(R.string.onb_welcome_title)
-        val today = ctx.getString(R.string.today_title)
-        // A fresh install shows the welcome screen; a phone that already finished onboarding shows Today.
+        val today = ctx.getString(R.string.tab_today)
+        // A fresh install shows the welcome screen; a phone that already finished onboarding shows Today (its tab is an icon with this name).
         compose.waitUntil(20_000) {
-            compose.onAllNodesWithText(welcome).fetchSemanticsNodes().isNotEmpty() || compose.onAllNodesWithText(today).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText(welcome).fetchSemanticsNodes().isNotEmpty() ||
+                compose.onAllNodes(hasContentDescription(today)).fetchSemanticsNodes().isNotEmpty()
         }
         if (compose.onAllNodesWithText(welcome).fetchSemanticsNodes().isNotEmpty()) compose.onNodeWithText(ctx.getString(R.string.app_name)).assertIsDisplayed()
     }

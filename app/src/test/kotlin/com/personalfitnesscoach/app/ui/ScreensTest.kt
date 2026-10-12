@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -70,16 +72,19 @@ class ScreensTest {
         return c
     }
 
+    /** A control's words, or the spoken name of an icon-only control (the tab bar, the settings button; D-099). */
+    private fun named(text: String, substring: Boolean = false) = hasText(text, substring = substring) or hasContentDescription(text, substring = substring)
+
     /** Taps the n-th node with this text, scrolling to it first when it sits in a scrolling screen (dialogs don't scroll). */
     private fun tap(text: String, index: Int = 0) {
-        val n = compose.onAllNodesWithText(text)[index]
+        val n = compose.onAllNodes(named(text))[index]
         runCatching { n.performScrollTo() }
         n.performClick()
         compose.waitForIdle()
     }
 
     private fun shown(text: String, substring: Boolean = false) {
-        val n = compose.onAllNodesWithText(text, substring = substring)[0]
+        val n = compose.onAllNodes(named(text, substring))[0]
         runCatching { n.performScrollTo() }
         n.assertIsDisplayed()
     }

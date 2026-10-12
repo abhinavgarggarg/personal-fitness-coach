@@ -1,9 +1,25 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.personalfitnesscoach.app.ui.coach
 
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import com.personalfitnesscoach.app.ui.Glass
+import com.personalfitnesscoach.app.ui.TonalPill
+import com.personalfitnesscoach.app.ui.warmBrush
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,7 +81,9 @@ fun CoachScreen(m: CoachModel) {
         PrimaryButton(stringResource(R.string.coach_ask), { a.run { askCoach() } }, enabled = m.text.isNotBlank())
         m.answer?.let { AnswerCard(it) }
         SectionTitle(stringResource(R.string.coach_suggested))
-        Question.SUGGESTED.forEach { q -> SmallAction(stringResource(Labels.question(q)), { a.run { askSuggested(q) } }) }
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Question.SUGGESTED.forEach { q -> TonalPill(stringResource(Labels.question(q)), { a.run { askSuggested(q) } }) }
+        }
         SecondaryButton(stringResource(R.string.gemini_ask), { a.run { prepareGeminiShare() } })
         if (m.back != null) SecondaryButton(stringResource(R.string.action_back), { a.run { closeCoach() } })
     }
@@ -83,14 +101,29 @@ private fun AnswerCard(ans: CoachAnswer) {
         ?: ans.outOfScope?.let { o -> if (o == OutOfScope.URGENT_SYMPTOMS) stringResource(R.string.oos_urgent, P.SAF_002.emergency_number_default)
             else stringResource(Labels.outOfScope(o)) }
         ?: stringResource(R.string.coach_unknown)
-    InfoCard(title, tone) {
+    val body: @Composable ColumnScope.() -> Unit = {
         ans.question?.let { q -> ans.facts.forEach { FactText(q, it) } }
         ans.suggestions.forEach { q -> SmallAction(stringResource(Labels.question(q)), { a.run { askSuggested(q) } }) }
         ans.actions.forEach { act -> ActionButton(act) }
         // The rules themselves, with their titles and how sure the evidence is, are one tap away (no rule codes on the answer; R6-16).
         if (ans.rules.isNotEmpty()) SmallAction(stringResource(R.string.action_why), { a.run { openWhy(ans.question?.name ?: ans.outOfScope?.name ?: "", ans.rules) } })
     }
+    if (ans.question == null) {
+        InfoCard(title, tone, content = body)
+        return
+    }
+    // D-099: the question as the user's bubble on the right (warm), the answer as the coach's on the left (glass, cool edge).
+    val g = Glass
+    Box(Modifier.fillMaxWidth()) {
+        Text(title, style = MaterialTheme.typography.titleSmall, color = g.onWarm,
+            modifier = Modifier.align(Alignment.CenterEnd).widthIn(max = 300.dp).background(warmBrush(), AskedShape).padding(horizontal = 16.dp, vertical = 12.dp))
+    }
+    Column(Modifier.fillMaxWidth().background(g.glass, AnsweredShape).border(1.dp, g.cool.copy(alpha = 0.4f), AnsweredShape).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp), content = body)
 }
+
+private val AskedShape = RoundedCornerShape(22.dp, 22.dp, 6.dp, 22.dp)
+private val AnsweredShape = RoundedCornerShape(22.dp, 22.dp, 22.dp, 6.dp)
 
 @Composable
 private fun FactText(q: Question, f: Fact) {

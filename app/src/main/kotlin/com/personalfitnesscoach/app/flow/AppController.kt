@@ -370,7 +370,8 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         return TodayModel(t, next, nextIsToday, cells, dd.docs.get(ReadinessRecord, dayKey(today)),
             dd.docs.get(SafetyStopRecord)?.takeIf { it.confirmedDay == null }?.symptoms, missed >= 1 && (next != null),
             dd.backup.reminderDue(dd.completedWorkouts()), rate, streak, steps, target, t.user.flaggedScreen, t.user.conditions.prompts,
-            week.any { it.day == today && it.row.status == Status.DONE }, reasons, painStop, reason, rescreen, flare, upcoming(t))
+            week.any { it.day == today && it.row.status == Status.DONE }, reasons, painStop, reason, rescreen, flare, upcoming(t),
+            hour = java.time.Instant.ofEpochMilli(now).atZone(dd.clock.zone()).hour, today = today)
     }
 
     /** SAF-010 low back pain flare mode, switched from Today (R5-12). */

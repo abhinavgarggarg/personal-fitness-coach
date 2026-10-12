@@ -1,6 +1,11 @@
 package com.personalfitnesscoach.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -120,7 +125,10 @@ fun PfcApp(actions: Actions) {
     }
 
     CompositionLocalProvider(LocalBusy provides busy, LocalActions provides actions) {
-        Scaffold(snackbarHost = { SnackbarHost(snack) }, bottomBar = { screen.tab()?.let { TabBar(it) } }) { padding ->
+        // D-099: every screen sits on the Glow background; the tab bar floats over it.
+        GlowBackground(Modifier.fillMaxSize()) {
+        Scaffold(snackbarHost = { SnackbarHost(snack) }, bottomBar = { screen.tab()?.let { TabBar(it) } },
+            containerColor = androidx.compose.ui.graphics.Color.Transparent, contentColor = Glass.text) { padding ->
             Box(Modifier.fillMaxSize().padding(padding).imePadding()) {
                 when (val s = screen) {
                     Screen.Loading -> LoadingScreen()
@@ -145,38 +153,41 @@ fun PfcApp(actions: Actions) {
                 }
             }
         }
+        }
     }
 }
 
 /**
- * The four tabs (Phase 2 section 5): Today, History, Progress, Coach. Text labels, each at least 56 dp tall (the look and the icons come
- * with CR-007); the current tab is marked for TalkBack too.
+ * The four tabs (Phase 2 section 5): Today, History, Progress, Coach, as icons on a floating glass bar (D-099). Each icon is a 56 dp
+ * target with its spoken name; the current one is marked (warm, with a glowing bar) and read as selected by TalkBack.
  */
 @Composable
 private fun TabBar(current: com.personalfitnesscoach.app.flow.Tab) {
     val a = LocalActions.current
     val busy = LocalBusy.current
-    androidx.compose.material3.Surface(tonalElevation = 3.dp) {
-        androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)) {
-            com.personalfitnesscoach.app.flow.Tab.entries.forEach { tab ->
-                val label = stringResource(when (tab) {
-                    com.personalfitnesscoach.app.flow.Tab.TODAY -> R.string.tab_today
-                    com.personalfitnesscoach.app.flow.Tab.HISTORY -> R.string.tab_history
-                    com.personalfitnesscoach.app.flow.Tab.PROGRESS -> R.string.tab_progress
-                    com.personalfitnesscoach.app.flow.Tab.COACH -> R.string.tab_coach
-                })
-                val selected = tab == current
-                androidx.compose.material3.TextButton(
-                    onClick = { if (!selected) a.run { openTab(tab) } }, enabled = !busy,
-                    modifier = Modifier.weight(1f).heightIn(min = PrimaryHeight)
-                        .semantics { this.selected = selected; role = androidx.compose.ui.semantics.Role.Tab },
-                ) {
-                    androidx.compose.material3.Text(label, style = if (selected) androidx.compose.material3.MaterialTheme.typography.titleSmall
-                        else androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.Bold else null,
-                        color = if (selected) androidx.compose.material3.MaterialTheme.colorScheme.primary
-                        else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                }
+    val g = Glass
+    androidx.compose.foundation.layout.Row(
+        Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars).padding(start = 16.dp, end = 16.dp, bottom = 12.dp, top = 4.dp)
+            .background(g.bar, PillShape).border(1.dp, g.glassBorder, PillShape).heightIn(min = 68.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        com.personalfitnesscoach.app.flow.Tab.entries.forEach { tab ->
+            val (label, icon) = when (tab) {
+                com.personalfitnesscoach.app.flow.Tab.TODAY -> stringResource(R.string.tab_today) to PfcIcons.Home
+                com.personalfitnesscoach.app.flow.Tab.HISTORY -> stringResource(R.string.tab_history) to PfcIcons.History
+                com.personalfitnesscoach.app.flow.Tab.PROGRESS -> stringResource(R.string.tab_progress) to PfcIcons.Progress
+                com.personalfitnesscoach.app.flow.Tab.COACH -> stringResource(R.string.tab_coach) to PfcIcons.Coach
+            }
+            val selected = tab == current
+            Column(
+                Modifier.weight(1f).heightIn(min = PrimaryHeight)
+                    .clickable(enabled = !busy, role = androidx.compose.ui.semantics.Role.Tab) { if (!selected) a.run { openTab(tab) } }
+                    .semantics { this.selected = selected; contentDescription = label },
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+            ) {
+                androidx.compose.material3.Icon(icon, contentDescription = null, tint = if (selected) g.warm else g.muted, modifier = Modifier.size(26.dp))
+                if (selected) Box(Modifier.padding(top = 6.dp).size(width = 18.dp, height = 3.dp).glow(g.warm, radius = 8.dp, corner = 2.dp)
+                    .background(g.warm, PillShape))
             }
         }
     }

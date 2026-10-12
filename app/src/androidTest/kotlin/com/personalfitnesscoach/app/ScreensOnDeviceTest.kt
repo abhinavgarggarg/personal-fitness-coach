@@ -2,6 +2,8 @@ package com.personalfitnesscoach.app
 
 import android.content.Context
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -52,9 +54,12 @@ class ScreensOnDeviceTest {
         return AppController({ PfcData(RoomRowStore(PfcDatabase.inMemory(ctx).also { dbs += it }), clock, "device-test") }, AndroidPlatform(ctx), "device-test")
     }
 
+    /** A control's words, or the spoken name of an icon-only control (the tab bar, the settings button; D-099). */
+    private fun named(text: String) = hasText(text) or hasContentDescription(text)
+
     private fun tapThenWait(text: String, until: () -> Boolean) {
-        compose.waitUntil(10_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
-        val n = compose.onAllNodesWithText(text)[0]
+        compose.waitUntil(10_000) { compose.onAllNodes(named(text)).fetchSemanticsNodes().isNotEmpty() }
+        val n = compose.onAllNodes(named(text))[0]
         runCatching { n.performScrollTo() }
         n.performClick()
         compose.waitUntil(15_000, until)

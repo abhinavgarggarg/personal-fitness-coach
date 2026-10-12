@@ -18,6 +18,7 @@
     <string name="action_increase">Increase %1$s</string>
     <string name="error_action">That didn’t work, and nothing was changed. Please try again.</string>
     <string name="unit_kg">%1$s kg</string>
+    <string name="unit_kg_alone">kg</string>
     <string name="unit_min">%1$d min</string>
     <string name="unit_sec">%1$d s</string>
     <string name="each_side">each side</string>
@@ -202,7 +203,26 @@
     <string name="onb_alerts_skip">Not now</string>
 
     <!-- ======================================================================== today -->
-    <string name="today_title">Today</string>
+    <string name="greet_morning">Good morning,</string>
+    <string name="greet_afternoon">Good afternoon,</string>
+    <string name="greet_evening">Good evening,</string>
+    <!-- The date under the greeting (java.time pattern): "Monday 12 October". -->
+    <string name="today_date_pattern" translatable="false">EEEE d MMMM</string>
+    <string name="today_ring_value">%1$d/%2$d</string>
+    <string name="today_ring_unit">sessions</string>
+    <string name="today_ring_desc">This week: %1$d of %2$d sessions done</string>
+    <string name="today_ring_spoken">%1$s. %2$s</string>
+    <string name="today_week_left">%1$d done, %2$d to go. One session at a time.</string>
+    <string name="today_week_all_done">Every planned session is done this week.</string>
+    <string name="tile_steps">steps</string>
+    <string name="tile_minutes">min session</string>
+    <string name="tile_streak">weeks in a row</string>
+    <string name="tile_year">weeks this year</string>
+    <string name="tile_sessions">sessions</string>
+    <string name="today_workout">Today’s workout</string>
+    <string name="today_card_line">About %1$d min · %2$d exercises</string>
+    <string name="today_week_days">Your week</string>
+    <string name="figure_desc">Moving picture of %1$s, start to end of one rep</string>
     <string name="today_next_planned">Next: %1$s (planned for %2$s, you can do it today)</string>
     <string name="today_about_minutes">About %1$d min</string>
     <string name="today_start">Start</string>

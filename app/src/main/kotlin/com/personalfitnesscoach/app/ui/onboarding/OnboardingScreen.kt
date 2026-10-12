@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -199,9 +198,7 @@ private fun ConditionItem(key: String, name: String, e: ConditionEntry?, f: Onbo
     })
     if (picked == null) return
     val change: ((ConditionAnswers) -> ConditionAnswers) -> Unit = { c -> edit { it.copy(conditions = it.conditions + (key to c(it.conditions[key] ?: ConditionAnswers()))) } }
-    Card(Modifier.fillMaxWidth().padding(start = 12.dp)) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { ConditionFollowUps(key, e, picked, change) }
-    }
+    com.personalfitnesscoach.app.ui.GlassCard(Modifier.padding(start = 12.dp), padding = 12.dp) { ConditionFollowUps(key, e, picked, change) }
 }
 
 /** The questions the table asks for one picked condition; each answer maps to a stored field the engine reads (SAF-010). */
@@ -396,15 +393,13 @@ private fun NumbersStep(f: OnboardingForm, c: AppController, edit: ((OnboardingF
         })
         if (id in open) {
             val set: ((NumberEntry) -> NumberEntry) -> Unit = { ch -> edit { it.copy(numbers = it.numbers + (id to ch(it.numbers[id] ?: NumberEntry()))) } }
-            Card(Modifier.fillMaxWidth().padding(start = 12.dp)) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NumberField(stringResource(R.string.onb_numbers_load), n?.loadKg, { v -> set { it.copy(loadKg = v) } }, Modifier.weight(1f))
-                        NumberField(stringResource(R.string.onb_numbers_reps), n?.reps?.toDouble(), { v -> set { it.copy(reps = v?.toInt()) } }, Modifier.weight(1f), decimals = false)
-                    }
-                    CheckRow(stringResource(R.string.onb_numbers_best), n?.bestLift == true, { on -> set { it.copy(bestLift = on) } })
-                    NumberField(stringResource(R.string.onb_numbers_days_ago), (n?.daysAgo ?: 7).toDouble(), { v -> set { it.copy(daysAgo = (v?.toInt() ?: 0).coerceIn(0, 3650)) } }, decimals = false)
+            com.personalfitnesscoach.app.ui.GlassCard(Modifier.padding(start = 12.dp), padding = 12.dp) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField(stringResource(R.string.onb_numbers_load), n?.loadKg, { v -> set { it.copy(loadKg = v) } }, Modifier.weight(1f))
+                    NumberField(stringResource(R.string.onb_numbers_reps), n?.reps?.toDouble(), { v -> set { it.copy(reps = v?.toInt()) } }, Modifier.weight(1f), decimals = false)
                 }
+                CheckRow(stringResource(R.string.onb_numbers_best), n?.bestLift == true, { on -> set { it.copy(bestLift = on) } })
+                NumberField(stringResource(R.string.onb_numbers_days_ago), (n?.daysAgo ?: 7).toDouble(), { v -> set { it.copy(daysAgo = (v?.toInt() ?: 0).coerceIn(0, 3650)) } }, decimals = false)
             }
         }
     }

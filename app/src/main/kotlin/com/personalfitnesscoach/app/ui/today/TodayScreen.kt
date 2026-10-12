@@ -2,22 +2,32 @@
 
 package com.personalfitnesscoach.app.ui.today
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,26 +37,43 @@ import com.personalfitnesscoach.app.flow.DayCell
 import com.personalfitnesscoach.app.flow.DayState
 import com.personalfitnesscoach.app.flow.SettingsFlow
 import com.personalfitnesscoach.app.flow.TodayModel
-import com.personalfitnesscoach.app.ui.Body
-import com.personalfitnesscoach.app.ui.Heading
+import com.personalfitnesscoach.app.ui.ChipShape
+import com.personalfitnesscoach.app.ui.ExerciseFigure
+import com.personalfitnesscoach.app.ui.Glass
+import com.personalfitnesscoach.app.ui.GlassCard
+import com.personalfitnesscoach.app.ui.IconRoundButton
 import com.personalfitnesscoach.app.ui.InfoCard
 import com.personalfitnesscoach.app.ui.LocalActions
 import com.personalfitnesscoach.app.ui.Note
+import com.personalfitnesscoach.app.ui.PfcIcons
+import com.personalfitnesscoach.app.ui.PillShape
 import com.personalfitnesscoach.app.ui.PrimaryButton
+import com.personalfitnesscoach.app.ui.ProgressRing
+import com.personalfitnesscoach.app.ui.ReasonRow
 import com.personalfitnesscoach.app.ui.ScreenColumn
-import com.personalfitnesscoach.app.ui.SecondaryButton
 import com.personalfitnesscoach.app.ui.SectionTitle
 import com.personalfitnesscoach.app.ui.SmallAction
+import com.personalfitnesscoach.app.ui.StatTile
+import com.personalfitnesscoach.app.ui.StudioCard
 import com.personalfitnesscoach.app.ui.SwitchRow
 import com.personalfitnesscoach.app.ui.Tone
 import com.personalfitnesscoach.app.ui.text.Labels
 import com.personalfitnesscoach.app.ui.text.ReasonTexts
+import com.personalfitnesscoach.app.ui.theme.NumeralsSmall
+import com.personalfitnesscoach.data.core.time.Days
+import com.personalfitnesscoach.engine.program.PlannedDay
+import java.time.format.DateTimeFormatter
 
-/** T1 Today: the next session with one big Start button, the week strip, and anything that needs the user's attention first. */
+/**
+ * T1 Today in the Glow look (D-099): a greeting with the date, anything that needs attention first, this week's ring and three small
+ * numbers, today's workout on a studio card with its first exercise moving, one big Start, the reasons with their "Why?", the week.
+ */
 @Composable
 fun TodayScreen(m: TodayModel) {
     val a = LocalActions.current
-    ScreenColumn(stringResource(R.string.today_title)) {
+    val g = Glass
+    ScreenColumn(null) {
+        Header(m)
         // SAF-002: a stop that has not been confirmed comes before everything else.
         val stop = m.stopOpen
         if (stop != null) {
@@ -71,27 +98,26 @@ fun TodayScreen(m: TodayModel) {
         m.backFlare?.let { on -> SwitchRow(stringResource(R.string.today_back_flare), on, { v -> a.run { setBackFlare(v) } }) }
         if (m.welcomeBack && stop == null) InfoCard(stringResource(R.string.today_welcome_back), Tone.GOOD)
 
+        WeekRing(m)
+        Tiles(m)
+
         val next = m.next
         when {
             stop != null || m.painStop -> Unit
             m.doneToday -> InfoCard(stringResource(R.string.today_done), Tone.GOOD) {
-                m.upcoming?.let { n -> Text(stringResource(R.string.done_next, stringResource(Labels.weekday(n.weekday)), stringResource(Labels.template(n.template)))) }
+                m.upcoming?.let { n -> Text(stringResource(R.string.done_next, stringResource(Labels.weekday(n.weekday)), stringResource(Labels.template(n.template))), color = g.text) }
             }
             next == null -> InfoCard(stringResource(R.string.today_week_done), Tone.GOOD)
             else -> {
                 val name = stringResource(Labels.template(next.template))
-                Text(
-                    if (m.nextIsToday) name
-                    else stringResource(R.string.today_next_planned, name, stringResource(Labels.weekday(next.weekday))),
-                    style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold,
-                )
-                Note(stringResource(R.string.today_about_minutes, m.plan.user.profile.sessionMinutes))
+                SectionTitle(stringResource(R.string.today_workout))
+                if (!m.nextIsToday) Note(stringResource(R.string.today_next_planned, name, stringResource(Labels.weekday(next.weekday))))
+                WorkoutCard(name, next, m.plan.user.profile.sessionMinutes)
                 PrimaryButton(stringResource(R.string.today_start), { a.run { openCheckIn() } })
             }
         }
         m.reasons.forEach { r ->
-            Note(stringResource(ReasonTexts.of(r.reason)))
-            SmallAction(stringResource(R.string.action_why), { a.run { openWhy(r.reason, r.ruleIds) } })
+            ReasonRow(stringResource(ReasonTexts.of(r.reason)), stringResource(R.string.action_why), { a.run { openWhy(r.reason, r.ruleIds) } })
         }
 
         // LOAD-002: a finished session still waiting for its rating.
@@ -107,26 +133,105 @@ fun TodayScreen(m: TodayModel) {
             }
         }
 
-        SectionTitle(stringResource(R.string.today_week))
+        SectionTitle(stringResource(R.string.today_week_days))
         WeekStrip(m.week)
-        // ADH-001: the streak appears once there is one (never a "0 weeks" line for someone just starting).
-        if (m.streak.best > 0) Note(stringResource(R.string.today_streak, m.streak.current, m.streak.best))
-        m.stepsToday?.let { steps ->
-            val target = m.stepTarget
-            Body(if (target != null) stringResource(R.string.today_steps_target, steps, target) else stringResource(R.string.today_steps, steps))
-        }
         if (m.conditionPrompts.isNotEmpty()) {
             SectionTitle(stringResource(R.string.today_condition_tips))
             m.conditionPrompts.distinct().forEach { Note(it) }
         }
-        SecondaryButton(stringResource(R.string.action_settings), { a.run { openSettings() } })
     }
 }
 
-/** The week: each day reads as "Mon, Lower body, heavy, done" to TalkBack; the words, not the colours, carry the state (NFR-08). */
+/** "Good morning," and the date, with the settings button on the right. */
+@Composable
+private fun Header(m: TodayModel) {
+    val a = LocalActions.current
+    val greeting = stringResource(when (m.hour) {
+        in 5..11 -> R.string.greet_morning
+        in 12..17 -> R.string.greet_afternoon
+        else -> R.string.greet_evening
+    })
+    val pattern = stringResource(R.string.today_date_pattern)
+    val date = remember(m.today, pattern) {
+        Days.date(m.today).format(DateTimeFormatter.ofPattern(pattern, java.util.Locale.getDefault()))
+    }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f).semantics(mergeDescendants = true) { heading() }) {
+            Text(greeting, style = MaterialTheme.typography.titleSmall, color = Glass.muted)
+            Text(date, style = MaterialTheme.typography.headlineSmall, color = Glass.text)
+        }
+        IconRoundButton(PfcIcons.Settings, stringResource(R.string.action_settings), { a.run { openSettings() } })
+    }
+}
+
+/** This week: sessions done out of the sessions planned, as a ring, with the words beside it (and read as one sentence). */
+@Composable
+private fun WeekRing(m: TodayModel) {
+    val planned = m.week.count { it.template != null || it.state == DayState.DONE }
+    val done = m.week.count { it.state == DayState.DONE }
+    if (planned == 0) return
+    val left = (planned - done).coerceAtLeast(0)
+    val desc = stringResource(R.string.today_ring_desc, done, planned)
+    val line = if (left == 0) stringResource(R.string.today_week_all_done) else stringResource(R.string.today_week_left, done, left)
+    val spoken = stringResource(R.string.today_ring_spoken, desc, line)
+    GlassCard(Modifier.clearAndSetSemantics { contentDescription = spoken }) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            ProgressRing(done.toFloat() / planned, 112.dp, 12.dp) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(stringResource(R.string.today_ring_value, done, planned), style = NumeralsSmall, color = Glass.text)
+                    Text(stringResource(R.string.today_ring_unit), style = MaterialTheme.typography.labelMedium, color = Glass.muted)
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.today_week), style = MaterialTheme.typography.titleLarge, color = Glass.text)
+                Text(line, style = MaterialTheme.typography.bodyMedium, color = Glass.muted)
+            }
+        }
+    }
+}
+
+private class TileData(val icon: ImageVector, val tint: Color, val value: String, val label: String, val description: String)
+
+/** Steps (when counted), the session's minutes and the streak (once there is one: never "0 weeks" for someone just starting, ADH-001). */
+@Composable
+private fun Tiles(m: TodayModel) {
+    val g = Glass
+    val tiles = ArrayList<TileData>()
+    m.stepsToday?.let { steps ->
+        val target = m.stepTarget
+        val desc = if (target != null) stringResource(R.string.today_steps_target, steps, target) else stringResource(R.string.today_steps, steps)
+        tiles += TileData(PfcIcons.Steps, g.cool, steps.toString(), stringResource(R.string.tile_steps), desc)
+    }
+    val minutes = m.plan.user.profile.sessionMinutes
+    tiles += TileData(PfcIcons.Clock, g.link, minutes.toString(), stringResource(R.string.tile_minutes), stringResource(R.string.today_about_minutes, minutes))
+    if (m.streak.best > 0) {
+        tiles += TileData(PfcIcons.Flame, g.warm, m.streak.current.toString(), stringResource(R.string.tile_streak),
+            stringResource(R.string.today_streak, m.streak.current, m.streak.best))
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        tiles.forEach { t -> StatTile(t.icon, t.tint, t.value, t.label, t.description, Modifier.weight(1f)) }
+    }
+}
+
+/** Today's workout on a studio card: its first exercise moving on the right, the name and the size of the session on the left. */
+@Composable
+private fun WorkoutCard(name: String, day: PlannedDay, minutes: Int) {
+    val first = day.slots.firstOrNull()?.exercise
+    StudioCard(Modifier.fillMaxWidth().heightIn(min = 188.dp)) {
+        if (first != null) ExerciseFigure(first.id, stringResource(R.string.figure_desc, first.name),
+            Modifier.matchParentSize().padding(start = 120.dp), alignEnd = true)
+        Column(Modifier.align(Alignment.BottomStart).padding(18.dp).widthIn(max = 220.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(name, style = MaterialTheme.typography.titleLarge, color = Color(0xFFF4F7FB))
+            Text(stringResource(R.string.today_card_line, minutes, day.slots.size), style = MaterialTheme.typography.bodyMedium, color = Color(0xFFC6D3E2))
+        }
+    }
+}
+
+/** The week: each day reads as "Mon, Lower body, done" to TalkBack; the words and the marks, not the colours, carry the state (NFR-08). */
 @Composable
 private fun WeekStrip(days: List<DayCell>) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    val g = Glass
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         days.forEach { d ->
             val day = stringResource(Labels.weekday(d.weekday))
             val what = d.template?.let { stringResource(Labels.template(it)) } ?: stringResource(R.string.day_state_rest)
@@ -138,22 +243,26 @@ private fun WeekStrip(days: List<DayCell>) {
                 DayState.PLANNED -> R.string.day_state_planned
             })
             val desc = stringResource(R.string.day_cell_desc, day, what, state) + if (d.today) ", " + stringResource(R.string.today_marker) else ""
-            val cs = MaterialTheme.colorScheme
-            val bg = when (d.state) {
-                DayState.DONE -> cs.primaryContainer
-                DayState.PLANNED -> if (d.today) cs.secondaryContainer else cs.surfaceVariant
-                else -> cs.surface
+            val edge = when {
+                d.today -> g.warm
+                d.state == DayState.DONE -> g.cool.copy(alpha = 0.5f)
+                else -> g.glassBorder
             }
-            Surface(color = bg, shape = MaterialTheme.shapes.small, tonalElevation = if (d.today) 2.dp else 0.dp,
-                modifier = Modifier.widthIn(min = 44.dp).heightIn(min = 56.dp).clearAndSetSemantics { contentDescription = desc }) {
-                Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(day, style = MaterialTheme.typography.labelLarge, fontWeight = if (d.today) FontWeight.Bold else FontWeight.Normal)
-                    Text(when (d.state) {
-                        DayState.DONE -> "✓"
-                        DayState.PLANNED -> "•"
-                        DayState.MISSED, DayState.SKIPPED -> "–"
-                        DayState.REST -> " "
-                    }, style = MaterialTheme.typography.titleMedium)
+            Column(
+                Modifier.weight(1f).heightIn(min = 64.dp)
+                    .background(if (d.state == DayState.DONE) g.cool.copy(alpha = 0.10f) else g.glass, ChipShape)
+                    .border(if (d.today) 1.5.dp else 1.dp, edge, ChipShape)
+                    .clearAndSetSemantics { contentDescription = desc }
+                    .padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(day.take(3), style = MaterialTheme.typography.labelMedium, color = if (d.today) g.text else g.muted,
+                    fontWeight = if (d.today) FontWeight.ExtraBold else FontWeight.SemiBold, maxLines = 1)
+                when (d.state) {
+                    DayState.DONE -> androidx.compose.material3.Icon(PfcIcons.Check, null, tint = g.cool, modifier = Modifier.size(16.dp))
+                    DayState.PLANNED -> Box(Modifier.size(8.dp).background(if (d.today) g.warm else g.muted, CircleShape))
+                    DayState.MISSED, DayState.SKIPPED -> Box(Modifier.size(width = 10.dp, height = 2.dp).background(g.muted, PillShape))
+                    DayState.REST -> Box(Modifier.size(8.dp))
                 }
             }
         }

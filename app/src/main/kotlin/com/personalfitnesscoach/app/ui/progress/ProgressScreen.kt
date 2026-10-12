@@ -8,8 +8,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -25,7 +32,13 @@ import com.personalfitnesscoach.app.flow.BodyEntry
 import com.personalfitnesscoach.app.flow.Screen
 import com.personalfitnesscoach.app.flow.Tab
 import com.personalfitnesscoach.app.ui.Body
+import com.personalfitnesscoach.app.ui.CardShape
 import com.personalfitnesscoach.app.ui.CheckRow
+import com.personalfitnesscoach.app.ui.Glass
+import com.personalfitnesscoach.app.ui.GlassCard
+import com.personalfitnesscoach.app.ui.PfcIcons
+import com.personalfitnesscoach.app.ui.StatTile
+import com.personalfitnesscoach.app.ui.glass
 import com.personalfitnesscoach.app.ui.InfoCard
 import com.personalfitnesscoach.app.ui.LocalActions
 import com.personalfitnesscoach.app.ui.LocalBusy
@@ -68,15 +81,23 @@ fun ProgressScreen(s: Screen.Progress) {
         if (o.weeks.isNotEmpty() || o.sessionsCompleted > 0) {
             SectionTitle(stringResource(R.string.prog_weeks))
             Note(stringResource(R.string.prog_weeks_intro))
-            if (o.weeks.isNotEmpty()) WeekBars(o.weeks)
-            o.weeks.reversed().forEach { w ->
-                Body(stringResource(R.string.prog_week_line, dateText(w.weekStartDay), w.completed, w.planned, minutes(w.equivalentMinutes)) +
-                    if (w.whoFloorMet) " · " + stringResource(R.string.prog_week_met) else "")
-            }
             // ADH-001: the run of weeks only once there is one, and the weeks trained this year, which never go down.
-            if (o.streak.best > 0) Body(stringResource(R.string.prog_streak, o.streak.current, o.streak.best))
-            if (o.streak.weeksTrainedThisYear > 0) Body(stringResource(R.string.prog_weeks_year, o.streak.weeksTrainedThisYear))
-            Body(stringResource(R.string.prog_sessions, o.sessionsCompleted))
+            val g = Glass
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (o.streak.best > 0) StatTile(PfcIcons.Flame, g.warm, o.streak.current.toString(), stringResource(R.string.tile_streak),
+                    stringResource(R.string.prog_streak, o.streak.current, o.streak.best), Modifier.weight(1f))
+                if (o.streak.weeksTrainedThisYear > 0) StatTile(PfcIcons.Trophy, g.cool, o.streak.weeksTrainedThisYear.toString(), stringResource(R.string.tile_year),
+                    stringResource(R.string.prog_weeks_year, o.streak.weeksTrainedThisYear), Modifier.weight(1f))
+                StatTile(PfcIcons.Check, g.link, o.sessionsCompleted.toString(), stringResource(R.string.tile_sessions),
+                    stringResource(R.string.prog_sessions, o.sessionsCompleted), Modifier.weight(1f))
+            }
+            if (o.weeks.isNotEmpty()) GlassCard {
+                WeekBars(o.weeks)
+                o.weeks.reversed().forEach { w ->
+                    Note(stringResource(R.string.prog_week_line, dateText(w.weekStartDay), w.completed, w.planned, minutes(w.equivalentMinutes)) +
+                        if (w.whoFloorMet) " · " + stringResource(R.string.prog_week_met) else "")
+                }
+            }
             Body(stringResource(R.string.prog_who_weeks, o.whoWeeks))
         }
         if (o.achievements.isNotEmpty()) {
@@ -147,52 +168,67 @@ private fun LiftRow(l: LiftLine) {
         TrendDirection.FLAT -> stringResource(R.string.prog_trend_flat)
         TrendDirection.DOWN -> stringResource(R.string.prog_trend_down, pct(-t.changePct))
     } }
-    Column(Modifier.fillMaxWidth().heightIn(min = SecondaryHeight).clickable(enabled = !busy, role = Role.Button) { a.run { openExercise(l.exerciseId) } }
-        .padding(vertical = 6.dp)) {
-        Text(head, style = MaterialTheme.typography.titleMedium)
+    Column(Modifier.fillMaxWidth().heightIn(min = SecondaryHeight).clip(CardShape).glass(CardShape)
+        .clickable(enabled = !busy, role = Role.Button) { a.run { openExercise(l.exerciseId) } }.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(head, style = MaterialTheme.typography.titleMedium, color = Glass.text)
         trend?.let { Note(it) }
         val values = l.points.mapNotNull { it.e1rm ?: (it.bestLoad * (1.0 + it.bestReps / 30.0)) }
         if (values.size >= 2) Sparkline(values, stringResource(R.string.prog_chart_desc, name, values.joinToString(", ") { kg(it) }))
     }
-    HorizontalDivider()
 }
 
-/** Weekly active minutes as bars with the 150-minute goal as a dashed line (PH-001). */
+/**
+ * Weekly active minutes as rounded bars with the 150-minute goal as a dashed line (PH-001): warm bars, cool once the goal is met (the week
+ * lines below say "goal met" in words too).
+ */
 @Composable
 private fun WeekBars(weeks: List<WeekLine>) {
-    val bar = MaterialTheme.colorScheme.primary
-    val met = MaterialTheme.colorScheme.tertiary
-    val line = MaterialTheme.colorScheme.onSurfaceVariant
+    val g = Glass
     val goal = P.PH_001.target_equivalent_minutes.toDouble()
     val top = maxOf(goal * 1.2, weeks.maxOf { it.equivalentMinutes })
     val desc = stringResource(R.string.prog_chart_desc, stringResource(R.string.prog_weeks), weeks.joinToString(", ") { minutes(it.equivalentMinutes) })
-    Canvas(Modifier.fillMaxWidth().height(96.dp).semantics { contentDescription = desc }) {
+    Canvas(Modifier.fillMaxWidth().height(140.dp).semantics { contentDescription = desc }) {
         val n = weeks.size
         val slot = size.width / n
-        weeks.forEachIndexed { i, w ->
-            val h = (w.equivalentMinutes / top * size.height).toFloat()
-            drawRect(if (w.whoFloorMet) met else bar, topLeft = Offset(i * slot + slot * 0.2f, size.height - h),
-                size = androidx.compose.ui.geometry.Size(slot * 0.6f, h))
+        val w = (slot * 0.56f).coerceAtMost(36.dp.toPx())
+        weeks.forEachIndexed { i, wk ->
+            val h = (wk.equivalentMinutes / top * size.height).toFloat().coerceAtLeast(4.dp.toPx())
+            val x = i * slot + (slot - w) / 2
+            // The empty track, then the bar with rounded ends.
+            drawRoundRect(g.glassBorder, topLeft = Offset(x, 0f), size = Size(w, size.height), cornerRadius = CornerRadius(w / 2))
+            val brush = if (wk.whoFloorMet) Brush.verticalGradient(listOf(g.cool, g.cool.copy(alpha = 0.55f)), size.height - h, size.height)
+            else Brush.verticalGradient(listOf(g.warmEnd, g.warmStart), size.height - h, size.height)
+            drawRoundRect(brush, topLeft = Offset(x, size.height - h), size = Size(w, h), cornerRadius = CornerRadius(w / 2))
         }
         val y = (size.height - goal / top * size.height).toFloat()
-        drawLine(line, Offset(0f, y), Offset(size.width, y), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)))
+        drawLine(g.muted, Offset(0f, y), Offset(size.width, y), strokeWidth = 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)))
     }
 }
 
-/** A small line chart; values carry the meaning in the description too (TalkBack). */
+/** A small line chart in the warm colour with a soft fill under it; the values carry the meaning in the description too (TalkBack). */
 @Composable
 internal fun Sparkline(values: List<Double>, description: String, target: Double? = null) {
-    val c = MaterialTheme.colorScheme.primary
-    val t = MaterialTheme.colorScheme.onSurfaceVariant
-    Canvas(Modifier.fillMaxWidth().height(56.dp).padding(vertical = 4.dp).semantics { contentDescription = description }) {
+    val g = Glass
+    Canvas(Modifier.fillMaxWidth().height(64.dp).padding(vertical = 6.dp).semantics { contentDescription = description }) {
         val all = values + listOfNotNull(target)
         val lo = all.min()
         val hi = all.max().let { if (it - lo < 1e-9) lo + 1.0 else it }
         fun y(v: Double) = (size.height - (v - lo) / (hi - lo) * size.height).toFloat()
         val step = if (values.size > 1) size.width / (values.size - 1) else 0f
-        target?.let { drawLine(t, Offset(0f, y(it)), Offset(size.width, y(it)), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))) }
-        for (i in 1 until values.size) drawLine(c, Offset((i - 1) * step, y(values[i - 1])), Offset(i * step, y(values[i])), strokeWidth = 5f)
-        values.forEachIndexed { i, v -> drawCircle(c, radius = 6f, center = Offset(i * step, y(v))) }
+        target?.let { drawLine(g.muted, Offset(0f, y(it)), Offset(size.width, y(it)), strokeWidth = 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))) }
+        if (values.size > 1) {
+            val area = Path().apply {
+                moveTo(0f, size.height)
+                values.forEachIndexed { i, v -> lineTo(i * step, y(v)) }
+                lineTo((values.size - 1) * step, size.height)
+                close()
+            }
+            drawPath(area, Brush.verticalGradient(listOf(g.warm.copy(alpha = 0.28f), g.warm.copy(alpha = 0f))))
+        }
+        for (i in 1 until values.size) drawLine(g.warm, Offset((i - 1) * step, y(values[i - 1])), Offset(i * step, y(values[i])),
+            strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
+        values.forEachIndexed { i, v -> drawCircle(if (i == values.lastIndex) g.text else g.warm, radius = if (i == values.lastIndex) 5.dp.toPx() else 3.dp.toPx(), center = Offset(i * step, y(v))) }
     }
 }
 
