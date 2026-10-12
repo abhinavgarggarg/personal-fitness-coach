@@ -347,7 +347,7 @@ private val RoundedTile = androidx.compose.foundation.shape.RoundedCornerShape(2
  */
 @Composable
 fun TonalPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
-              tone: Tone = Tone.NEUTRAL, enabled: Boolean = true) {
+              tone: Tone = Tone.NEUTRAL, enabled: Boolean = true, centred: Boolean = true) {
     val g = Glass
     val on = enabled && !LocalBusy.current
     val (veil, edge, ink) = when (tone) {
@@ -355,11 +355,12 @@ fun TonalPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
         Tone.WARN -> Triple(g.cautionTint, g.caution.copy(alpha = 0.55f), g.caution)
         Tone.ALERT -> Triple(g.alertTint, g.alert.copy(alpha = 0.6f), g.alert)
     }
-    Row(modifier.heightIn(min = PrimaryHeight).clip(ChipShape).background(veil).border(1.dp, edge, ChipShape)
-        .clickable(enabled = on, role = Role.Button, onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
+    Row(modifier.heightIn(min = PrimaryHeight).widthIn(min = PrimaryHeight).clip(ChipShape).background(veil).border(1.dp, edge, ChipShape)
+        .clickable(enabled = on, role = Role.Button, onClick = onClick).padding(horizontal = if (centred) 12.dp else 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp, if (centred) Alignment.CenterHorizontally else Alignment.Start)) {
         if (icon != null) androidx.compose.material3.Icon(icon, contentDescription = null, tint = if (on) ink else g.muted, modifier = Modifier.size(18.dp))
-        Text(text, style = MaterialTheme.typography.labelLarge, color = if (on) ink else g.muted, textAlign = TextAlign.Center)
+        Text(text, style = MaterialTheme.typography.labelLarge, color = if (on) ink else g.muted, textAlign = if (centred) TextAlign.Center else TextAlign.Start)
     }
 }
 

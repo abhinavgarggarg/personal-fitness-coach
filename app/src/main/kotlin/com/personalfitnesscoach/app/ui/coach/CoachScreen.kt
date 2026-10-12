@@ -1,5 +1,3 @@
-@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-
 package com.personalfitnesscoach.app.ui.coach
 
 import android.content.Context
@@ -81,8 +79,9 @@ fun CoachScreen(m: CoachModel) {
         PrimaryButton(stringResource(R.string.coach_ask), { a.run { askCoach() } }, enabled = m.text.isNotBlank())
         m.answer?.let { AnswerCard(it) }
         SectionTitle(stringResource(R.string.coach_suggested))
-        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Question.SUGGESTED.forEach { q -> TonalPill(stringResource(Labels.question(q)), { a.run { askSuggested(q) } }) }
+        // One full-width glass row per question: easy to hit, and long questions wrap at large text sizes.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Question.SUGGESTED.forEach { q -> TonalPill(stringResource(Labels.question(q)), { a.run { askSuggested(q) } }, Modifier.fillMaxWidth(), centred = false) }
         }
         SecondaryButton(stringResource(R.string.gemini_ask), { a.run { prepareGeminiShare() } })
         if (m.back != null) SecondaryButton(stringResource(R.string.action_back), { a.run { closeCoach() } })
