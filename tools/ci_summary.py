@@ -8,13 +8,32 @@ def esc(s):
     return s.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
 
 
-for label, pattern in (a.split("=", 1) for a in sys.argv[1:]):
+def excerpt(label, path):
+    """A text file (such as the phone's crash log) as one annotation, when it has anything in it: its last lines, which hold the cause."""
+    try:
+        lines = [l.rstrip() for l in open(path, errors="replace") if l.strip()]
+    except OSError:
+        return
+    if lines:
+        print(f"::error title={label.replace(',', ' ·').replace(':', ' ')}::{esc(chr(10).join(lines[-40:]))[:4000]}")
+
+
+for arg in sys.argv[1:]:
+    if "@=" in arg:
+        excerpt(*arg.split("@=", 1))
+        continue
+    label, pattern = arg.split("=", 1)
     tests = failures = skipped = 0
     failed = []
     for f in glob.glob(pattern, recursive=True):
         r = ET.parse(f).getroot()
         for s in ([r] if r.tag == "testsuite" else r.iter("testsuite")):
             tests += int(s.get("tests", 0)); failures += int(s.get("failures", 0)) + int(s.get("errors", 0)); skipped += int(s.get("skipped", 0))
+            # A failure outside any test (the app's process crashed, the run stopped): say so with whatever the suite recorded.
+            listed = sum(1 for c in s.iter("testcase") for _ in list(c.findall("failure")) + list(c.findall("error")))
+            if int(s.get("failures", 0)) + int(s.get("errors", 0)) > listed:
+                err = " ".join(((s.findtext("system-err") or "") + " " + (s.findtext("system-out") or "")).split())[:900]
+                failed.append((s.get("name", "suite") + " (outside a test)", err or "no details recorded"))
             for case in s.iter("testcase"):
                 for bad in list(case.findall("failure")) + list(case.findall("error")):
                     text = (bad.get("message") or "") + "\n" + (bad.text or "")
