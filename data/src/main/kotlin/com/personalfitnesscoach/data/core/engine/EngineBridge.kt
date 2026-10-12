@@ -319,7 +319,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             }
             if (session.hiitBlocks > 0) hiit++
             if (blocks.any { it.impact > 0 } || session.exercises.any { it.exercise.impact > 0 }) impact++
-            ssu += SessionValidator.sessionSsu(session)
+            ssu += SessionValidator.sessionSsu(session) + calibrationSsu(w)
             val rpe = w.row.sessionRpe
             val minutes = w.row.actualMinutes
             if (rpe != null && minutes != null) load += Workload.sessionLoad(rpe, minutes)
@@ -337,6 +337,16 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
      * A finished workout as it was done: working sets logged per exercise; conditioning as logged, or as planned when the minutes
      * were not recorded (so HIIT, impact and stress are never under-counted), never more than planned.
      */
+    /**
+     * VOL-007 counts every hard set, so calibration sets count too, each at its logged effort (RIR, else 10 − RPE, else the target RIR).
+     * Easy ramp-up sets (RIR 5 or more) count nothing, as usual. Without them a calibration week looked almost empty and became a tiny
+     * baseline for the LOAD-005 / VOL-007 caps of the weeks after (Part 8 journey test).
+     */
+    fun calibrationSsu(w: StoredWorkout): Double = Ssu.sets(w.exercises.flatMap { e ->
+        val ex = Library[e.exerciseId] ?: return@flatMap emptyList()
+        e.calibration.map { s -> ex.costClass to (s.rir ?: s.rpe?.let { 10.0 - it } ?: e.doc.targetRir) }
+    })
+
     fun doneSession(w: StoredWorkout): com.personalfitnesscoach.engine.safety.Session {
         val exercises = w.exercises.mapNotNull { e ->
             val ex = Library[e.exerciseId] ?: return@mapNotNull null
@@ -467,6 +477,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val (painLimits, _) = painToday(today)
         val regions = regions(today).value + u.injuries.regions
         val ret = returnPlan(u, program).value
+        val k = learnedK(active)
         return ValidationContext(
             level = u.profile.level, weeksTraining = program.weeksTraining, age = u.age, screening = u.screening, jointLimits = painLimits,
             regions = regions, blockedTags = u.injuries.blockedTags, excludedIds = u.preferences.excludedIds,
@@ -476,13 +487,31 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             hoursSinceLastHiit = lastHiit?.let { (clock.nowMs() - (it.row.endedAtMs ?: it.row.startedAtMs ?: clock.nowMs())) / 3_600_000.0 },
             hoursToNextHeavyLower = nextHeavy?.let { it * 24.0 }, heavyLegsNextDay = nextHeavy == 1,
             impactSessionsThisWeekSoFar = soFar.impactSessions,
-            weekLoadSoFar = soFar.workload, weeklyLoadCap = Workload.planningCap(active.map { it.workload }, historyDays), k = learnedK(active),
+            // LOAD-005 "predicted weekly load = k × planned SSU" covers the whole week, so the sessions already done count as k × their SSU
+            // too (D-107). Mixing their measured load with today's prediction made the week's last session absorb every difference between
+            // the two, and trimmed weeks then lowered the next weeks' caps. Measured loads still set the cap (the 3-week mean) and k.
+            weekLoadSoFar = if (k != null) k * soFar.ssu else soFar.workload, weeklyLoadCap = Workload.planningCap(active.map { it.workload }, historyDays), k = k,
             lastWeekSsu = if (historyDays >= P.LOAD_006.phase1_days) lastActiveWeek(today)?.ssu else null,
-            loadCapExempt = plan.deload || program.justFinishedLighterWeek || ret.inReturn, inDeload = plan.deload,
+            loadCapExempt = plan.deload || program.justFinishedLighterWeek || ret.inReturn, inDeload = plan.deload, weekShare = weekShare(plan, day, today),
             equipmentToday = u.equipment.availableOn(today), library = Library.all.filter { !it.userAddOnly },
             planImpactAllowed = day?.impactAllowed ?: true, planIntervalModalities = day?.intervalModalities, conditions = u.conditions,
             strengthYesterday = strengthDoneOn(today - 1),
         )
+    }
+
+    /**
+     * VOL-007 / LOAD-005 week pacing (ValidationContext.weekShare): the planned day's SSU over the planned SSU of itself and the week's
+     * later planned sessions not yet done or skipped. 1.0 for a session outside the plan, or a planned day with no SSU.
+     */
+    suspend fun weekShare(plan: WeekPlan, day: PlannedDay?, today: Int): Double {
+        if (day == null) return 1.0
+        val mine = SessionValidator.sessionSsu(day.toSession())
+        if (mine <= 0.0) return 1.0
+        val weekday = Days.weekday(today)
+        val handled = log.between(Days.weekStart(today), today).filter { it.row.status == Status.DONE || it.row.status == Status.SKIPPED }.map { it.doc.weekday }.toSet()
+        val later = plan.days.filter { it.weekday > weekday && it.weekday !in handled && !(it.weekday == day.weekday && it.template == day.template) }
+            .sumOf { SessionValidator.sessionSsu(it.toSession()) }
+        return mine / (mine + later)
     }
 
     /**

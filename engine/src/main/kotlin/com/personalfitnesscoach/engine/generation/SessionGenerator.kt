@@ -371,11 +371,19 @@ object SessionGenerator {
         d += balance.decisions
 
         // 9) Safety validator (SAF-008): corrected or replaced, never shown unvalidated.
-        val session = Session(tier, items.map { SessionExercise(it.exercise, it.sets, it.reps.last, it.targetRir, it.loadFactor, it.main, it.lastSetToFailure, fullTierRir = slotRir(it, r)) },
+        val session = Session(tier, items.map { SessionExercise(it.exercise, it.sets, it.reps.last, it.targetRir, it.loadFactor, it.main, it.lastSetToFailure, fullTierRir = slotRir(it, r),
+            calibrating = it.calibrating) },
             conditioning, warmupMinutes = warmupMin, cooldownMinutes = fit.value.plan.cooldownMin, boneLoading = bone?.variant)
         val ctx = validationContext(r, fullSets)
-        val v = SessionValidator.validate(session, ctx)
-        d += v.decisions
+        val v0 = SessionValidator.validate(session, ctx)
+        d += v0.decisions
+        // VOL-007 / LOAD-005: the week's limits shaped today. Said once, plainly; when nothing is left it is a recovery day, not an empty session.
+        val weekly = v0.decisions.flatMap { it.ruleIds }.filter { it == RuleIds.VOL_007 || it == RuleIds.LOAD_005 }.distinct().sorted()
+        val emptied = weekly.isNotEmpty() && v0.value.session.exercises.isEmpty() && v0.value.session.conditioning.isEmpty() &&
+            (session.exercises.isNotEmpty() || session.conditioning.isNotEmpty())
+        if (weekly.isNotEmpty()) d += Decision(DecisionKind.SAFETY, weekly, ReasonKey.PLAN_CAPPED_BY_LOAD,
+            inputs = mapOf("weekShare" to Num.round2(ctx.weekShare)), outputs = mapOf("recoveryDay" to emptied))
+        val v = if (emptied) EngineResult(v0.value.copy(session = v0.value.session.copy(tier = Tier.RECOVERY)), v0.decisions) else v0
         val final = rebuild(items, v.value.session, r)
         val finalWarmup = v.value.session.warmupMinutes ?: warmupMin
         val finalCooldown = v.value.session.cooldownMinutes ?: fit.value.plan.cooldownMin

@@ -603,7 +603,8 @@ class SessionPlayer(private val d: PfcData) {
             val (id, doc) = o
             val x = Library[id] ?: return@mapNotNull null
             val sets = maxOf(doc.sets - doc.addedSets, if (e.exerciseId == id) e.working.size.coerceAtMost(doc.sets - doc.addedSets) else 0)
-            if (sets <= 0) null else SessionExercise(x, sets, doc.reps.last, doc.targetRir, doc.loadFactor, doc.main, doc.lastSetToFailure)
+            if (sets <= 0) null else SessionExercise(x, sets, doc.reps.last, doc.targetRir, doc.loadFactor, doc.main, doc.lastSetToFailure,
+                calibrating = doc.calibrating && e.exerciseId == id)
         }
         return Session(Tier.valueOf(w.row.tier ?: Tier.FULL.name), ex, conditioning.map { it.block() }, w.doc.warmupMinutes, w.doc.cooldownMinutes,
             w.doc.boneLoading?.variant)

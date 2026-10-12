@@ -32,6 +32,11 @@ data class SessionExercise(
     val lastSetToFailure: Boolean = false,
     /** Target RIR in the FULL-day plan, so the MODIFIED +1 RIR shift (RDY-004) can be checked. */
     val fullTierRir: Double? = null,
+    /**
+     * CAL-001: the weight is still being found today. The ramp's sets start easy (5+ in reserve), so for VOL-007 the item is expected to
+     * count as one set at the target effort, the set that finds the weight, which is how its logged sets are counted afterwards.
+     */
+    val calibrating: Boolean = false,
 )
 
 /** HIIT-002 protocol families (null = not an interval protocol). */
@@ -111,6 +116,13 @@ data class ValidationContext(
     val lastWeekSsu: Double? = null,
     /** This week follows its own ramp (deload, post-deload or return-to-training week: DEL-004, REG-004), so LOAD-005 does not apply. */
     val loadCapExempt: Boolean = false,
+    /**
+     * VOL-007 / LOAD-005 week pacing: the share of what is left of the week's SSU and load budget that this session may use. It is
+     * this session's planned SSU over the planned SSU of every session still to do this week, this one included; 1.0 = all of what is
+     * left. Without it, a plan that grew faster than the caps was trimmed only in the week's last session, sometimes down to nothing
+     * (Part 8 journey test). Pacing only ever lowers the limit.
+     */
+    val weekShare: Double = 1.0,
     val inDeload: Boolean = false,
     /**
      * Working sets of the FULL-day plan, so tier and deload set cuts (RDY-004, DEL-003) can be checked.
@@ -281,26 +293,63 @@ object SessionValidator {
         if (strength.isNotEmpty() && s.conditioning.sumOf { it.totalMinutes } > P.HIIT_005.post_strength_conditioning_min_max + 1e-9) v += Violation(RuleIds.HIIT_005, "POST_STRENGTH_CONDITIONING")
         // VOL-007 weekly SSU and LOAD-005 planned load.
         val ssu = sessionSsu(s)
-        val ssuLimit = c.weeklySsuLimit ?: Caps.weeklySsu(c.level).toDouble()
+        val ssuLimit = paced(c.weeklySsuLimit ?: Caps.weeklySsu(c.level).toDouble(), c.weekSsuSoFar, c)
         if (ssu > 0 && c.weekSsuSoFar + ssu > ssuLimit + 1e-9) v += Violation(RuleIds.VOL_007, "WEEKLY_SSU")
         if (ssu > 0 && overLoadCap(c, ssu)) v += Violation(RuleIds.LOAD_005, "WEEKLY_LOAD")
         return v
     }
 
     fun sessionSsu(s: Session): Double =
-        Ssu.sets(s.exercises.flatMap { e -> List(e.sets) { e.exercise.costClass to e.targetRir } }) +
+        Ssu.sets(s.exercises.flatMap { e -> List(if (e.calibrating) minOf(e.sets, 1) else e.sets) { e.exercise.costClass to e.targetRir } }) +
             s.conditioning.sumOf { Ssu.conditioning(it.modality, it.zone, it.workMinutes, it.restMinutes) }
 
     private fun overLoadCap(c: ValidationContext, ssu: Double): Boolean {
         if (c.loadCapExempt) return false
         val k = c.k
         val cap = c.weeklyLoadCap
-        if (k != null && cap != null) return c.weekLoadSoFar + k * ssu > cap + 1e-9
+        if (k != null && cap != null) return c.weekLoadSoFar + k * ssu > paced(cap, c.weekLoadSoFar, c) + 1e-9
         val last = c.lastWeekSsu
         if (k == null && last != null && last > 0) {
-            return c.weekSsuSoFar + ssu > last * (1.0 + P.LOAD_005.early_week_over_week_pct / 100.0) + 1e-9
+            return c.weekSsuSoFar + ssu > paced(last * (1.0 + P.LOAD_005.early_week_over_week_pct / 100.0), c.weekSsuSoFar, c) + 1e-9
         }
         return false
+    }
+
+    /**
+     * Today's part of a weekly limit (week pacing, see [ValidationContext.weekShare]): what is already done plus this session's share
+     * of what is left. A limit already reached stays as it is, so any further work is over it.
+     */
+    fun paced(limit: Double, soFar: Double, c: ValidationContext): Double =
+        if (limit > soFar) soFar + (limit - soFar) * c.weekShare.coerceIn(0.0, 1.0) else limit
+
+    /** The SSU this session must lose to meet its paced weekly limits (VOL-007, LOAD-005); 0 when it is within them. */
+    fun weeklyExcessSsu(s: Session, c: ValidationContext): Double {
+        val ssu = sessionSsu(s)
+        var over = c.weekSsuSoFar + ssu - paced(c.weeklySsuLimit ?: Caps.weeklySsu(c.level).toDouble(), c.weekSsuSoFar, c)
+        if (!c.loadCapExempt) {
+            val k = c.k
+            val cap = c.weeklyLoadCap
+            val last = c.lastWeekSsu
+            if (k != null && cap != null) {
+                if (k > 0) over = maxOf(over, (c.weekLoadSoFar + k * ssu - paced(cap, c.weekLoadSoFar, c)) / k)
+            } else if (k == null && last != null && last > 0) {
+                over = maxOf(over, c.weekSsuSoFar + ssu - paced(last * (1.0 + P.LOAD_005.early_week_over_week_pct / 100.0), c.weekSsuSoFar, c))
+            }
+        }
+        return maxOf(0.0, over)
+    }
+
+    /**
+     * The last conditioning block, shortened just enough for the weekly limits (half-minute steps, rounded down), or null when that
+     * would take more than TIME-002's 40% off key conditioning — then the block is dropped instead.
+     */
+    private fun shortenedForWeek(s: Session, c: ValidationContext): ConditioningBlock? {
+        val b = s.conditioning.last()
+        val perMinute = Ssu.conditioning(b.modality, b.zone, b.workMinutes, b.restMinutes) / b.workMinutes
+        if (b.workMinutes <= 0.0 || perMinute <= 0.0) return null
+        val left = Math.floor((b.workMinutes - weeklyExcessSsu(s, c) / perMinute) * 2.0) / 2.0
+        if (left < b.workMinutes * (1.0 - P.TIME_002.p2_max_cut_pct / 100.0) - 1e-9) return null
+        return b.copy(workMinutes = left, restMinutes = b.restMinutes * left / b.workMinutes)
     }
 
     // ---------------------------------------------------------------- correction
@@ -465,11 +514,16 @@ object SessionValidator {
                 setBlock(v.index, b.copy(workMinutes = cap, restMinutes = b.restMinutes * f)) to d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, mapOf("workMinutes" to cap))
             }
             "WEEKLY_SSU", "WEEKLY_LOAD" -> {
-                val t = trim(s, mainsAllowed = false) { true }
+                // TIME-001 priorities: accessory sets first, then the key conditioning (shortened by up to 40%, else dropped), then main lifts.
+                val t = trim(s, mainsAllowed = false, ssu = true) { true }
                 when {
                     t != null -> t to d(ReasonKey.VALIDATOR_TRIMMED)
-                    s.conditioning.isNotEmpty() -> setBlock(s.conditioning.lastIndex, null) to d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED)
-                    else -> trim(s) { true }?.let { it to d(ReasonKey.VALIDATOR_TRIMMED) }
+                    s.conditioning.isNotEmpty() -> {
+                        val shorter = shortenedForWeek(s, c)
+                        setBlock(s.conditioning.lastIndex, shorter) to
+                            d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, shorter?.let { mapOf("workMinutes" to it.workMinutes) } ?: emptyMap())
+                    }
+                    else -> trim(s, ssu = true) { true }?.let { it to d(ReasonKey.VALIDATOR_TRIMMED) }
                 }
             }
             else -> null
@@ -478,16 +532,18 @@ object SessionValidator {
 
     /**
      * Remove one set, choosing (from the end of the session) a non-main exercise with >1 set,
-     * else remove a 1-set non-main exercise, else (if allowed) take a set from a main lift or remove it.
+     * else remove a 1-set non-main exercise, else (if allowed) take a set from a main lift or remove it. For SSU (`ssu`), an exercise
+     * still being calibrated counts as one set whatever its set count, so it is removed whole rather than a set at a time.
      */
-    private fun trim(s: Session, mainsAllowed: Boolean = true, match: (SessionExercise) -> Boolean): Session? {
+    private fun trim(s: Session, mainsAllowed: Boolean = true, ssu: Boolean = false, match: (SessionExercise) -> Boolean): Session? {
         val ex = s.exercises
         fun dec(i: Int) = s.copy(exercises = ex.mapIndexed { j, e -> if (j == i) e.copy(sets = e.sets - 1) else e })
         fun drop(i: Int) = s.copy(exercises = ex.filterIndexed { j, _ -> j != i })
-        ex.indices.reversed().firstOrNull { !ex[it].main && match(ex[it]) && ex[it].sets > 1 }?.let { return dec(it) }
+        fun splittable(e: SessionExercise) = e.sets > 1 && !(ssu && e.calibrating)
+        ex.indices.reversed().firstOrNull { !ex[it].main && match(ex[it]) && splittable(ex[it]) }?.let { return dec(it) }
         ex.indices.reversed().firstOrNull { !ex[it].main && match(ex[it]) }?.let { return drop(it) }
         if (!mainsAllowed) return null
-        ex.indices.reversed().firstOrNull { ex[it].main && match(ex[it]) && ex[it].sets > 1 }?.let { return dec(it) }
+        ex.indices.reversed().firstOrNull { ex[it].main && match(ex[it]) && splittable(ex[it]) }?.let { return dec(it) }
         ex.indices.reversed().firstOrNull { ex[it].main && match(ex[it]) }?.let { return drop(it) }
         return null
     }
