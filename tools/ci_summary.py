@@ -43,6 +43,8 @@ for arg in sys.argv[1:]:
                     # the message and the first frames from the project's own code
                     own = [l.strip() for l in lines[1:] if "com.personalfitnesscoach" in l][:3]
                     failed.append((case.get("classname", "").split(".")[-1] + " > " + case.get("name", ""), "\n".join(lines[:2] + own)[:900]))
+    names = sorted(c.get("name", "") for f in glob.glob(pattern, recursive=True) for c in ET.parse(f).getroot().iter("testcase"))
+    print(f"::notice title=ran::{' '.join(names)}")
     level = "error" if failures or tests == 0 else "notice"
     title = label.replace(",", " ·").replace(":", " ")  # commas and colons end a workflow-command property
     print(f"::{level} title={title}::{tests} tests, {failures} failed, {skipped} skipped")
