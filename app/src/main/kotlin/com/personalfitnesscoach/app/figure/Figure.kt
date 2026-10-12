@@ -142,15 +142,24 @@ data class Timing(val holdStart: Double = 0.14, val toEnd: Double = 0.36, val ho
 /** Something to draw. [layer] orders the drawing: far limbs behind the body, the near arm in front. */
 sealed interface Shape {
     val layer: Layer
-    /** A rounded segment of the body (or a handle). */
-    data class Bone(val a: P, val b: P, val width: Double, override val layer: Layer, val kind: Kind = Kind.BODY) : Shape
-    data class Dot(val c: P, val r: Double, override val layer: Layer, val kind: Kind = Kind.BODY) : Shape
+    /** A rounded segment of the body (or a handle). [part] names the body segment, for the sculpted drawing (CR-008); null for equipment. */
+    data class Bone(val a: P, val b: P, val width: Double, override val layer: Layer, val kind: Kind = Kind.BODY, val part: BodyPart? = null) : Shape
+    data class Dot(val c: P, val r: Double, override val layer: Layer, val kind: Kind = Kind.BODY, val part: BodyPart? = null) : Shape
     data class Poly(val points: List<P>, override val layer: Layer, val kind: Kind = Kind.WEIGHT) : Shape
     data class Stroke(val a: P, val b: P, val kind: Kind, override val layer: Layer = Layer.PROP_BACK) : Shape
     data class Box(val corners: List<P>, override val layer: Layer = Layer.PROP_BACK) : Shape
 }
 
 enum class Layer { PROP_BACK, FAR, BODY, NEAR, PROP_FRONT, GUIDE }
+
+/**
+ * The body segments of a frame (CR-008). A side view has every limb segment twice (the far one on [Layer.FAR]), the trunk, the neck and
+ * the head; a front view has both limbs on each side, the trunk, the line across the hips, the line across the shoulders, the neck and
+ * the head.
+ */
+enum class BodyPart { THIGH, SHIN, FOOT, UPPER_ARM, FOREARM, TRUNK, NECK, HEAD, HIPS, SHOULDERS,
+    /** Not in a frame: the sculpted figure adds a hand past each wrist. */
+    HAND }
 enum class Kind { BODY, WEIGHT, HOLE, CABLE, BAND, RAIL, GUIDE, PULLEY }
 
 /** One computed picture. The floor is the line y = 0; the screen draws it. */
@@ -350,21 +359,21 @@ data class SideFigure(
         val back = FAR_SHIFT
         for (pr in props) addProp(pr, s, out, behind = true)
         // The far side, a little behind.
-        out += Shape.Bone(s.hip + back, s.fKnee + back, 20.0, Layer.FAR)
-        out += Shape.Bone(s.fKnee + back, s.fAnkle + back, 15.0, Layer.FAR)
-        foot(s.fAnkle + back, s.fFoot).let { (h, toe) -> out += Shape.Bone(h, toe, 10.0, Layer.FAR) }
-        out += Shape.Bone(s.shoulder + back, s.fElbow + back, 12.0, Layer.FAR)
-        out += Shape.Bone(s.fElbow + back, s.fWrist + back, 10.0, Layer.FAR)
+        out += Shape.Bone(s.hip + back, s.fKnee + back, 20.0, Layer.FAR, part = BodyPart.THIGH)
+        out += Shape.Bone(s.fKnee + back, s.fAnkle + back, 15.0, Layer.FAR, part = BodyPart.SHIN)
+        foot(s.fAnkle + back, s.fFoot).let { (h, toe) -> out += Shape.Bone(h, toe, 10.0, Layer.FAR, part = BodyPart.FOOT) }
+        out += Shape.Bone(s.shoulder + back, s.fElbow + back, 12.0, Layer.FAR, part = BodyPart.UPPER_ARM)
+        out += Shape.Bone(s.fElbow + back, s.fWrist + back, 10.0, Layer.FAR, part = BodyPart.FOREARM)
         // The body and the near leg.
-        out += Shape.Bone(s.hip, s.shoulder, 30.0, Layer.BODY)
-        out += Shape.Bone(s.shoulder, s.neckTop, 11.0, Layer.BODY)
-        out += Shape.Dot(s.head, Body.HEAD, Layer.BODY)
-        out += Shape.Bone(s.hip, s.nKnee, 22.0, Layer.BODY)
-        out += Shape.Bone(s.nKnee, s.nAnkle, 17.0, Layer.BODY)
-        foot(s.nAnkle, s.nFoot).let { (h, toe) -> out += Shape.Bone(h, toe, 11.0, Layer.BODY) }
+        out += Shape.Bone(s.hip, s.shoulder, 30.0, Layer.BODY, part = BodyPart.TRUNK)
+        out += Shape.Bone(s.shoulder, s.neckTop, 11.0, Layer.BODY, part = BodyPart.NECK)
+        out += Shape.Dot(s.head, Body.HEAD, Layer.BODY, part = BodyPart.HEAD)
+        out += Shape.Bone(s.hip, s.nKnee, 22.0, Layer.BODY, part = BodyPart.THIGH)
+        out += Shape.Bone(s.nKnee, s.nAnkle, 17.0, Layer.BODY, part = BodyPart.SHIN)
+        foot(s.nAnkle, s.nFoot).let { (h, toe) -> out += Shape.Bone(h, toe, 11.0, Layer.BODY, part = BodyPart.FOOT) }
         // The near arm in front.
-        out += Shape.Bone(s.shoulder, s.nElbow, 13.0, Layer.NEAR)
-        out += Shape.Bone(s.nElbow, s.nWrist, 11.0, Layer.NEAR)
+        out += Shape.Bone(s.shoulder, s.nElbow, 13.0, Layer.NEAR, part = BodyPart.UPPER_ARM)
+        out += Shape.Bone(s.nElbow, s.nWrist, 11.0, Layer.NEAR, part = BodyPart.FOREARM)
         for (pr in props) addProp(pr, s, out, behind = false)
         when (val g = guide) {
             is Guide.Through -> {
@@ -546,23 +555,23 @@ data class FrontFigure(
             }
             else -> Unit
         }
-        out += Shape.Bone(pelvis, chest, 36.0, Layer.BODY)
-        out += Shape.Bone(rHip, lHip, 24.0, Layer.BODY)
-        out += Shape.Bone(rSh, lSh, 20.0, Layer.BODY)
-        out += Shape.Bone(chest, neckTop, 12.0, Layer.BODY)
-        out += Shape.Dot(head, Body.HEAD, Layer.BODY)
-        out += Shape.Bone(rHip, rk, 20.0, Layer.BODY); out += Shape.Bone(rk, ra, 16.0, Layer.BODY)
-        out += Shape.Bone(lHip, lk, 20.0, Layer.BODY); out += Shape.Bone(lk, la, 16.0, Layer.BODY)
+        out += Shape.Bone(pelvis, chest, 36.0, Layer.BODY, part = BodyPart.TRUNK)
+        out += Shape.Bone(rHip, lHip, 24.0, Layer.BODY, part = BodyPart.HIPS)
+        out += Shape.Bone(rSh, lSh, 20.0, Layer.BODY, part = BodyPart.SHOULDERS)
+        out += Shape.Bone(chest, neckTop, 12.0, Layer.BODY, part = BodyPart.NECK)
+        out += Shape.Dot(head, Body.HEAD, Layer.BODY, part = BodyPart.HEAD)
+        out += Shape.Bone(rHip, rk, 20.0, Layer.BODY, part = BodyPart.THIGH); out += Shape.Bone(rk, ra, 16.0, Layer.BODY, part = BodyPart.SHIN)
+        out += Shape.Bone(lHip, lk, 20.0, Layer.BODY, part = BodyPart.THIGH); out += Shape.Bone(lk, la, 16.0, Layer.BODY, part = BodyPart.SHIN)
         // Feet seen from the front: short capsules turned a little out, along the shin's line.
         fun frontFoot(knee: P, ankle: P, sign: Int) {
             val dir = ankle - knee
             val len = hypot(dir.x, dir.y).coerceAtLeast(1.0)
             val d = dir * (1 / len)
-            out += Shape.Bone(ankle, ankle + d * 9.0 + P(sign * 5.0, 0.0), 13.0, Layer.BODY)
+            out += Shape.Bone(ankle, ankle + d * 9.0 + P(sign * 5.0, 0.0), 13.0, Layer.BODY, part = BodyPart.FOOT)
         }
         frontFoot(rk, ra, -1); frontFoot(lk, la, 1)
-        out += Shape.Bone(rSh, re, 13.0, Layer.NEAR); out += Shape.Bone(re, rw, 11.0, Layer.NEAR)
-        out += Shape.Bone(lSh, le, 13.0, Layer.NEAR); out += Shape.Bone(le, lw, 11.0, Layer.NEAR)
+        out += Shape.Bone(rSh, re, 13.0, Layer.NEAR, part = BodyPart.UPPER_ARM); out += Shape.Bone(re, rw, 11.0, Layer.NEAR, part = BodyPart.FOREARM)
+        out += Shape.Bone(lSh, le, 13.0, Layer.NEAR, part = BodyPart.UPPER_ARM); out += Shape.Bone(le, lw, 11.0, Layer.NEAR, part = BodyPart.FOREARM)
         for (pr in props) when (pr) {
             is FrontProp.Dumbbells -> {
                 if (pr.right) dumbbellFront(rw, out)
