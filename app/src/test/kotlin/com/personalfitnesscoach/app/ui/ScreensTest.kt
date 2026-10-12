@@ -300,8 +300,10 @@ class ScreensTest {
             assertEquals("$text on one line", 1, layout.lineCount)
             // The line ends inside the text's box (a pixel or two of rounding from the tight letter spacing is allowed): nothing cut off.
             assertTrue("$text fits its width: ${layout.getLineRight(0)} of ${layout.size.width}", layout.getLineRight(0) <= layout.size.width + 2f)
-            val dp = node.layoutInfo.density.density
-            assertTrue("$text is not smaller than at normal text size: ${layout.size.height / dp} dp tall", layout.size.height / dp >= normal * 0.95f)
+            // The size the text is drawn at, in dp, through the phone's own sp → dp conversion (non-linear at large text sizes).
+            val drawn = with(compose.density) { layout.layoutInput.style.fontSize.toDp().value }
+            assertTrue("$text is not smaller than at normal text size: drawn at $drawn dp (style ${layout.layoutInput.style.fontSize}, " +
+                "font scale ${compose.density.fontScale}, box ${layout.size}, density ${compose.density.density})", drawn >= normal * 0.95f)
         }
     }
 
