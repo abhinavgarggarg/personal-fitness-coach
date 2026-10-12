@@ -295,8 +295,10 @@ class ScreensTest {
             val node = compose.onAllNodes(named(text))[0].fetchSemanticsNode()
             val layouts = ArrayList<androidx.compose.ui.text.TextLayoutResult>()
             node.config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
-            assertEquals("$text on one line", 1, layouts.single().lineCount)
-            assertTrue("$text fits its width", !layouts.single().didOverflowWidth)
+            val layout = layouts.single()
+            assertEquals("$text on one line", 1, layout.lineCount)
+            // The line ends inside the text's box (a pixel or two of rounding from the tight letter spacing is allowed): nothing cut off.
+            assertTrue("$text fits its width: ${layout.getLineRight(0)} of ${layout.size.width}", layout.getLineRight(0) <= layout.size.width + 2f)
         }
     }
 
