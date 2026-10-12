@@ -291,7 +291,8 @@ class ScreensTest {
             }
         }
         compose.waitForIdle()
-        for (text in listOf("102.5", s(R.string.wk_rest_left, 25, 0))) {
+        // (text, its height on screen at normal text size in dp: 76 sp numbers, the 60 sp rest timer) — never smaller at 200% (re-check N1).
+        for ((text, normal) in listOf("102.5" to 76f, s(R.string.wk_rest_left, 25, 0) to 60f)) {
             val node = compose.onAllNodes(named(text))[0].fetchSemanticsNode()
             val layouts = ArrayList<androidx.compose.ui.text.TextLayoutResult>()
             node.config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
@@ -299,6 +300,8 @@ class ScreensTest {
             assertEquals("$text on one line", 1, layout.lineCount)
             // The line ends inside the text's box (a pixel or two of rounding from the tight letter spacing is allowed): nothing cut off.
             assertTrue("$text fits its width: ${layout.getLineRight(0)} of ${layout.size.width}", layout.getLineRight(0) <= layout.size.width + 2f)
+            val dp = node.layoutInfo.density.density
+            assertTrue("$text is not smaller than at normal text size: ${layout.size.height / dp} dp tall", layout.size.height / dp >= normal * 0.95f)
         }
     }
 

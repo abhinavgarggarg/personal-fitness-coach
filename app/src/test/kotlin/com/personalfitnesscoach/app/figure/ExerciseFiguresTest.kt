@@ -91,6 +91,27 @@ class ExerciseFiguresTest {
         assertTrue("reaches that miss: $misses", misses.isEmpty())
     }
 
+    /**
+     * Re-check: in every key position each elbow and knee is where that position, drawn on its own, puts it — a blend never keeps one
+     * end's bend for the other end (the pulldown's elbow pointing up at the end).
+     */
+    @Test
+    fun keyPositionsLookAsDefined() {
+        val wrong = ArrayList<String>()
+        for (e in Library.all) {
+            val f = ExerciseFigures.of(e.id) as? SideFigure ?: continue
+            val keys = listOfNotNull(0.0 to f.start, f.mid?.let { 0.5 to it }, 1.0 to f.end)
+            for ((t, pose) in keys) {
+                val inBlend = f.skeleton(t)
+                val alone = f.copy(start = pose, end = pose, mid = null).skeleton(0.0)
+                val joints = listOf("near elbow" to (inBlend.nElbow to alone.nElbow), "far elbow" to (inBlend.fElbow to alone.fElbow),
+                    "near knee" to (inBlend.nKnee to alone.nKnee), "far knee" to (inBlend.fKnee to alone.fKnee))
+                for ((name, pair) in joints) if (pair.first.dist(pair.second) > 3.0) wrong += "${e.id} t=$t $name off by ${"%.0f".format(pair.first.dist(pair.second))}"
+            }
+        }
+        assertTrue("key positions drawn differently in the rep: $wrong", wrong.isEmpty())
+    }
+
     /** Review R7-04: nothing snaps or jumps during a rep: between two close moments every point of the picture moves only a little. */
     @Test
     fun nothingJumpsDuringTheRep() {

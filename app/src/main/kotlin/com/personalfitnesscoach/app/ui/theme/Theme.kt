@@ -163,15 +163,21 @@ val Numerals = TextStyle(fontFamily = Jakarta, fontSize = 76.sp, lineHeight = 80
 val NumeralsSmall = TextStyle(fontFamily = Jakarta, fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp)
 
 /**
- * This style, growing with the phone's text size only up to [maxScale] times. The big numbers are already larger than body text at
- * 200%, and at twice their size "102.5 kg" or a 25:00 timer would break in the middle of the number (review R7-03, D-103).
+ * This style, growing with the phone's text size to at most [maxScale] times its normal size on screen. Android grows large text
+ * less than small text (non-linear scaling), so the size is worked out through the phone's own conversion (sp ↔ dp) and never comes
+ * out smaller than at normal text size (re-check N1). Used for numbers that must stay whole inside a ring or on one line (D-103).
  */
 @Composable
 fun TextStyle.grownAtMost(maxScale: Float): TextStyle {
-    val scale = androidx.compose.ui.platform.LocalDensity.current.fontScale
-    if (scale <= maxScale) return this
-    val k = maxScale / scale
-    return copy(fontSize = fontSize * k, lineHeight = if (lineHeight.isSp) lineHeight * k else lineHeight)
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    if (!fontSize.isSp) return this
+    val shown = with(density) { fontSize.toDp() }
+    val cap = (fontSize.value * maxScale).dp
+    if (shown <= cap) return this
+    return with(density) {
+        val k = cap.value / shown.value
+        copy(fontSize = cap.toSp(), lineHeight = if (lineHeight.isSp) (lineHeight.toDp() * k).toSp() else lineHeight)
+    }
 }
 
 @Composable

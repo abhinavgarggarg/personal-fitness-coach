@@ -105,7 +105,7 @@ fun WorkoutScreen(s: Screen.Workout) {
     }
     BackHandler { if (s.sheet != null) a.run { closeSheet() } else a.run { openEnd() } }
     // The rest's full length, kept here so the ring doesn't refill after ±30 s or after a sheet was open (review R7-13).
-    val restLength = remember { RestLength() }
+    val restLength = androidx.compose.runtime.saveable.rememberSaveable(saver = RestLength.SAVER) { RestLength() }
     v.restEndsAtMs?.let { restLength.follow(it, v.lifts.sumOf { l -> l.sets.size }) }
     val sheet = s.sheet
     if (sheet != null) {
@@ -161,14 +161,30 @@ private fun TopRow(v: PlayerView) {
 @Composable
 private fun SafetyRow(v: PlayerView) {
     val a = LocalActions.current
-    // Three side by side (icon above the words); at large text sizes one per line, so no word is ever broken (review R7-11).
-    val roomy = androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.3f
-    FlowRow(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = if (roomy) 3 else 1) {
-        val current = (v.step as? Step.Lift)?.lift?.rowId
-        TonalPill(stringResource(R.string.wk_hurts), { a.run { openHurts(current) } }, Modifier.weight(1f), PfcIcons.Hurts, Tone.WARN, stacked = roomy)
-        TonalPill(stringResource(R.string.wk_red_flag), { a.run { openRedFlag() } }, Modifier.weight(1f), PfcIcons.Warning, Tone.ALERT, stacked = roomy)
-        TonalPill(stringResource(R.string.wk_change_time), { a.run { openChangeTime() } }, Modifier.weight(1f), PfcIcons.Time, stacked = roomy)
+    // As many per line as keep every word whole: three side by side (icon above the words) when the longest word fits, else two, else
+    // one per line; measured on this phone at its text size, so a narrow phone or large text never breaks a word (R7-11, re-check N2).
+    val labels = listOf(stringResource(R.string.wk_hurts), stringResource(R.string.wk_red_flag), stringResource(R.string.wk_change_time))
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val longest = remember(labels, style, density) {
+        labels.flatMap { it.split(' ') }.maxOf { w -> measurer.measure(w, style).size.width }.let { with(density) { it.toDp() } }
+    }
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+        // Each pill's room for words: its share of the width, less the gaps (8 dp) and its own padding (6 dp a side).
+        val perLine = when {
+            longest <= (maxWidth - 16.dp) / 3 - 12.dp -> 3
+            longest <= (maxWidth - 8.dp) / 2 - 12.dp -> 2
+            else -> 1
+        }
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+            maxItemsInEachRow = perLine) {
+            val current = (v.step as? Step.Lift)?.lift?.rowId
+            val stacked = perLine > 1
+            TonalPill(labels[0], { a.run { openHurts(current) } }, Modifier.weight(1f), PfcIcons.Hurts, Tone.WARN, stacked = stacked)
+            TonalPill(labels[1], { a.run { openRedFlag() } }, Modifier.weight(1f), PfcIcons.Warning, Tone.ALERT, stacked = stacked)
+            TonalPill(labels[2], { a.run { openChangeTime() } }, Modifier.weight(1f), PfcIcons.Time, stacked = stacked)
+        }
     }
 }
 
@@ -220,11 +236,17 @@ private fun RestPanel(endsAtMs: Long, v: PlayerView, totalMs: Long) {
  * How long the current rest is in all: set when a rest starts (a new set was logged), and moved by exactly as much as the end moves
  * when the user adds or takes away 30 s. Plain bookkeeping, not screen state.
  */
-private class RestLength {
-    private var setsLogged = -1
-    private var endsAtMs = 0L
-    var totalMs = 1L
+private class RestLength(private var setsLogged: Int = -1, private var endsAtMs: Long = 0L, total: Long = 1L) {
+    var totalMs = total
         private set
+
+    companion object {
+        /** Kept across turning the phone (the screen is rebuilt; re-check N3). */
+        val SAVER = androidx.compose.runtime.saveable.Saver<RestLength, LongArray>(
+            save = { longArrayOf(it.setsLogged.toLong(), it.endsAtMs, it.totalMs) },
+            restore = { RestLength(it[0].toInt(), it[1], it[2]) },
+        )
+    }
 
     fun follow(endsAt: Long, sets: Int) {
         if (sets != setsLogged) {

@@ -233,7 +233,7 @@ private fun WorkoutCard(name: String, day: PlannedDay, minutes: Int) {
         if (first != null) ExerciseFigure(first.id, stringResource(R.string.figure_desc, first.name),
             Modifier.align(Alignment.CenterEnd).fillMaxWidth(0.6f).height(200.dp), alignEnd = true)
         Column(Modifier.align(Alignment.BottomStart).fillMaxWidth(0.62f)
-            .background(Brush.horizontalGradient(listOf(Color(0xE60D1422), Color(0x000D1422))), CardShape)
+            .background(Brush.horizontalGradient(0f to Color(0xF20D1422), 0.8f to Color(0xD90D1422), 1f to Color(0x000D1422)), CardShape)
             .padding(18.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(name, style = MaterialTheme.typography.titleLarge, color = Color(0xFFF4F7FB))
             Text(stringResource(R.string.today_card_line, minutes, day.slots.size), style = MaterialTheme.typography.bodyMedium, color = Color(0xFFC6D3E2))

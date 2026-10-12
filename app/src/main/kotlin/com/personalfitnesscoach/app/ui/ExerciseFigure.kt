@@ -116,7 +116,10 @@ private fun DrawScope.drawFigure(frame: Frame, camera: Bounds, alignEnd: Boolean
 
     // The floor line, then a soft warm halo behind the body: three wide, faint strokes per body part (no blur filter, so it looks the
     // same on every phone and costs little per frame; review R7-12).
-    drawLine(Studio.floor, Offset(0f, floorY), Offset(size.width, floorY), strokeWidth = 2.dp.toPx())
+    // The floor only under the figure and its equipment (not under words beside it on a card).
+    val floorFrom = (ox + camera.minX.toFloat() * scale - 14.dp.toPx()).coerceAtLeast(0f)
+    val floorTo = (ox + camera.maxX.toFloat() * scale + 14.dp.toPx()).coerceAtMost(size.width)
+    drawLine(Studio.floor, Offset(floorFrom, floorY), Offset(floorTo, floorY), strokeWidth = 2.dp.toPx())
     for ((extra, alpha) in HALO) for (s in shapes) if (s is Shape.Bone && s.kind == Kind.BODY && (s.layer == Layer.BODY || s.layer == Layer.NEAR)) {
         drawLine(Studio.halo.copy(alpha = alpha), o(s.a), o(s.b), strokeWidth = s.width.toFloat() * scale + extra.toPx(), cap = StrokeCap.Round)
     }

@@ -24,3 +24,4 @@ signing.properties
 
 # Local Claude permissions (not shared)
 .claude/settings.local.json
+__pycache__/

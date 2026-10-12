@@ -37,7 +37,7 @@ Every pair a screen uses is checked by `tools/check_contrast.py` (in CI): words 
 - **Card and section titles:** 22 sp, ExtraBold.
 - **Body:** 16 sp, Medium.
 - **Labels and notes:** 13–14 sp, Medium or SemiBold.
-- **Large text (200%):** every word grows with the phone's text size. The very large numbers grow only up to their own size (they are already bigger than body text at 200%, and a weight like "102.5" must not break in the middle); the medium numbers grow up to 1.4 times. Rows of three (safety buttons, tiles) and the week's days wrap onto more lines rather than cut words.
+- **Large text (200%):** every word grows with the phone's text size (Android grows large text less than small text). The very large numbers are held at most at their normal size on screen and the medium numbers at 1.4 times, never smaller than at normal size, so a weight like "102.5" or a 25:00 timer never breaks. The safety buttons sit three, two or one to a line, whichever keeps every word whole on that phone; the week's days wrap onto a second line rather than cut words.
 
 ## Shapes
 - **Cards:** 22 dp corners.

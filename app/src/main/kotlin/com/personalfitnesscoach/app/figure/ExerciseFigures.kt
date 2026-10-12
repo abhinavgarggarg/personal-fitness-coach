@@ -445,7 +445,7 @@ object ExerciseFigures {
     // ------------------------------------------------------------------------------------------------ vertical pull
     private fun pulldown(band: Boolean = false) = SideFigure(
         anchor = Anchor.HIP,
-        start = seated(100.0, W(8.0, 272.0, 1)),
+        start = seated(100.0, W(8.0, 272.0, -1)),
         end = seated(104.0, S(26.0, 6.0, -1)),
         props = (if (band) listOf(Prop.Block(-44.0, 0.0, 84.0, 70.0)) else SEAT + listOf(Prop.Pad(NEAR_KNEE, 0.0, 30.0, 12.0, dy = 18.0), Prop.Rail(P(70.0, 0.0), P(70.0, 330.0)))) +
             listOf(Prop.Line(NEAR_WRIST, P(20.0, 330.0), band = band), Prop.Pad(NEAR_WRIST, 0.0, 34.0, 7.0)),
@@ -482,9 +482,9 @@ object ExerciseFigures {
 
     // ------------------------------------------------------------------------------------------------ rotation (chops in side view)
     private fun chop(hold: List<Prop>, kneel: Boolean, lift: Boolean = false, cable: P? = null): SideFigure {
-        val high = S(-30.0, 90.0, 1)
+        val high = S(-30.0, 90.0, -1)
         val low = S(76.0, -66.0, -1)
-        val fromP = if (lift) S(-40.0, -90.0, 1) else high
+        val fromP = if (lift) S(-40.0, -90.0, -1) else high
         val toP = if (lift) S(66.0, 74.0, -1) else low
         fun pose(arm: Limb, torso: Double) = if (kneel) halfKneel(torso, arm, arm) else Pose(torso = torso, near = L(-80.0, -96.0), far = L(-104.0, -88.0), nearArm = arm, farArm = arm)
         return SideFigure(
@@ -591,7 +591,8 @@ object ExerciseFigures {
         val body = L(180.0 + a, 180.0 + a, -62.0 + a)
         val hands = W(-150.0 + (Body.THIGH + Body.SHIN + Body.TORSO) * kotlin.math.cos(Math.toRadians(a)) - 3.0, handsY, -1)
         return SideFigure(
-            start = Pose(torso = a, near = body, nearArm = hands, farArm = hands),
+            // The rowing arm keeps one bend from start to end (it is straight at the start, so the bend only shows as it rows).
+            start = Pose(torso = a, near = body, nearArm = if (row) hands.copy(bend = 1) else hands, farArm = hands),
             end = Pose(torso = a, near = body, nearArm = if (tap) S(-6.0, -14.0, -1) else S(-30.0, -44.0, 1), farArm = hands),
             anchorAt = P(-150.0, 24.0),
             props = if (row) listOf(Prop.Dumbbell(NEAR_WRIST, dy = -8.0), Prop.Dumbbell(FAR_WRIST, dy = -8.0)) else emptyList(),
