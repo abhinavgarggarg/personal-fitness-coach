@@ -89,6 +89,19 @@ class TimeBudgetTest {
         assertEquals(listOf("squat", "db-bench", "cable-row", "fly", "rower-30-30"), paired.map { it.id })
     }
 
+    @Test fun `TC-TIME-002d a superset is timed as the workout plays it - the partner with more sets first`() {
+        val a = PlanItem("a", Priority.P3, sets = 3, reps = 10, restSec = 120, minRestSec = 90, setupSec = 30)
+        val b = PlanItem("b", Priority.P4, sets = 1, reps = 10, restSec = 90, minRestSec = 60, setupSec = 30)
+        val s = TimeModel.setSeconds(a)
+        val r = P.REST_004.default_s
+        // A1, 60 s, B1, 60 s, A2, A's rest, A3.
+        assertEquals(60.0 + 4 * s + 2 * r + 120.0, TimeModel.pairSeconds(a, b), 1e-9)
+        // Whichever is listed first, the workout starts with the partner that has more sets: the same time.
+        assertEquals(TimeModel.pairSeconds(a, b), TimeModel.pairSeconds(b, a), 1e-9)
+        // Equal sets: every rest is the superset's.
+        assertEquals(60.0 + 6 * s + 5 * r, TimeModel.pairSeconds(a, a.copy(id = "c")), 1e-9)
+    }
+
     @Test fun `TC-TIME-002b under 20 minutes an express session is offered, and invariants hold for random plans`() {
         assertTrue(TimeBudget.fit(Example60.plan, 15.0).value.expressOffered)
         val rnd = Random(42)

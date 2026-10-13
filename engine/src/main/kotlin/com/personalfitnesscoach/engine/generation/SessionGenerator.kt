@@ -412,7 +412,7 @@ object SessionGenerator {
             if (iv == null || planned == null || planned.modality != b.modality || planned.zone != b.zone || iv.workSec <= 0) null
             // Never more work than the validator approved (R8-01): HIIT blocks change by whole repeats, so their count is exact; tempo
             // repeats (no protocol) keep their number and each gets shorter.
-            else if (iv.protocol == null) iv.copy(workSec = maxOf(1, Math.floor(b.workMinutes * 60 / iv.reps + 1e-6).toInt()))
+            else if (iv.protocol == null) tempoRepeats(iv, b.workMinutes)
             else iv.copy(reps = maxOf(1, Math.floor(b.workMinutes * 60 / iv.workSec + 1e-6).toInt()))
         }
 
@@ -613,6 +613,18 @@ object SessionGenerator {
                 restMinutes = 0.0, repSec = null, workMinutes = P.RDY_004.MODIFIED.hiit_replacement_minutes[0].toDouble())
             else -> b
         }
+    }
+
+    /**
+     * Tempo repeats (no protocol) for `work` minutes: the same number, each shorter, but never below HIIT-002's tempo repeat length when
+     * they started at or above it — then fewer repeats (re-check of R8-01). Never more work than given.
+     */
+    private fun tempoRepeats(iv: com.personalfitnesscoach.engine.conditioning.Interval, work: Double): com.personalfitnesscoach.engine.conditioning.Interval {
+        val total = Math.floor(work * 60 + 1e-6).toInt()
+        val floor = com.personalfitnesscoach.engine.conditioning.HiitMenu.band(null).work.first
+        var reps = iv.reps
+        if (iv.workSec >= floor) while (reps > 1 && total / reps < floor) reps--
+        return iv.copy(reps = reps, workSec = maxOf(1, total / reps))
     }
 
     private fun toSlot(it: WorkoutItem) = PlannedSlot(com.personalfitnesscoach.engine.program.SlotSpec(it.slotKey, it.role, it.exercise.pattern),

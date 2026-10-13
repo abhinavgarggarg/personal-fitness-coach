@@ -72,8 +72,9 @@ object TimeModel {
     }
 
     /**
-     * A non-competing superset as the guided workout plays it (D-109): A and B alternate with the REST-004 rest between them; once the
-     * shorter one is done, the other's remaining sets follow with its own rest (review R8-10).
+     * A non-competing superset as the guided workout plays it (D-109): it starts with the partner that has more sets, the two alternate
+     * with the REST-004 rest between them, and once the shorter one is done the longer one's remaining sets follow with its own rest
+     * (review R8-10).
      */
     fun pairSeconds(a: PlanItem, b: PlanItem): Double {
         val pairs = minOf(a.sets, b.sets)

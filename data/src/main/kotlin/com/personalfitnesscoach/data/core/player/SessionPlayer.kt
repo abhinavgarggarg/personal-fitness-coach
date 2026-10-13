@@ -246,7 +246,13 @@ class SessionPlayer(private val d: PfcData) {
                 val i = doc.conditioning.indices.first { it !in s.conditioningDone }
                 Step.Conditioning(i, doc.conditioning[i])
             }
-            Stage.LIFTS -> Step.Lift(lifts.firstOrNull { it.rowId == s.currentRowId && !it.finished } ?: lifts.first { !it.finished })
+            Stage.LIFTS -> {
+                val chosen = lifts.firstOrNull { it.rowId == s.currentRowId && !it.finished }
+                val next = chosen ?: lifts.first { !it.finished }
+                // A superset not started yet begins with the partner that has more sets to do, as its time was planned (D-109, R8-10).
+                val p = if (chosen == null) supersetPartner(next, lifts) else null
+                Step.Lift(if (p != null && !next.hasLoggedWork && !p.hasLoggedWork && p.item.sets - p.workingDone > next.item.sets - next.workingDone) p else next)
+            }
             Stage.BALANCE -> Step.Balance(doc.balanceMinutes, doc.balanceDrills)
             Stage.COOLDOWN -> Step.Cooldown(doc.cooldownMinutes ?: 0.0, doc.cooldownDrills, doc.mobilityMinutes)
             Stage.END -> Step.Done
@@ -436,7 +442,7 @@ class SessionPlayer(private val d: PfcData) {
         // Only during the lifts: choosing an exercise never skips the warm-up or a block before the lifts (R5-08).
         val v = build(w, s)
         if (v.stage != Stage.LIFTS) return@transaction v
-        save(w, restAfterPairChange(w.id, s.copy(currentRowId = rowId)))
+        save(w, restAfterPairChange(w.id, s.copy(currentRowId = rowId), s.currentRowId))
     }
 
     /**
@@ -444,12 +450,13 @@ class SessionPlayer(private val d: PfcData) {
      * shown is not part of a running superset any more (the partner was moved, skipped, stopped or another exercise chosen), the rest
      * becomes that exercise's own (D-109, review R8-04).
      */
-    private suspend fun restAfterPairChange(workoutId: Long, s: ActiveState): ActiveState {
+    private suspend fun restAfterPairChange(workoutId: Long, s: ActiveState, intended: Long?): ActiveState {
         val sec = s.restSec ?: return s
         if (s.restStartedAtMs == null) return s
         val v = build(d.sessions.load(workoutId)!!, s)
         val l = (v.step as? Step.Lift)?.lift ?: return s
-        if (supersetPartner(l, v.lifts) != null || sec >= l.item.restMinSec) return s
+        // The short rest stands only before the set it was given for: the partner's, while the superset still runs (re-check of R8-04).
+        if ((l.rowId == intended && supersetPartner(l, v.lifts) != null) || sec >= l.item.restMinSec) return s
         return s.copy(restSec = l.item.restDefaultSec)
     }
 
@@ -598,7 +605,7 @@ class SessionPlayer(private val d: PfcData) {
         val (w, s) = active()
         val e = w.exercises.first { it.row.id == rowId }
         breakPair(w, e)
-        save(w, restAfterPairChange(w.id, endAtLogged(e, s).copy(currentRowId = null, sheet = null)))
+        save(w, restAfterPairChange(w.id, endAtLogged(e, s).copy(currentRowId = null, sheet = null), s.currentRowId))
     }
 
     /**
@@ -618,7 +625,7 @@ class SessionPlayer(private val d: PfcData) {
         // A deferred exercise leaves its superset, so the player never jumps back to it before its turn (review R8-04).
         w.exercises.firstOrNull { it.row.id == rowId }?.let { breakPair(w, it) }
         d.sessions.moveToEnd(rowId)
-        save(w, restAfterPairChange(w.id, s.copy(currentRowId = null, sheet = null)))
+        save(w, restAfterPairChange(w.id, s.copy(currentRowId = null, sheet = null), s.currentRowId))
     }
 
     // ------------------------------------------------------------------------------------------------ re-plans (all re-validated, SAF-008)
@@ -813,7 +820,7 @@ class SessionPlayer(private val d: PfcData) {
             val sum = finishInternal(w.id, null, endedEarly = true)
             return@transaction PainResult(o, changes, emptyList(), true, dec, null).also { lastSummary = sum }
         }
-        PainResult(o, changes, alternatives, false, dec, save(d.sessions.load(w.id)!!, restAfterPairChange(w.id, state.copy(sheet = null, currentRowId = null))))
+        PainResult(o, changes, alternatives, false, dec, save(d.sessions.load(w.id)!!, restAfterPairChange(w.id, state.copy(sheet = null, currentRowId = null), s.currentRowId)))
     }
 
     /**
@@ -963,7 +970,7 @@ class SessionPlayer(private val d: PfcData) {
             }
         }
         if (doc.copy(conditioning = cond) != w.doc) d.sessions.updateDoc(w.id, doc.copy(conditioning = cond))
-        val view = save(d.sessions.load(w.id)!!, restAfterPairChange(w.id, state.copy(sheet = null)))
+        val view = save(d.sessions.load(w.id)!!, restAfterPairChange(w.id, state.copy(sheet = null), s.currentRowId))
         // What can't be cut (warm-up and cool-down floors with a condition's extras, one set of each main lift) still takes longer than
         // asked: the user is told the shortest this session can be from here, as the express session does (D-071, re-check N7).
         val shortest = if (view.remainingMinutes > minutesLeft + 0.5) Math.ceil(view.remainingMinutes - 1e-6).toInt() else null

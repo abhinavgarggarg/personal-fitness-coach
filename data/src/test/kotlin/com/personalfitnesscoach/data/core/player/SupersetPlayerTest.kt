@@ -145,6 +145,17 @@ class SupersetPlayerTest {
         Unit
     }
 
+    @Test fun `going back to the exercise just done gives it its own rest, not the superset's`() = runBlocking {
+        val (_, p) = pairedSession()
+        val (a, b) = toFirstPairedSet(p)
+        // The 60 s rest is for the partner's set: shown on the partner it stays, back on the first exercise it becomes that one's own.
+        assertRestFits(p.select(b.rowId))
+        assertEquals(P.REST_004.default_s, p.view()!!.state.restSec)
+        val back = p.select(a.rowId)
+        if (a.item.restMinSec > P.REST_004.default_s) assertEquals(a.item.restDefaultSec, back.state.restSec)
+        Unit
+    }
+
     @Test fun `changing the time left drops the exercise cut, not its superset partner with it`() = runBlocking {
         for (minutes in listOf(4, 6, 8, 10, 12, 15, 20)) {
             val (_, paired) = pairedSession()
