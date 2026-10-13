@@ -14,6 +14,7 @@ import com.personalfitnesscoach.engine.model.Exercise
 import com.personalfitnesscoach.engine.model.LoadType
 import com.personalfitnesscoach.engine.model.Pattern
 import com.personalfitnesscoach.engine.model.Tier
+import com.personalfitnesscoach.engine.program.WeekPlanner
 import com.personalfitnesscoach.engine.safety.SessionValidator
 import com.personalfitnesscoach.engine.safety.PainAction
 import com.personalfitnesscoach.engine.safety.PainKind
@@ -208,10 +209,13 @@ class JourneyIntegrationTest {
             c.submitCheckIn(); c.ok("$where: preview")
             val pv = c.s() as? Screen.Preview ?: error("$where: expected the preview, got ${c.s()}")
             val wk = pv.model.session.workout
-            w.data().planToday()?.next?.let { planned ->
+            w.data().let { dd -> dd.planToday()?.let { t -> t.next?.let { next ->
+                // Against the day as the programme planned it, before the weekly limits (the planner fits the week within them, D-110).
+                val planned = WeekPlanner.plan(dd.bridge.weekInput(t.user, t.program).copy(weeklySsuLimit = null, weeklySsuGuard = null),
+                    dd.bridge.blueprint(t.program)).value.days.firstOrNull { it.weekday == next.weekday && it.template == next.template } ?: next
                 val week = log.weeks.getOrPut(d / 7) { DoubleArray(2) }
                 week[0] += SessionValidator.sessionSsu(planned.toSession()); week[1] += SessionValidator.sessionSsu(wk.validated)
-            }
+            } } }
             assertNull("$where: no safety stop on a normal day", wk.safetyStop)
             if (wk.items.isEmpty() && wk.conditioning.isEmpty()) {
                 // VOL-007 / LOAD-005: when the week's safe load is used up, the day is a recovery day with the reason shown, never an

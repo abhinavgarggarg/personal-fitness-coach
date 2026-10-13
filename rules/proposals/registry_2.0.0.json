@@ -1,0 +1,92 @@
+{
+  "registry_version": "2.0.0",
+  "base_registry_version": "1.1.2",
+  "kind": "MAJOR",
+  "date": "2026-10-13",
+  "title": "Weekly limits that follow how often you train, with a floor and a spike guard (Phase 4 Part 1)",
+  "summary": "The weekly limits (VOL-007 training stress, LOAD-005 effort-load) compare a week with the last three weeks. Twelve-month simulations of eight people under three ways of turning up (Phase 4 Part 1, D-110) showed that, measured against the weeks as done, a missed session makes its week look light and the next limit follows it down: below about 87% turnout (1 / 1.15) the limits fall week after week. Someone who misses about 1 session in 5 was down to recovery days within 2-3 months (82-125 a year), and a bodyweight-only user was, even turning up every time, because whole conditioning blocks were dropped and the week ended far below its limit. Calibration weeks looked light too, because the easy ramp sets of a weight still being found count nothing. This change counts each past week at the level of the sessions that were done (a week cut short by more than half is left out, like a missed week), counts a weight still being found as two sets at the target effort as it is planned, plans the week within the limits (other exercises' sets first, then conditioning shortened or made easy, then main lifts), and never lets the limits cut a week below half of its plan (about a deload week, DEL-003). Above that floor, a new spike guard holds a week to twice the last three weeks as done. The 1.15 and 1.20 multipliers stay. It is MAJOR because it changes where a safety limit applies.",
+  "approval": {
+    "by": "",
+    "date": "",
+    "reference": "D-110, D-112"
+  },
+  "safety_review": "Draft by the build agent, to be confirmed by the independent review (docs/phase4/part1_report.md). What loosens: (1) a past week with missed sessions counts at the level of the sessions done, so after missed sessions a week may return to its planned level faster than +15% a week; (2) the limits never cut a week below 50% of its plan's training stress; (3) a weight being found counts as two sets at the target effort (planned and done). What does not change: the size of each session is still set by the programme and its progression rules (PROG, PER, CAL), never by the limits; the level ceilings; SAF-005 weekly set caps per muscle; HIIT caps and spacing; return-to-training ramps (REG-003/004/005) and deloads (DEL-003), which stay exempt from LOAD-005 as before; the readiness check (RDY), pain gate (SAF-003) and warning signs (SAF-002); LOAD-004's soft flag on a high acute:chronic ratio. What is added: a spike guard (a week is never more than 2 x the mean of the last three weeks as done, from three weeks of history, not during a return or deload), and the session check never shows a session that breaks any rule (every session in the simulations passed the full validator). Simulated effect (8 personas x 3 ways of turning up x 52 weeks): weeks above 1.5 x the mean of the three weeks before: 0 of 392 with every session done, 30 of 376 with a missed week and an illness, 37 of 389 with about 4 in 5 sessions; none above 2 x (largest 1.98 x). Residual risk: someone who has trained very little for three weeks may get up to half of the planned week at once (the floor); each session stays the programme's normal size, and REG-003/004 still apply after 7 or more days without training.",
+  "sources_add": {
+    "PFCSim2026": {
+      "citation": "Personal Fitness Coach, Phase 4 Part 1. Twelve-month simulations of the weekly limits: eight personas (Phase 2 P1-P3, P5, an advanced lifter, two condition personas and a bodyweight-only user) x three ways of turning up, through the app's data layer and engine. Internal report, not peer reviewed: docs/phase4/part1_report.md; reproduced by data/src/test/.../YearOfTrainingTest.kt",
+      "verification": "internal; reproducible on every CI run (YearOfTrainingTest 'Measured' lines)"
+    }
+  },
+  "changed_rules": [
+    {
+      "rule_id": "VOL-007",
+      "from_version": "1.0.0",
+      "to_version": "2.0.0",
+      "change": "MAJOR",
+      "reason": "Twelve-month simulations (D-110): measured against the weeks actually done, the relative limit falls whenever turnout is below about 87% (1 / 1.15), calibration weeks set a low starting point, and conditioning blocks dropped whole left weeks far below their limit. Past weeks now count at the level of the sessions done, a weight being found counts as planned, the week is planned within the limit, conditioning is made easy before it is dropped, and the limit never cuts a week below half of its plan; a spike guard bounds the loosening.",
+      "statement": "SSU = sum over sets C_ex x E_RIR + sum over conditioning t_min x Z_zone x J_modality. Weekly SSU <= level ceiling and (after 4 weeks) <= 1.15 x the mean of the last 3 reference weeks. Reference weeks: a week with fewer than half of its planned sessions done is left out, like a missed week; a week with fewer sessions done than planned counts at the level of the sessions done (its SSU x planned / done sessions). A weight still being found counts as 2 sets at the target effort, in the plan and once done. The week is planned within the limit: other exercises' sets first, then steady conditioning shortened by up to 40% (not below 10 minutes) or made easy (Z1), then main lifts; a session over its share of the week is cut in the same order, conditioning made easy before it is dropped. The weekly limits never cut a week below 50% of its plan's SSU (about a deload week, DEL-003). Above that floor a week is never more than 2 x the mean SSU of the last 3 weeks as done (missed weeks 0), from 3 weeks after the first session and not during a return or deload. Personal factor k = median(sRPE load / SSU) after 4 weeks.",
+      "parameters_replace": {
+        "C": {
+          "isolation_or_core": 0.5,
+          "machine_or_cable_compound": 0.8,
+          "free_weight_compound_carry_sled": 1.0,
+          "heavy_bilateral_squat_hinge_ge80pct": 1.5
+        },
+        "E": {
+          "rir0": 1.2,
+          "rir1_2": 1.0,
+          "rir3_4": 0.8
+        },
+        "Z_per_min": {
+          "Z1": 0.4,
+          "Z2": 0.8,
+          "Z3_work": 1.5,
+          "interval_rest": 0.2
+        },
+        "J": {
+          "rower_skierg_elliptical": 0.9,
+          "ropes_kettlebell_sled_carries": 1.0,
+          "jump_rope_jumping_circuits": 1.1
+        },
+        "weekly_ceiling": {
+          "beginner": 100,
+          "intermediate": 140,
+          "advanced": 180
+        },
+        "rolling_multiplier": 1.15,
+        "k_after_weeks": 4,
+        "reference_min_turnout_pct": 50,
+        "plan_floor_pct": 50,
+        "spike_guard_multiplier": 2.0,
+        "spike_guard_after_days": 21,
+        "calibration_sets_counted": 2
+      },
+      "evidence_add": [
+        "PFCSim2026"
+      ],
+      "uncertainty": "Novel model; coefficients are judgement. The reference weeks, the floor and the spike guard were chosen in Phase 4 simulations (D-110, D-112). They loosen the limit for people who miss sessions: after weeks with fewer sessions a full week may be up to 2 x the recent weekly total (each session its normal size); below the floor the guard gives way. LOAD-004's soft flag still reports such weeks.",
+      "tests_add": [
+        "TC-VOL-007h",
+        "TC-VOL-007i",
+        "TC-VOL-007j"
+      ]
+    },
+    {
+      "rule_id": "LOAD-005",
+      "from_version": "1.0.0",
+      "to_version": "2.0.0",
+      "change": "MAJOR",
+      "reason": "The same reference weeks and floor as VOL-007 (D-110), so the two weekly limits agree.",
+      "statement": "Predicted weekly load (k x planned SSU) <= 1.20 x mean of the last 3 reference weeks (VOL-007's reference weeks; a week with fewer sessions than planned counts its load x planned / done sessions); before 4 weeks <= +20% over the last reference week; deload/return ramps exempt; never cuts a week below VOL-007's plan floor.",
+      "evidence_add": [
+        "Impellizzeri2021",
+        "PFCSim2026"
+      ],
+      "uncertainty": "Workload ratios have statistical flaws and weak causal support (Lolli 2019, Impellizzeri 2021); the cap is used to smooth planning, never described as injury risk. The reference weeks and floor were chosen in Phase 4 simulations (D-110, D-112).",
+      "tests_add": [
+        "TC-LOAD-005j",
+        "TC-LOAD-005k"
+      ]
+    }
+  ]
+}

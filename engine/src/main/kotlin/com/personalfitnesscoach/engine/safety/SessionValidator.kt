@@ -129,6 +129,11 @@ data class ValidationContext(
      * (Part 8 journey test). Pacing only ever lowers the limit.
      */
     val weekShare: Double = 1.0,
+    /**
+     * The weekly limits' floor in SSU (D-110, [WeeklyLimits.PLAN_FLOOR_PCT] of the week's plan, never above the spike guard): neither
+     * VOL-007 nor LOAD-005 cuts the week below it (paced like the limits). Null = no floor.
+     */
+    val weekFloorSsu: Double? = null,
     val inDeload: Boolean = false,
     /**
      * Working sets of the FULL-day plan, so tier and deload set cuts (RDY-004, DEL-003) can be checked.
@@ -304,7 +309,7 @@ object SessionValidator {
         if (strength.isNotEmpty() && s.conditioning.sumOf { it.totalMinutes } > P.HIIT_005.post_strength_conditioning_min_max + 1e-9) v += Violation(RuleIds.HIIT_005, "POST_STRENGTH_CONDITIONING")
         // VOL-007 weekly SSU and LOAD-005 planned load.
         val ssu = sessionSsu(s)
-        val ssuLimit = paced(c.weeklySsuLimit ?: Caps.weeklySsu(c.level).toDouble(), c.weekSsuSoFar, c)
+        val ssuLimit = paced(weeklySsuLimit(c), c.weekSsuSoFar, c)
         if (ssu > 0 && c.weekSsuSoFar + ssu > ssuLimit + 1e-9) v += Violation(RuleIds.VOL_007, "WEEKLY_SSU")
         if (ssu > 0 && overLoadCap(c, ssu)) v += Violation(RuleIds.LOAD_005, "WEEKLY_LOAD")
         return v
@@ -314,8 +319,16 @@ object SessionValidator {
         Ssu.sets(s.exercises.flatMap { e -> List(if (e.calibrating) minOf(e.sets, CALIBRATION_SETS_COUNTED) else e.sets) { e.exercise.costClass to e.targetRir } }) +
             s.conditioning.sumOf { Ssu.conditioning(it.modality, it.zone, it.workMinutes, it.restMinutes) }
 
+    /** VOL-007's weekly limit for this week: the limit given (else the level ceiling), never below the floor (D-110) nor above the ceiling. */
+    fun weeklySsuLimit(c: ValidationContext): Double {
+        val ceiling = Caps.weeklySsu(c.level).toDouble()
+        return maxOf(c.weeklySsuLimit ?: ceiling, minOf(c.weekFloorSsu ?: 0.0, ceiling))
+    }
+
     private fun overLoadCap(c: ValidationContext, ssu: Double): Boolean {
         if (c.loadCapExempt) return false
+        // The floor (D-110): LOAD-005 never cuts the week below it, whatever the measured loads so far.
+        c.weekFloorSsu?.let { f -> if (c.weekSsuSoFar + ssu <= paced(f, c.weekSsuSoFar, c) + 1e-9) return false }
         val k = c.k
         val cap = c.weeklyLoadCap
         if (k != null && cap != null) return c.weekLoadSoFar + k * ssu > paced(cap, c.weekLoadSoFar, c) + 1e-9
@@ -336,16 +349,20 @@ object SessionValidator {
     /** The SSU this session must lose to meet its paced weekly limits (VOL-007, LOAD-005); 0 when it is within them. */
     fun weeklyExcessSsu(s: Session, c: ValidationContext): Double {
         val ssu = sessionSsu(s)
-        var over = c.weekSsuSoFar + ssu - paced(c.weeklySsuLimit ?: Caps.weeklySsu(c.level).toDouble(), c.weekSsuSoFar, c)
+        var over = c.weekSsuSoFar + ssu - paced(weeklySsuLimit(c), c.weekSsuSoFar, c)
         if (!c.loadCapExempt) {
             val k = c.k
             val cap = c.weeklyLoadCap
             val last = c.lastWeekSsu
+            var load = 0.0
             if (k != null && cap != null) {
-                if (k > 0) over = maxOf(over, (c.weekLoadSoFar + k * ssu - paced(cap, c.weekLoadSoFar, c)) / k)
+                if (k > 0) load = (c.weekLoadSoFar + k * ssu - paced(cap, c.weekLoadSoFar, c)) / k
             } else if (k == null && last != null && last > 0) {
-                over = maxOf(over, c.weekSsuSoFar + ssu - paced(last * (1.0 + P.LOAD_005.early_week_over_week_pct / 100.0), c.weekSsuSoFar, c))
+                load = c.weekSsuSoFar + ssu - paced(last * (1.0 + P.LOAD_005.early_week_over_week_pct / 100.0), c.weekSsuSoFar, c)
             }
+            // Never more than it takes to come down to the floor (D-110).
+            c.weekFloorSsu?.let { f -> load = minOf(load, c.weekSsuSoFar + ssu - paced(f, c.weekSsuSoFar, c)) }
+            over = maxOf(over, load)
         }
         return maxOf(0.0, over)
     }
@@ -365,6 +382,23 @@ object SessionValidator {
         if (left <= 0.0) return null
         if (left < b.workMinutes * (1.0 - P.TIME_002.p2_max_cut_pct / 100.0) - 1e-9) return null
         return b.copy(workMinutes = left, restMinutes = b.restMinutes * left / b.workMinutes)
+    }
+
+    /**
+     * When the last conditioning block would lose more than 40%: the same block made easy instead (steady Z1, as the validator makes
+     * any disallowed hard work easy, D-039), shortened to fit if need be but never below FREQ-005's 10-minute block. The minutes of
+     * activity stay where the week's limit allows (FL-002, PH-001); dropping a whole block left weeks far below their limit, and the
+     * next limits followed them down (Phase 4 simulations, D-110). Null when the block is already easy or even 10 easy minutes are over.
+     */
+    private fun easierForWeek(s: Session, c: ValidationContext): ConditioningBlock? {
+        val b = s.conditioning.last()
+        if (b.zone == Zone.Z1 && !b.hiit) return null
+        val easy = b.copy(zone = Zone.Z1, hiit = false, protocol = null, restMinutes = 0.0, repSec = null, workMinutes = b.totalMinutes)
+        val perMinute = Ssu.conditioning(easy.modality, Zone.Z1, 1.0)
+        if (easy.workMinutes <= 0.0 || perMinute <= 0.0) return null
+        val room = easy.workMinutes - weeklyExcessSsu(s.copy(conditioning = s.conditioning.dropLast(1) + easy), c) / perMinute
+        val left = minOf(easy.workMinutes, Math.floor(room * 2.0) / 2.0)
+        return if (left >= P.FREQ_005.min_block_minutes - 1e-9) easy.copy(workMinutes = left) else null
     }
 
     // ---------------------------------------------------------------- correction
@@ -542,9 +576,9 @@ object SessionValidator {
                 when {
                     t != null -> t to d(ReasonKey.VALIDATOR_TRIMMED)
                     s.conditioning.isNotEmpty() -> {
-                        val shorter = shortenedForWeek(s, c)
+                        val shorter = shortenedForWeek(s, c) ?: easierForWeek(s, c)
                         setBlock(s.conditioning.lastIndex, shorter) to
-                            d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, shorter?.let { mapOf("workMinutes" to it.workMinutes) } ?: emptyMap())
+                            d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, shorter?.let { mapOf("workMinutes" to it.workMinutes, "zone" to it.zone.name) } ?: emptyMap())
                     }
                     else -> trim(s, ssu = true) { true }?.let { it to d(ReasonKey.VALIDATOR_TRIMMED) }
                 }

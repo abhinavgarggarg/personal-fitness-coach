@@ -2,11 +2,13 @@ package com.personalfitnesscoach.data.core.engine
 
 import com.personalfitnesscoach.data.core.Fixtures
 import com.personalfitnesscoach.data.core.PfcData
+import com.personalfitnesscoach.data.core.model.WeekSummary
 import com.personalfitnesscoach.data.core.session.NewSet
 import com.personalfitnesscoach.data.core.session.SetKind
 import com.personalfitnesscoach.data.core.time.Days
 import com.personalfitnesscoach.engine.calc.CheckIn
 import com.personalfitnesscoach.engine.calc.Ssu
+import com.personalfitnesscoach.engine.calc.Workload
 import com.personalfitnesscoach.engine.model.DoseUnit
 import com.personalfitnesscoach.engine.safety.SessionValidator
 import kotlinx.coroutines.runBlocking
@@ -63,7 +65,7 @@ class WeekBudgetTest {
         assertEquals(1.0, d.bridge.weekShare(t.week, null, Fixtures.MONDAY), 1e-9)
     }
 
-    @Test fun `TC-VOL-007f calibration sets count at their logged effort`() = runBlocking {
+    @Test fun `TC-VOL-007f a weight being found counts as planned - two sets at the target effort, whatever the ramp`() = runBlocking {
         val (d, clock) = Fixtures.data()
         Fixtures.onboard(d)
         clock.setDay(Fixtures.MONDAY, hour = 9)
@@ -77,9 +79,21 @@ class WeekBudgetTest {
         val load = w.items[i].load!!
         listOf(5.0, 3.0, 2.0).forEachIndexed { n, rir -> d.sessions.logSet(row, NewSet(n, SetKind.CALIBRATION, load + 5.0 * n, 8, rir = rir), "{}") }
         val stored = checkNotNull(d.sessions.load(id))
-        val c = Ssu.cost(w.items[i].exercise.costClass)
-        // 5 in reserve is an easy ramp set (0); 3 counts 0.8; 2 counts 1.0 (VOL-007 E factors).
-        assertEquals(c * (0.0 + 0.8 + 1.0), d.bridge.calibrationSsu(stored), 1e-9)
+        // Two sets at the target effort, as the plan counts it (D-110): the easy ramp set no longer makes the week look light.
+        val planned = SessionValidator.sessionSsu(com.personalfitnesscoach.engine.safety.Session(com.personalfitnesscoach.engine.model.Tier.FULL,
+            listOf(com.personalfitnesscoach.engine.safety.SessionExercise(w.items[i].exercise, 3, 8, w.items[i].targetRir, calibrating = true))))
+        assertEquals(planned, d.bridge.calibrationSsu(stored), 1e-9)
+        // One set logged (the ramp stopped at once) counts one.
+        val (e, eclock) = Fixtures.data()
+        Fixtures.onboard(e)
+        eclock.setDay(Fixtures.MONDAY, hour = 9)
+        val et = checkNotNull(e.planToday())
+        val en = checkNotNull(et.next)
+        val ew = e.generate(et, en, e.checkIns.record(et.user, CheckIn(4, 4, 3, 4)).record.tier).value
+        val eid = e.sessions.start(ew, en.template, en.weekday, inDeload = false)
+        val erow = checkNotNull(e.sessions.load(eid)).exercises[i].row.id
+        e.sessions.logSet(erow, NewSet(0, SetKind.CALIBRATION, load, 8, rir = 2.0), "{}")
+        assertEquals(planned / 2, e.bridge.calibrationSsu(checkNotNull(e.sessions.load(eid))), 1e-9)
     }
 
     @Test fun `TC-LOAD-005h once k is learned each session done counts as k times its SSU or its measured load, whichever is higher`() = runBlocking {
@@ -114,5 +128,30 @@ class WeekBudgetTest {
         assertTrue(esoFar.workload < ec.k!! * esoFar.ssu)
         assertEquals(ec.k!! * esoFar.ssu, ec.weekLoadSoFar, 1e-6)
         assertNotEquals(esoFar.workload, ec.weekLoadSoFar, 1.0)
+    }
+
+    @Test fun `TC-LOAD-005j the limits come from reference weeks - a week cut short counts at its sessions' level, one cut by more than half is left out`() = runBlocking {
+        val (d, clock) = Fixtures.data()
+        Fixtures.onboard(d)
+        val monday = Fixtures.MONDAY + 35
+        clock.setDay(monday, hour = 9)
+        // Opening the app closes the past weeks (it writes their summaries), so the stored weeks are set after it.
+        val t = checkNotNull(d.planToday())
+        // Five finished weeks before this one, oldest first: all 3 sessions, 2 of 3, 1 of 3 (left out), all 3, 2 of 3.
+        listOf(Triple(3, 30.0, 900.0), Triple(2, 20.0, 600.0), Triple(1, 10.0, 300.0), Triple(3, 30.0, 900.0), Triple(2, 20.0, 600.0))
+            .forEachIndexed { i, (done, ssu, load) -> d.docs.put(WeekSummary, WeekSummary(Fixtures.MONDAY + 7 * i, i + 1, 3, done, ssu = ssu, workload = load)) }
+        val refs = d.bridge.referenceWeeks(monday).map { it.second }
+        assertEquals(listOf(30.0, 30.0, 30.0, 30.0), refs.map { it.ssu })
+        assertEquals(listOf(900.0, 900.0, 900.0, 900.0), refs.map { it.load })
+        val lim = d.bridge.weekLimits(t.user, t.program, deload = false)
+        // VOL-007: 1.15 × 30 = 34.5, not 1.15 × 23.3 from the weeks as done; k (load ÷ SSU) is the same either way.
+        assertEquals(34.5, lim.ssuLimit, 1e-9)
+        assertEquals(30.0, lim.k!!, 1e-9)
+        // LOAD-005 on the same reference weeks: 1.20 × 900.
+        assertEquals(1080.0, Workload.planningCap(refs.map { it.load }, 40)!!, 1e-9)
+        // The floor and the session check (TC-VOL-007j): half of this week's plan, never above the level ceiling, and the limit never under it.
+        val c = d.bridge.validationContext(t.user, t.program, t.week, t.next)
+        assertEquals(minOf(0.5 * t.week.plannedSsu, Ssu.weeklyCeiling(t.user.profile.level).toDouble()), c.weekFloorSsu!!, 1e-9)
+        assertTrue(c.weeklySsuLimit!! >= c.weekFloorSsu!! - 1e-9)
     }
 }

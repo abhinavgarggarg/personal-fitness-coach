@@ -266,7 +266,7 @@ class Part4RecheckRegressionTest {
     @Test fun `RC-11 the personal k is the median weekly ratio`() = runBlocking {
         val (d, clock) = ready(monday - 35)
         clock.setDay(monday)
-        val weeks = listOf(1000.0, 1000.0, 1000.0, 4000.0).mapIndexed { i, wl -> WeekSummary(monday - 28 + 7 * i, 1, 3, 3, ssu = 100.0, workload = wl) }
+        val weeks = listOf(1000.0, 1000.0, 1000.0, 4000.0).map { wl -> com.personalfitnesscoach.engine.safety.WeeklyLimits.Week(3, 3, ssu = 100.0, load = wl) }
         assertEquals(10.0, d.bridge.learnedK(weeks)!!, 1e-9)
         assertNull(d.bridge.learnedK(weeks.take(3)))
     }

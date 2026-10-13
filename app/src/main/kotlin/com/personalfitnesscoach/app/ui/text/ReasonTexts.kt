@@ -40,6 +40,7 @@ object ReasonTexts {
         ReasonKey.WORKLOAD_SPIKE_FLAG -> R.string.reason_workload_spike_flag
         ReasonKey.MONOTONY_FLAG -> R.string.reason_monotony_flag
         ReasonKey.PLAN_CAPPED_BY_LOAD -> R.string.reason_plan_capped_by_load
+        ReasonKey.WEEK_WITHIN_LIMIT -> R.string.reason_week_within_limit
         ReasonKey.DELOAD_NOW -> R.string.reason_deload_now
         ReasonKey.LIGHTER_WEEK -> R.string.reason_lighter_week
         ReasonKey.DELOAD_BLOCK_END -> R.string.reason_deload_block_end

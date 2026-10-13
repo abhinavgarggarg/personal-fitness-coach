@@ -68,25 +68,32 @@ class WeekPacingTest {
         assertEquals(1, out.corrections)
     }
 
-    @Test fun `TC-LOAD-005f conditioning is shortened just enough, and dropped when that would take more than 40 percent`() {
+    @Test fun `TC-LOAD-005f conditioning is shortened just enough, made easy when more than 40 percent must go, and dropped last`() {
         // 20 min of Z2 on the rower: 20 × 0.8 × 0.9 = 14.4 SSU.
         val s = Session(Tier.FULL, emptyList(), listOf(ConditioningBlock(Modality.ROWER, Zone.Z2, 20.0)))
         val shorter = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 12.0)).value.session.conditioning.single()
         assertEquals(16.5, shorter.workMinutes, 1e-9)
-        val gone = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 5.0)).value.session
+        assertEquals(Zone.Z2, shorter.zone)
+        // 5 SSU left: Z2 would lose 65%, so the block is made easy (Z1, 0.36 SSU a minute) and shortened to fit: 13.5 min (D-110).
+        val easy = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 5.0)).value.session.conditioning.single()
+        assertEquals(Zone.Z1, easy.zone)
+        assertEquals(13.5, easy.workMinutes, 1e-9)
+        assertTrue(SessionValidator.sessionSsu(Session(Tier.FULL, emptyList(), listOf(easy))) <= 5.0 + 1e-9)
+        // Under 10 easy minutes (FREQ-005's shortest block) it goes.
+        val gone = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 3.0)).value.session
         assertTrue(gone.conditioning.isEmpty())
     }
 
     @Test fun `TC-VOL-007g sets cut before conditioning that then had to go are given back when they fit`() {
-        // Two accessories of 2 sets at RIR 2 (4 × 0.8 = 3.2 SSU) and 20 min of Z2 on the rower (14.4 SSU), against 6 SSU left.
+        // Two accessories of 2 sets at RIR 2 (4 × 0.8 = 3.2 SSU) and 20 min of Z2 on the rower (14.4 SSU), against 3.25 SSU left.
         val s = Session(Tier.FULL, listOf(SessionExercise(ex("row", Muscle.LATS), 2, 10, 2.0), SessionExercise(ex("fly", Muscle.CHEST), 2, 12, 2.0)),
             listOf(ConditioningBlock(Modality.ROWER, Zone.Z2, 20.0)))
-        val r = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 6.0))
+        val r = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 3.25))
         val out = r.value.session
-        // The conditioning would lose more than 40%, so it goes; the accessory sets cut before it all fit again (not an empty day).
+        // Even 10 easy minutes (3.6 SSU) are over, so the block goes; the accessory sets cut before it all fit again (not an empty day).
         assertTrue(out.conditioning.isEmpty())
         assertEquals(listOf("row" to 2, "fly" to 2), out.exercises.map { it.exercise.id to it.sets })
-        assertTrue(SessionValidator.sessionSsu(out) <= 6.0 + 1e-9)
+        assertTrue(SessionValidator.sessionSsu(out) <= 3.25 + 1e-9)
         assertEquals(4, r.decisions.last().outputs["setsGivenBack"])
         // Only what fits: with 2 SSU left, two sets come back, the first exercise first.
         val tight = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 2.0)).value.session

@@ -20,7 +20,7 @@ A tool checks the change set against the versioning rules, shows what it would a
 | 3 Compare | Which rules it touches, by rule ID | The report's rule table |
 | 4 Conflicts | Where it disagrees with a rule, and why | The report |
 | 5 Confidence | The evidence scale: High, Moderate, Limited, Expert Practice, Product Rule | `confidence` in the change set |
-| 6 Propose | A draft change set in `rules/changes/registry_<version>.json` | The format below |
+| 6 Propose | A draft change set in `rules/proposals/registry_<version>.json` (proposals are not replayed by CI); on approval it moves to `rules/changes/` | The format below |
 | 7 Impact | Affected rules, algorithms, code and tests | `python3 -I tools/research_update.py impact <file> --proposal`, plus the report's own analysis of workouts and stored data |
 | 8 Approval | The Product Owner approves. Safety rules also need a written safety review | `approval` and `safety_review` in the change set |
 | 9 Version | Each rule and the registry get their new semantic version | `python3 -I tools/research_update.py apply <file>` |

@@ -80,6 +80,7 @@ import com.personalfitnesscoach.engine.safety.SafetyStop
 import com.personalfitnesscoach.engine.safety.Screening
 import com.personalfitnesscoach.engine.safety.ScreeningMode
 import com.personalfitnesscoach.engine.safety.SessionValidator
+import com.personalfitnesscoach.engine.safety.WeeklyLimits
 import com.personalfitnesscoach.engine.safety.ValidationContext
 
 /** The user as the engine sees them on one day: everything resolved from storage (profile, screening, conditions, injuries). */
@@ -346,13 +347,14 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
     }
 
     /**
-     * VOL-007 counts every hard set, so calibration sets count too, each at its logged effort (RIR, else 10 − RPE, else the target RIR).
-     * Easy ramp-up sets (RIR 5 or more) count nothing, as usual. Without them a calibration week looked almost empty and became a tiny
-     * baseline for the LOAD-005 / VOL-007 caps of the weeks after (Part 8 journey test).
+     * A weight still being found counts as it is planned (D-110): up to two sets at the target effort
+     * ([SessionValidator.CALIBRATION_SETS_COUNTED]), however its ramp went. Counted at their logged effort, the easy ramp sets of a
+     * calibration week counted nothing, so the week looked light and held the next weeks' limits (VOL-007, LOAD-005) low for months
+     * (Phase 4 simulations).
      */
     fun calibrationSsu(w: StoredWorkout): Double = Ssu.sets(w.exercises.flatMap { e ->
         val ex = Library[e.exerciseId] ?: return@flatMap emptyList()
-        e.calibration.map { s -> ex.costClass to (s.rir ?: s.rpe?.let { 10.0 - it } ?: e.doc.targetRir) }
+        List(minOf(e.calibration.size, SessionValidator.CALIBRATION_SETS_COUNTED)) { ex.costClass to e.doc.targetRir }
     })
 
     fun doneSession(w: StoredWorkout): com.personalfitnesscoach.engine.safety.Session {
@@ -401,6 +403,52 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         return inputs to FatigueSignals.active(inputs)
     }
 
+    /**
+     * VOL-007 / LOAD-005 reference weeks before the week of `today`, oldest first (D-110, [WeeklyLimits.reference]): finished weeks with
+     * at least half of their planned sessions done, each counted at the level of the sessions done, so missed sessions never lower the
+     * limits.
+     */
+    suspend fun referenceWeeks(today: Int): List<Pair<Int, WeeklyLimits.Week>> {
+        val ws = Days.weekStart(today)
+        val weeks = docs.all(WeekSummary).filter { it.weekStartDay < ws }.sortedBy { it.weekStartDay }
+        return weeks.mapNotNull { w ->
+            WeeklyLimits.reference(listOf(WeeklyLimits.Week(w.planned, w.completed, w.ssu, w.workload))).firstOrNull()?.let { w.weekStartDay to it }
+        }
+    }
+
+    /** This week's limits before pacing (VOL-007 SSU limit; LOAD-005 cap, k and its early reference), and whether LOAD-005 is exempt. */
+    data class WeekLimits(val ssuLimit: Double, val loadCap: Double?, val k: Double?, val lastWeekSsu: Double?, val loadExempt: Boolean,
+                          /** The spike guard (twice the last three weeks as done); null in a return or a deload, or before 28 days. */
+                          val guard: Double? = null) {
+        /** The lower of the two limits in SSU — LOAD-005 as its cap ÷ k, or last week + 20% before k — for planning the week (D-110). */
+        val planningSsu: Double get() {
+            if (loadExempt) return ssuLimit
+            val load = when {
+                k != null && loadCap != null && k > 0 -> loadCap / k
+                k == null && lastWeekSsu != null && lastWeekSsu > 0 -> lastWeekSsu * (1.0 + P.LOAD_005.early_week_over_week_pct / 100.0)
+                else -> null
+            }
+            return if (load == null) ssuLimit else minOf(ssuLimit, load)
+        }
+    }
+
+    suspend fun weekLimits(u: UserState, program: ProgramRecord, deload: Boolean): WeekLimits {
+        val today = u.today
+        val refs = referenceWeeks(today)
+        val historyDays = historyDays(today, program)
+        val ssuLimit = Ssu.weeklyLimit(u.profile.level, refs.takeLast(3).map { it.second.ssu }, refs.size)
+        val k = learnedK(refs.map { it.second })
+        val cap = Workload.planningCap(refs.map { it.second.load }, historyDays)
+        // LOAD-005 before k: last reference week within 4 weeks; after a longer gap the return rules (REG-003/004) set the dose.
+        val last = if (historyDays >= P.LOAD_006.phase1_days) refs.lastOrNull { it.first >= Days.weekStart(today) - 28 }?.second?.ssu else null
+        val exempt = deload || program.justFinishedLighterWeek || returnPlan(u, program).value.inReturn
+        val ws = Days.weekStart(today)
+        val byStart = docs.all(WeekSummary).associateBy { it.weekStartDay }
+        val guard = if (exempt || historyDays < WeeklyLimits.SPIKE_GUARD_AFTER_DAYS) null
+            else WeeklyLimits.spikeGuard((3 downTo 1).map { byStart[ws - 7 * it]?.ssu ?: 0.0 })
+        return WeekLimits(ssuLimit, cap, k, last, exempt, guard)
+    }
+
     /** Days since the first finished workout (0 without one). */
     private suspend fun historyDays(today: Int, program: ProgramRecord?): Int {
         val first = log.done(minOf(program?.startDay ?: today, today) - 3650, today).firstOrNull()?.day ?: return 0
@@ -436,6 +484,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
     /** The week planner's input for the week containing `today` (SCH, VOL, FREQ, AER, FL-002/003, SAF-010). */
     suspend fun weekInput(u: UserState, program: ProgramRecord): WeekInput {
         val today = u.today
+        val limits = weekLimits(u, program, program.deloadThisWeek)
         val ctx = plannedContext(program)
         val last = lastActiveWeek(today)
         val sinceBlock = log.done(program.blockStartDay, today).count { w -> doneSession(w).conditioning.any { it.protocol != null } }
@@ -454,6 +503,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             ladderRungs = program.ladderRungs, coreLifts = program.coreLifts, previousBlockChoices = program.previousBlockChoices,
             modalityPreferences = prefs.modalityScores, excludedModalities = prefs.excludedModalities,
             lastWeekEquivalentMinutes = last?.equivalentMinutes ?: 0.0, hiitOptIn = prefs.hiitOptIn, conditions = u.conditions,
+            weeklySsuLimit = limits.planningSsu, weeklySsuGuard = limits.guard,
         )
     }
 
@@ -480,17 +530,18 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val soFar = totals(weekStart, today)
         val lastHiit = log.done(today - 14, today).lastOrNull { doneSession(it).hiitBlocks > 0 }
         val nextHeavy = daysToNextHeavyLower(plan, day, today)
-        val active = docs.all(WeekSummary).filter { it.completed > 0 && it.weekStartDay < weekStart }.sortedBy { it.weekStartDay }
-        val historyDays = historyDays(today, program)
         val (painLimits, _) = painToday(today)
         val regions = regions(today).value + u.injuries.regions
-        val ret = returnPlan(u, program).value
-        val k = learnedK(active)
+        val limits = weekLimits(u, program, plan.deload)
+        val k = limits.k
+        // The floor (D-110): the limits never cut a week below half of its plan, as the planner planned it — about a deload week (DEL-003).
+        val floor = minOf(WeeklyLimits.floorSsu(plan.plannedSsu), Ssu.weeklyCeiling(u.profile.level).toDouble())
         return ValidationContext(
             level = u.profile.level, weeksTraining = program.weeksTraining, age = u.age, screening = u.screening, jointLimits = painLimits,
             regions = regions, blockedTags = u.injuries.blockedTags, excludedIds = u.preferences.excludedIds,
             excludedModalities = u.preferences.excludedModalities, weekSetsSoFar = soFar.sets, weekSsuSoFar = soFar.ssu,
-            weeklySsuLimit = Ssu.weeklyLimit(u.profile.level, active.takeLast(3).map { it.ssu }, active.size),
+            // The spike guard holds the limit down; the floor (about a deload week) is always allowed (D-110).
+            weeklySsuLimit = maxOf(limits.guard?.let { minOf(limits.ssuLimit, it) } ?: limits.ssuLimit, floor),
             hiitThisWeekSoFar = soFar.hiitSessions, hiitBaseReady = hiitBaseReady(u, program, plannedContext(program)), sprintsThisWeekSoFar = soFar.sprints,
             hoursSinceLastHiit = lastHiit?.let { (clock.nowMs() - (it.row.endedAtMs ?: it.row.startedAtMs ?: clock.nowMs())) / 3_600_000.0 },
             hoursToNextHeavyLower = nextHeavy?.let { it * 24.0 }, heavyLegsNextDay = nextHeavy == 1,
@@ -498,9 +549,9 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             // LOAD-005 "predicted weekly load = k × planned SSU" covers the whole week (D-107): each session already done counts as k × its
             // SSU, or as its measured load when that was higher, so a harder day than predicted still leaves less room (review R8-02).
             weekLoadSoFar = if (k != null) weekLoadSoFar(weekStart, today, k) else soFar.workload,
-            weeklyLoadCap = Workload.planningCap(active.map { it.workload }, historyDays), k = k,
-            lastWeekSsu = if (historyDays >= P.LOAD_006.phase1_days) lastActiveWeek(today)?.ssu else null,
-            loadCapExempt = plan.deload || program.justFinishedLighterWeek || ret.inReturn, inDeload = plan.deload, weekShare = weekShare(plan, day, today),
+            weeklyLoadCap = limits.loadCap, k = k, lastWeekSsu = limits.lastWeekSsu,
+            loadCapExempt = limits.loadExempt, inDeload = plan.deload, weekShare = weekShare(plan, day, today),
+            weekFloorSsu = floor,
             equipmentToday = u.equipment.availableOn(today), library = Library.all.filter { !it.userAddOnly },
             planImpactAllowed = day?.impactAllowed ?: true, planIntervalModalities = day?.intervalModalities, conditions = u.conditions,
             strengthYesterday = strengthDoneOn(today - 1),
@@ -549,8 +600,8 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
      * VOL-007 k (AU per SSU) once 4 weeks with both a session rating and stress exist: the median of the weekly load ÷ SSU ratios
      * (re-check finding 11: a ratio of sums lets one unusual week move k).
      */
-    fun learnedK(active: List<WeekSummary>): Double? {
-        val ratios = active.filter { it.workload > 0 && it.ssu > 0 }.takeLast(P.VOL_007.k_after_weeks).map { it.workload / it.ssu }.sorted()
+    fun learnedK(weeks: List<WeeklyLimits.Week>): Double? {
+        val ratios = weeks.filter { it.load > 0 && it.ssu > 0 }.takeLast(P.VOL_007.k_after_weeks).map { it.load / it.ssu }.sorted()
         if (ratios.size < P.VOL_007.k_after_weeks) return null
         val n = ratios.size
         return if (n % 2 == 1) ratios[n / 2] else (ratios[n / 2 - 1] + ratios[n / 2]) / 2.0
