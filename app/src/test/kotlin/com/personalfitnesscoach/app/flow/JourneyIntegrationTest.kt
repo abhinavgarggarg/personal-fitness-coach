@@ -14,6 +14,7 @@ import com.personalfitnesscoach.engine.model.Exercise
 import com.personalfitnesscoach.engine.model.LoadType
 import com.personalfitnesscoach.engine.model.Pattern
 import com.personalfitnesscoach.engine.model.Tier
+import com.personalfitnesscoach.engine.safety.SessionValidator
 import com.personalfitnesscoach.engine.safety.PainAction
 import com.personalfitnesscoach.engine.safety.PainKind
 import kotlinx.coroutines.runBlocking
@@ -73,6 +74,8 @@ class JourneyIntegrationTest {
         var restored = false
         var shortened = false
         var recoveryDays = 0
+        /** Per week (0-based): planned SSU of the days generated, and SSU kept after the weekly limits (VOL-007, LOAD-005). */
+        val weeks = sortedMapOf<Int, DoubleArray>()
     }
 
     private fun AppController.s() = screen.value
@@ -123,12 +126,14 @@ class JourneyIntegrationTest {
             if (s is Screen.Workout && s.sheet != null) { c.closeSheet(); continue }
             val v = (s as? Screen.Workout ?: error("$where: expected the workout, got $s")).view
             when (val step = v.step) {
-                is Step.Warmup -> c.completeStage(Stage.WARMUP)
-                is Step.BoneLoading -> c.completeStage(Stage.BONE_LOADING)
+                // The clock moves as in a gym, so the session minutes (and so the measured loads, LOAD-001) are realistic: the warm-up,
+                // each set (40 s) after the rest shown, the conditioning, balance and cool-down.
+                is Step.Warmup -> { w.clock.ms += (step.minutes * 60_000).toLong(); c.completeStage(Stage.WARMUP) }
+                is Step.BoneLoading -> { w.clock.ms += 300_000; c.completeStage(Stage.BONE_LOADING) }
                 is Step.Lift -> {
                     val t = step.lift.next!!
                     val e = step.lift.exercise
-                    w.clock.ms += 90_000
+                    w.clock.ms += 40_000L + 1000L * (v.state.restSec ?: 0)
                     val load = t.load
                     val calibration = t.kind == "CALIBRATION"
                     val entry = when {
@@ -144,8 +149,8 @@ class JourneyIntegrationTest {
                     c.log(step.lift.rowId, entry, confirmed = true)
                 }
                 is Step.Conditioning -> { w.clock.ms += (step.item.workMinutes * 60_000).toLong(); c.logConditioning(step.index, step.item.workMinutes) }
-                is Step.Balance -> c.completeStage(Stage.BALANCE)
-                is Step.Cooldown -> c.completeStage(Stage.COOLDOWN)
+                is Step.Balance -> { w.clock.ms += (step.minutes * 60_000).toLong(); c.completeStage(Stage.BALANCE) }
+                is Step.Cooldown -> { w.clock.ms += ((step.minutes + step.mobilityMinutes) * 60_000).toLong(); c.completeStage(Stage.COOLDOWN) }
                 Step.Done -> { c.finishWorkout(); c.ok("$where: finish"); return }
             }
             c.ok("$where: step $guard")
@@ -203,6 +208,10 @@ class JourneyIntegrationTest {
             c.submitCheckIn(); c.ok("$where: preview")
             val pv = c.s() as? Screen.Preview ?: error("$where: expected the preview, got ${c.s()}")
             val wk = pv.model.session.workout
+            w.data().planToday()?.next?.let { planned ->
+                val week = log.weeks.getOrPut(d / 7) { DoubleArray(2) }
+                week[0] += SessionValidator.sessionSsu(planned.toSession()); week[1] += SessionValidator.sessionSsu(wk.validated)
+            }
             assertNull("$where: no safety stop on a normal day", wk.safetyStop)
             if (wk.items.isEmpty() && wk.conditioning.isEmpty()) {
                 // VOL-007 / LOAD-005: when the week's safe load is used up, the day is a recovery day with the reason shown, never an
@@ -266,6 +275,10 @@ class JourneyIntegrationTest {
         c.openTab(Tab.COACH); c.ok("${p.name}: coach")
         c.openTab(Tab.TODAY); c.ok("${p.name}: today")
         println("JOURNEY ${p.name}: sessions=${log.completed} recoveryDays=${log.recoveryDays}")
+        // How much of the planned work the weekly limits kept, week by week (an open issue for Phase 4 tuning; D-107).
+        val kept = (0 until weeks).joinToString(" ") { i -> log.weeks[i]?.let { "%.0f".format(100 * it[1] / it[0]) } ?: "-" }
+        val all = log.weeks.values.let { v -> 100 * v.sumOf { it[1] } / v.sumOf { it[0] } }
+        println("METRIC journey ${p.name}: planned work kept by the weekly limits, %% by week: $kept (overall %.0f%%)".format(all))
         // The weekly limits are paced over the week (D-107): a day emptied by them stays the exception.
         assertTrue("${p.name}: recovery days from the weekly limits: ${log.recoveryDays}", log.recoveryDays <= 2)
         return w to log

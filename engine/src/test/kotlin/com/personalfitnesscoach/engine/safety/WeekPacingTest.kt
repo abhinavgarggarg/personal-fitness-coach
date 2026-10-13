@@ -77,6 +77,26 @@ class WeekPacingTest {
         assertTrue(gone.conditioning.isEmpty())
     }
 
+    @Test fun `TC-VOL-007g sets cut before conditioning that then had to go are given back when they fit`() {
+        // Two accessories of 2 sets at RIR 2 (4 × 0.8 = 3.2 SSU) and 20 min of Z2 on the rower (14.4 SSU), against 6 SSU left.
+        val s = Session(Tier.FULL, listOf(SessionExercise(ex("row", Muscle.LATS), 2, 10, 2.0), SessionExercise(ex("fly", Muscle.CHEST), 2, 12, 2.0)),
+            listOf(ConditioningBlock(Modality.ROWER, Zone.Z2, 20.0)))
+        val r = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 6.0))
+        val out = r.value.session
+        // The conditioning would lose more than 40%, so it goes; the accessory sets cut before it all fit again (not an empty day).
+        assertTrue(out.conditioning.isEmpty())
+        assertEquals(listOf("row" to 2, "fly" to 2), out.exercises.map { it.exercise.id to it.sets })
+        assertTrue(SessionValidator.sessionSsu(out) <= 6.0 + 1e-9)
+        assertEquals(4, r.decisions.last().outputs["setsGivenBack"])
+        // Only what fits: with 2 SSU left, two sets come back, the first exercise first.
+        val tight = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 2.0)).value.session
+        assertEquals(listOf("row" to 2), tight.exercises.map { it.exercise.id to it.sets })
+        // Never more than planned, and nothing given back when nothing was cut for the week.
+        val open = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 40.0))
+        assertEquals(s.exercises, open.value.session.exercises)
+        assertTrue(open.decisions.last().outputs["setsGivenBack"] == null)
+    }
+
     @Test fun `TC-LOAD-005i an interval block is shortened by whole repeats, so what is shown is what was approved`() {
         // Rower Z4, 4 x 240 s work with 120 s rest: 16 min of work.
         val block = ConditioningBlock(Modality.ROWER, Zone.Z4, 16.0, 8.0, hiit = true, protocol = HiitProtocol.LONG, repSec = 240)

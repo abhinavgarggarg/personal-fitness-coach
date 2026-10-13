@@ -374,12 +374,17 @@ object SessionValidator {
         try {
             var s = input
             var steps = 0
+            var weeklyCut = false
             while (steps < MAX_STEPS) {
                 val v = violations(s, c)
                 if (v.isEmpty()) {
-                    log += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_008), ReasonKey.VALIDATOR_PASSED, outputs = mapOf("corrections" to steps))
-                    return EngineResult(ValidatedSession(s, false, steps), log)
+                    val back = if (weeklyCut) giveBackForWeek(input, s, c) else s
+                    val given = back.exercises.sumOf { it.sets } - s.exercises.sumOf { it.sets }
+                    log += Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_008), ReasonKey.VALIDATOR_PASSED,
+                        outputs = if (given > 0) mapOf("corrections" to steps, "setsGivenBack" to given) else mapOf("corrections" to steps))
+                    return EngineResult(ValidatedSession(back, false, steps), log)
                 }
+                if (v.first().code == "WEEKLY_SSU" || v.first().code == "WEEKLY_LOAD") weeklyCut = true
                 val (next, d) = correct(s, v.first(), c) ?: break
                 s = next
                 log += d
@@ -564,6 +569,40 @@ object SessionValidator {
         ex.indices.reversed().firstOrNull { ex[it].main && match(ex[it]) && splittable(ex[it]) }?.let { return dec(it) }
         ex.indices.reversed().firstOrNull { ex[it].main && match(ex[it]) }?.let { return drop(it) }
         return null
+    }
+
+    /**
+     * After the weekly limits (VOL-007, LOAD-005) cut a session, gives back the sets that still fit, most important first: main lifts,
+     * then the others in session order, each filled back as far as it fits before the next (a weight still being found whole), every
+     * set kept only if the whole session still passes every check. The cuts go in TIME-001 order (accessory sets from the end, then the
+     * key conditioning, then main lifts), so when the conditioning had to be shortened or dropped as well, accessory sets cut before it
+     * may fit again: without this, a day whose conditioning alone was over its share lost every set too and became a recovery day
+     * (Part 8 journey test). Never more than planned.
+     */
+    private fun giveBackForWeek(input: Session, cut: Session, c: ValidationContext): Session {
+        // Exercises are matched by ID; a session listing one twice keeps its cuts.
+        if (input.exercises.distinctBy { it.exercise.id }.size != input.exercises.size) return cut
+        var cur = cut
+        val order = input.exercises.indices.sortedWith(compareBy({ !input.exercises[it].main }, { it }))
+        fun inputIndex(e: SessionExercise) = input.exercises.indexOfFirst { it.exercise.id == e.exercise.id }
+        for (i in order) {
+            val want = input.exercises[i]
+            while (true) {
+                val at = cur.exercises.indexOfFirst { it.exercise.id == want.exercise.id }
+                val candidate = if (at >= 0) {
+                    val have = cur.exercises[at]
+                    if (have.sets >= want.sets) break
+                    val more = if (have.calibrating) want.sets - have.sets else 1
+                    cur.copy(exercises = cur.exercises.mapIndexed { j, e -> if (j == at) e.copy(sets = e.sets + more) else e })
+                } else {
+                    // Back in its place among the exercises still there.
+                    val pos = cur.exercises.count { inputIndex(it) in 0 until i }
+                    cur.copy(exercises = cur.exercises.toMutableList().apply { add(pos, if (want.calibrating) want else want.copy(sets = 1)) })
+                }
+                if (violations(candidate, c).isEmpty()) cur = candidate else break
+            }
+        }
+        return cur
     }
 
     // ---------------------------------------------------------------- helpers
