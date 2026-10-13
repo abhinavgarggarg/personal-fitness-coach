@@ -60,7 +60,7 @@ Test names are given as `Class › test`. Engine tests are in `engine/src/test`,
 
 | NFR | Target | Evidence | Status |
 |---|---|---|---|
-| NFR-01 Cold launch | < 1.5 s to a usable Today on a 2022+ mid-range phone | The release smoke test measures cold start of the shrunk release build on an Android 14 emulator with software graphics: 970 ms median (775–1,043 ms) | Automated (measured) + UAT |
+| NFR-01 Cold launch | < 1.5 s to a usable Today on a 2022+ mid-range phone | The release smoke test measures cold start of the shrunk release build on an Android 14 emulator with software graphics: medians of 970–1,152 ms over the last three runs (1,027 ms on the last) | Automated (measured) + UAT |
 | NFR-02 Generation | < 500 ms | `GenerationSpeedTest` | Automated |
 | NFR-03 Set logging | < 100 ms, UI never blocks | `PlayerSpeedTest`; taps are handled one at a time and a double tap logs nothing (D-083) | Automated + UAT |
 | NFR-04 Offline | Everything works with no connection | No INTERNET or network-state permission (CI on the debug and release APK, device test) | Automated |
@@ -76,3 +76,6 @@ Test names are given as `Class › test`. Engine tests are in `engine/src/test`,
 | NFR-14 Determinism | Same inputs, same workout | `GenerationTest › TC-GEN-001a`; `ReviewRegressionTest › R07` | Automated |
 | NFR-15 Units & time | kg default, lb option; UTC times with a local training date, correct across time zones | `StepLedgerTest › time zones decide the day`; dates stored as local training days; lb deferred (D-097) | Automated (time) / **Open** (lb) |
 | NFR-16 Language | No hard-coded UI strings | `tools/check_strings.py` (CI) | Automated |
+
+## Beyond the criteria
+The journeys also report how much of the planned work the weekly limits (VOL-007, LOAD-005) kept each week: `JourneyIntegrationTest`, shown as a "Measured" line on every CI run. It is not a Phase 2 criterion, but it is the main open issue at the Phase 3 gate (`docs/phase3/part8_report.md`, "The weekly limits").
