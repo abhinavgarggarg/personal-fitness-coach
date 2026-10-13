@@ -1,17 +1,28 @@
 # PROJECT STATE — Personal Fitness Coach
 
-Last updated: 2026-10-13 (Phase 3 complete: Part 8 done; Phase 3 sign-off gate open, waiting for the PO's APPROVED) · Master prompt: v3.0 (7 Oct 2026)
+Last updated: 2026-10-13 (Phase 3 APPROVED; Phase 4 started with Part 1, the weekly-limit tuning) · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
-**Phase 3 — Application Development: COMPLETE, AT THE SIGN-OFF GATE. Parts 1–8 done (engine, library and planner, Research Update 1.1, data layer, screens, history/progress/coach, look and figures, integration and release checks). Rule coverage 152/152. Gate report `docs/phase3/part8_report.md`; waiting for the PO to reply APPROVED (→ Phase 4) or give feedback.**
+**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Part 1 of 5: weekly-limit tuning (VOL-007, LOAD-005) with 12-month simulations. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
 
 | Phase | Status | Date |
 |---|---|---|
 | 1 Fitness research & evidence engine | APPROVED | 2026-10-07 |
 | 2 Product requirements, UX & architecture | APPROVED (D-028) | 2026-10-07 |
-| 3 Application development | AT SIGN-OFF GATE — Parts 1–8 complete | 2026-10-13 |
-| 4 Testing, validation & UAT | NOT STARTED | — |
+| 3 Application development | APPROVED (D-110) | 2026-10-13 |
+| 4 Testing, validation & UAT | IN PROGRESS — Part 1 of 5 (D-111) | 2026-10-13 |
 | 5 Production build & APK delivery | NOT STARTED | — |
+
+## Phase 4 progress (D-111)
+| Part | Content | Status |
+|---|---|---|
+| 1 | Weekly-limit tuning (D-110): (a) the week planner plans within VOL-007 / LOAD-005; (b) a week with fewer than half its planned sessions leaves the 3-week reference; (c) 1.15 / 1.20 re-checked in 12-month simulations of the Phase 2 personas and the condition personas, with a floor; MINOR change set for the PO's approval | IN PROGRESS |
+| 2 | The 30-scenario suite (E2), automated on every push | NOT STARTED |
+| 3 | Interruption, data-integrity and upgrade tests on emulators (E5); Android backup | NOT STARTED |
+| 4 | Safety and evidence audit: independent expert review, the nine pending sources, TalkBack pass, device performance | NOT STARTED |
+| 5 | UAT on the PO's Motorola Edge 50 (E7), fixes, Phase 4 gate | NOT STARTED |
+
+Baseline before Part 1 (CI, `JourneyIntegrationTest` "Measured" lines): planned work kept by the weekly limits — Beginner 66 80%, Bodyweight 35 68%, Lifter 41 49% (16–28% in weeks 9–12).
 
 ## Phase 3 progress
 | Part | Content | Status |
@@ -74,9 +85,9 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 - Phone: Motorola Edge 50, Android 16. Request: the app must work on any phone (→ D-044) and use the phone's Gemini instead of paid AI calls (→ D-045).
 
 ## Open items for the Product Owner
-1. **Reply APPROVED** to the Phase 3 sign-off gate to start Phase 4 (Testing, Validation & UAT), or give feedback. Gate report: `docs/phase3/part8_report.md`.
-2. **Decision: the weekly limits (VOL-007, LOAD-005) are too cautious.** In the 12-week journeys they keep about 50–80% of the planned work, and less after an interrupted week (the lifter fell to 16–28% in weeks 9–12). Recommended first Phase 4 task, as a MINOR registry change through the research-update workflow: (a) the week planner plans within the limits; (b) a week with fewer than half its planned sessions doesn't count in the 3-week average (a quick trial stopped the slide: 34–43%); (c) re-check 1.15 / 1.20 in Phase 4 simulations with a floor at maintenance volume. The PO may ask for (a) and (b) before UAT starts.
-3. **Review Registry 1.1.2** (`rules/changes/registry_1.1.2.json`): an evidence-only PATCH applied under delegation (D-106) — six sources checked, citations completed, one link corrected, nine still pending; no rule changed.
+1. **Coming for your approval (Phase 4 Part 1):** the weekly-limit change set (VOL-007, LOAD-005; D-110) with its simulation results. Until it is approved, the app keeps today's cautious limits.
+2. Optional: if you have the master prompt's Phase 4 section (deliverables E1–E7 and the list of 30 scenarios), paste it so Phase 4 follows its exact numbering; otherwise Phase 4 follows the approved Phase 2 test strategy.
+3. For awareness: Registry 1.1.2 (evidence-only, applied under delegation, D-106) was accepted with the Phase 3 gate; the nine sources still pending are re-tried in Phase 4 Part 4.
 4. Decision in Phase 4: fill extra time (TIME-003 extension is built and tested but off, since it adds training volume). Pounds stay deferred (D-097) unless you want them.
 5. Housekeeping: the old test branches `probe/gpu` and `probe/pre-cr008` can be deleted on GitHub (the session's proxy can't delete branches).
 6. For awareness (D-109): when time is short two non-competing exercises may be a superset (alternate their sets, about 60 s between); at 30 minutes the express session may be offered instead — "no thanks" is kept until the app closes.
@@ -89,5 +100,5 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 13. Before any public release: clinician and regulatory review of the condition table and wording (D-058).
 
 ## Next actions
-1. On "APPROVED": Phase 4 — Testing, Validation & UAT. First the weekly-limit tuning (open item 2, with the PO's choice), then the 30-scenario suite, Phase 4 simulations of the expert-practice coefficients, re-trying the nine pending sources, and UAT on the PO's Motorola Edge 50 (install instructions from GitHub, a UAT checklist: rest alarm when locked, cold start, onboarding time, TalkBack pass, look in gym light, the 157 figures, one-handed use).
-2. On feedback: apply it, re-run CI and Devices, and re-issue the gate.
+1. Phase 4 Part 1 (D-110, D-111): a 12-month simulation harness at app level (the journeys' way: real controller, data layer and engine) for the five Phase 2 personas and the condition personas, with adherence patterns (every week, missed weeks, a cut-short week, illness); measure kept work, progression, deloads, cap compliance; then implement (a) planning within the limits, (b) cut-short weeks out of the reference, (c) coefficient/floor options; draft the MINOR change set (Registry 1.2.0) with its impact report for the PO's approval; independent review; part report.
+2. Then Parts 2–5 as in D-111. The PO may install the debug build from the CI artifacts at any time (instructions sent 13 Oct 2026).

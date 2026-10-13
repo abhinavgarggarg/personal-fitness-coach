@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-10-13 — Phase 3 approved; Phase 4 started
+- The Product Owner approved Phase 3 (D-110). The weekly limits (VOL-007, LOAD-005) are tuned in Phase 4, all three recommended steps together, as its first task.
+- Phase 4 plan in 5 parts (D-111): weekly-limit tuning with 12-month simulations; the 30-scenario suite; interruption, data-integrity and upgrade tests; safety and evidence audit; UAT on the PO's phone and the Phase 4 gate.
+
 ## 2026-10-13 — Phase 3 Part 8: integration, research updates, release checks; Phase 3 gate
 - Integration: three 12-week journeys through the app's own calls on the real data layer and engine (a lifter in a full gym; a 66-year-old beginner at home with type 2 diabetes and knee osteoarthritis; bodyweight only), with a killed app, a missed week, pain mid-set, a warning sign at the check-in, a 30-minute day and a backup restore. No step fails, history matches what was done, lifts progress. The clock moves as in a gym, and each journey reports how much of the planned work the weekly limits kept.
 - Weekly limits spread over the week (D-107): each session gets its share of what is left of the week's VOL-007 / LOAD-005 budget; calibration counted as it is done; done sessions count at their measured load or as predicted, whichever is higher; trimming in TIME-001 order, intervals by whole repeats; a day with nothing left is a recovery day with the reason; sets that still fit after the cuts are given back.
