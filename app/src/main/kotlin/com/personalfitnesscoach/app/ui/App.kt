@@ -103,9 +103,13 @@ val LocalActions = staticCompositionLocalOf<Actions> { error("no actions") }
 @Composable
 fun PfcApp(actions: Actions) {
     val c = actions.controller
-    val screen by c.screen.collectAsState()
-    val busy by c.busy.collectAsState()
-    val error by c.error.collectAsState()
+    // The controller publishes from its own thread; its values are taken in on the main thread, so whatever the change sets off in the
+    // screens (a screen leaving, its back handler let go) happens there too. The phone's composition already runs there; a test's
+    // composition can otherwise run on the thread that published (Devices run 38335952578, Android 10).
+    val main = Dispatchers.Main.immediate
+    val screen by c.screen.collectAsState(context = main)
+    val busy by c.busy.collectAsState(context = main)
+    val error by c.error.collectAsState(context = main)
     val snack = remember { SnackbarHostState() }
     val context = LocalContext.current
     // A short, plain message (COACH-001, NFR-16); the technical detail stays out of the screen.
