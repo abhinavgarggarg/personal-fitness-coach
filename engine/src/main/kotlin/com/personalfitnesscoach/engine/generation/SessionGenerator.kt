@@ -396,11 +396,12 @@ object SessionGenerator {
             (session.exercises.isNotEmpty() || session.conditioning.isNotEmpty())
         if (weekly.isNotEmpty()) d += Decision(DecisionKind.SAFETY, weekly, ReasonKey.PLAN_CAPPED_BY_LOAD,
             inputs = mapOf("weekShare" to Num.round2(ctx.weekShare)), outputs = mapOf("recoveryDay" to emptied))
-        val v = if (emptied) EngineResult(v0.value.copy(session = v0.value.session.copy(tier = Tier.RECOVERY)), v0.decisions) else v0
-        val final = Supersets.normalise(rebuild(items, v.value.session, r))
+        val v = if (emptied) EngineResult(v0.value.copy(session = v0.value.session.copy(tier = Tier.RECOVERY, boneLoading = null)), v0.decisions) else v0
+        val final = Supersets.normalise(rebuild(items, v.value.session, r), r.crowded)
         val finalWarmup = v.value.session.warmupMinutes ?: warmupMin
         val finalCooldown = v.value.session.cooldownMinutes ?: fit.value.plan.cooldownMin
-        val finalBone = bone?.takeIf { v.value.session.boneLoading != null }?.copy(variant = v.value.session.boneLoading!!)
+        // An emptied day (weekly limits) is a recovery day: no bone-loading block, as on any RECOVERY day (review R8-03).
+        val finalBone = bone?.takeIf { v.value.session.boneLoading != null && !emptied }?.copy(variant = v.value.session.boneLoading!!)
         val minutes = TimeModel.minutes(SessionPlan(finalWarmup, finalCooldown,
             Supersets.planItems(WeekPlanner.planItems(r.day.copy(slots = final.map { toSlot(it) }, conditioning = v.value.session.conditioning.map { toPlanned(it) })), final),
             coreMobilityMin = mobilityMin + balanceMin + (finalBone?.minutes ?: 0.0)), r.personalFactor)
@@ -409,7 +410,10 @@ object SessionGenerator {
             val planned = conditioning.getOrNull(j)
             val iv = r.day.conditioning.firstOrNull { it.modality == planned?.modality && it.zone == b.zone }?.interval
             if (iv == null || planned == null || planned.modality != b.modality || planned.zone != b.zone || iv.workSec <= 0) null
-            else iv.copy(reps = maxOf(1, Math.round(b.workMinutes * 60 / iv.workSec).toInt()))
+            // Never more work than the validator approved (R8-01): HIIT blocks change by whole repeats, so their count is exact; tempo
+            // repeats (no protocol) keep their number and each gets shorter.
+            else if (iv.protocol == null) iv.copy(workSec = maxOf(1, Math.floor(b.workMinutes * 60 / iv.reps + 1e-6).toInt()))
+            else iv.copy(reps = maxOf(1, Math.floor(b.workMinutes * 60 / iv.workSec + 1e-6).toInt()))
         }
 
         // EQ-003: the moves for each bodyweight-circuit block.
@@ -603,10 +607,10 @@ object SessionGenerator {
         val b = c.toBlock()
         return when {
             // Conversions keep the block's impact flag, so CON-004 and SAF-004 still see jump rope as impact work.
-            tier == Tier.LIGHT || r.inDeload -> b.copy(zone = Zone.Z1, hiit = false, protocol = null, restMinutes = 0.0,
+            tier == Tier.LIGHT || r.inDeload -> b.copy(zone = Zone.Z1, hiit = false, protocol = null, restMinutes = 0.0, repSec = null,
                 workMinutes = minOf(c.workMinutes + c.restMinutes, P.RDY_004.LIGHT.z1_minutes[1].toDouble()).coerceAtLeast(P.RDY_004.LIGHT.z1_minutes[0].toDouble()))
             tier == Tier.MODIFIED && b.countsAsHiit -> b.copy(zone = if (r.screening == ScreeningMode.STANDARD) Zone.Z2 else Zone.Z1, hiit = false, protocol = null,
-                restMinutes = 0.0, workMinutes = P.RDY_004.MODIFIED.hiit_replacement_minutes[0].toDouble())
+                restMinutes = 0.0, repSec = null, workMinutes = P.RDY_004.MODIFIED.hiit_replacement_minutes[0].toDouble())
             else -> b
         }
     }
@@ -689,15 +693,20 @@ object Supersets {
      * Keeps only pairs that still hold after the validator: both items present and pointing to each other, neither a main lift nor
      * still being calibrated, and no shared primary muscle (ORD-003). Anything else is played on its own.
      */
-    fun normalise(items: List<WorkoutItem>): List<WorkoutItem> {
+    fun normalise(items: List<WorkoutItem>, crowded: Boolean = false): List<WorkoutItem> {
         val bySlot = items.associateBy { it.slotKey }
         fun ok(a: WorkoutItem): Boolean {
             val b = a.supersetWith?.let { bySlot[it] } ?: return false
             return b !== a && b.supersetWith == a.slotKey && !a.main && !b.main && !a.calibrating && !b.calibrating &&
-                (a.exercise.primary intersect b.exercise.primary).isEmpty()
+                compatible(a.exercise, b.exercise, crowded)
         }
         return items.map { if (it.supersetWith != null && !ok(it)) it.copy(supersetWith = null) else it }
     }
+
+    /** ORD-003 / EQ-002: no shared primary muscle, an allowed pair of movement classes, and in a crowded gym never two fixed stations. */
+    fun compatible(a: com.personalfitnesscoach.engine.model.Exercise, b: com.personalfitnesscoach.engine.model.Exercise, crowded: Boolean): Boolean =
+        (a.primary intersect b.primary).isEmpty() && Order.classesCompatible(Order.pairClass(a), Order.pairClass(b)) &&
+            Order.stationsCompatible(a.stationKey, b.stationKey, crowded)
 
     /** The plan items of a workout (from [WeekPlanner.planItems], strength items first) with their supersets, for the time estimate. */
     fun planItems(plan: List<PlanItem>, items: List<WorkoutItem>): List<PlanItem> {

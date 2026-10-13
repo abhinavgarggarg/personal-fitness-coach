@@ -436,7 +436,29 @@ class SessionPlayer(private val d: PfcData) {
         // Only during the lifts: choosing an exercise never skips the warm-up or a block before the lifts (R5-08).
         val v = build(w, s)
         if (v.stage != Stage.LIFTS) return@transaction v
-        save(w, s.copy(currentRowId = rowId))
+        save(w, restAfterPairChange(w.id, s.copy(currentRowId = rowId)))
+    }
+
+    /**
+     * A superset rest (REST-004's 60 s, shorter than many exercises' own minimum) is only right before the partner's set. When the next set
+     * shown is not part of a running superset any more (the partner was moved, skipped, stopped or another exercise chosen), the rest
+     * becomes that exercise's own (D-109, review R8-04).
+     */
+    private suspend fun restAfterPairChange(workoutId: Long, s: ActiveState): ActiveState {
+        val sec = s.restSec ?: return s
+        if (s.restStartedAtMs == null) return s
+        val v = build(d.sessions.load(workoutId)!!, s)
+        val l = (v.step as? Step.Lift)?.lift ?: return s
+        if (supersetPartner(l, v.lifts) != null || sec >= l.item.restMinSec) return s
+        return s.copy(restSec = l.item.restDefaultSec)
+    }
+
+    /** Ends the superset an exercise is part of (both sides), so neither waits for or jumps to the other (D-109). */
+    private suspend fun breakPair(w: StoredWorkout, e: StoredExercise) {
+        val key = e.doc.supersetWith ?: return
+        d.sessions.updateItem(e.row.id, e.doc.copy(supersetWith = null))
+        w.exercises.firstOrNull { it.row.id != e.row.id && it.row.slotKey == key && it.doc.supersetWith == e.row.slotKey }
+            ?.let { p -> d.sessions.updateItem(p.row.id, p.doc.copy(supersetWith = null)) }
     }
 
     private fun maxStage(a: Stage, b: Stage, w: StoredWorkout): Stage = if (a.ordinal >= b.ordinal) a else b
@@ -523,17 +545,6 @@ class SessionPlayer(private val d: PfcData) {
         LogResult(built.copy(state = built.state.copy(idleAllowanceMs = allowance)), dec, calStep, rest)
     }
 
-    /**
-     * The superset partner of a lift (D-109): the exercise in the slot it names, naming this lift's slot back, still with work to do,
-     * and neither being calibrated (a calibration ramp needs its own rests).
-     */
-    fun supersetPartner(lift: LiftView, lifts: List<LiftView>): LiftView? {
-        val key = lift.item.supersetWith ?: return null
-        val p = lifts.firstOrNull { it.rowId != lift.rowId && it.slotKey == key && it.status != Status.SKIPPED } ?: return null
-        if (p.item.supersetWith != lift.slotKey || p.finished || p.item.calibrating || lift.item.calibrating) return null
-        return p
-    }
-
     /** Rest timer controls (A2): ±30 s or skip. */
     suspend fun adjustRest(deltaSec: Int): PlayerView = d.store.transaction {
         val (w, s) = active()
@@ -586,7 +597,8 @@ class SessionPlayer(private val d: PfcData) {
     suspend fun skipExercise(rowId: Long): PlayerView = d.store.transaction {
         val (w, s) = active()
         val e = w.exercises.first { it.row.id == rowId }
-        save(w, endAtLogged(e, s).copy(currentRowId = null, sheet = null))
+        breakPair(w, e)
+        save(w, restAfterPairChange(w.id, endAtLogged(e, s).copy(currentRowId = null, sheet = null)))
     }
 
     /**
@@ -603,8 +615,10 @@ class SessionPlayer(private val d: PfcData) {
     /** EQ-002 "do it later": the exercise moves to the end of the list. */
     suspend fun doLater(rowId: Long): PlayerView = d.store.transaction {
         val (w, s) = active()
+        // A deferred exercise leaves its superset, so the player never jumps back to it before its turn (review R8-04).
+        w.exercises.firstOrNull { it.row.id == rowId }?.let { breakPair(w, it) }
         d.sessions.moveToEnd(rowId)
-        save(w, s.copy(currentRowId = null, sheet = null))
+        save(w, restAfterPairChange(w.id, s.copy(currentRowId = null, sheet = null)))
     }
 
     // ------------------------------------------------------------------------------------------------ re-plans (all re-validated, SAF-008)
@@ -713,10 +727,11 @@ class SessionPlayer(private val d: PfcData) {
         val g = SessionGenerator.generate(one).value
         val it = g.items.firstOrNull { x -> x.slotKey == e.row.slotKey && x.exercise.id == ex.id } ?: return null
         val sets = minOf(it.sets, maxOf(1, e.doc.sets - e.doc.addedSets))
-        // A swap keeps the slot's superset when the new exercise still trains other muscles than the partner (ORD-003, D-109).
+        // A swap keeps the slot's superset only when the pair still meets ORD-003 (muscles, movement classes, stations; D-109, R8-07).
         val partnerEx = e.doc.supersetWith?.let { key -> w.exercises.firstOrNull { x -> x.row.slotKey == key }?.let { x -> Library[x.exerciseId] } }
         val gen = it
-        val pair = e.doc.supersetWith?.takeIf { partnerEx != null && (partnerEx.primary intersect ex.primary).isEmpty() && !gen.calibrating && !gen.main }
+        val pair = e.doc.supersetWith?.takeIf { partnerEx != null && !gen.calibrating && !gen.main &&
+            com.personalfitnesscoach.engine.generation.Supersets.compatible(ex, partnerEx, req.crowded) }
         return ItemDoc(it.role, it.priority, sets, it.reps, it.unit, it.perSide, it.targetRir, it.lastSetToFailure, it.load, it.loadFactor,
             it.rest.minSec, it.rest.defaultSec, it.rest.maxSec, it.calibrating, it.main, rampSets = it.warmupSets.map { r -> RampRef(r.load, r.reps) },
             reducedRange = it.range == com.personalfitnesscoach.engine.planning.RangeOfMotion.REDUCED,
@@ -798,7 +813,7 @@ class SessionPlayer(private val d: PfcData) {
             val sum = finishInternal(w.id, null, endedEarly = true)
             return@transaction PainResult(o, changes, emptyList(), true, dec, null).also { lastSummary = sum }
         }
-        PainResult(o, changes, alternatives, false, dec, save(d.sessions.load(w.id)!!, state.copy(sheet = null, currentRowId = null)))
+        PainResult(o, changes, alternatives, false, dec, save(d.sessions.load(w.id)!!, restAfterPairChange(w.id, state.copy(sheet = null, currentRowId = null))))
     }
 
     /**
@@ -889,7 +904,8 @@ class SessionPlayer(private val d: PfcData) {
         while (!fits()) {
             val victim = plan.items.filter { it.priority >= com.personalfitnesscoach.engine.planning.Priority.P3 }.maxWithOrNull(compareBy({ it.priority }, { plan.items.indexOf(it) }))
                 ?: plan.items.lastOrNull { it.isConditioning }
-            if (victim != null) { plan = plan.copy(items = plan.items.filter { it.id != victim.id && it.pairedWith != victim.id }); extra += victim.id; continue }
+            // Only the victim goes; its superset partner stays, on its own (review R8-05).
+            if (victim != null) { plan = plan.copy(items = plan.items.filter { it.id != victim.id }.map { if (it.pairedWith == victim.id) it.copy(pairedWith = null) else it }); extra += victim.id; continue }
             val p1 = plan.items.lastOrNull { !it.isConditioning && it.sets > 1 } ?: break
             plan = plan.copy(items = plan.items.map { if (it.id == p1.id) it.copy(sets = it.sets - 1) else it })
         }
@@ -947,7 +963,7 @@ class SessionPlayer(private val d: PfcData) {
             }
         }
         if (doc.copy(conditioning = cond) != w.doc) d.sessions.updateDoc(w.id, doc.copy(conditioning = cond))
-        val view = save(d.sessions.load(w.id)!!, state.copy(sheet = null))
+        val view = save(d.sessions.load(w.id)!!, restAfterPairChange(w.id, state.copy(sheet = null)))
         // What can't be cut (warm-up and cool-down floors with a condition's extras, one set of each main lift) still takes longer than
         // asked: the user is told the shortest this session can be from here, as the express session does (D-071, re-check N7).
         val shortest = if (view.remainingMinutes > minutesLeft + 0.5) Math.ceil(view.remainingMinutes - 1e-6).toInt() else null
@@ -1039,6 +1055,17 @@ class SessionPlayer(private val d: PfcData) {
     }
 
     companion object {
+        /**
+         * The superset partner of a lift (D-109): the exercise in the slot it names, naming this lift's slot back, still with work to do,
+         * and neither being calibrated (a calibration ramp needs its own rests). Null when the pair has broken up.
+         */
+        fun supersetPartner(lift: LiftView, lifts: List<LiftView>): LiftView? {
+            val key = lift.item.supersetWith ?: return null
+            val p = lifts.firstOrNull { it.rowId != lift.rowId && it.slotKey == key && it.status != Status.SKIPPED } ?: return null
+            if (p.item.supersetWith != lift.slotKey || p.finished || p.item.calibrating || lift.item.calibrating) return null
+            return p
+        }
+
         val LOADED = setOf(LoadType.BARBELL, LoadType.DUMBBELL, LoadType.KETTLEBELL, LoadType.STACK)
         /** Rest after a WU-002 ramp-up set: short, never longer than the exercise's minimum rest. */
         const val RAMP_REST_SEC = 60

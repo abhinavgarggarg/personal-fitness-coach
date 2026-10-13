@@ -115,7 +115,9 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
      */
     suspend fun generateSession(t: TodayPlan, day: PlannedDay, tier: Tier, minutes: Int = t.user.profile.sessionMinutes,
                                 redFlags: Set<String> = emptySet(), illnessSymptoms: Set<String> = emptySet(), express: Boolean = false,
-                                awayFromGym: Boolean = false): GeneratedSession = store.transaction {
+                                awayFromGym: Boolean = false,
+                                /** False for a trial generation the caller may discard: its decisions are not logged (the caller logs the kept one). */
+                                record: Boolean = true): GeneratedSession = store.transaction {
         val checkIn = docs.get(ReadinessRecord, dayKey(t.user.today))
         val capped = checkIn?.let { Tier.min(tier, it.tier) } ?: tier
         val prepared = bridge.prepare(t.user, t.program, t.week, day, capped, minutes, redFlags + (checkIn?.redFlags ?: emptySet()),
@@ -133,7 +135,7 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
         })
         // SAF-002: a stop raised here (red flags given now) is kept until the user confirms it resolved (re-check finding 3).
         w.safetyStop?.let { checkIns.startStop(it, t.user.today) }
-        decisions.append(prepared.decisions + g.decisions)
+        if (record) decisions.append(prepared.decisions + g.decisions)
         GeneratedSession(t, day, w, prepared.request, prepared.decisions + g.decisions, express, awayFromGym)
     }
 

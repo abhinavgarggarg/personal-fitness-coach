@@ -322,7 +322,7 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
     Heading(l.exercise.name)
     l.item.swappedFrom?.let { Note(stringResource(R.string.wk_swapped_from, exerciseName(it))) }
     // TIME-002 superset (D-109): the partner's sets alternate with this one's.
-    v.lifts.firstOrNull { it.slotKey == l.item.supersetWith && it.item.supersetWith == l.slotKey }?.let { p ->
+    com.personalfitnesscoach.data.core.player.SessionPlayer.supersetPartner(l, v.lifts)?.let { p ->
         Note(stringResource(R.string.wk_superset, p.exercise.name, com.personalfitnesscoach.engine.registry.P.REST_004.default_s))
     }
     if (l.item.reducedRange) Note(stringResource(R.string.wk_reduced_range))

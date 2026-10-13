@@ -41,19 +41,25 @@ class WeekBudgetTest {
         return id
     }
 
-    @Test fun `TC-VOL-007e each session's share is its planned SSU over what is still planned this week`() = runBlocking {
+    @Test fun `TC-VOL-007e each session's share is its planned SSU over what is still owed this week`() = runBlocking {
         val (d, clock) = Fixtures.data()
         Fixtures.onboard(d)
         val t = checkNotNull(d.planToday())
         val days = t.week.days
         assertEquals(3, days.size)
         fun ssu(i: Int) = SessionValidator.sessionSsu(days[i].toSession())
-        assertEquals(ssu(0) / (ssu(0) + ssu(1) + ssu(2)), d.bridge.weekShare(t.week, days[0], Fixtures.MONDAY + days[0].weekday), 1e-9)
-        assertEquals(ssu(1) / (ssu(1) + ssu(2)), d.bridge.weekShare(t.week, days[1], Fixtures.MONDAY + days[1].weekday), 1e-9)
-        assertEquals(1.0, d.bridge.weekShare(t.week, days[2], Fixtures.MONDAY + days[2].weekday), 1e-9)
-        // A later day done early no longer counts as still to come; a session outside the plan gets no share.
-        clock.setDay(Fixtures.MONDAY + days[0].weekday, hour = 9)
+        fun day(i: Int) = Fixtures.MONDAY + days[i].weekday
+        // Monday: all three sessions are still to do.
+        assertEquals(ssu(0) / (ssu(0) + ssu(1) + ssu(2)), d.bridge.weekShare(t.week, days[0], day(0)), 1e-9)
+        // Monday missed: on Wednesday it can still be caught up, so it keeps its part (SCH-003, review R8-08).
+        assertEquals(ssu(1) / (ssu(0) + ssu(1) + ssu(2)), d.bridge.weekShare(t.week, days[1], day(1)), 1e-9)
+        // Monday done: Wednesday shares only with Friday; Friday, the last, may use all that is left.
+        clock.setDay(day(0), hour = 9)
         assertTrue(doToday(d) != null)
+        assertEquals(ssu(1) / (ssu(1) + ssu(2)), d.bridge.weekShare(t.week, days[1], day(1)), 1e-9)
+        // On Sunday nothing else can follow: the whole remainder, whatever is still owed.
+        assertEquals(1.0, d.bridge.weekShare(t.week, days[1], Fixtures.MONDAY + 6), 1e-9)
+        // A session outside the plan gets no share.
         assertEquals(1.0, d.bridge.weekShare(t.week, null, Fixtures.MONDAY), 1e-9)
     }
 
@@ -76,7 +82,7 @@ class WeekBudgetTest {
         assertEquals(c * (0.0 + 0.8 + 1.0), d.bridge.calibrationSsu(stored), 1e-9)
     }
 
-    @Test fun `TC-LOAD-005h once k is learned the sessions already done this week count as k times their SSU`() = runBlocking {
+    @Test fun `TC-LOAD-005h once k is learned each session done counts as k times its SSU or its measured load, whichever is higher`() = runBlocking {
         val (d, clock) = Fixtures.data()
         Fixtures.onboard(d)
         // Five weeks of training (k needs 4 weeks with both a load and SSU), then Monday of week 6.
@@ -91,8 +97,22 @@ class WeekBudgetTest {
         val k = checkNotNull(c.k) { "k learned after 4 weeks" }
         val soFar = d.bridge.totals(Days.weekStart(monday6), monday6 + 2)
         assertTrue(soFar.ssu > 0.0)
-        assertEquals(k * soFar.ssu, c.weekLoadSoFar, 1e-6)
-        assertNotEquals(soFar.workload, c.weekLoadSoFar, 1.0)
+        // The hard Monday counts at its measured load, which is more than k × its SSU (review R8-02): never less room than measured.
+        assertTrue(soFar.workload > k * soFar.ssu)
+        assertEquals(soFar.workload, c.weekLoadSoFar, 1e-6)
         assertTrue("the cap is still set by measured loads", c.weeklyLoadCap != null)
+        // An easy, short Monday counts as k × its SSU, so a day lighter than predicted never makes room for more.
+        val (e, eclock) = Fixtures.data()
+        Fixtures.onboard(e)
+        for (day in Fixtures.MONDAY until Fixtures.MONDAY + 35) { eclock.setDay(day, hour = 9); doToday(e) }
+        eclock.setDay(monday6, hour = 9)
+        assertTrue(doToday(e, rpe = 2.0, minutes = 15.0) != null)
+        eclock.setDay(monday6 + 2, hour = 9)
+        val et = checkNotNull(e.planToday())
+        val ec = e.bridge.validationContext(et.user, et.program, et.week, et.next)
+        val esoFar = e.bridge.totals(Days.weekStart(monday6), monday6 + 2)
+        assertTrue(esoFar.workload < ec.k!! * esoFar.ssu)
+        assertEquals(ec.k!! * esoFar.ssu, ec.weekLoadSoFar, 1e-6)
+        assertNotEquals(esoFar.workload, ec.weekLoadSoFar, 1.0)
     }
 }

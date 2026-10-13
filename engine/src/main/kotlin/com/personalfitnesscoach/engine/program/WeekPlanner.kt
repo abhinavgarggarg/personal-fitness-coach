@@ -133,7 +133,9 @@ data class PlannedConditioning(
     val purpose: ConditioningPurpose = ConditioningPurpose.STEADY,
 ) {
     val protocol: HiitProtocol? get() = interval?.protocol
-    fun toBlock(): ConditioningBlock = ConditioningBlock(modality, zone, workMinutes, restMinutes, hiit, impact, protocol)
+    /** HIIT protocol repeats change only whole (R8-01); tempo repeats (no protocol) may each be shortened instead. */
+    fun toBlock(): ConditioningBlock = ConditioningBlock(modality, zone, workMinutes, restMinutes, hiit, impact, protocol,
+        repSec = interval?.takeIf { it.protocol != null }?.workSec?.takeIf { it > 0 })
 }
 
 data class PlannedDay(

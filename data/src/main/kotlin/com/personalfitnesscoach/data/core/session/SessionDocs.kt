@@ -100,7 +100,8 @@ data class ConditioningItem(
     /** EQ-003 circuit moves for a bodyweight-circuit block. */
     val circuit: CircuitRef? = null,
 ) {
-    fun block(): ConditioningBlock = ConditioningBlock(modality, zone, workMinutes, restMinutes, hiit, impact, protocol)
+    fun block(): ConditioningBlock = ConditioningBlock(modality, zone, workMinutes, restMinutes, hiit, impact, protocol,
+        repSec = interval?.takeIf { protocol != null }?.workSec?.takeIf { it > 0 })
     /**
      * The block as it counts once the workout is finished: work minutes as logged, never more than planned; as planned when the
      * minutes were not recorded (null), so caps and spacing never miss it; nothing when logged as 0 (skipped).

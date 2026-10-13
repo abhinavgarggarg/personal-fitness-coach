@@ -56,10 +56,11 @@ class WeekPacingTest {
         assertEquals(40.0, SessionValidator.paced(40.0, 40.0, c.copy(weekShare = 1.0)), 1e-9)
     }
 
-    @Test fun `TC-VOL-007d a weight still being found counts as one set at the target effort`() {
+    @Test fun `TC-VOL-007d a weight still being found counts as two sets at the target effort`() {
         val e = SessionExercise(ex("row", Muscle.LATS), 3, 10, 2.0)
         assertEquals(2.4, SessionValidator.sessionSsu(Session(Tier.FULL, listOf(e))), 1e-9)
-        assertEquals(0.8, SessionValidator.sessionSsu(Session(Tier.FULL, listOf(e.copy(calibrating = true)))), 1e-9)
+        assertEquals(1.6, SessionValidator.sessionSsu(Session(Tier.FULL, listOf(e.copy(calibrating = true)))), 1e-9)
+        assertEquals(0.8, SessionValidator.sessionSsu(Session(Tier.FULL, listOf(e.copy(sets = 1, calibrating = true)))), 1e-9)
         // Over the weekly limit, it is removed whole in one step (taking one of its sets would change nothing).
         val s = Session(Tier.FULL, listOf(e.copy(calibrating = true)))
         val out = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 0.5)).value
@@ -76,6 +77,23 @@ class WeekPacingTest {
         assertTrue(gone.conditioning.isEmpty())
     }
 
+    @Test fun `TC-LOAD-005i an interval block is shortened by whole repeats, so what is shown is what was approved`() {
+        // Rower Z4, 4 x 240 s work with 120 s rest: 16 min of work.
+        val block = ConditioningBlock(Modality.ROWER, Zone.Z4, 16.0, 8.0, hiit = true, protocol = HiitProtocol.LONG, repSec = 240)
+        val full = SessionValidator.sessionSsu(Session(Tier.FULL, emptyList(), listOf(block)))
+        var shortened = 0
+        for (limit in listOf(full - 1.0, full - 4.0, full * 0.62)) {
+            val out = SessionValidator.validate(Session(Tier.FULL, emptyList(), listOf(block)),
+                ValidationContext(Level.ADVANCED, weeklySsuLimit = limit, hiitBaseReady = true, hiitAllowedThisWeek = 2)).value.session
+            val b = out.conditioning.singleOrNull() ?: continue
+            val reps = b.workMinutes * 60 / 240
+            assertEquals("limit $limit: ${b.workMinutes} min is whole repeats", Math.round(reps).toDouble(), reps, 1e-9)
+            assertTrue("limit $limit: within it", SessionValidator.sessionSsu(out) <= limit + 1e-9)
+            if (b.workMinutes < 16.0) shortened++
+        }
+        assertTrue("an interval block was shortened ($shortened)", shortened >= 1)
+    }
+
     @Test fun `TC-LOAD-005g a day with no weekly budget left is a recovery day that says why`() {
         val program = Blueprint.plan(listOf(Goal.STRENGTH, Goal.CARDIO)).value
         val day = WeekPlanner.plan(weekInput(4, 16, program = program), program).value.days.first { it.heavyLower }
@@ -88,6 +106,10 @@ class WeekPacingTest {
         val why = r.decisions.single { it.reason == ReasonKey.PLAN_CAPPED_BY_LOAD }
         assertEquals(listOf(RuleIds.VOL_007), why.ruleIds)
         assertEquals(true, why.outputs["recoveryDay"])
+        // A recovery day has no bone-loading block either (osteoporosis; review R8-03).
+        val ost = Conditions.resolve(listOf(UserCondition("osteoporosis"))).value
+        val bone = SessionGenerator.generate(req.copy(conditions = ost)).value
+        assertTrue(bone.items.isEmpty() && bone.boneLoading == null && bone.validated.boneLoading == null)
         // With room left, the same day trains normally and says nothing about the limit.
         val open = SessionGenerator.generate(req.copy(week = req.week.copy(weekSsuSoFar = 0.0)))
         assertTrue(open.value.items.isNotEmpty())

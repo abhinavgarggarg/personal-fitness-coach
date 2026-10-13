@@ -152,19 +152,24 @@ class AppControllerTest {
         val (_, c) = world()
         c.openCheckIn()
         c.submitCheckIn()
+        var expressSeen = 0
         for (minutes in listOf(30, 25, 20)) {
             c.previewMinutes(minutes)
             val p = c.s() as Screen.Preview
             val w = p.model.session.workout
             assertTrue("$minutes min: ${w.plannedMinutes} min planned", w.plannedMinutes <= minutes * 1.10 + 1e-9)
-            if (p.model.session.express && minutes >= 20) {
+            if (p.model.session.express) {
+                expressSeen++
                 assertTrue("$minutes min: the reason is shown", p.model.reasons.any { it.reason == ReasonKey.TIME_NOT_FITTABLE || it.reason == ReasonKey.EXPRESS_SESSION })
-                // The user's own choice wins: switched off, the full (longer) session stays.
-                c.previewExpress(false)
-                assertFalse((c.s() as Screen.Preview).model.session.express)
-                c.previewExpress(true)
             }
         }
+        // This full-body day can't fit 25 or 20 minutes, so the express session was offered at least once.
+        assertTrue("express offered ($expressSeen)", expressSeen >= 1)
+        // The user's own choice wins, and is remembered for the day: switched off, it stays off when the minutes change (review R8-09).
+        c.previewExpress(false)
+        assertFalse((c.s() as Screen.Preview).model.session.express)
+        c.previewMinutes(25)
+        assertFalse("the opt-out is kept", (c.s() as Screen.Preview).model.session.express)
         assertNull(c.error.value)
     }
 

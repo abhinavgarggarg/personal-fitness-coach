@@ -34,7 +34,8 @@ data class SessionExercise(
     val fullTierRir: Double? = null,
     /**
      * CAL-001: the weight is still being found today. The ramp's sets start easy (5+ in reserve), so for VOL-007 the item is expected to
-     * count as one set at the target effort, the set that finds the weight, which is how its logged sets are counted afterwards.
+     * count as two sets at the target effort ([SessionValidator.CALIBRATION_SETS_COUNTED]): the set that finds the weight and the hard
+     * one before it. Its logged sets are counted at their own effort afterwards.
      */
     val calibrating: Boolean = false,
 )
@@ -50,6 +51,11 @@ data class ConditioningBlock(
     val hiit: Boolean = false,
     val impact: Int = 0,
     val protocol: HiitProtocol? = null,
+    /**
+     * Work seconds of one interval repeat (HIIT-002), or null for steady work. An interval block only changes by whole repeats, so
+     * what the validator approves is exactly what is shown and played (review R8-01).
+     */
+    val repSec: Int? = null,
 ) {
     /** HIIT-001: flagged HIIT, an interval protocol, any Z4 work, or ≥ 6 min of Z3 work. */
     val countsAsHiit: Boolean
@@ -191,6 +197,11 @@ object ModalityJoints {
  * It never throws and never returns an unvalidated session.
  */
 object SessionValidator {
+    /**
+     * A weight still being found is expected to count as this many sets at the target effort (VOL-007): a ramp's last two sets are
+     * usually within 4 reps in reserve (review R8-06, which found one set too few).
+     */
+    const val CALIBRATION_SETS_COUNTED = 2
     private const val MAX_STEPS = 500
     private val IMPACT_JOINTS = setOf(Joint.KNEE, Joint.ANKLE, Joint.HIP, Joint.SPINE)
     /** Replacement order for conditioning; a no-jump bodyweight circuit is last because it needs no equipment (review R3-10). */
@@ -300,7 +311,7 @@ object SessionValidator {
     }
 
     fun sessionSsu(s: Session): Double =
-        Ssu.sets(s.exercises.flatMap { e -> List(if (e.calibrating) minOf(e.sets, 1) else e.sets) { e.exercise.costClass to e.targetRir } }) +
+        Ssu.sets(s.exercises.flatMap { e -> List(if (e.calibrating) minOf(e.sets, CALIBRATION_SETS_COUNTED) else e.sets) { e.exercise.costClass to e.targetRir } }) +
             s.conditioning.sumOf { Ssu.conditioning(it.modality, it.zone, it.workMinutes, it.restMinutes) }
 
     private fun overLoadCap(c: ValidationContext, ssu: Double): Boolean {
@@ -347,7 +358,11 @@ object SessionValidator {
         val b = s.conditioning.last()
         val perMinute = Ssu.conditioning(b.modality, b.zone, b.workMinutes, b.restMinutes) / b.workMinutes
         if (b.workMinutes <= 0.0 || perMinute <= 0.0) return null
-        val left = Math.floor((b.workMinutes - weeklyExcessSsu(s, c) / perMinute) * 2.0) / 2.0
+        val room = b.workMinutes - weeklyExcessSsu(s, c) / perMinute
+        // Steady work in half-minute steps; intervals by whole repeats (R8-01). Either way rounded down, so it fits.
+        val rep = b.repSec?.takeIf { it > 0 }
+        val left = if (rep != null) Math.floor(room * 60.0 / rep + 1e-9) * rep / 60.0 else Math.floor(room * 2.0) / 2.0
+        if (left <= 0.0) return null
         if (left < b.workMinutes * (1.0 - P.TIME_002.p2_max_cut_pct / 100.0) - 1e-9) return null
         return b.copy(workMinutes = left, restMinutes = b.restMinutes * left / b.workMinutes)
     }
@@ -426,7 +441,7 @@ object SessionValidator {
             val r = P.RDY_004.MODIFIED.hiit_replacement_minutes
             val easy = s.tier == Tier.LIGHT || s.tier == Tier.RECOVERY || c.inDeload || c.conditions.maxZone < Zone.Z2 ||
                 c.effectiveScreening != ScreeningMode.STANDARD
-            return b.copy(zone = if (easy) Zone.Z1 else Zone.Z2, hiit = false, protocol = null, restMinutes = 0.0,
+            return b.copy(zone = if (easy) Zone.Z1 else Zone.Z2, hiit = false, protocol = null, restMinutes = 0.0, repSec = null,
                 workMinutes = b.totalMinutes.coerceIn(r[0].toDouble(), r[1].toDouble()))
         }
         return when (v.code) {
@@ -510,8 +525,11 @@ object SessionValidator {
             "HIIT_WORK_CAP" -> {
                 val b = s.conditioning[v.index]
                 val cap = hiitWorkCap(b)!!
-                val f = cap / b.workMinutes
-                setBlock(v.index, b.copy(workMinutes = cap, restMinutes = b.restMinutes * f)) to d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, mapOf("workMinutes" to cap))
+                // Whole repeats only (R8-01): the cap rounded down to a number of repeats; under one repeat the block becomes steady work.
+                val work = b.repSec?.takeIf { it > 0 }?.let { rep -> Math.floor(cap * 60.0 / rep + 1e-9) * rep / 60.0 } ?: cap
+                if (work <= 0.0) setBlock(v.index, steady(b)) to d(ReasonKey.VALIDATOR_REMOVED_HIIT)
+                else setBlock(v.index, b.copy(workMinutes = work, restMinutes = b.restMinutes * work / b.workMinutes)) to
+                    d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, mapOf("workMinutes" to work))
             }
             "WEEKLY_SSU", "WEEKLY_LOAD" -> {
                 // TIME-001 priorities: accessory sets first, then the key conditioning (shortened by up to 40%, else dropped), then main lifts.

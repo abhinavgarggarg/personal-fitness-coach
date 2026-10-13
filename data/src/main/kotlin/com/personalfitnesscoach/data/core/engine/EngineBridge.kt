@@ -337,6 +337,14 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
      * A finished workout as it was done: working sets logged per exercise; conditioning as logged, or as planned when the minutes
      * were not recorded (so HIIT, impact and stress are never under-counted), never more than planned.
      */
+    /** LOAD-005 so far this week (D-107, R8-02): each finished session as k × its SSU, or its measured load (RPE × minutes) when higher. */
+    suspend fun weekLoadSoFar(fromDay: Int, toDay: Int, k: Double): Double = log.done(fromDay, toDay).sumOf { w ->
+        val ssu = SessionValidator.sessionSsu(doneSession(w)) + calibrationSsu(w)
+        val rpe = w.row.sessionRpe
+        val minutes = w.row.actualMinutes
+        maxOf(if (rpe != null && minutes != null) Workload.sessionLoad(rpe, minutes) else 0.0, k * ssu)
+    }
+
     /**
      * VOL-007 counts every hard set, so calibration sets count too, each at its logged effort (RIR, else 10 − RPE, else the target RIR).
      * Easy ramp-up sets (RIR 5 or more) count nothing, as usual. Without them a calibration week looked almost empty and became a tiny
@@ -487,10 +495,10 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             hoursSinceLastHiit = lastHiit?.let { (clock.nowMs() - (it.row.endedAtMs ?: it.row.startedAtMs ?: clock.nowMs())) / 3_600_000.0 },
             hoursToNextHeavyLower = nextHeavy?.let { it * 24.0 }, heavyLegsNextDay = nextHeavy == 1,
             impactSessionsThisWeekSoFar = soFar.impactSessions,
-            // LOAD-005 "predicted weekly load = k × planned SSU" covers the whole week, so the sessions already done count as k × their SSU
-            // too (D-107). Mixing their measured load with today's prediction made the week's last session absorb every difference between
-            // the two, and trimmed weeks then lowered the next weeks' caps. Measured loads still set the cap (the 3-week mean) and k.
-            weekLoadSoFar = if (k != null) k * soFar.ssu else soFar.workload, weeklyLoadCap = Workload.planningCap(active.map { it.workload }, historyDays), k = k,
+            // LOAD-005 "predicted weekly load = k × planned SSU" covers the whole week (D-107): each session already done counts as k × its
+            // SSU, or as its measured load when that was higher, so a harder day than predicted still leaves less room (review R8-02).
+            weekLoadSoFar = if (k != null) weekLoadSoFar(weekStart, today, k) else soFar.workload,
+            weeklyLoadCap = Workload.planningCap(active.map { it.workload }, historyDays), k = k,
             lastWeekSsu = if (historyDays >= P.LOAD_006.phase1_days) lastActiveWeek(today)?.ssu else null,
             loadCapExempt = plan.deload || program.justFinishedLighterWeek || ret.inReturn, inDeload = plan.deload, weekShare = weekShare(plan, day, today),
             equipmentToday = u.equipment.availableOn(today), library = Library.all.filter { !it.userAddOnly },
@@ -500,18 +508,20 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
     }
 
     /**
-     * VOL-007 / LOAD-005 week pacing (ValidationContext.weekShare): the planned day's SSU over the planned SSU of itself and the week's
-     * later planned sessions not yet done or skipped. 1.0 for a session outside the plan, or a planned day with no SSU.
+     * VOL-007 / LOAD-005 week pacing (ValidationContext.weekShare): the planned day's SSU over the planned SSU of itself and every other
+     * planned session of the week not yet done or skipped — a missed earlier day can still be caught up (SCH-003, review R8-08) — but no
+     * more of them than there are days left in the week after today. 1.0 for a session outside the plan, or a planned day with no SSU.
      */
     suspend fun weekShare(plan: WeekPlan, day: PlannedDay?, today: Int): Double {
         if (day == null) return 1.0
         val mine = SessionValidator.sessionSsu(day.toSession())
         if (mine <= 0.0) return 1.0
-        val weekday = Days.weekday(today)
+        val daysLeft = 6 - Days.weekday(today)
         val handled = log.between(Days.weekStart(today), today).filter { it.row.status == Status.DONE || it.row.status == Status.SKIPPED }.map { it.doc.weekday }.toSet()
-        val later = plan.days.filter { it.weekday > weekday && it.weekday !in handled && !(it.weekday == day.weekday && it.template == day.template) }
-            .sumOf { SessionValidator.sessionSsu(it.toSession()) }
-        return mine / (mine + later)
+        val owed = plan.days.filter { it.weekday !in handled && !(it.weekday == day.weekday && it.template == day.template) }
+            .sortedBy { it.weekday }.take(maxOf(0, daysLeft))
+        val rest = owed.sumOf { SessionValidator.sessionSsu(it.toSession()) }
+        return mine / (mine + rest)
     }
 
     /**

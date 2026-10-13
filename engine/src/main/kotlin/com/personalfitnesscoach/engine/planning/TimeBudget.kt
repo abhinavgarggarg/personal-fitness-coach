@@ -71,10 +71,18 @@ object TimeModel {
         return item.setupSec + item.sets * setSeconds(item) + (item.sets - 1) * item.restSec.toDouble()
     }
 
-    /** A non-competing superset: alternate A and B with the REST-004 rest after each set. */
+    /**
+     * A non-competing superset as the guided workout plays it (D-109): A and B alternate with the REST-004 rest between them; once the
+     * shorter one is done, the other's remaining sets follow with its own rest (review R8-10).
+     */
     fun pairSeconds(a: PlanItem, b: PlanItem): Double {
-        val rounds = a.sets + b.sets
-        return a.setupSec + b.setupSec + a.sets * setSeconds(a) + b.sets * setSeconds(b) + (rounds - 1) * P.REST_004.default_s.toDouble()
+        val pairs = minOf(a.sets, b.sets)
+        val longer = if (a.sets >= b.sets) a else b
+        val extra = maxOf(a.sets, b.sets) - pairs
+        val supersetRests = if (pairs == 0) 0 else 2 * pairs - 1 + (if (extra > 0) 1 else 0)
+        val ownRests = maxOf(0, extra - 1)
+        return a.setupSec + b.setupSec + a.sets * setSeconds(a) + b.sets * setSeconds(b) +
+            supersetRests * P.REST_004.default_s.toDouble() + ownRests * longer.restSec.toDouble()
     }
 
     /** Planned session minutes including warm-up, cool-down, station changes, 5% buffer and personal factor. */

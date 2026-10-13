@@ -39,7 +39,7 @@ Test names are given as `Class › test`. Engine tests are in `engine/src/test`,
 | | "Do it later" moves the exercise later | `SessionPlayerTest › EQ-002 occupied offers do-it-later, which moves the exercise to the end` | Automated |
 | F9 Something hurts / red flags | One tap on every workout screen | `ScreensOnDeviceTest › aWorkoutStartsFromTodayThroughTheScreens` (Hurts opened and closed on the device) | Automated |
 | | 4–6/10 joint pain stops the exercise and offers pain-free swaps; ≥ 7/10 or red-flag descriptors stop the region or the session; a red flag never gives a lighter workout | `SafetyTest › TC-SAF-002a/b, TC-SAF-003a/b, TC-SAF-004a/b`; `ReviewFindingsTest › TC-SAF-003c/d`; `Part4RecheckRegressionTest › RC-03`; `ScreensTest › A5`; `JourneyIntegrationTest` (pain mid-set, red flag at the check-in) | Automated |
-| F10 Time adaptation | For 30, 40, 60, 75 and 90 minutes the session is within ±10% of the time, keeps the warm-up and the primary lift, and lists what moved | `TimeBudgetAcceptanceTest` (39 planned days × 5 budgets: never more than 10% over; shortened sessions within 10%; a 30-minute day that the full session can't fit gets the express session); `AppControllerTest › F10 30 minutes`; `TimeBudgetTest › TC-TIME-001a … 004b`; `SupersetPlayerTest` | Automated |
+| F10 Time adaptation | For 30, 40, 60, 75 and 90 minutes the session is within ±10% of the time, keeps the warm-up and the primary lift, and lists what moved | `TimeBudgetAcceptanceTest` (39 planned days × 5 budgets: never more than 10% over; shortened sessions within 10%; a 30-minute day that the full session can't fit gets the express session); `AppControllerTest › F10 30 minutes` (express offered, the user's opt-out kept); `TimeBudgetTest › TC-TIME-001a … 004b`; `SupersetPlayerTest` (supersets played as timed, also after later, skip, pain and a time change); `WeekPacingTest › TC-LOAD-005i` (interval blocks by whole repeats) | Automated |
 | | Extra time (75 or 90 minutes on a day planned shorter) is filled | TIME-003 is implemented and tested (`TimeBudgetTest › TC-TIME-003a/b`) but not used when generating a session: it would add training volume | **Open** (decision for Phase 4) |
 | F11 Summary | One 0–10 effort question; session load saved; records, "what changed" and the next session shown | `SessionPlayerTest › finishing gives a summary, records the minutes and asks the rating …`; `AppControllerTest › J1`; `Part5ReviewFlowTest › R5-10 and R5-26 … the summary names the next session`; `CalcTest › TC-LOAD-001a/b` | Automated |
 | F12 History & progress | Every completed set appears in history; edits recompute the estimated max and records and are logged | `InsightsTest › history lists finished sessions …`, `› correcting a past set rebuilds the estimated max and is logged …`; `Part6FlowTest › a past set is corrected from history …`; `JourneyIntegrationTest` (stored sessions = sessions done) | Automated |
@@ -52,7 +52,7 @@ Test names are given as `Class › test`. Engine tests are in `engine/src/test`,
 | F16 Settings | "Erase all my data" needs two confirmations and returns to first launch | `ScreensTest › settings - erase needs two confirmations …`; `BackupTest › erase all removes every record` | Automated |
 | | Units switch kg ↔ lb everywhere | Deferred: kilograms only in V1 (D-097) | **Open** (your decision) |
 | All | No internet permission in the APK | CI checks the debug and the release APK; `LaunchSmokeTest › appHasNoInternetPermission` on 5 emulators | Automated |
-| | No crash in the full 30-scenario suite | The 30 scenarios are the Phase 4 suite; the three 12-week journeys and the release smoke test run crash-free now | Phase 4 |
+| | No crash in the full 30-scenario suite | The 30 scenarios are the Phase 4 suite; the three 12-week journeys, the device tests on 5 emulators and the release smoke test (onboarding to today's session on the shrunk release build) run crash-free now | Phase 4 |
 | | TalkBack can complete a set log | Pictures, colours and icons always come with words (design system, D-102); a manual TalkBack pass is planned | UAT |
 | | Text readable at 200% font size | Device matrix includes Android 14 at 200%; `ScreensTest › 200 percent text …` (3 tests) | Automated |
 
@@ -60,7 +60,7 @@ Test names are given as `Class › test`. Engine tests are in `engine/src/test`,
 
 | NFR | Target | Evidence | Status |
 |---|---|---|---|
-| NFR-01 Cold launch | < 1.5 s to a usable Today on a 2022+ mid-range phone | The release smoke test measures cold start on the emulator (software graphics, so slower than a phone) and reports it | Automated (measured) + UAT |
+| NFR-01 Cold launch | < 1.5 s to a usable Today on a 2022+ mid-range phone | The release smoke test measures cold start of the shrunk release build on an Android 14 emulator with software graphics: 970 ms median (775–1,043 ms) | Automated (measured) + UAT |
 | NFR-02 Generation | < 500 ms | `GenerationSpeedTest` | Automated |
 | NFR-03 Set logging | < 100 ms, UI never blocks | `PlayerSpeedTest`; taps are handled one at a time and a double tap logs nothing (D-083) | Automated + UAT |
 | NFR-04 Offline | Everything works with no connection | No INTERNET or network-state permission (CI on the debug and release APK, device test) | Automated |

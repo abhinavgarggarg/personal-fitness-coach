@@ -451,15 +451,17 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
         // SAF-002/003: no preview (so no start) on a day the pain gate or a warning sign stopped, however it was reached (review R6-03).
         if (dd.trainingStopped(t.user.today)) return today()
         val planned = t.week.days.firstOrNull { it.weekday == day.weekday && it.template == day.template } ?: day
-        var g = dd.generateSession(t, planned, tier, minutes, express = express, awayFromGym = away)
-        g.workout.safetyStop?.let { return Screen.Stop(it) }
+        // The user turned the express session off for this day: their choice stands (review R8-09).
+        val mayExpress = autoExpress && !express && !away && minutes <= P.ADH_004.express_minutes[1] &&
+            expressDeclined != (t.user.today to planned.template.name)
+        var g = dd.generateSession(t, planned, tier, minutes, express = express, awayFromGym = away, record = !mayExpress)
+        g.workout.safetyStop?.let { if (mayExpress) dd.decisions.append(g.decisions); return Screen.Stop(it) }
         var why = extra
-        if (autoExpress && !express && !away && minutes <= P.ADH_004.express_minutes[1] && g.workout.items.isNotEmpty() &&
-            g.workout.plannedMinutes > minutes * 1.10) {
+        if (mayExpress && g.workout.items.isNotEmpty() && g.workout.plannedMinutes > minutes * 1.10) {
             why = extra + g.decisions.filter { it.reason == com.personalfitnesscoach.engine.core.ReasonKey.TIME_NOT_FITTABLE }
             g = dd.generateSession(t, planned, tier, minutes, express = true, awayFromGym = away)
             g.workout.safetyStop?.let { return Screen.Stop(it) }
-        }
+        } else if (mayExpress) dd.decisions.append(g.decisions)
         val rec = dd.docs.get(ReadinessRecord, dayKey(t.user.today))
         val engineTier = rec?.engineTier ?: tier
         // RDY-007 with the same lock as the check-in, the day's safety, return and lighter-week caps included (R5-14).
@@ -490,8 +492,13 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     suspend fun previewExpress(on: Boolean) = act {
         val s = current() as? Screen.Preview ?: return@act null
+        val key = s.model.session.plan.user.today to s.model.session.day.template.name
+        expressDeclined = if (on) null else key
         preview(s.model.session.day, s.model.tier, s.model.minutes, express = on, away = s.model.session.awayFromGym)
     }
+
+    /** The day and session the user switched the express session off for (D-109, R8-09): it is not offered automatically again. */
+    private var expressDeclined: Pair<Int, String>? = null
 
     /** EQ-003: one tap — today's equipment is the saved home kit (bodyweight only by default). */
     suspend fun previewAway(on: Boolean) = act {
