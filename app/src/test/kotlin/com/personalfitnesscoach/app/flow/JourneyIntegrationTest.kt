@@ -211,7 +211,7 @@ class JourneyIntegrationTest {
             val wk = pv.model.session.workout
             w.data().let { dd -> dd.planToday()?.let { t -> t.next?.let { next ->
                 // Against the day as the programme planned it, before the weekly limits (the planner fits the week within them, D-110).
-                val planned = WeekPlanner.plan(dd.bridge.weekInput(t.user, t.program).copy(weeklySsuLimit = null, weeklySsuGuard = null),
+                val planned = WeekPlanner.plan(dd.bridge.weekInput(t.user, t.program).copy(weeklySsuLimit = null, weeklyLoadSsu = null, weeklySsuGuard = null),
                     dd.bridge.blueprint(t.program)).value.days.firstOrNull { it.weekday == next.weekday && it.template == next.template } ?: next
                 val week = log.weeks.getOrPut(d / 7) { DoubleArray(2) }
                 week[0] += SessionValidator.sessionSsu(planned.toSession()); week[1] += SessionValidator.sessionSsu(wk.validated)
