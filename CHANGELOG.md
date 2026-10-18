@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-18 — Phase 4 Part 1: weekly limits that follow how often you train (proposal, waiting for approval)
+- Twelve-month simulations through the data layer (`YearOfTrainingTest`): 8 personas × every session, interrupted (a missed week, illness at the check-in, a warning-sign stop), about 4 in 5 sessions, and sparse (one a week for ten weeks). Today's limits fell week after week whenever sessions were missed: 82–125 recovery days a year at 4 in 5 sessions.
+- Proposal Registry 2.0.0 (MAJOR, D-112), on branch `phase4/weekly-limits`: reference weeks at the level planned and done (missed sessions, cut-short weeks, readiness-lightened days; last 8 weeks); a weight being found counts two sets as planned; the week planned within the limits (accessory sets, conditioning shortened or eased, intervals, then main lifts), with the reason shown on lighter days; easy conditioning on a low-impact modality before dropping it; a floor at half the plan under a 2× spike guard on the weeks as done. Result: 80–100% of the plan kept across all 32 simulated years, no recovery days from the limits, no week above 2× the three before.
+- Independent safety review: 1 high, 4 medium, 4 low; re-check: 2 more; all fixed before the proposal went to the PO. Report `docs/phase4/part1_report.md`.
+
 ## 2026-10-13 — Phase 3 approved; Phase 4 started
 - The Product Owner approved Phase 3 (D-110). The weekly limits (VOL-007, LOAD-005) are tuned in Phase 4, all three recommended steps together, as its first task.
 - Phase 4 plan in 5 parts (D-111): weekly-limit tuning with 12-month simulations; the 30-scenario suite; interruption, data-integrity and upgrade tests; safety and evidence audit; UAT on the PO's phone and the Phase 4 gate.

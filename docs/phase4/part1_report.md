@@ -1,6 +1,6 @@
 # Phase 4, Part 1 report: weekly limits that follow how often you train
 
-Date: REPORT_DATE · Proposal: Rule Registry 2.0.0 (MAJOR), changing VOL-007 and LOAD-005 · Decisions D-110 to D-112 · **Waiting for your approval**
+Date: 18 October 2026 · Proposal: Rule Registry 2.0.0 (MAJOR), changing VOL-007 and LOAD-005 · Decisions D-110 to D-112 · **Waiting for your approval**
 
 ## Summary
 Two of the app's safety rules stop training from growing too fast:
@@ -9,9 +9,9 @@ Two of the app's safety rules stop training from growing too fast:
 
 Both compare this week with your last three weeks. At the Phase 3 gate they held weeks at about half to four-fifths of the plan. You chose to tune them as the first task of Phase 4.
 
-**What the year-long tests showed.** I simulated a full year of training for eight test people through the app's own data layer and engine. Each person was tried three ways: every session done; a missed week plus a week cut short by illness; and about 4 sessions in 5, missed at random. The problem was worse than the Phase 3 journeys suggested. A missed session made its week look light, and the next week's limit followed it down. Anyone missing about 1 session in 5 was down to recovery days within 2–3 months: 82 to 125 empty days a year. The bodyweight-only person fell to recovery days even when training every time.
+**What the year-long tests showed.** I simulated a full year of training for eight test people through the app's own data layer and engine. Each person was tried in several ways, including every session done and about 4 sessions in 5, missed at random. The problem was worse than the Phase 3 journeys suggested. A missed session made its week look light, and the next week's limit followed it down. Anyone missing about 1 session in 5 was down to recovery days within 2–3 months: 82 to 125 empty days a year. The bodyweight-only person fell to recovery days even when training every time.
 
-**The proposed fix** keeps the limits' purpose: stopping sudden jumps. It stops them shrinking your training when you miss sessions. With it, six of the eight test people keep 93–100% of their planned training in every pattern, and nobody gets a recovery day from the limits. No week went above twice the three weeks before it.
+**The proposed fix** keeps the limits' purpose: stopping sudden jumps. It stops them shrinking your training when you miss sessions or sleep badly. With it, the person like you keeps 94–96% of the planned training whether they train every time, miss a session in five or have a week interrupted. Across all eight test people and all four patterns, it's 80–100%. Nobody gets a recovery day from the limits, and no week goes above twice the three weeks before it.
 
 **What needs your decision.** The fix changes where a safety limit applies, so it is a MAJOR rule change (Registry 2.0.0). Under the research-update workflow only you can approve it (D-106). The code is ready and tested on a separate branch and isn't in the app until you approve.
 
@@ -47,23 +47,24 @@ The share of the planned training stress kept over the year, and the days emptie
 
 | Test person | Every session (before → after) | About 4 in 5 (before → after) | Interrupted | Sparse |
 |---|---|---|---|---|
-| P1 — like you (intermediate, 3 × 60 min, gym without treadmill running, bikes or stairs, fat loss) | 74% → 97% | 9% → 95%; 82 → 0 recovery days | 93% | 86% |
-| P2 — returning beginner | 94% → 98% | 8% → 94%; 92 → 0 | 96% | 86% |
-| P3 — time-crunched, 4 × 35 min | 96% → 98% | 19% → 94%; 83 → 0 | 97% | 88% |
-| P5 — poor sleeper | 70% → 56% | 6% → 61%; 90 → 0 | 57% | 60% |
-| Advanced lifter, 4 days | 76% → 95% | 4% → 95%; 125 → 0 | 92% | 88% |
-| Beginner 66, type 2 diabetes and knee osteoarthritis | 96% → 100% | 14% → 100%; 86 → 0 | 98% | 93% |
+| P1 — like you (intermediate, 3 × 60 min, gym without treadmill running, bikes or stairs, fat loss) | 74% → 96% | 9% → 94%; 82 → 0 recovery days | 94% | 86% |
+| P2 — returning beginner | 94% → 98% | 8% → 94%; 92 → 0 | 96% | 87% |
+| P3 — time-crunched, 4 × 35 min | 96% → 98% | 19% → 94%; 83 → 0 | 96% | 88% |
+| P5 — poor sleeper | 70% → 86% | 6% → 81%; 90 → 0 | 86% | 80% |
+| Advanced lifter, 4 days | 76% → 95% | 4% → 95%; 125 → 0 | 93% | 88% |
+| Beginner 66, type 2 diabetes and knee osteoarthritis | 96% → 100% | 14% → 100%; 86 → 0 | 98% | 94% |
 | Fat loss 52, high blood pressure | 94% → 98% | 4% → 96%; 104 → 0 | 96% | 90% |
-| Bodyweight only, 35, at home | 12% → 84%; 94 → 0 | 6% → 81%; 100 → 0 | 76% | 94% |
+| Bodyweight only, 35, at home | 12% → 84%; 94 → 0 | 6% → 80%; 100 → 0 | 81% | 94% |
 
 With the change, no person had a recovery day caused by the limits, in any of the 32 simulated years.
 
 How to read it:
-- **The poor sleeper** keeps a little over half. Their short-sleep days are planned lighter by the readiness check, by design. The limits then follow those lighter weeks and hold them near the floor, and their cardio is made easy rather than kept as intervals. Strength still rises by 10–12% over the year. This is the one result that is lower than today's app, which kept more interval cardio; it is discussed under "What remains".
+- **The poor sleeper** now keeps about 80–86%. The rest is their short-sleep days, which the readiness check plans lighter by design. Before this change they were cut twice, by the readiness check and then by the limits.
 - **The bodyweight-only person** keeps about four-fifths. Their cardio circuits carry a lot of training stress, so some weeks are still trimmed. Nothing is emptied.
+- **After sparse weeks** (one session a week for ten weeks) training comes back to the full plan over a few weeks, never more than doubling in a week.
 - **Strength still grows.** For the person like you, the main lifts' estimated maximum rises by about 11–14% over the year in every pattern. Before, it was only +4% when 1 session in 5 was missed.
 - **Sessions cut on the day by the limits** fell from about two-thirds of all sessions to a few per year for most people. The planner now fits the week in advance, and each lighter day says so in its preview.
-- **Sudden jumps stay bounded.** No week went above twice the three weeks before it (the largest was 1.99×, after ten weeks of one session a week). With every session done, no week went above 1.3×. The simulation now fails if any week breaks this, so every future change is checked against it.
+- **Sudden jumps stay bounded.** No week went above twice the three weeks before it, outside a return or a deload; the largest was exactly 2.0×, after ten weeks of one session a week. With every session done, no week went above 1.6×. The simulation now fails if any week breaks this, so every future change is checked against it.
 
 ## What gets looser, and why it stays safe
 The fix makes the limits less strict in four ways:
@@ -74,7 +75,7 @@ The fix makes the limits less strict in four ways:
 
 **What keeps it safe:**
 - **Session size is unchanged.** The programme and its progression rules set the size of each session, never these limits. A session is never bigger than it would have been.
-- **The new spike guard bounds the loosening.** A week is never more than twice the three weeks before it as you actually did them, floor included. It is off only during a return ramp or a deload, which have their own rules. In the simulations the largest week was 1.99× the three before it; with every session done, no week went above 1.3×.
+- **The new spike guard bounds the loosening.** A week is never more than twice the three weeks before it as you actually did them, floor included. It is off only during a return ramp or a deload, which have their own rules. In the simulations the largest week was exactly 2.0× the three before it; with every session done, no week went above 1.6×.
 - **Everything else stays as it was:**
   - the ceilings for each level;
   - the weekly set limit per muscle (SAF-005);
@@ -110,7 +111,7 @@ A reviewer who had not seen the work being built checked the proposal. It read t
 
 | # | What was wrong | Fix |
 |---|---|---|
-| A (medium) | The poor sleeper kept only about 55% of their plan: they were cut twice. The readiness check lightened their bad days, then the weekly limits followed those lighter weeks and lightened the good days too. The planner also padded short interval blocks to 10 easy minutes, which could make a day heavier rather than lighter | A day the readiness check made lighter now counts at its planned size in the weeks the limits compare with, as the reviewer suggested; the spike guard still uses the weeks as done. Intervals are made easy only when that lowers the day's training stress, and never for longer than the block itself. The poor sleeper now keeps about 80–85% |
+| A (medium) | The poor sleeper kept only about 55% of their plan: they were cut twice. The readiness check lightened their bad days, then the weekly limits followed those lighter weeks and lightened the good days too. The planner also padded short interval blocks to 10 easy minutes, which could make a day heavier rather than lighter | A day the readiness check made lighter now counts at its planned size in the weeks the limits compare with, as the reviewer suggested; the spike guard still uses the weeks as done. Intervals are made easy only when that lowers the day's training stress, and never for longer than the block itself. The poor sleeper now keeps about 80–86% |
 | B (low) | The year simulation didn't check weeks that started with a return session | It checks them now. That showed one small counting mismatch (a weight-finding exercise planned as one set but logged as up to five counted as two), fixed |
 
 ## How it was checked

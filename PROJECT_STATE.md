@@ -1,9 +1,9 @@
 # PROJECT STATE — Personal Fitness Coach
 
-Last updated: 2026-10-13 (Phase 3 APPROVED; Phase 4 started with Part 1, the weekly-limit tuning) · Master prompt: v3.0 (7 Oct 2026)
+Last updated: 2026-10-18 (Phase 4 Part 1: weekly-limit proposal Registry 2.0.0 reviewed and ready, waiting for the PO's approval) · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
-**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Part 1 of 5: weekly-limit tuning (VOL-007, LOAD-005) with 12-month simulations. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
+**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Part 1 of 5: weekly-limit tuning (VOL-007, LOAD-005) — proposal Registry 2.0.0 (MAJOR, D-112) on branch `phase4/weekly-limits`, independently reviewed, waiting for the PO's approval; report `docs/phase4/part1_report.md`. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
 
 | Phase | Status | Date |
 |---|---|---|
@@ -16,7 +16,7 @@ Last updated: 2026-10-13 (Phase 3 APPROVED; Phase 4 started with Part 1, the wee
 ## Phase 4 progress (D-111)
 | Part | Content | Status |
 |---|---|---|
-| 1 | Weekly-limit tuning (D-110): (a) the week planner plans within VOL-007 / LOAD-005; (b) a week with fewer than half its planned sessions leaves the 3-week reference; (c) 1.15 / 1.20 re-checked in 12-month simulations of the Phase 2 personas and the condition personas, with a floor; MINOR change set for the PO's approval | IN PROGRESS |
+| 1 | Weekly-limit tuning (D-110, D-112): 12-month simulations (`YearOfTrainingTest`, 8 personas × 4 ways of turning up); reference weeks at the level planned and done (missed sessions, cut-short weeks, readiness-lightened days; last 8 weeks); the week planned within the limits; easy conditioning before dropping it; a floor at 50% of the plan under a 2× spike guard on the weeks as done; independent review (1 high, 4 medium, 4 low) and re-check (2 more), all fixed. MAJOR change set `rules/proposals/registry_2.0.0.json` | **WAITING FOR PO APPROVAL** — code on branch `phase4/weekly-limits`, not merged |
 | 2 | The 30-scenario suite (E2), automated on every push | NOT STARTED |
 | 3 | Interruption, data-integrity and upgrade tests on emulators (E5); Android backup | NOT STARTED |
 | 4 | Safety and evidence audit: independent expert review, the nine pending sources, TalkBack pass, device performance | NOT STARTED |
@@ -85,7 +85,7 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 - Phone: Motorola Edge 50, Android 16. Request: the app must work on any phone (→ D-044) and use the phone's Gemini instead of paid AI calls (→ D-045).
 
 ## Open items for the Product Owner
-1. **Coming for your approval (Phase 4 Part 1):** the weekly-limit change set (VOL-007, LOAD-005; D-110) with its simulation results. Until it is approved, the app keeps today's cautious limits.
+1. **Approve Registry 2.0.0 (Phase 4 Part 1):** the weekly-limit change set (VOL-007, LOAD-005; D-112), report `docs/phase4/part1_report.md`. Until it is approved, the app keeps today's cautious limits, so please don't train with the test build yet.
 2. Optional: if you have the master prompt's Phase 4 section (deliverables E1–E7 and the list of 30 scenarios), paste it so Phase 4 follows its exact numbering; otherwise Phase 4 follows the approved Phase 2 test strategy.
 3. For awareness: Registry 1.1.2 (evidence-only, applied under delegation, D-106) was accepted with the Phase 3 gate; the nine sources still pending are re-tried in Phase 4 Part 4.
 4. Decision in Phase 4: fill extra time (TIME-003 extension is built and tested but off, since it adds training volume). Pounds stay deferred (D-097) unless you want them.
@@ -100,5 +100,5 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 13. Before any public release: clinician and regulatory review of the condition table and wording (D-058).
 
 ## Next actions
-1. Phase 4 Part 1 (D-110, D-111): a 12-month simulation harness at app level (the journeys' way: real controller, data layer and engine) for the five Phase 2 personas and the condition personas, with adherence patterns (every week, missed weeks, a cut-short week, illness); measure kept work, progression, deloads, cap compliance; then implement (a) planning within the limits, (b) cut-short weeks out of the reference, (c) coefficient/floor options; draft the MINOR change set (Registry 1.2.0) with its impact report for the PO's approval; independent review; part report.
+1. On the PO's approval of Registry 2.0.0: move `rules/proposals/registry_2.0.0.json` to `rules/changes/`, fill in the approval, `python3 -I tools/research_update.py apply`, move the numbers from `WeeklyLimits` to the registry (P.VOL_007), update TC-VOL-008b's registry version, merge `phase4/weekly-limits` to main, CI + Devices, sync the Project; then Part 2.
 2. Then Parts 2–5 as in D-111. The PO may install the debug build from the CI artifacts at any time (instructions sent 13 Oct 2026).
