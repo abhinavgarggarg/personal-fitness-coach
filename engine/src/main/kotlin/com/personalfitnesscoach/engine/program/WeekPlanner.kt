@@ -22,6 +22,7 @@ import com.personalfitnesscoach.engine.dose.Rest
 import com.personalfitnesscoach.engine.dose.RestWindow
 import com.personalfitnesscoach.engine.model.DoseUnit
 import com.personalfitnesscoach.engine.model.Exercise
+import com.personalfitnesscoach.engine.model.LoadType
 import com.personalfitnesscoach.engine.model.Joint
 import com.personalfitnesscoach.engine.model.Level
 import com.personalfitnesscoach.engine.model.Modality
@@ -97,13 +98,23 @@ data class WeekInput(
     /** SAF-010: the merged health-condition limits for this week. */
     val conditions: ConditionLimits = ConditionLimits.NONE,
     /**
-     * VOL-007 / LOAD-005: this week's training-stress limit in SSU, the lower of the two (LOAD-005 as its load cap ÷ k, or last week's
-     * SSU + 20% before k is learned); null when no limit applies. The week is planned within it (D-110), never below
-     * [com.personalfitnesscoach.engine.safety.WeeklyLimits.PLAN_FLOOR_PCT] of the week as first planned.
+     * VOL-007: this week's training-stress limit in SSU; null when no limit applies. The week is planned within it and [weeklyLoadSsu]
+     * (D-110), never below [com.personalfitnesscoach.engine.safety.WeeklyLimits.PLAN_FLOOR_PCT] of the week as first planned.
      */
     val weeklySsuLimit: Double? = null,
-    /** VOL-007 spike guard ([com.personalfitnesscoach.engine.safety.WeeklyLimits.SPIKE_GUARD]): the week stays under it, down to the floor. */
+    /** LOAD-005 in SSU (its load cap ÷ k, or last week's SSU + 20% before k is learned); null when it doesn't apply. Not in a deload. */
+    val weeklyLoadSsu: Double? = null,
+    /**
+     * VOL-007 spike guard ([com.personalfitnesscoach.engine.safety.WeeklyLimits.SPIKE_GUARD]): the week never goes above it, the floor
+     * included. Not in a deload.
+     */
     val weeklySsuGuard: Double? = null,
+    /**
+     * Exercises with a working weight known (an estimated max or a prescription); any other loaded exercise is still being found and
+     * counts as [com.personalfitnesscoach.engine.safety.SessionValidator.CALIBRATION_SETS_COUNTED] sets, as the session check counts it.
+     * Null = unknown (every exercise counts all its sets).
+     */
+    val knownLoads: Set<String>? = null,
 ) {
     /** FL-001: "Lose fat, keep muscle" is the #1 priority, so FL-003 shapes the week. */
     val fatLoss: Boolean get() = priorities.firstOrNull() == Goal.FAT_LOSS
@@ -129,6 +140,8 @@ data class PlannedSlot(
     val main: Boolean,
     /** Sets before any deload cut (DEL-003), so later checks cut from the normal plan, not twice. */
     val fullSets: Int = sets,
+    /** The weight is still being found (CAL-001), so the weekly limits count it as two sets (VOL-007, D-112). */
+    val calibrating: Boolean = false,
 ) {
     val power: Boolean get() = spec.role == SlotRole.POWER
 }
@@ -165,10 +178,12 @@ data class PlannedDay(
      */
     val impactAllowed: Boolean = true,
     val intervalModalities: Set<Modality>? = null,
+    /** The day's training stress (SSU) before the week was fitted within its weekly limits, when that made this day lighter (D-112). */
+    val uncappedSsu: Double? = null,
 ) {
     val workingSets: Int get() = slots.sumOf { it.sets }
     fun toSession(tier: Tier = Tier.FULL): Session = Session(tier,
-        slots.map { SessionExercise(it.exercise, it.sets, it.reps.last, it.targetRir, main = it.main, fullTierRir = it.targetRir) },
+        slots.map { SessionExercise(it.exercise, it.sets, it.reps.last, it.targetRir, main = it.main, fullTierRir = it.targetRir, calibrating = it.calibrating) },
         conditioning.map { it.toBlock() })
 }
 
@@ -363,9 +378,11 @@ object WeekPlanner {
         week = alloc.value; d += alloc.decisions
         // Safety net: TIME-002 compression if a session still does not fit (normally a no-op).
         week = week.map { fitDay(it, i, d) }
+        // VOL-007: a weight still being found counts as two sets, in the plan as in the session check (D-112).
+        i.knownLoads?.let { known -> week = week.map { day -> day.copy(slots = day.slots.map { it.copy(calibrating = beingFound(it.exercise, known)) }) } }
         // VOL-007 / LOAD-005: the week is planned within its weekly limit, so sessions are not cut after the fact (D-110).
         val uncapped = week.sumOf { SessionValidator.sessionSsu(it.toSession()) }
-        week = withinWeeklyLimit(week, i, uncapped, d)
+        week = withinWeeklyLimit(week, i, uncapped, deload, d)
 
         // Week checks: PAT-001..004 (the validator re-checks every session), FREQ-002, AER-002, PH-001.
         val sessions = week.map { it.toSession() }
@@ -454,7 +471,7 @@ object WeekPlanner {
         val b = i.week.block
         val normalCtx = WeekContext(b.endWeek, b, b.loadingWeeks, WeekKind.LOADING, i.week.blockIndex)
         // The normal week as planned before the weekly limits: the deload halves it anyway (DEL-003), and is exempt from LOAD-005.
-        val normal = plan(i.copy(week = normalCtx, deload = false, weeklySsuLimit = null, weeklySsuGuard = null), program)
+        val normal = plan(i.copy(week = normalCtx, deload = false, weeklySsuLimit = null, weeklyLoadSsu = null, weeklySsuGuard = null), program)
         val pre = P.DEL_003
         val days = normal.value.days.map { day ->
             var slots = day.slots.filter { !it.power }.map { it.copy(fullSets = it.sets, targetRir = maxOf(it.targetRir, pre.min_rir.toDouble())) }
@@ -793,19 +810,33 @@ object WeekPlanner {
 
     // ------------------------------------------------------------------ weekly limits
 
+    /** A loaded exercise without a known working weight is still being found (CAL-001); bodyweight, timed and assisted work never is. */
+    private fun beingFound(e: Exercise, known: Set<String>): Boolean =
+        e.id !in known && !e.assisted && e.loadType != LoadType.BODYWEIGHT && e.loadType != LoadType.TIME && e.loadType != LoadType.DISTANCE
+
     /**
-     * VOL-007 / LOAD-005 (D-110): fits the week within its weekly limit when it was planned above it, so the session check doesn't have
-     * to cut sessions one by one (and say so every day). In the TIME-001 order the session check uses (D-107): sets of the other
-     * exercises first (accessories to 2, secondary and power lifts to 3, isolation to 1, …), each from the day with the most training
-     * stress; then steady conditioning shortened by up to TIME-002's 40% (never below FREQ-005's 10-minute block); then the last
-     * accessory and secondary sets; then steady hard conditioning made easy (Z1, D-039); then main lifts, the day's first keeping 2 sets. Interval blocks are left to the session
-     * check (whole repeats, R8-01). Brisk walks still close the gap to the week's activity target afterwards (FL-002). Never below
-     * [WeeklyLimits.PLAN_FLOOR_PCT] of the week as first planned; the session check still applies the limits to each day.
+     * VOL-007 / LOAD-005 (D-110, D-112): fits the week within its weekly limits when it was planned above them, so the session check
+     * doesn't have to cut sessions one by one. In the TIME-001 order the session check uses (D-107), each step from the day with the
+     * most training stress:
+     * 1. the other exercises' sets (accessories to 2, secondary and power lifts to 3, isolation to 1, …);
+     * 2. steady conditioning shortened by up to TIME-002's 40% (never below FREQ-005's 10-minute block);
+     * 3. the last accessory and secondary sets;
+     * 4. steady hard conditioning made easy (Z1, D-039);
+     * 5. interval blocks shortened by whole repeats, by up to 40% (R8-01), then made easy (steady Z1 on the same low-impact machine, or a
+     *    circuit without jumps) or, on another impact modality, left out (independent review: main lifts were cut while intervals stayed whole);
+     * 6. main lifts, the day's first keeping 2 sets.
+     * What still fits is then given back, most important first. The limit is VOL-007's and LOAD-005's, at least
+     * [WeeklyLimits.PLAN_FLOOR_PCT] of the week as first planned and never above the spike guard (the guard wins). In a deload or review
+     * week LOAD-005 and the guard don't apply, as in the session check. Each day made lighter keeps its [PlannedDay.uncappedSsu], so its
+     * session says so. Brisk walks still close the gap to the week's activity target afterwards (FL-002).
      */
-    private fun withinWeeklyLimit(week: List<PlannedDay>, i: WeekInput, uncapped: Double, d: MutableList<Decision>): List<PlannedDay> {
-        if (i.weeklySsuLimit == null && i.weeklySsuGuard == null) return week
-        val limit = i.weeklySsuLimit ?: Double.MAX_VALUE
-        val budget = maxOf(minOf(limit, i.weeklySsuGuard ?: Double.MAX_VALUE), WeeklyLimits.floorSsu(uncapped))
+    private fun withinWeeklyLimit(week: List<PlannedDay>, i: WeekInput, uncapped: Double, deload: Boolean, d: MutableList<Decision>): List<PlannedDay> {
+        val load = if (deload) null else i.weeklyLoadSsu
+        val guard = if (deload) null else i.weeklySsuGuard
+        if (i.weeklySsuLimit == null && load == null && guard == null) return week
+        val limit = minOf(i.weeklySsuLimit ?: Double.MAX_VALUE, load ?: Double.MAX_VALUE)
+        val floor = WeeklyLimits.floorSsu(uncapped)
+        val budget = WeeklyLimits.bounded(limit, floor, guard)
         if (uncapped <= budget + 1e-9) return week
         val cur = week.toMutableList()
         fun ssu(day: PlannedDay) = SessionValidator.sessionSsu(day.toSession())
@@ -814,8 +845,8 @@ object WeekPlanner {
         fun reduce(pred: (PlannedSlot) -> Boolean, floor: Int): Boolean {
             while (total() > budget + 1e-9) {
                 val c = cur.withIndex().mapNotNull { (di, day) ->
-                    day.slots.withIndex().filter { pred(it.value) && it.value.sets > floor }.maxWithOrNull(compareBy({ it.value.sets }, { it.index }))
-                        ?.let { Triple(di, it.index, ssu(day)) }
+                    day.slots.withIndex().filter { pred(it.value) && it.value.sets > floor && (!it.value.calibrating || it.value.sets <= SessionValidator.CALIBRATION_SETS_COUNTED) }
+                        .maxWithOrNull(compareBy({ it.value.sets }, { it.index }))?.let { Triple(di, it.index, ssu(day)) }
                 }.maxWithOrNull(compareBy({ it.third }, { -it.first })) ?: return false
                 cur[c.first] = cur[c.first].let { day -> day.copy(slots = day.slots.mapIndexed { k, s -> if (k == c.second) s.copy(sets = s.sets - 1) else s }) }
                 removed++
@@ -829,42 +860,75 @@ object WeekPlanner {
         val main: (PlannedSlot) -> Boolean = { it.spec.role == SlotRole.MAIN }
         val mainNotP1: (PlannedSlot) -> Boolean = { it.spec.role == SlotRole.MAIN && it.priority != Priority.P1 }
         val original = cur.map { day -> day.conditioning.map { it.workMinutes } }
+        val originalReps = cur.map { day -> day.conditioning.map { it.interval?.reps ?: 0 } }
         fun steady(c: PlannedConditioning) = c.protocol == null && !c.hiit
+        fun repeats(c: PlannedConditioning) = c.interval?.takeIf { it.protocol != null && it.workSec > 0 && it.reps > 0 }
         fun blockSsu(c: PlannedConditioning) = Ssu.conditioning(c.modality, c.zone, c.workMinutes, c.restMinutes)
+        fun setBlock(di: Int, bi: Int, b: PlannedConditioning?) {
+            cur[di] = cur[di].let { day -> day.copy(conditioning = day.conditioning.mapIndexedNotNull { k, x -> if (k == bi) b else x }) }
+        }
+        /** The block with the most training stress among those [ok] allows: day index, block index. */
+        fun pick(ok: (Int, Int, PlannedConditioning) -> Boolean): Pair<Int, Int>? = cur.withIndex().flatMap { (di, day) ->
+            day.conditioning.withIndex().filter { (bi, b) -> ok(di, bi, b) }.map { (bi, b) -> Triple(di, bi, blockSsu(b)) } }
+            .maxWithOrNull(compareBy({ it.third }, { -it.first }))?.let { it.first to it.second }
         fun shortenConditioning(): Boolean {
             while (total() > budget + 1e-9) {
-                val c = cur.withIndex().flatMap { (di, day) -> day.conditioning.withIndex().filter { (bi, b) -> steady(b) &&
-                    b.workMinutes - 0.5 >= maxOf(P.FREQ_005.min_block_minutes.toDouble(), original[di][bi] * (1.0 - P.TIME_002.p2_max_cut_pct / 100.0)) - 1e-9
-                }.map { (bi, b) -> Triple(di, bi, blockSsu(b)) } }.maxWithOrNull(compareBy({ it.third }, { -it.first })) ?: return false
-                cur[c.first] = cur[c.first].let { day -> day.copy(conditioning = day.conditioning.mapIndexed { k, b ->
-                    if (k != c.second) b else b.copy(workMinutes = b.workMinutes - 0.5, restMinutes = b.restMinutes * (b.workMinutes - 0.5) / b.workMinutes) }) }
+                val (di, bi) = pick { di, bi, b -> steady(b) &&
+                    b.workMinutes - 0.5 >= maxOf(P.FREQ_005.min_block_minutes.toDouble(), original[di][bi] * (1.0 - P.TIME_002.p2_max_cut_pct / 100.0)) - 1e-9 } ?: return false
+                val b = cur[di].conditioning[bi]
+                setBlock(di, bi, b.copy(workMinutes = b.workMinutes - 0.5, restMinutes = b.restMinutes * (b.workMinutes - 0.5) / b.workMinutes))
                 removed++
             }
             return true
         }
         fun easeConditioning(): Boolean {
             while (total() > budget + 1e-9) {
-                val c = cur.withIndex().flatMap { (di, day) -> day.conditioning.withIndex().filter { (_, b) -> steady(b) && b.zone > Zone.Z1 }
-                    .map { (bi, b) -> Triple(di, bi, blockSsu(b)) } }.maxWithOrNull(compareBy({ it.third }, { -it.first })) ?: return false
-                cur[c.first] = cur[c.first].let { day -> day.copy(conditioning = day.conditioning.mapIndexed { k, b ->
-                    if (k != c.second) b else b.copy(zone = Zone.Z1, interval = null, restMinutes = 0.0, workMinutes = b.workMinutes + b.restMinutes,
-                        purpose = ConditioningPurpose.STEADY) }) }
+                val (di, bi) = pick { _, _, b -> steady(b) && b.zone > Zone.Z1 } ?: return false
+                val b = cur[di].conditioning[bi]
+                setBlock(di, bi, b.copy(zone = Zone.Z1, interval = null, restMinutes = 0.0, workMinutes = b.workMinutes + b.restMinutes, purpose = ConditioningPurpose.STEADY))
+                removed++
+            }
+            return true
+        }
+        fun shortenIntervals(): Boolean {
+            while (total() > budget + 1e-9) {
+                val (di, bi) = pick { di, bi, b -> repeats(b)?.let { iv -> iv.reps - 1 >= maxOf(1.0, Math.ceil(originalReps[di][bi] * (1.0 - P.TIME_002.p2_max_cut_pct / 100.0) - 1e-9)) } == true }
+                    ?: return false
+                val b = cur[di].conditioning[bi]
+                val iv = repeats(b)!!.let { it.copy(reps = it.reps - 1) }
+                setBlock(di, bi, b.copy(interval = iv, workMinutes = iv.workMinutes, restMinutes = iv.reps * iv.restSec / 60.0))
+                removed++
+            }
+            return true
+        }
+        fun easeIntervals(): Boolean {
+            while (total() > budget + 1e-9) {
+                val (di, bi) = pick { _, _, b -> !steady(b) } ?: return false
+                val b = cur[di].conditioning[bi]
+                val minutes = maxOf(P.FREQ_005.min_block_minutes.toDouble(), b.workMinutes + b.restMinutes)
+                // Easy work on the same machine when it is low-impact, or a circuit without jumps; other impact work (jump rope) is left out
+                // rather than made "easy" (kept as an empty block until the end, so blocks keep their places for the give-back).
+                val keep = b.impact == 0 || b.modality == Modality.BODYWEIGHT_CIRCUIT
+                setBlock(di, bi, b.copy(zone = Zone.Z1, interval = null, hiit = false, impact = 0, restMinutes = 0.0, workMinutes = if (keep) minutes else 0.0,
+                    purpose = ConditioningPurpose.STEADY))
                 removed++
             }
             return true
         }
         val fits = reduce(acc, 2) || reduce(sec, 3) || reduce(iso, 1) || reduce(sec, 2) || reduce(core, 1) ||
-            shortenConditioning() || reduce(acc, 1) || reduce(sec, 1) || easeConditioning() ||
+            shortenConditioning() || reduce(acc, 1) || reduce(sec, 1) || easeConditioning() || shortenIntervals() || easeIntervals() ||
             reduce(main, 3) || reduce(mainNotP1, 2) || reduce(mainNotP1, 1) || reduce(main, 2)
         // Give back what still fits, most important first: making a block easy can free more than was needed, and the week should use
-        // its limit (a week planned under its limit lowers the next limits). Sets by priority (P1 first), then easy-free minutes.
+        // its limit (a week planned under its limit lowers the next limits). Sets by priority (P1 first), then interval repeats, then
+        // steady minutes.
+        fun fitsWith(di: Int, next: PlannedDay) = total() - ssu(cur[di]) + ssu(next) <= budget + 1e-9
         for (prio in Priority.entries) for (di in cur.indices) for (si in cur[di].slots.indices) {
             while (true) {
                 val sl = cur[di].slots[si]
                 val orig = week[di].slots.getOrNull(si)
                 if (sl.priority != prio || orig == null || orig.exercise.id != sl.exercise.id || sl.sets >= orig.sets) break
                 val next = cur[di].copy(slots = cur[di].slots.mapIndexed { k, x -> if (k == si) x.copy(sets = x.sets + 1) else x })
-                if (total() - ssu(cur[di]) + ssu(next) > budget + 1e-9) break
+                if (!fitsWith(di, next)) break
                 cur[di] = next
                 removed--
             }
@@ -873,16 +937,28 @@ object WeekPlanner {
             while (true) {
                 val b = cur[di].conditioning[bi]
                 val orig = week[di].conditioning.getOrNull(bi) ?: break
-                if (!steady(b) || b.zone != orig.zone || b.workMinutes + 0.5 > orig.workMinutes + 1e-9) break
-                val next = cur[di].copy(conditioning = cur[di].conditioning.mapIndexed { k, x ->
-                    if (k == bi) x.copy(workMinutes = x.workMinutes + 0.5, restMinutes = orig.restMinutes * (x.workMinutes + 0.5) / orig.workMinutes) else x })
-                if (total() - ssu(cur[di]) + ssu(next) > budget + 1e-9) break
-                cur[di] = next
+                val iv = repeats(b)
+                val origIv = repeats(orig)
+                val next = when {
+                    iv != null && origIv != null && iv.protocol == origIv.protocol && iv.workSec == origIv.workSec && iv.reps < origIv.reps ->
+                        iv.copy(reps = iv.reps + 1).let { n -> b.copy(interval = n, workMinutes = n.workMinutes, restMinutes = n.reps * n.restSec / 60.0) }
+                    steady(b) && b.zone == orig.zone && b.workMinutes + 0.5 <= orig.workMinutes + 1e-9 ->
+                        b.copy(workMinutes = b.workMinutes + 0.5, restMinutes = orig.restMinutes * (b.workMinutes + 0.5) / orig.workMinutes)
+                    else -> break
+                }
+                val day = cur[di].copy(conditioning = cur[di].conditioning.mapIndexed { k, x -> if (k == bi) next else x })
+                if (!fitsWith(di, day)) break
+                cur[di] = day
             }
         }
+        // Impact intervals left out are removed now; each day made lighter says so in its session (D-112).
+        for (di in cur.indices) {
+            cur[di] = cur[di].copy(conditioning = cur[di].conditioning.filter { it.workMinutes > 0.0 })
+            if (ssu(cur[di]) < ssu(week[di]) - 1e-9) cur[di] = cur[di].copy(uncappedSsu = ssu(week[di]))
+        }
         d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.VOL_007, RuleIds.LOAD_005), ReasonKey.WEEK_WITHIN_LIMIT,
-            inputs = mapOf("limit" to i.weeklySsuLimit?.let { Num.round1(it) }, "floor" to Num.round1(WeeklyLimits.floorSsu(uncapped)),
-                "guard" to i.weeklySsuGuard?.let { Num.round1(it) }, "planned" to Num.round1(uncapped)),
+            inputs = mapOf("limit" to i.weeklySsuLimit?.let { Num.round1(it) }, "load" to load?.let { Num.round1(it) }, "floor" to Num.round1(floor),
+                "guard" to guard?.let { Num.round1(it) }, "planned" to Num.round1(uncapped)),
             outputs = mapOf("ssu" to Num.round1(total()), "steps" to removed, "fits" to fits))
         return cur
     }

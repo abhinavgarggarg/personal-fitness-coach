@@ -7,14 +7,21 @@ package com.personalfitnesscoach.engine.safety
  * The limits compare a week with the last three weeks. Measured against the weeks as done, a missed session made its week look light
  * and the next limit followed it down: below about 87% turnout (1 / 1.15) the limits fell week after week, until days were empty
  * (twelve-month simulations, `YearOfTrainingTest`). So a past week counts at the level of the sessions that were done, a week with
- * fewer than half of its planned sessions is left out like a missed week, and the limits never cut a week below half of its plan. Above
- * that floor, a week is never more than twice the last three weeks as done (the spike guard).
+ * fewer than half of its planned sessions is left out like a missed week, and the limits never cut a week below half of its plan. The
+ * spike guard is above both: a week is never more than twice the last three weeks as done, floor included (independent review,
+ * Phase 4 Part 1).
  */
 object WeeklyLimits {
     /** A week with fewer than this share of its planned sessions done is not a reference week. */
     const val REFERENCE_MIN_TURNOUT_PCT = 50
 
-    /** The limits never cut a week below this share of the training stress (SSU) it was planned with — about a deload week (DEL-003). */
+    /** Reference weeks are taken from this many calendar weeks before the current one at most, so an old week never sets today's limit. */
+    const val REFERENCE_WINDOW_WEEKS = 8
+
+    /**
+     * The limits never cut a week below this share of the training stress (SSU) it was planned with (unless the spike guard is lower):
+     * about the training stress of a deload week (DEL-003), though with the week's normal exercises and effort.
+     */
     const val PLAN_FLOOR_PCT = 50
 
     /** One finished week as stored: sessions planned and done, its SSU and its measured load (LOAD-001). */
@@ -34,8 +41,8 @@ object WeeklyLimits {
     /**
      * The spike guard: a week is never more than this times the mean SSU of the last three weeks as they were done (a missed week
      * counts 0). Reference weeks are counted at the level of the sessions done, so after weeks of turning up seldom a full week would
-     * otherwise be allowed at once; this holds it to twice what was done. The floor stays allowed: half the plan is about the training
-     * stress of a deload week (DEL-003). It never applies during a return or a deload, whose own ramps set the dose (REG-003/004/005).
+     * otherwise be allowed at once; this holds it to twice what was done, and the floor gives way to it. It never applies during a
+     * return or a deload, whose own ramps set the dose (REG-003/004/005, DEL-003); the week after a lighter week is not exempt.
      */
     const val SPIKE_GUARD = 2.0
 
@@ -48,4 +55,10 @@ object WeeklyLimits {
         val mean = lastThreeDone.takeLast(3).average()
         return if (mean > 0.0) SPIKE_GUARD * mean else null
     }
+
+    /** The floor as it applies: never above the spike guard. */
+    fun floorUnder(floor: Double, guard: Double?): Double = if (guard != null) minOf(floor, guard) else floor
+
+    /** A week's limit with the floor and the guard: at least the floor, at most the guard — the guard wins. */
+    fun bounded(limit: Double, floor: Double, guard: Double?): Double = maxOf(limit, floorUnder(floor, guard)).let { if (guard != null) minOf(it, guard) else it }
 }

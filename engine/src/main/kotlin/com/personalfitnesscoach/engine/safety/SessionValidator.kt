@@ -388,12 +388,17 @@ object SessionValidator {
      * When the last conditioning block would lose more than 40%: the same block made easy instead (steady Z1, as the validator makes
      * any disallowed hard work easy, D-039), shortened to fit if need be but never below FREQ-005's 10-minute block. The minutes of
      * activity stay where the week's limit allows (FL-002, PH-001); dropping a whole block left weeks far below their limit, and the
-     * next limits followed them down (Phase 4 simulations, D-110). Null when the block is already easy or even 10 easy minutes are over.
+     * next limits followed them down (Phase 4 simulations, D-110). Easy work is done on a low-impact machine: jumping or other impact
+     * work (jump rope, jumping circuits) moves to the first allowed modality of the usual swap order (a bodyweight circuit without jumps
+     * last), as for a disallowed modality, and is dropped when there is none (independent review: "easy" jump rope for the whole block, rest included, doubled the impact time).
+     * Null when the block is already easy or even 10 easy minutes are over.
      */
     private fun easierForWeek(s: Session, c: ValidationContext): ConditioningBlock? {
         val b = s.conditioning.last()
         if (b.zone == Zone.Z1 && !b.hiit) return null
-        val easy = b.copy(zone = Zone.Z1, hiit = false, protocol = null, restMinutes = 0.0, repSec = null, workMinutes = b.totalMinutes)
+        val lowImpact = b.impact == 0 && b.modality in SWAP_ORDER
+        val modality = if (lowImpact) b.modality else SWAP_ORDER.firstOrNull { modalityAllowed(it, c) } ?: return null
+        val easy = b.copy(modality = modality, impact = 0, zone = Zone.Z1, hiit = false, protocol = null, restMinutes = 0.0, repSec = null, workMinutes = b.totalMinutes)
         val perMinute = Ssu.conditioning(easy.modality, Zone.Z1, 1.0)
         if (easy.workMinutes <= 0.0 || perMinute <= 0.0) return null
         val room = easy.workMinutes - weeklyExcessSsu(s.copy(conditioning = s.conditioning.dropLast(1) + easy), c) / perMinute

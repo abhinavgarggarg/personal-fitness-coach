@@ -406,11 +406,12 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
     /**
      * VOL-007 / LOAD-005 reference weeks before the week of `today`, oldest first (D-110, [WeeklyLimits.reference]): finished weeks with
      * at least half of their planned sessions done, each counted at the level of the sessions done, so missed sessions never lower the
-     * limits.
+     * limits; from the last [WeeklyLimits.REFERENCE_WINDOW_WEEKS] calendar weeks only, so a week months old never sets today's limit.
      */
     suspend fun referenceWeeks(today: Int): List<Pair<Int, WeeklyLimits.Week>> {
         val ws = Days.weekStart(today)
-        val weeks = docs.all(WeekSummary).filter { it.weekStartDay < ws }.sortedBy { it.weekStartDay }
+        val weeks = docs.all(WeekSummary).filter { it.weekStartDay < ws && it.weekStartDay >= ws - 7 * WeeklyLimits.REFERENCE_WINDOW_WEEKS }
+            .sortedBy { it.weekStartDay }
         return weeks.mapNotNull { w ->
             WeeklyLimits.reference(listOf(WeeklyLimits.Week(w.planned, w.completed, w.ssu, w.workload))).firstOrNull()?.let { w.weekStartDay to it }
         }
@@ -418,17 +419,16 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
 
     /** This week's limits before pacing (VOL-007 SSU limit; LOAD-005 cap, k and its early reference), and whether LOAD-005 is exempt. */
     data class WeekLimits(val ssuLimit: Double, val loadCap: Double?, val k: Double?, val lastWeekSsu: Double?, val loadExempt: Boolean,
-                          /** The spike guard (twice the last three weeks as done); null in a return or a deload, or before 28 days. */
+                          /** The spike guard (twice the last three weeks as done); null in a return or a deload, or before 21 days. */
                           val guard: Double? = null) {
-        /** The lower of the two limits in SSU — LOAD-005 as its cap ÷ k, or last week + 20% before k — for planning the week (D-110). */
-        val planningSsu: Double get() {
-            if (loadExempt) return ssuLimit
-            val load = when {
+        /** LOAD-005 in SSU — its cap ÷ k, or last week + 20% before k — for planning the week (D-110); null when it doesn't apply. */
+        val loadSsu: Double? get() {
+            if (loadExempt) return null
+            return when {
                 k != null && loadCap != null && k > 0 -> loadCap / k
                 k == null && lastWeekSsu != null && lastWeekSsu > 0 -> lastWeekSsu * (1.0 + P.LOAD_005.early_week_over_week_pct / 100.0)
                 else -> null
             }
-            return if (load == null) ssuLimit else minOf(ssuLimit, load)
         }
     }
 
@@ -441,10 +441,13 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val cap = Workload.planningCap(refs.map { it.second.load }, historyDays)
         // LOAD-005 before k: last reference week within 4 weeks; after a longer gap the return rules (REG-003/004) set the dose.
         val last = if (historyDays >= P.LOAD_006.phase1_days) refs.lastOrNull { it.first >= Days.weekStart(today) - 28 }?.second?.ssu else null
-        val exempt = deload || program.justFinishedLighterWeek || returnPlan(u, program).value.inReturn
+        val inReturn = returnPlan(u, program).value.inReturn
+        val exempt = deload || program.justFinishedLighterWeek || inReturn
         val ws = Days.weekStart(today)
         val byStart = docs.all(WeekSummary).associateBy { it.weekStartDay }
-        val guard = if (exempt || historyDays < WeeklyLimits.SPIKE_GUARD_AFTER_DAYS) null
+        // The spike guard is off only in a return or a deload, whose own ramps set the dose (REG-003/004/005, DEL-003). The week after a
+        // lighter week keeps it: LOAD-005 is exempt then, so without the guard only VOL-007 would be left (independent review, finding 1).
+        val guard = if (deload || inReturn || historyDays < WeeklyLimits.SPIKE_GUARD_AFTER_DAYS) null
             else WeeklyLimits.spikeGuard((3 downTo 1).map { byStart[ws - 7 * it]?.ssu ?: 0.0 })
         return WeekLimits(ssuLimit, cap, k, last, exempt, guard)
     }
@@ -503,7 +506,8 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             ladderRungs = program.ladderRungs, coreLifts = program.coreLifts, previousBlockChoices = program.previousBlockChoices,
             modalityPreferences = prefs.modalityScores, excludedModalities = prefs.excludedModalities,
             lastWeekEquivalentMinutes = last?.equivalentMinutes ?: 0.0, hiitOptIn = prefs.hiitOptIn, conditions = u.conditions,
-            weeklySsuLimit = limits.planningSsu, weeklySsuGuard = limits.guard,
+            weeklySsuLimit = limits.ssuLimit, weeklyLoadSsu = limits.loadSsu, weeklySsuGuard = limits.guard,
+            knownLoads = docs.all(ExerciseState).filter { it.e1rm != null || it.prescription != null }.map { it.exerciseId }.toSet(),
         )
     }
 
@@ -534,14 +538,15 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val regions = regions(today).value + u.injuries.regions
         val limits = weekLimits(u, program, plan.deload)
         val k = limits.k
-        // The floor (D-110): the limits never cut a week below half of its plan, as the planner planned it — about a deload week (DEL-003).
-        val floor = minOf(WeeklyLimits.floorSsu(plan.plannedSsu), Ssu.weeklyCeiling(u.profile.level).toDouble())
+        // The floor (D-110): the limits never cut a week below half of its plan, as the planner planned it (about the training stress of a
+        // deload week, DEL-003), unless the spike guard is lower: the guard wins (independent review, finding 2).
+        val floor = WeeklyLimits.floorUnder(minOf(WeeklyLimits.floorSsu(plan.plannedSsu), Ssu.weeklyCeiling(u.profile.level).toDouble()), limits.guard)
         return ValidationContext(
             level = u.profile.level, weeksTraining = program.weeksTraining, age = u.age, screening = u.screening, jointLimits = painLimits,
             regions = regions, blockedTags = u.injuries.blockedTags, excludedIds = u.preferences.excludedIds,
             excludedModalities = u.preferences.excludedModalities, weekSetsSoFar = soFar.sets, weekSsuSoFar = soFar.ssu,
-            // The spike guard holds the limit down; the floor (about a deload week) is always allowed (D-110).
-            weeklySsuLimit = maxOf(limits.guard?.let { minOf(limits.ssuLimit, it) } ?: limits.ssuLimit, floor),
+            // At least the floor, at most the spike guard (D-110).
+            weeklySsuLimit = WeeklyLimits.bounded(limits.ssuLimit, floor, limits.guard),
             hiitThisWeekSoFar = soFar.hiitSessions, hiitBaseReady = hiitBaseReady(u, program, plannedContext(program)), sprintsThisWeekSoFar = soFar.sprints,
             hoursSinceLastHiit = lastHiit?.let { (clock.nowMs() - (it.row.endedAtMs ?: it.row.startedAtMs ?: clock.nowMs())) / 3_600_000.0 },
             hoursToNextHeavyLower = nextHeavy?.let { it * 24.0 }, heavyLegsNextDay = nextHeavy == 1,

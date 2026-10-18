@@ -66,18 +66,57 @@ class WeeklyLimitsTest {
         val mainSets = { p: List<com.personalfitnesscoach.engine.program.PlannedDay> -> p.sumOf { d -> d.slots.filter { it.spec.role == SlotRole.MAIN }.sumOf { it.sets } } }
         assertEquals(mainSets(open.days), mainSets(fitted.days))
 
-        // A limit far below: never below half of the plan (the floor, about a deload week).
-        val low = WeekPlanner.plan(input.copy(weeklySsuLimit = 0.1 * full), program).value
-        val lowSsu = low.days.sumOf { SessionValidator.sessionSsu(it.toSession()) }
-        // Never below the floor (one set's worth of rounding); the planner's own floors may stop it above it — the session check then
-        // applies the limits to each day.
-        assertTrue("not below the floor ($lowSsu)", lowSsu >= 0.5 * full - 1.5)
-        assertTrue("cut as far as the plan allows ($lowSsu)", lowSsu < 0.85 * full)
-        // The spike guard holds the week down too, but not below the floor.
+        // The spike guard holds the week down too.
         val guarded = WeekPlanner.plan(input.copy(weeklySsuLimit = full, weeklySsuGuard = 0.7 * full), program).value
         assertTrue(guarded.days.sumOf { SessionValidator.sessionSsu(it.toSession()) } <= 0.7 * full + 1e-9)
-        val belowFloor = WeekPlanner.plan(input.copy(weeklySsuLimit = full, weeklySsuGuard = 0.2 * full), program).value
-        assertTrue(belowFloor.days.sumOf { SessionValidator.sessionSsu(it.toSession()) } >= 0.5 * full - 1.5)
+        // In a deload or review week LOAD-005 and the guard don't apply, as in the session check (independent review, finding 9).
+        val reviewInput = weekInput(3, 50, program = program)
+        val review = WeekPlanner.plan(reviewInput, program).value
+        assertTrue("week 50 is the year's review week", review.deload)
+        val base = review.days.sumOf { SessionValidator.sessionSsu(it.toSession()) }
+        val r2 = WeekPlanner.plan(reviewInput.copy(weeklyLoadSsu = 0.6 * base, weeklySsuGuard = 0.6 * base), program).value
+        assertEquals(base, r2.days.sumOf { SessionValidator.sessionSsu(it.toSession()) }, 1e-9)
+        // VOL-007 itself still applies there.
+        assertTrue(WeekPlanner.plan(reviewInput.copy(weeklySsuLimit = 0.8 * base), program).value.days.sumOf { SessionValidator.sessionSsu(it.toSession()) } < base - 1e-9)
+    }
+
+    @Test fun `TC-VOL-007l the floor stops the planner at half the plan, and gives way to the spike guard`() {
+        // Two long sessions a week for an advanced lifter: enough sets that the planner could cut below half (47%) without a floor.
+        val program = Blueprint.plan(listOf(Goal.MUSCLE)).value
+        val input = weekInput(2, 6, level = Level.ADVANCED, minutes = 90, program = program)
+        val full = WeekPlanner.plan(input, program).value.days.sumOf { SessionValidator.sessionSsu(it.toSession()) }
+        fun ssu(i: com.personalfitnesscoach.engine.program.WeekInput) = WeekPlanner.plan(i, program).value.days.sumOf { SessionValidator.sessionSsu(it.toSession()) }
+        val deepest = ssu(input.copy(weeklySsuLimit = full, weeklySsuGuard = 0.01 * full))
+        assertTrue("the plan can go below half ($deepest of $full)", deepest < 0.5 * full)
+        // A limit far below: the week stops at the floor (within one set), not at what the plan allows.
+        val floored = ssu(input.copy(weeklySsuLimit = 0.01 * full))
+        assertTrue("at the floor ($floored, floor ${0.5 * full})", floored <= 0.5 * full + 1e-9 && floored >= 0.5 * full - 1.5)
+        assertTrue(floored > deepest + 1e-9)
+        // A spike guard below the floor wins: the week is cut as far as the plan allows, and the session check does the rest.
+        assertEquals(deepest, ssu(input.copy(weeklySsuLimit = full, weeklySsuGuard = 0.3 * full)), 1e-9)
+        assertEquals(30.0, WeeklyLimits.bounded(10.0, 50.0, 30.0), 1e-9)
+        assertEquals(50.0, WeeklyLimits.bounded(10.0, 50.0, null), 1e-9)
+        assertEquals(40.0, WeeklyLimits.bounded(40.0, 20.0, 60.0), 1e-9)
+        assertEquals(30.0, WeeklyLimits.floorUnder(50.0, 30.0), 1e-9)
+    }
+
+    @Test fun `TC-VOL-007k the planner shortens and eases intervals before it cuts main lifts`() {
+        val program = Blueprint.plan(listOf(Goal.STRENGTH, Goal.MUSCLE, Goal.GENERAL_FITNESS)).value
+        val input = weekInput(3, 6, program = program)
+        val open = WeekPlanner.plan(input, program).value
+        val full = open.days.sumOf { SessionValidator.sessionSsu(it.toSession()) }
+        fun mainSets(p: com.personalfitnesscoach.engine.program.WeekPlan) = p.days.sumOf { d -> d.slots.filter { it.spec.role == SlotRole.MAIN }.sumOf { it.sets } }
+        fun intervals(p: com.personalfitnesscoach.engine.program.WeekPlan) = p.days.flatMap { it.conditioning }.filter { it.protocol != null }
+        assertTrue("the week has intervals", intervals(open).isNotEmpty())
+        var mainsCut = 0
+        for (pct in 99 downTo 55) {
+            val fitted = WeekPlanner.plan(input.copy(weeklySsuLimit = pct / 100.0 * full), program).value
+            if (mainSets(fitted) < mainSets(open)) {
+                mainsCut++
+                assertTrue("$pct%: main lifts cut while intervals stay (${intervals(fitted)})", intervals(fitted).isEmpty())
+            }
+        }
+        assertTrue("main lifts are cut at some limit ($mainsCut)", mainsCut > 0)
     }
 
     @Test fun `TC-VOL-007j the limits never cut a week below its floor, and the floor never passes the level ceiling`() {
@@ -107,6 +146,35 @@ class WeeklyLimitsTest {
         // Above the floor the cap applies as usual: 5 SSU left by the cap, floor 3 → 5.
         val usual = SessionValidator.sessionSsu(SessionValidator.validate(big, c.copy(weekLoadSoFar = 900.0, weekSsuSoFar = 0.0, weekFloorSsu = 3.0)).value.session)
         assertTrue("cap applies ($usual)", usual <= 5.0 + 1e-9 && usual > 5.0 - 0.8 - 1e-9)
+    }
+
+    @Test fun `TC-VOL-007n a day made lighter by the week's limits says so with its session`() {
+        val program = Blueprint.plan(listOf(Goal.STRENGTH, Goal.MUSCLE, Goal.GENERAL_FITNESS)).value
+        val input = weekInput(3, 6, program = program)
+        val full = WeekPlanner.plan(input, program).value.days.sumOf { SessionValidator.sessionSsu(it.toSession()) }
+        val fitted = WeekPlanner.plan(input.copy(weeklySsuLimit = 0.85 * full), program).value
+        val lighter = fitted.days.filter { it.uncappedSsu != null }
+        assertTrue("some days were made lighter", lighter.isNotEmpty())
+        for (day in lighter) assertTrue(day.uncappedSsu!! > SessionValidator.sessionSsu(day.toSession()))
+        fun req(day: com.personalfitnesscoach.engine.program.PlannedDay) = com.personalfitnesscoach.engine.generation.GenerationRequest(day, Level.INTERMEDIATE, 40, 60,
+            com.personalfitnesscoach.engine.program.FULL_GYM, Tier.FULL, age = 35, e1rm = mapOf("back-squat" to 120.0, "bench-press" to 90.0, "romanian-deadlift" to 130.0))
+        val said = com.personalfitnesscoach.engine.generation.SessionGenerator.generate(req(lighter.first())).decisions.filter { it.reason == ReasonKey.WEEK_WITHIN_LIMIT }
+        assertEquals(1, said.size)
+        assertEquals(listOf(com.personalfitnesscoach.engine.registry.RuleIds.VOL_007, com.personalfitnesscoach.engine.registry.RuleIds.LOAD_005), said.single().ruleIds)
+        // A day the limits left alone says nothing.
+        val same = fitted.days.firstOrNull { it.uncappedSsu == null } ?: WeekPlanner.plan(input, program).value.days.first()
+        assertTrue(com.personalfitnesscoach.engine.generation.SessionGenerator.generate(req(same)).decisions.none { it.reason == ReasonKey.WEEK_WITHIN_LIMIT })
+    }
+
+    @Test fun `TC-LOAD-005f(3) jumping intervals made easy move to a low-impact machine`() {
+        // Jump-rope intervals, 6 min of work and 6 of rest, with too little room left to shorten them: easy work on the elliptical.
+        val s = Session(Tier.FULL, emptyList(), listOf(ConditioningBlock(com.personalfitnesscoach.engine.model.Modality.JUMP_ROPE, Zone.Z3, 6.0, 6.0,
+            hiit = true, impact = 2, protocol = HiitProtocol.SHORT, repSec = 30)))
+        val b = SessionValidator.validate(s, ValidationContext(Level.INTERMEDIATE, weeklySsuLimit = 4.6, hiitBaseReady = true)).value.session.conditioning.single()
+        assertEquals(Zone.Z1, b.zone)
+        assertEquals(0, b.impact)
+        assertTrue(b.modality != com.personalfitnesscoach.engine.model.Modality.JUMP_ROPE)
+        assertTrue(b.workMinutes >= 10.0 - 1e-9)
     }
 
     @Test fun `TC-LOAD-005f(2) hard conditioning made easy keeps its minutes where the limit allows`() {

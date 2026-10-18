@@ -394,6 +394,10 @@ object SessionGenerator {
         val weekly = v0.decisions.flatMap { it.ruleIds }.filter { it == RuleIds.VOL_007 || it == RuleIds.LOAD_005 }.distinct().sorted()
         val emptied = weekly.isNotEmpty() && v0.value.session.exercises.isEmpty() && v0.value.session.conditioning.isEmpty() &&
             (session.exercises.isNotEmpty() || session.conditioning.isNotEmpty())
+        // The week was planned within its weekly limits and this day made lighter for it (D-112): said with the session, as a cut on the
+        // day is (independent review: the planner's cut was silent).
+        r.day.uncappedSsu?.let { full -> d += Decision(DecisionKind.VOLUME_CHANGE, listOf(RuleIds.VOL_007, RuleIds.LOAD_005), ReasonKey.WEEK_WITHIN_LIMIT,
+            inputs = mapOf("plannedSsu" to Num.round1(full)), outputs = mapOf("ssu" to Num.round1(SessionValidator.sessionSsu(r.day.toSession())))) }
         if (weekly.isNotEmpty()) d += Decision(DecisionKind.SAFETY, weekly, ReasonKey.PLAN_CAPPED_BY_LOAD,
             inputs = mapOf("weekShare" to Num.round2(ctx.weekShare)), outputs = mapOf("recoveryDay" to emptied))
         val v = if (emptied) EngineResult(v0.value.copy(session = v0.value.session.copy(tier = Tier.RECOVERY, boneLoading = null)), v0.decisions) else v0

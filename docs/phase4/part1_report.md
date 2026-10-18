@@ -73,7 +73,19 @@ The fix makes the limits less strict in three ways:
 **What remains.** Someone who trained very little for three weeks can get up to half of the planned week at once (the floor). Each session is still its normal size, and after 7 or more days off the return ramp applies.
 
 ## Independent review
-REVIEW_SECTION
+A reviewer who had not seen the work being built checked the proposal. It read the code, ran the tests and wrote its own probe tests and simulations. It found **1 high, 4 medium and 4 low** problems, and said the proposal was not yet safe to put to you. All nine are fixed:
+
+| # | What was wrong | Fix |
+|---|---|---|
+| 1 (high) | In the week after a lighter week, the guard against sudden jumps was switched off by mistake. LOAD-005 is also off that week, so one test week was allowed about 4 times the three weeks before it | The guard is off only in a return ramp or a deload, which have their own rules. A test checks the week after a lighter week |
+| 2 (medium) | The floor (half the plan) could override the guard, so a week could still be 2.4–3.9 times the three before it. Also, "about a deload week" is only true for the total training stress, not for how hard the sessions are | The guard now always wins: the floor never goes above it. The report says plainly what the floor is |
+| 3 (medium) | When the planner trimmed a week in advance, you were never told | Each day the planner made lighter says so in its preview, with a clearer reason |
+| 4 (medium) | Some tests could pass without proving anything, and nothing tested how the guard is switched on and off | New tests cover the guard's on/off cases, the floor actually stopping the planner, and the load limit working with real history. The year simulation now fails if any week goes above the guard, and it has more ways of turning up: illness reported at the check-in, a warning-sign stop, and weeks of one session each |
+| 5 (medium) | The planner cut main lifts before shortening intervals | Intervals are now shortened, then made easy, before any main lift is touched |
+| 6 (low) | Reference weeks could be months old | Only the last 8 weeks count |
+| 7 (low) | Making jump-rope intervals "easy" kept the jumping, for longer | Easy work moves to a low-impact machine, or to a circuit without jumps |
+| 8 (low) | The planner counted a weight still being found as all its sets, while the session check counts two | Both count two |
+| 9 (low) | Some comments didn't match the code. Review weeks were treated differently by the planner and the session check | Fixed and aligned |
 
 ## How it was checked
 TESTS_SECTION

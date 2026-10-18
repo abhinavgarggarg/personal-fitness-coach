@@ -36,7 +36,7 @@
     <string name="reason_workload_spike_flag">Your training load rose quickly this week, so the plan holds back a little.</string>
     <string name="reason_monotony_flag">Your days have been very similar in effort, so some variety is added.</string>
     <string name="reason_plan_capped_by_load">This week\'s plan is kept under your weekly load limit.</string>
-    <string name="reason_week_within_limit">This week was planned a little lighter, to stay within your weekly training limit.</string>
+    <string name="reason_week_within_limit">This week is planned within your weekly training limit, so some sets or cardio are shorter than in the full plan. They come back as your recent weeks build up.</string>
     <string name="reason_deload_now">This week is a lighter week: your body has been showing signs it needs one.</string>
     <string name="reason_lighter_week">A lighter week: a few sessions are kept at Modified to let you recover.</string>
     <string name="reason_deload_block_end">A lighter week to finish the block before the next one starts.</string>

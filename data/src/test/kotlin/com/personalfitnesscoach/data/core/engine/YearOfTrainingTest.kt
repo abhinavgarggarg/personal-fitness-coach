@@ -25,6 +25,7 @@ import com.personalfitnesscoach.engine.progression.CalibrationStep
 import com.personalfitnesscoach.engine.registry.RuleIds
 import com.personalfitnesscoach.engine.safety.ClearanceScope
 import com.personalfitnesscoach.engine.safety.SessionValidator
+import com.personalfitnesscoach.engine.safety.WeeklyLimits
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,23 +33,38 @@ import java.util.Random
 
 /**
  * Phase 4 Part 1 (D-110, D-111): a year of training through the data layer for the Phase 2 personas and the condition personas, under
- * three ways of turning up — every planned session; a missed week and a week cut short by illness; about 4 in 5 sessions at random.
- * It measures what the weekly limits (VOL-007, LOAD-005) keep of the planned work, how often a day is emptied, how the main lifts
- * progress, and that every session shown passes the validator against the week as stored (SAF-008). Each run is reported as a
- * "Measured" line on CI, so a change to the limits is measured, not guessed.
+ * four ways of turning up — every planned session; interrupted (a missed week, a week cut short by an illness reported at the check-in,
+ * and a warning sign that stops training until it is confirmed, each twice); about 4 in 5 sessions at random; and sparse (one session a
+ * week for ten weeks, then every session). It measures what the weekly limits (VOL-007, LOAD-005) keep of the planned work, how often a
+ * day is emptied, how the main lifts progress, the largest week against the three before it, and that every session shown passes the
+ * validator against the week as stored (SAF-008). Each run is reported as a "Measured" line on CI, so a change to the limits is
+ * measured, not guessed. It fails if a week outside a return or a deload goes above the spike guard (independent review, Phase 4 Part 1).
  */
 class YearOfTrainingTest {
-    enum class Turnout { EVERY, INTERRUPTED, MOSTLY }
+    enum class Turnout { EVERY, INTERRUPTED, MOSTLY, SPARSE }
 
     data class Persona(val name: String, val level: Level, val days: Int, val minutes: Int, val birthYear: Int, val gym: Set<String>,
                        val priorities: List<Goal>, val conditions: List<StoredCondition> = emptyList(), val poorSleep: Boolean = false,
                        val excludedModalities: Set<Modality> = emptySet(), val strength: Double = 1.0)
 
-    data class Week(var planned: Double = 0.0, var kept: Double = 0.0, var sessions: Int = 0, var recovery: Int = 0, var capped: Int = 0, var deload: Boolean = false, var byVol: Int = 0, var byLoad: Int = 0, var limit: Double? = null, var loadCap: Double? = null, var k: Double? = null, var done: Double = 0.0)
+    data class Week(var planned: Double = 0.0, var kept: Double = 0.0, var sessions: Int = 0, var recovery: Int = 0, var capped: Int = 0, var deload: Boolean = false, var byVol: Int = 0, var byLoad: Int = 0, var limit: Double? = null, var loadCap: Double? = null, var k: Double? = null, var done: Double = 0.0,
+                    /** A session this week was in a return to training (REG-003/004/005) or a lighter week after one. */
+                    var inReturn: Boolean = false)
 
     data class Result(val weeks: Map<Int, Week>, val violations: List<String>, val e1rmGain: Double?) {
         fun kept(range: IntRange): Double? = weeks.filterKeys { it in range }.values.let { w ->
             val p = w.sumOf { it.planned }; if (p <= 0.0) null else w.sumOf { it.kept } / p }
+
+        /**
+         * Each week's training stress as done against the mean of the three calendar weeks before it as done (missed weeks 0), where the
+         * spike guard applies: from week 3 (21 days), outside returns and deloads, after weeks with some training.
+         */
+        fun spikes(): List<Pair<Int, Double>> = weeks.keys.filter { it >= 3 }.mapNotNull { i ->
+            val w = weeks.getValue(i)
+            if (w.deload || w.inReturn || w.done <= 0.0) return@mapNotNull null
+            val mean = (1..3).sumOf { weeks[i - it]?.done ?: 0.0 } / 3.0
+            if (mean <= 0.0) null else i to w.done / mean
+        }
     }
 
     private class Body(level: Level, private val scale: Double) {
@@ -64,6 +80,8 @@ class YearOfTrainingTest {
         // A missed week (week 6), and a week cut short after its first session by illness (week 14), then again in the second half.
         Turnout.INTERRUPTED -> week != 5 && week != 31 && !((week == 13 || week == 39) && nthThisWeek >= 1)
         Turnout.MOSTLY -> rnd.nextInt(5) != 0
+        // One session a week for ten weeks (weeks 4-13), then every session: the limits must not let a full week in at once.
+        Turnout.SPARSE -> week !in 4..13 || nthThisWeek == 0
     }
 
     private suspend fun year(p: Persona, turnout: Turnout, weeks: Int, seed: Long): Result {
@@ -75,14 +93,41 @@ class YearOfTrainingTest {
         val out = sortedMapOf<Int, Week>()
         val violations = ArrayList<String>()
         val firstE1rm = HashMap<String, Double>()
+        var stopDay: Int? = null
+        val ill = HashSet<Int>()
+        val stopped = HashSet<Int>()
         for (day in Fixtures.MONDAY until Fixtures.MONDAY + 7 * weeks) {
             clock.setDay(day, hour = 7)
             val wk = (day - Fixtures.MONDAY) / 7
+            // A warning-sign stop lasts until it is confirmed (SAF-002): here two days later.
+            val stop = stopDay
+            if (stop != null) {
+                if (day < stop + 2) continue
+                d.confirmStopResolved()
+                stopDay = null
+            }
             val t = checkNotNull(d.planToday())
             val next = t.next ?: continue
             if (t.week.days.none { it.weekday == Days.weekday(day) }) continue
             val week = out.getOrPut(wk) { Week() }
-            if (!turnsUp(turnout, wk, week.sessions + week.recovery, rnd)) continue
+            val nth = week.sessions + week.recovery
+            if (turnout == Turnout.INTERRUPTED) {
+                // Ill on the second session day of weeks 13 and 39 (SAF-007), reported at the check-in; the rest of that week is missed and
+                // the return after it follows REG-005.
+                if ((wk == 13 || wk == 39) && nth == 1 && ill.add(wk)) {
+                    clock.setDay(day, hour = 18)
+                    d.checkIns.record(t.user, CheckIn(3, 2, 3, 3), illnessSymptoms = setOf(com.personalfitnesscoach.engine.safety.RedFlags.SYSTEMIC.first()))
+                    continue
+                }
+                // A warning sign at the check-in of the first session of weeks 20 and 44 (SAF-002).
+                if ((wk == 20 || wk == 44) && nth == 0 && stopped.add(wk)) {
+                    clock.setDay(day, hour = 18)
+                    d.checkIns.record(t.user, CheckIn(3, 3, 3, 3), redFlags = setOf("chest_pain_pressure_tightness"))
+                    stopDay = day
+                    continue
+                }
+            }
+            if (!turnsUp(turnout, wk, nth, rnd)) continue
             clock.setDay(day, hour = 18)
             val checkIn = if (p.poorSleep && rnd.nextBoolean()) CheckIn(2, 2, 3, 2, sleepHours = 5.0) else CheckIn(3 + rnd.nextInt(2), 3 + rnd.nextInt(2), 3, 4)
             val ci = d.checkIns.record(t.user, checkIn)
@@ -92,8 +137,10 @@ class YearOfTrainingTest {
             val vctx = d.bridge.validationContext(t.user, t.program, t.week, next)
             SessionValidator.violations(w.validated, vctx.copy(fullTierWorkingSets = w.fullTierWorkingSets)).forEach { violations += "${p.name} ${Days.date(day)} $it" }
             if (week.limit == null) { week.limit = vctx.weeklySsuLimit; week.loadCap = vctx.weeklyLoadCap; week.k = vctx.k }
+            week.inReturn = week.inReturn || d.bridge.returnPlan(t.user, t.program).value.inReturn
             // What the programme asked for: the day as planned before the weekly limits (the planner now fits the week within them).
-            val uncapped = WeekPlanner.plan(d.bridge.weekInput(t.user, t.program).copy(weeklySsuLimit = null, weeklySsuGuard = null), d.bridge.blueprint(t.program)).value
+            val uncapped = WeekPlanner.plan(d.bridge.weekInput(t.user, t.program).copy(weeklySsuLimit = null, weeklyLoadSsu = null, weeklySsuGuard = null),
+                d.bridge.blueprint(t.program)).value
                 .days.firstOrNull { it.weekday == next.weekday && it.template == next.template } ?: next
             week.planned += SessionValidator.sessionSsu(uncapped.toSession())
             week.kept += SessionValidator.sessionSsu(w.validated)
@@ -170,14 +217,17 @@ class YearOfTrainingTest {
         val trained = r.weeks.values.filter { it.sessions + it.recovery > 0 }
         val underHalf = trained.count { it.planned > 0 && it.kept < 0.5 * it.planned }
         val capped = trained.sumOf { it.capped }; val days = trained.sumOf { it.sessions + it.recovery }
+        val spikes = r.spikes()
         println("METRIC year ${p.name}, ${t.name.lowercase()}: planned work kept by quarter ${quarters.joinToString("/")}%; weeks under half $underHalf of ${trained.size}; " +
             "sessions cut by the limits $capped of $days (VOL-007 ${trained.sumOf { it.byVol }}, LOAD-005 ${trained.sumOf { it.byLoad }}); recovery days ${trained.sumOf { it.recovery }}; deload weeks ${trained.count { it.deload }}; " +
-            "median e1RM change ${r.e1rmGain?.let { "%+.0f%%".format(it * 100) } ?: "-"}")
+            "median e1RM change ${r.e1rmGain?.let { "%+.0f%%".format(it * 100) } ?: "-"}; largest week ${"%.2f".format(spikes.maxOfOrNull { it.second } ?: 0.0)}x the 3 before " +
+            "(${spikes.count { it.second > 1.5 + 1e-9 }} above 1.5x)")
     }
 
     @Test fun `a year of training - what the weekly limits keep`() = runBlocking {
         val weeks = (System.getenv("PFC_SIM_WEEKS") ?: "52").toInt()
         val all = ArrayList<String>()
+        val spikes = ArrayList<String>()
         // For local experiments: PFC_SIM_ONLY picks personas by name prefix, PFC_SIM_TURNOUT one way of turning up.
         val only = System.getenv("PFC_SIM_ONLY")?.split(",")
         val turnout = System.getenv("PFC_SIM_TURNOUT")?.let { Turnout.valueOf(it) }
@@ -186,7 +236,10 @@ class YearOfTrainingTest {
             val r = year(p, t, weeks, 1000L + i * 10 + t.ordinal)
             report(p, t, r, weeks)
             all += r.violations
+            // The spike guard (D-112): outside returns and deloads, no week above twice the three before it as done.
+            r.spikes().filter { it.second > WeeklyLimits.SPIKE_GUARD + 1e-6 }.forEach { (w, x) -> spikes += "${p.name} ${t.name} week $w: ${"%.2f".format(x)}x" }
         }
         assertTrue("every session shown passes the validator: ${all.take(5)}", all.isEmpty())
+        assertTrue("no week above the spike guard: ${spikes.take(5)}", spikes.isEmpty())
     }
 }

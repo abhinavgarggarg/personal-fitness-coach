@@ -24,7 +24,7 @@
       "to_version": "2.0.0",
       "change": "MAJOR",
       "reason": "Twelve-month simulations (D-110): measured against the weeks actually done, the relative limit falls whenever turnout is below about 87% (1 / 1.15), calibration weeks set a low starting point, and conditioning blocks dropped whole left weeks far below their limit. Past weeks now count at the level of the sessions done, a weight being found counts as planned, the week is planned within the limit, conditioning is made easy before it is dropped, and the limit never cuts a week below half of its plan; a spike guard bounds the loosening.",
-      "statement": "SSU = sum over sets C_ex x E_RIR + sum over conditioning t_min x Z_zone x J_modality. Weekly SSU <= level ceiling and (after 4 weeks) <= 1.15 x the mean of the last 3 reference weeks. Reference weeks: a week with fewer than half of its planned sessions done is left out, like a missed week; a week with fewer sessions done than planned counts at the level of the sessions done (its SSU x planned / done sessions). A weight still being found counts as 2 sets at the target effort, in the plan and once done. The week is planned within the limit: other exercises' sets first, then steady conditioning shortened by up to 40% (not below 10 minutes) or made easy (Z1), then main lifts; a session over its share of the week is cut in the same order, conditioning made easy before it is dropped. The weekly limits never cut a week below 50% of its plan's SSU (about a deload week, DEL-003). Above that floor a week is never more than 2 x the mean SSU of the last 3 weeks as done (missed weeks 0), from 3 weeks after the first session and not during a return or deload. Personal factor k = median(sRPE load / SSU) after 4 weeks.",
+      "statement": "SSU = sum over sets C_ex x E_RIR + sum over conditioning t_min x Z_zone x J_modality. Weekly SSU <= level ceiling and (after 4 weeks) <= 1.15 x the mean of the last 3 reference weeks. Reference weeks are the finished weeks of the last 8: a week with fewer than half of its planned sessions done is left out, like a missed week; a week with fewer sessions done than planned counts at the level of the sessions done (its SSU x planned / done sessions). A weight still being found counts as 2 sets at the target effort, in the plan and once done. The week is planned within the limit: other exercises' sets first, then steady conditioning shortened by up to 40% (not below 10 minutes) or made easy (Z1), then interval blocks shortened by whole repeats (up to 40%) or made easy, then main lifts; a session over its share of the week is cut in the same order, conditioning made easy (Z1, on a low-impact modality) before it is dropped. The weekly limits never cut a week below 50% of its plan's SSU (about the training stress of a deload week, DEL-003). A spike guard caps every week, floor included, at 2 x the mean SSU of the last 3 weeks as done (missed weeks 0), from 3 weeks after the first session and not during a return or a deload, whose own ramps set the dose. Personal factor k = median(sRPE load / SSU) of the last 4 reference weeks.",
       "parameters_replace": {
         "C": {
           "isolation_or_core": 0.5,
@@ -59,7 +59,8 @@
         "plan_floor_pct": 50,
         "spike_guard_multiplier": 2.0,
         "spike_guard_after_days": 21,
-        "calibration_sets_counted": 2
+        "calibration_sets_counted": 2,
+        "reference_window_weeks": 8
       },
       "evidence_add": [
         "PFCSim2026"
@@ -68,7 +69,12 @@
       "tests_add": [
         "TC-VOL-007h",
         "TC-VOL-007i",
-        "TC-VOL-007j"
+        "TC-VOL-007j",
+        "TC-VOL-007k",
+        "TC-VOL-007l",
+        "TC-VOL-007m",
+        "TC-VOL-007n",
+        "TC-VOL-007o"
       ]
     },
     {
@@ -77,7 +83,7 @@
       "to_version": "2.0.0",
       "change": "MAJOR",
       "reason": "The same reference weeks and floor as VOL-007 (D-110), so the two weekly limits agree.",
-      "statement": "Predicted weekly load (k x planned SSU) <= 1.20 x mean of the last 3 reference weeks (VOL-007's reference weeks; a week with fewer sessions than planned counts its load x planned / done sessions); before 4 weeks <= +20% over the last reference week; deload/return ramps exempt; never cuts a week below VOL-007's plan floor.",
+      "statement": "Predicted weekly load (k x planned SSU) <= 1.20 x mean of the last 3 reference weeks (VOL-007's reference weeks; a week with fewer sessions than planned counts its load x planned / done sessions); before 4 weeks <= +20% over the last reference week; deload/return ramps exempt; never cuts a week below VOL-007's plan floor (which never exceeds VOL-007's spike guard).",
       "evidence_add": [
         "Impellizzeri2021",
         "PFCSim2026"
