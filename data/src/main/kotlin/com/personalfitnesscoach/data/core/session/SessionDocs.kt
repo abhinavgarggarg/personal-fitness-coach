@@ -145,6 +145,12 @@ data class WorkoutDoc(
     val effortByFeel: Boolean = false,
     /** The session was ended early by the user, by time or by the pain gate (Phase 2 state PARTIAL). */
     val endedEarly: Boolean = false,
+    /**
+     * VOL-007 reference weeks (D-112): the day's training stress at the FULL tier as the week planned it, and the session as offered
+     * (after the readiness tier and the session check). Null for older sessions and sessions without a planned day.
+     */
+    val plannedSsu: Double? = null,
+    val offeredSsu: Double? = null,
 ) {
     init {
         require(weekday in 0..6) { "weekday is 0–6" }
@@ -171,6 +177,7 @@ data class WorkoutDoc(
         objs("balanceDrills", balanceDrills.map { d -> obj { d.write(this) } })
         boneLoading?.let { b -> put("boneLoading", obj { put("minutes", b.minutes); put("landings", b.landings); put("variant", b.variant) }) }
         flag("effortByFeel", effortByFeel); flag("endedEarly", endedEarly)
+        plannedSsu?.let { put("plannedSsu", it) }; offeredSsu?.let { put("offeredSsu", it) }
     }.toString()
 
     companion object {
@@ -187,7 +194,8 @@ data class WorkoutDoc(
                 o.bool("inDeload"), o.bool("express"), o.bool("awayFromGym"), o.dblOrNull("plannedSessionRpe"), o.bool("stoppedBySafety"),
                 DrillRef.list(o, "warmupDrills"), DrillRef.list(o, "cooldownDrills"), DrillRef.list(o, "balanceDrills"),
                 o.objOrNull("boneLoading")?.let { b -> BoneRef(b.dbl("minutes"), b.int("landings"), b.enum("variant")) },
-                o.bool("effortByFeel"), o.bool("endedEarly"))
+                o.bool("effortByFeel"), o.bool("endedEarly"), o.dblOrNull("plannedSsu")?.takeIf { it in 0.0..1000.0 },
+                o.dblOrNull("offeredSsu")?.takeIf { it in 0.0..1000.0 })
         }
     }
 }

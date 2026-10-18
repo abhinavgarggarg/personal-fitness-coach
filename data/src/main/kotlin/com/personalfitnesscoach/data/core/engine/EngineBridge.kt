@@ -128,6 +128,9 @@ data class Totals(
     val carryOrRotation: Set<Pattern>,
     val sprints: Int,
     val impactSessions: Int,
+    /** VOL-007 / LOAD-005 reference totals: as [ssu] and [workload], with sessions the readiness check made lighter at their planned size (D-112). */
+    val referenceSsu: Double = ssu,
+    val referenceLoad: Double = workload,
 )
 
 /** Today's limits from stored safety state (SAF-002 stop, REG return, DEL-002 lighter week). */
@@ -305,7 +308,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val done = log.done(fromDay, toDay)
         val walks = docs.between(WalkRecord, fromDay, toDay)
         var z1 = 0.0; var z2p = 0.0; var hiitWork = 0.0; var hiit = 0; var ssu = 0.0; var load = 0.0; var longestZ1 = 0.0
-        var sprints = 0; var impact = 0
+        var sprints = 0; var impact = 0; var refSsu = 0.0; var refLoad = 0.0
         val sets = HashMap<Muscle, Double>()
         val aerobic = ArrayList<AerobicBlock>()
         val carryRot = HashSet<Pattern>()
@@ -320,10 +323,14 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             }
             if (session.hiitBlocks > 0) hiit++
             if (blocks.any { it.impact > 0 } || session.exercises.any { it.exercise.impact > 0 }) impact++
-            ssu += SessionValidator.sessionSsu(session) + calibrationSsu(w)
+            val done = SessionValidator.sessionSsu(session) + calibrationSsu(w)
+            ssu += done
             val rpe = w.row.sessionRpe
             val minutes = w.row.actualMinutes
-            if (rpe != null && minutes != null) load += Workload.sessionLoad(rpe, minutes)
+            val sessionLoad = if (rpe != null && minutes != null) Workload.sessionLoad(rpe, minutes) else 0.0
+            load += sessionLoad
+            val scale = readinessScale(w, done)
+            refSsu += done * scale; refLoad += sessionLoad * scale
             Volume.weekly(session.exercises.map { it.exercise to it.sets.toDouble() }).forEach { (m, s) -> sets[m] = (sets[m] ?: 0.0) + s }
             session.exercises.map { it.exercise.pattern }.filterTo(carryRot) { it == Pattern.LOADED_CARRY || it == Pattern.ROTATION }
         }
@@ -331,7 +338,22 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val walking = walks.groupBy { it.day }.values.sumOf { day ->
             BriskWalks.z1Minutes(emptyList(), day.map { LoggedWalk(it.startMinute, it.minutes, it.brisk) }).value }
         return Totals(done.size, z1 + z2p, z1, z2p, hiit, hiitWork, walking, Aerobic.whoEquivalentMinutes(aerobic, walking), ssu, load, sets,
-            longestZ1, carryRot, sprints, impact)
+            longestZ1, carryRot, sprints, impact, refSsu, refLoad)
+    }
+
+    /**
+     * VOL-007 / LOAD-005 reference weeks (D-112): a session the readiness check (or the illness gate) made lighter counts at the size it
+     * was planned, in proportion to how much of the offered session was done. Otherwise someone who often sleeps badly is cut twice —
+     * the readiness check lightens the bad days, then the weekly limits follow those lighter weeks and lighten the good ones too (year
+     * simulations, independent re-check). Never above the planned size; 1 for a FULL session, an older session or one with nothing offered.
+     * The spike guard still uses the weeks as done.
+     */
+    fun readinessScale(w: StoredWorkout, done: Double): Double {
+        if (w.row.tier == null || w.row.tier == Tier.FULL.name) return 1.0
+        val planned = w.doc.plannedSsu ?: return 1.0
+        val offered = w.doc.offeredSsu ?: return 1.0
+        if (offered <= 0.0 || done <= 0.0 || planned <= offered) return 1.0
+        return minOf(planned / offered, planned / done)
     }
 
     /**
@@ -354,7 +376,8 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
      */
     fun calibrationSsu(w: StoredWorkout): Double = Ssu.sets(w.exercises.flatMap { e ->
         val ex = Library[e.exerciseId] ?: return@flatMap emptyList()
-        List(minOf(e.calibration.size, SessionValidator.CALIBRATION_SETS_COUNTED)) { ex.costClass to e.doc.targetRir }
+        // Never more than the plan counted for it (min(sets, 2)): a one-set ramp that ran to five sets still counts one (re-check).
+        List(minOf(e.calibration.size, SessionValidator.CALIBRATION_SETS_COUNTED, maxOf(1, e.doc.sets))) { ex.costClass to e.doc.targetRir }
     })
 
     fun doneSession(w: StoredWorkout): com.personalfitnesscoach.engine.safety.Session {
@@ -413,7 +436,8 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val weeks = docs.all(WeekSummary).filter { it.weekStartDay < ws && it.weekStartDay >= ws - 7 * WeeklyLimits.REFERENCE_WINDOW_WEEKS }
             .sortedBy { it.weekStartDay }
         return weeks.mapNotNull { w ->
-            WeeklyLimits.reference(listOf(WeeklyLimits.Week(w.planned, w.completed, w.ssu, w.workload))).firstOrNull()?.let { w.weekStartDay to it }
+            WeeklyLimits.reference(listOf(WeeklyLimits.Week(w.planned, w.completed, w.referenceSsu ?: w.ssu, w.referenceLoad ?: w.workload)))
+                .firstOrNull()?.let { w.weekStartDay to it }
         }
     }
 

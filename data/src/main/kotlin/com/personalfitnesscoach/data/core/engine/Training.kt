@@ -227,7 +227,8 @@ class ProgramClock(private val docs: Docs, private val log: SessionLog, private 
             val step = if (prog.insertedDeload(ctx) && wasDeload) Blueprint.ClockStep(prog.clockWeek, Blueprint.ClockAction.PAUSE) // the block waits for an inserted deload
                 else Blueprint.advanceClock(program, prog.clockWeek, planned, t.completed, disruption, breakDays).also { d += it.decisions }.value
             docs.put(WeekSummary, WeekSummary(ws, prog.clockWeek, planned, t.completed, t.aerobicMinutes, t.z1Minutes, t.z2PlusMinutes, t.hiitSessions,
-                t.hiitWorkMinutes, t.walkingMinutes, t.equivalentMinutes, t.ssu, t.workload, wasDeload, step.action))
+                t.hiitWorkMinutes, t.walkingMinutes, t.equivalentMinutes, t.ssu, t.workload, wasDeload, step.action,
+                referenceSsu = t.referenceSsu, referenceLoad = t.referenceLoad))
 
             val nextCtx = Blueprint.context(program, step.nextClockWeek)
             val newBlock = nextCtx.blockIndex != prog.blockIndex

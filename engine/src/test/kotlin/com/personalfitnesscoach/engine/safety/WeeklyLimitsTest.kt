@@ -113,7 +113,13 @@ class WeeklyLimitsTest {
             val fitted = WeekPlanner.plan(input.copy(weeklySsuLimit = pct / 100.0 * full), program).value
             if (mainSets(fitted) < mainSets(open)) {
                 mainsCut++
-                assertTrue("$pct%: main lifts cut while intervals stay (${intervals(fitted)})", intervals(fitted).isEmpty())
+                // Every interval block left is already as short as TIME-002 allows (60% of its repeats); making it easy would not have
+                // lowered its training stress, so it is left for the session check.
+                for ((di, day) in fitted.days.withIndex()) for (b in day.conditioning.filter { it.protocol != null }) {
+                    val orig = open.days[di].conditioning.first { it.modality == b.modality && it.protocol == b.protocol }
+                    assertTrue("$pct%: main lifts cut while ${b.modality} intervals keep ${b.interval!!.reps} of ${orig.interval!!.reps} repeats",
+                        b.interval!!.reps <= Math.ceil(orig.interval!!.reps * 0.6 - 1e-9))
+                }
             }
         }
         assertTrue("main lifts are cut at some limit ($mainsCut)", mainsCut > 0)

@@ -89,7 +89,8 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
             workout.conditioningFirst, workout.mobilityMinutes, workout.balanceDrills.sumOf { it.seconds } / 60.0, workout.fullTierWorkingSets, inDeload,
             express, awayFromGym, plannedRpe, warmupDrills = workout.warmupDrills.map { DrillRef.of(it) }, cooldownDrills = workout.cooldown.map { DrillRef.of(it) },
             balanceDrills = workout.balanceDrills.map { DrillRef.of(it) },
-            boneLoading = workout.boneLoading?.let { BoneRef(it.minutes, it.landings, it.variant) }, effortByFeel = workout.effortByFeel)
+            boneLoading = workout.boneLoading?.let { BoneRef(it.minutes, it.landings, it.variant) }, effortByFeel = workout.effortByFeel,
+            plannedSsu = workout.plannedSsu, offeredSsu = workout.plannedSsu?.let { com.personalfitnesscoach.engine.safety.SessionValidator.sessionSsu(workout.validated) })
         val id = store.insertWorkout(WorkoutRow(day = day, status = Status.IN_PROGRESS, template = template.name, tier = workout.tier.name,
             startedAtMs = now, registryVersion = Registry.VERSION, json = doc.encode()))
         workout.items.forEachIndexed { i, it ->

@@ -119,6 +119,12 @@ data class WeekSummary(
     val workload: Double = 0.0,
     val deload: Boolean = false,
     val clockAction: Blueprint.ClockAction? = null,
+    /**
+     * VOL-007 / LOAD-005 reference totals (D-112): as [ssu] and [workload], with each session the readiness check made lighter counted
+     * at its planned size (scaled by how much of it was done). Null for weeks closed before this was kept.
+     */
+    val referenceSsu: Double? = null,
+    val referenceLoad: Double? = null,
 ) {
     companion object Codec : DocCodec<WeekSummary>("week", 1, RecordKind.DERIVED, setOf(DataItem.LOGGED_SETS, DataItem.SESSION_RPE_DURATION,
         DataItem.DAILY_STEPS_PHONE_SENSOR), "Weekly totals") {
@@ -130,10 +136,13 @@ data class WeekSummary(
             put("hiitSessions", v.hiitSessions); put("hiitWorkMinutes", v.hiitWorkMinutes); put("walkingMinutes", v.walkingMinutes)
             put("equivalentMinutes", v.equivalentMinutes); put("ssu", v.ssu); put("workload", v.workload); flag("deload", v.deload)
             put("clockAction", v.clockAction)
+            v.referenceSsu?.let { put("referenceSsu", it) }; v.referenceLoad?.let { put("referenceLoad", it) }
+            Unit
         }
         override fun read(o: JsonObject, version: Int) = WeekSummary(o.int("weekStartDay"), o.int("clockWeek"), o.int("planned"), o.int("completed"),
             o.dbl("aerobicMinutes"), o.dbl("z1Minutes"), o.dbl("z2PlusMinutes"), o.int("hiitSessions"), o.dbl("hiitWorkMinutes"),
-            o.dbl("walkingMinutes"), o.dbl("equivalentMinutes"), o.dbl("ssu"), o.dbl("workload"), o.bool("deload"), o.enumOrNull<Blueprint.ClockAction>("clockAction"))
+            o.dbl("walkingMinutes"), o.dbl("equivalentMinutes"), o.dbl("ssu"), o.dbl("workload"), o.bool("deload"), o.enumOrNull<Blueprint.ClockAction>("clockAction"),
+            o.dblOrNull("referenceSsu"), o.dblOrNull("referenceLoad"))
     }
 }
 

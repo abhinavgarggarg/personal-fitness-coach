@@ -902,15 +902,21 @@ object WeekPlanner {
             return true
         }
         fun easeIntervals(): Boolean {
+            val tried = HashSet<Pair<Int, Int>>()
             while (total() > budget + 1e-9) {
-                val (di, bi) = pick { _, _, b -> !steady(b) } ?: return false
+                val (di, bi) = pick { di, bi, b -> !steady(b) && (di to bi) !in tried } ?: return false
+                tried += di to bi
                 val b = cur[di].conditioning[bi]
-                val minutes = maxOf(P.FREQ_005.min_block_minutes.toDouble(), b.workMinutes + b.restMinutes)
-                // Easy work on the same machine when it is low-impact, or a circuit without jumps; other impact work (jump rope) is left out
-                // rather than made "easy" (kept as an empty block until the end, so blocks keep their places for the give-back).
+                // Easy work for the block's own time (work and rest, never longer) on the same machine when it is low-impact, or a circuit
+                // without jumps; other impact work (jump rope) is left out rather than made "easy" (kept as an empty block until the end, so
+                // blocks keep their places for the give-back). Only when that lowers the block's training stress: otherwise the block is left
+                // for the session check, whose own easier replacements (RDY-004, D-039) then apply (re-check: padding short interval blocks to
+                // 10 easy minutes made some weeks heavier, not lighter, on days the readiness check changes anyway).
                 val keep = b.impact == 0 || b.modality == Modality.BODYWEIGHT_CIRCUIT
-                setBlock(di, bi, b.copy(zone = Zone.Z1, interval = null, hiit = false, impact = 0, restMinutes = 0.0, workMinutes = if (keep) minutes else 0.0,
-                    purpose = ConditioningPurpose.STEADY))
+                val eased = b.copy(zone = Zone.Z1, interval = null, hiit = false, impact = 0, restMinutes = 0.0,
+                    workMinutes = if (keep) b.workMinutes + b.restMinutes else 0.0, purpose = ConditioningPurpose.STEADY)
+                if (blockSsu(eased) >= blockSsu(b) - 1e-9) continue
+                setBlock(di, bi, eased)
                 removed++
             }
             return true

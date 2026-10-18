@@ -176,6 +176,11 @@ data class Workout(
     val followCareProvider: Set<String> = emptySet(),
     /** EQ-003: the moves for each bodyweight-circuit block (aligned with `conditioning`; null for other modalities). */
     val circuits: List<com.personalfitnesscoach.engine.conditioning.CircuitPlan?> = emptyList(),
+    /**
+     * The day's training stress (SSU) at the FULL tier as the week planned it (VOL-007), so a session the readiness check made lighter
+     * counts at its planned size in the weekly limits' reference weeks (D-112). Null when there is no planned day (express, rest).
+     */
+    val plannedSsu: Double? = null,
 )
 
 /**
@@ -433,7 +438,8 @@ object SessionGenerator {
         // 10) Output.
         val w = Workout(v.value.session.tier, final, v.value.session.conditioning, finalWarmup, drills.value, cooldown.value, Num.round1(minutes),
             fit.value.expressOffered, null, v.value.fallbackUsed, v.value.session, fullSets, intervals, r.day.conditioningPriority && !c.strengthBeforeCardio,
-            mobilityMin, balance.value, c.prompts, c.stopSigns, c.effortByFeel, finalBone, circuits = circuits)
+            mobilityMin, balance.value, c.prompts, c.stopSigns, c.effortByFeel, finalBone, circuits = circuits,
+            plannedSsu = SessionValidator.sessionSsu(r.day.toSession()))
         return EngineResult(w, d + done(r, w.tier, false))
     }
 

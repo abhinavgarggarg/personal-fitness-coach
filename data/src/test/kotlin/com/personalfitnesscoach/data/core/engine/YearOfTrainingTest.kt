@@ -48,8 +48,8 @@ class YearOfTrainingTest {
                        val excludedModalities: Set<Modality> = emptySet(), val strength: Double = 1.0)
 
     data class Week(var planned: Double = 0.0, var kept: Double = 0.0, var sessions: Int = 0, var recovery: Int = 0, var capped: Int = 0, var deload: Boolean = false, var byVol: Int = 0, var byLoad: Int = 0, var limit: Double? = null, var loadCap: Double? = null, var k: Double? = null, var done: Double = 0.0,
-                    /** A session this week was in a return to training (REG-003/004/005) or a lighter week after one. */
-                    var inReturn: Boolean = false)
+                    /** Sessions this week in a return to training (REG-003/004/005), where the spike guard is off. */
+                    var returnSessions: Int = 0)
 
     data class Result(val weeks: Map<Int, Week>, val violations: List<String>, val e1rmGain: Double?) {
         fun kept(range: IntRange): Double? = weeks.filterKeys { it in range }.values.let { w ->
@@ -57,11 +57,12 @@ class YearOfTrainingTest {
 
         /**
          * Each week's training stress as done against the mean of the three calendar weeks before it as done (missed weeks 0), where the
-         * spike guard applies: from week 3 (21 days), outside returns and deloads, after weeks with some training.
+         * spike guard applies: from week 3 (21 days), outside deloads and weeks spent wholly in a return, after weeks with some training.
+         * A week whose first session is a return session is checked: the guard holds its other sessions (re-check).
          */
         fun spikes(): List<Pair<Int, Double>> = weeks.keys.filter { it >= 3 }.mapNotNull { i ->
             val w = weeks.getValue(i)
-            if (w.deload || w.inReturn || w.done <= 0.0) return@mapNotNull null
+            if (w.deload || w.returnSessions >= w.sessions || w.done <= 0.0) return@mapNotNull null
             val mean = (1..3).sumOf { weeks[i - it]?.done ?: 0.0 } / 3.0
             if (mean <= 0.0) null else i to w.done / mean
         }
@@ -137,7 +138,7 @@ class YearOfTrainingTest {
             val vctx = d.bridge.validationContext(t.user, t.program, t.week, next)
             SessionValidator.violations(w.validated, vctx.copy(fullTierWorkingSets = w.fullTierWorkingSets)).forEach { violations += "${p.name} ${Days.date(day)} $it" }
             if (week.limit == null) { week.limit = vctx.weeklySsuLimit; week.loadCap = vctx.weeklyLoadCap; week.k = vctx.k }
-            week.inReturn = week.inReturn || d.bridge.returnPlan(t.user, t.program).value.inReturn
+            if (d.bridge.returnPlan(t.user, t.program).value.inReturn) week.returnSessions++
             // What the programme asked for: the day as planned before the weekly limits (the planner now fits the week within them).
             val uncapped = WeekPlanner.plan(d.bridge.weekInput(t.user, t.program).copy(weeklySsuLimit = null, weeklyLoadSsu = null, weeklySsuGuard = null),
                 d.bridge.blueprint(t.program)).value

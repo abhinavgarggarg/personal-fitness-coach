@@ -17,15 +17,22 @@ Both compare this week with your last three weeks. At the Phase 3 gate they held
 
 ## What changes, in plain words
 
-1. **Missed sessions no longer shrink your limit.** A past week is counted at the level of the sessions you did. If you did 2 of 3 sessions, the week counts as if all 3 had been like those 2. A week with fewer than half its sessions done is left out, as a fully missed week already is.
-2. **A weight still being found counts as it is done.** When the app is finding your working weight, that exercise counts as two sets at the target effort, in the plan and once done. Before, the easy ramp-up sets counted nothing, so the first weeks looked light and set a low starting point.
-3. **The week is planned within the limits.** The week planner now fits the whole week inside the limits before you start. Sessions are no longer cut on the day, and "kept under your weekly load limit" no longer shows on most days. When something must give, it goes in this order:
+1. **Missed sessions and tired days no longer shrink your limit.** A past week is counted at the level it was planned and done:
+   - if you did 2 of 3 sessions, the week counts as if all 3 had been like those 2;
+   - if the readiness check made a day lighter after a poor night, that day counts at its planned size, in proportion to how much of it you did;
+   - a week with fewer than half its sessions done is left out, as a fully missed week already is;
+   - only the last 8 weeks count.
+2. **A weight still being found counts as it is done.** When the app is finding your working weight, that exercise counts as two sets at the target effort, in the plan and once done, never more than planned. Before, the easy ramp-up sets counted nothing, so the first weeks looked light and set a low starting point.
+3. **The week is planned within the limits.** The week planner now fits the whole week inside the limits before you start, so sessions are rarely cut on the day. When something must give, it goes in this order:
    - other exercises' sets;
    - steady cardio, shortened by at most 40% (never below 10 minutes) or made easy;
+   - intervals, shortened by whole repeats or made easy;
    - main lifts, last.
-4. **Cardio is made easy before it is dropped.** When a day's cardio would have to lose more than 40% to fit, it becomes easy cardio instead of disappearing.
-5. **A floor.** The limits never cut a week below half of its planned training stress. Half is about the stress of a deload week (DEL-003).
-6. **A spike guard.** Above the floor, a week can never be more than twice the average of your last three weeks as you actually did them, missed weeks counting as zero. It starts three weeks after your first session. It doesn't apply during a return ramp or a deload, which have their own rules.
+
+   A day made lighter this way says so in its preview.
+4. **Cardio is made easy before it is dropped.** When a day's cardio would have to lose more than 40% to fit, it becomes easy cardio instead of disappearing. Easy cardio is on a low-impact machine: easy jump rope becomes the elliptical, for example.
+5. **A floor.** The limits never cut a week below half of its planned training stress. Half is about the training stress of a deload week, although the sessions keep their normal exercises and effort.
+6. **A spike guard.** No week can be more than twice the average of your last three weeks as you actually did them, missed weeks counting as zero. The guard wins over the floor. It starts three weeks after your first session. It doesn't apply during a return ramp or a deload, which have their own rules.
 
 The two numbers that set how fast training may grow stay the same: 15% for VOL-007 and 20% for LOAD-005.
 
@@ -59,8 +66,9 @@ How to read it:
 - **Sudden jumps stay bounded.** No week went above twice the three weeks before it (the largest was 1.99×, after ten weeks of one session a week). With every session done, no week went above 1.3×. The simulation now fails if any week breaks this, so every future change is checked against it.
 
 ## What gets looser, and why it stays safe
-The fix makes the limits less strict in three ways:
+The fix makes the limits less strict in four ways:
 - after missed sessions, a week can go back to its planned size faster than +15% a week;
+- a day the readiness check made lighter counts at its planned size in the weeks the limits compare with;
 - the limits never cut a week below half its plan (unless that would break the spike guard);
 - a weight being found counts as two sets.
 
@@ -81,7 +89,7 @@ The fix makes the limits less strict in three ways:
 **What remains:**
 - **After a few very light weeks, a week can be up to twice what you did.** Each session is still its normal size, and after 7 or more days off the return ramp applies instead.
 - **The floor is half the plan's training stress, which is about what a deload week has.** But the sessions keep their normal exercises and effort, unlike a real deload (DEL-003), which is easier.
-- **Someone who often sleeps badly stays near the floor.** The readiness check makes many of their days lighter. The limits then follow those lighter weeks, so in the simulation they kept a little over half of the plan. An alternative would be to count a day made lighter by the readiness check at its planned size, as a missed session now is. That would loosen the limit further, so I haven't done it; it is your choice, and Phase 4 testing on your phone will show whether it matters.
+- **Tired days no longer hold the next weeks down.** The readiness check still protects each day: a short night still means a lighter session that day.
 
 ## Independent review
 A reviewer who had not seen the work being built checked the proposal. It read the code, ran the tests and wrote its own probe tests and simulations. It found **1 high, 4 medium and 4 low** problems, and said the proposal was not yet safe to put to you. All nine are fixed:
@@ -97,6 +105,13 @@ A reviewer who had not seen the work being built checked the proposal. It read t
 | 7 (low) | Making jump-rope intervals "easy" kept the jumping, for longer | Easy work moves to a low-impact machine, or to a circuit without jumps |
 | 8 (low) | The planner counted a weight still being found as all its sets, while the session check counts two | Both count two |
 | 9 (low) | Some comments didn't match the code. Review weeks were treated differently by the planner and the session check | Fixed and aligned |
+
+**The reviewer then re-checked the fixes.** All nine hold, and it judged the proposal safe to put to you. It found two more problems, both now fixed:
+
+| # | What was wrong | Fix |
+|---|---|---|
+| A (medium) | The poor sleeper kept only about 55% of their plan: they were cut twice. The readiness check lightened their bad days, then the weekly limits followed those lighter weeks and lightened the good days too. The planner also padded short interval blocks to 10 easy minutes, which could make a day heavier rather than lighter | A day the readiness check made lighter now counts at its planned size in the weeks the limits compare with, as the reviewer suggested; the spike guard still uses the weeks as done. Intervals are made easy only when that lowers the day's training stress, and never for longer than the block itself. The poor sleeper now keeps about 80–85% |
+| B (low) | The year simulation didn't check weeks that started with a return session | It checks them now. That showed one small counting mismatch (a weight-finding exercise planned as one set but logged as up to five counted as two), fixed |
 
 ## How it was checked
 TESTS_SECTION

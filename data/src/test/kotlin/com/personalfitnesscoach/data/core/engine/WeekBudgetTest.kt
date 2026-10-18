@@ -22,12 +22,12 @@ import org.junit.Test
 class WeekBudgetTest {
 
     /** Generates, does and finishes the session planned for today: calibration finds the planned weight at once, working sets as planned. */
-    private suspend fun doToday(d: PfcData, rpe: Double = 7.0, minutes: Double = 50.0): Long? {
+    private suspend fun doToday(d: PfcData, rpe: Double = 7.0, minutes: Double = 50.0, tier: com.personalfitnesscoach.engine.model.Tier? = null): Long? {
         val t = checkNotNull(d.planToday())
         val next = t.next ?: return null
         if (next.weekday != Days.weekday(t.user.today)) return null
         val ci = d.checkIns.record(t.user, CheckIn(4, 4, 3, 4))
-        val w = d.generate(t, next, ci.record.tier).value
+        val w = d.generate(t, next, tier ?: ci.record.tier).value
         val id = d.sessions.start(w, next.template, next.weekday, inDeload = t.week.deload)
         val stored = checkNotNull(d.sessions.load(id))
         for ((i, e) in stored.exercises.withIndex()) {
@@ -199,6 +199,35 @@ class WeekBudgetTest {
         val et = checkNotNull(e.planToday())
         assertTrue("in a return", e.bridge.returnPlan(et.user, et.program).value.inReturn)
         assertNull(e.bridge.weekLimits(et.user, et.program, deload = false).guard)
+    }
+
+    @Test fun `TC-VOL-007p a session the readiness check made lighter counts at its planned size in the reference week`() = runBlocking {
+        val (d, clock) = Fixtures.data()
+        Fixtures.onboard(d)
+        clock.setDay(Fixtures.MONDAY, hour = 9)
+        // Monday at MODIFIED (a poor night), every offered set done; Wednesday at FULL.
+        val mon = checkNotNull(doToday(d, tier = com.personalfitnesscoach.engine.model.Tier.MODIFIED))
+        val m = checkNotNull(d.sessions.load(mon))
+        val planned = checkNotNull(m.doc.plannedSsu)
+        val offered = checkNotNull(m.doc.offeredSsu)
+        assertTrue("MODIFIED offers less than planned ($offered of $planned)", offered < planned)
+        val monTotals = d.bridge.totals(Fixtures.MONDAY, Fixtures.MONDAY)
+        // As done for the weekly totals and the spike guard; at its planned size (scaled by what was done) for the reference weeks.
+        assertTrue(monTotals.referenceSsu > monTotals.ssu)
+        assertEquals(minOf(planned, monTotals.ssu * planned / offered), monTotals.referenceSsu, 1e-9)
+        assertTrue(monTotals.referenceSsu <= planned + 1e-9)
+        assertEquals(monTotals.workload * monTotals.referenceSsu / monTotals.ssu, monTotals.referenceLoad, 1e-6)
+        clock.setDay(Fixtures.MONDAY + 2, hour = 9)
+        checkNotNull(doToday(d))
+        val wed = d.bridge.totals(Fixtures.MONDAY + 2, Fixtures.MONDAY + 2)
+        assertEquals(wed.ssu, wed.referenceSsu, 1e-9)
+        // The closed week keeps both: the reference weeks use the reference totals.
+        clock.setDay(Fixtures.MONDAY + 7, hour = 9)
+        checkNotNull(d.planToday())
+        val week = checkNotNull(d.docs.all(WeekSummary).firstOrNull { it.weekStartDay == Fixtures.MONDAY })
+        assertTrue(week.referenceSsu!! > week.ssu)
+        val scaled = if (week.completed < week.planned) week.referenceSsu!! * week.planned / week.completed else week.referenceSsu!!
+        assertEquals(scaled, d.bridge.referenceWeeks(Fixtures.MONDAY + 7).single().second.ssu, 1e-6)
     }
 
     @Test fun `TC-VOL-007o reference weeks come from the last eight weeks only`() = runBlocking {
