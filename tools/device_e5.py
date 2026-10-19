@@ -515,7 +515,9 @@ class Device(Smoke):
     def stored(self):
         """The names in the app's backup as the local test transport keeps it (read as root)."""
         names = []
-        files = adb("shell", "find", "/data/cache/backup", "-path", f"*{self.pkg}*", "-type", "f", timeout=60).split()
+        # Android 10 keeps it in /data/cache/backup; from Android 12 the test transport keeps it in its own files.
+        files = adb("shell", f"find /data/cache/backup /data/data/com.android.localtransport -path '*{self.pkg}*' -type f 2>/dev/null",
+                    timeout=60).split()
         for f in files:
             data = subprocess.run(["adb", "exec-out", "cat", f], capture_output=True, timeout=120).stdout
             try:
@@ -568,7 +570,7 @@ class Device(Smoke):
         self.step = "device-to-device transfer"
         result, names = self.backup_now("fake_encryption_flag=false,is_encrypted=false,is_device_transfer=true")
         if not has_db(names):
-            listing = " ".join(adb("shell", "ls", "-lR", "/data/cache/backup", timeout=60).split())[:900]
+            listing = " ".join(adb("shell", "ls -lR /data/cache/backup /data/data/com.android.localtransport 2>&1 | head -60", timeout=60).split())[:900]
             self.fail(f"a device-to-device transfer left the database behind ({result}; {names[:5]}; {self.where}; {listing})")
         self.ok(f"a device-to-device transfer takes the database ({result})")
 
