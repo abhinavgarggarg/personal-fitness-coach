@@ -33,8 +33,15 @@ class Device(Smoke):
         self.passed = []
 
     def ok(self, what):
+        # GitHub keeps only 10 notices a step: each check is printed plainly, and the list goes into one notice at the end (or with a
+        # failure, so a failed run still shows how far it got).
         self.passed.append(what)
-        print(f"::notice title={self.title}: {self.step}::{what}")
+        print(f"{self.title}: {self.step}: {what}")
+
+    def fail(self, why, nodes=None):
+        if self.passed:
+            print(f"::notice title={self.title}: passed before the failure ({len(self.passed)})::" + " / ".join(self.passed))
+        super().fail(why, nodes)
 
     # ------------------------------------------------------------------------------------------------ the database, read from outside
     def _read(self):
@@ -98,9 +105,17 @@ class Device(Smoke):
         tapped = None
         for _ in range(60):
             nodes = screen()
-            if self.find(S["wk_effort_5plus"], nodes) or self.find(S["wk_done_as_planned"], nodes):
+            if self.find(S["wk_effort_5plus"], nodes) or self.find(S["wk_done_as_planned"], nodes) or self.find(S["wk_effort_q"], nodes):
                 return nodes
-            for t in (S["wk_rest_skip"], S["wk_rest_over"], S["wk_stage_next"]):
+            confirm = self.find(S["addset_confirm_go"], nodes, enabled=True)
+            if confirm:
+                self.tap(confirm)
+                continue
+            # Rests first; then a stage before the lifts; once every exercise is done, one more set ("Add a set") keeps the session
+            # going for the next interruption.
+            done_lift = self.find(S["wk_add_set"], nodes, enabled=True)
+            order = (S["wk_rest_skip"], S["wk_rest_over"]) + ((S["wk_add_set"],) if done_lift else (S["wk_stage_next"],))
+            for t in order:
                 n = self.find(t, nodes, enabled=True)
                 # The same button again right after tapping it: it is out of reach, so scroll to it first (a short, sideways screen).
                 if n and (t, n.y) != tapped and n.y < self.size()[1] - 8:
@@ -160,6 +175,8 @@ class Device(Smoke):
     def finish(self):
         S = self.S
         self.step = "finish"
+        # "End" sits at the top of the workout screen: back to the top first (a small screen scrolls it away).
+        self.scroll_top()
         self.tap_text(S["wk_end"], scrolls=3)
         self.tap_text(S["sheet_end_finish"], scrolls=5)
         self.wait(S["done_title"], 60)
@@ -409,7 +426,7 @@ def main(argv):
     crash = adb("logcat", "-d", "-b", "crash", timeout=30).strip()
     if PKG in crash:
         d.fail("a crash was logged")
-    print(f"::notice title=E5::PASS: {len(d.passed)} checks")
+    print(f"::notice title=E5::PASS: {len(d.passed)} checks: " + " / ".join(d.passed))
     return 0
 
 
