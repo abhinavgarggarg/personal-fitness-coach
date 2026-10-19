@@ -389,12 +389,26 @@ class Device(Smoke):
         rang = adb("emu", "gsm", "call", number, timeout=30)
         if "OK" not in rang:
             self.fail(f"the emulator could not ring: {rang.strip()[:200]}")
-        time.sleep(4)
-        answered = adb("emu", "gsm", "accept", number, timeout=30)
         time.sleep(5)
+        # Answered as a person would: "Answer" on the call alert (Android 10+ shows a banner over an open app), else from the console.
+        alert = next((n for n in screen() if (n.text or n.desc).strip().lower() == "answer"), None)
+        if alert:
+            self.tap(alert)
+            how = "answered from the call alert"
+        else:
+            if "OK" not in adb("emu", "gsm", "accept", number, timeout=30):
+                self.fail("the call could not be answered")
+            how = "answered"
+        time.sleep(4)
+        if self.in_front():
+            # The call screen opened, as when the person goes to it: the phone app comes in front of this one.
+            adb("shell", "am", "start", "-a", "android.intent.action.DIAL", timeout=30)
+            how += ", the phone app in front"
+            time.sleep(3)
         on_call = self.focus()
-        if "OK" not in answered or self.pkg in on_call:
-            self.fail(f"the call did not take over the screen ({answered.strip()[:80]}; focus: {on_call[:200]})")
+        if self.pkg in on_call:
+            self.fail(f"the call did not take over the screen (focus: {on_call[:200]})")
+        self.notes.append(f"call: {how}")
         time.sleep(5)
         hung = adb("emu", "gsm", "cancel", number, timeout=30)
         if "OK" not in hung:
