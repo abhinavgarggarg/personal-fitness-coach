@@ -32,6 +32,7 @@ PKG = "com.personalfitnesscoach.dev"
 ACTIVITY = f"{PKG}/com.personalfitnesscoach.app.MainActivity"
 TRANSPORT = "com.android.localtransport/.LocalTransport"
 APP_LABEL = "Fitness Coach"
+REST_ACTION = "com.personalfitnesscoach.REST_OVER"
 # The saved resume point that an interruption must not change (ActiveState; times of the last tap and the idle allowance may).
 RESUME_KEYS = ("stage", "currentRowId", "nextLoads", "calibrationDone", "rampSkipped", "restStartedAtMs", "restSec", "conditioningDone",
                "lastHardEffortAtMs")
@@ -272,14 +273,35 @@ class Device(Smoke):
                 time.sleep(1)
         self.fail(f"{why}: the workout did not come back")
 
+    def pending_alarm(self):
+        """Whether the end-of-rest alarm is pending: only the pending section of `dumpsys alarm` (its statistics keep old ones)."""
+        text = adb("shell", "dumpsys", "alarm", timeout=60)
+        low = text.lower()
+        start = min([i for i in (low.find("pending alarm batches"), low.find("pending alarms:")) if i >= 0] or [-1])
+        if start < 0:
+            return REST_ACTION in text
+        ends = [i for i in (low.find(k, start + 20) for k in ("pending user blocked", "past-due", "top alarms", "alarm stats",
+                                                              "mlastalarmdeliverytime", "next wakeup alarm")) if i > 0]
+        return REST_ACTION in text[start:min(ends) if ends else len(text)]
+
     def rest_alarm(self, why):
-        """During a rest, the end-of-rest alert is set again after the app is reopened (it is cancelled with the app)."""
-        nodes = screen()
-        if self.find(self.S["wk_rest_skip"], nodes) and not self.find(self.S["wk_rest_over"], nodes):
-            alarms = adb("shell", "dumpsys", "alarm", timeout=60)
-            if self.pkg not in alarms:
-                self.fail(f"{why}: a rest is running but its alert is not set")
-            self.ok(f"{why}: the rest's alert is set again")
+        """While the saved rest hasn't ended, its end-of-rest alarm is pending after the app is reopened (a stop or a restart
+        cancels it); and, as a control, gone once the rest is skipped."""
+        r = self.snap()["resume"] or {}
+        start, sec = r.get("restStartedAtMs"), r.get("restSec")
+        now_ms = int(adb("shell", "date", "+%s").strip() or 0) * 1000
+        if not start or not sec or start + sec * 1000 <= now_ms + 5000:
+            self.notes.append(f"{why}: the rest had ended, no alert to check")
+            return
+        if not self.pending_alarm():
+            self.fail(f"{why}: a rest is running but its end-of-rest alert is not set")
+        skip = self.find(self.S["wk_rest_skip"], screen(), enabled=True)
+        if skip:
+            self.tap(skip)
+            time.sleep(2)
+            if self.pending_alarm():
+                self.fail(f"{why}: the rest was skipped but its alert is still set")
+        self.ok(f"{why}: the running rest's alert is set{' (and gone once the rest is skipped)' if skip else ''}")
 
     def finish(self):
         S = self.S
@@ -380,6 +402,11 @@ class Device(Smoke):
         adb("shell", "settings", "put", "system", "accelerometer_rotation", "0")
         adb("shell", "settings", "put", "system", "user_rotation", "1")
         time.sleep(4)
+        rot = " ".join(ln.strip() for ln in adb("shell", "dumpsys", "window", "displays").splitlines() if "mCurrentRotation" in ln or "mRotation=" in ln)
+        if not rot:
+            self.notes.append("rotation: the window manager did not report it")
+        elif not any(k in rot for k in ("ROTATION_90", "mCurrentRotation=1", "mRotation=1")):
+            self.fail(f"the screen did not turn sideways ({rot[:160]})")
         self.back_in("turned sideways", resume=False)
         s = self.kept("turned sideways", pid, s)
         s = self.log_set()
@@ -413,6 +440,9 @@ class Device(Smoke):
         on_call = self.focus()
         if self.pkg in on_call:
             self.fail(f"the call did not take over the screen (focus: {on_call[:200]})")
+        calls = " ".join(adb("emu", "gsm", "list", timeout=30).split())
+        if "active" not in calls:
+            self.fail(f"the call was not answered: {calls[:200]}")
         self.notes.append(f"call: {how}")
         time.sleep(5)
         hung = adb("emu", "gsm", "cancel", number, timeout=30)
@@ -421,7 +451,7 @@ class Device(Smoke):
         time.sleep(3)
         self.relaunch()
         self.back_in("an answered call", resume=False)
-        s = self.kept("an answered call", pid, s)
+        s = self.kept(f"an answered call ({how})", pid, s)
         s = self.log_set()
 
         self.step = "low memory"
@@ -485,10 +515,11 @@ class Device(Smoke):
                 self.fail(f"stopped {delay} s after a tap: {k0} sets before, {k1} after")
             self.health(f"stopped {delay} s after a tap")
             self.answer_all_reps()
-        self.ok(f"stopped right after a tap, 4 times: each set saved whole with the session's next step, or not at all ({', '.join(outcomes)})")
+        self.ok(f"stopped within about a second of a tap, 4 times: each set saved whole with the session's next step, or not at all ({', '.join(outcomes)})")
         s = self.log_set()
 
         self.step = "reboot"
+        self.health("before the restart")  # a restart empties the logs
         self.reboot()
         self.relaunch()
         self.back_in("a restart of the phone", resume=True)
@@ -564,13 +595,18 @@ class Device(Smoke):
         result, names = self.backup_now("fake_encryption_flag=false,is_encrypted=false,is_device_transfer=false")
         if has_db(names):
             self.fail(f"the database went into a backup that is not end-to-end encrypted ({result}; {names[:5]})")
-        self.ok(f"not end-to-end encrypted: the database stays out of the backup (Android says \"{result}\"; {len(names)} files kept)")
+        # The backup ran and was empty: the test transport turns down a backup with nothing in it, or keeps only the manifest. A
+        # backup that didn't run at all ("not allowed", an agent error) proves nothing.
+        refused_empty = result.startswith("Transport rejected package") or (result == "Success" and all(n.endswith("_manifest") for n in names))
+        if not refused_empty:
+            self.fail(f"the backup without encryption did not run as expected: {result}; {names[:5]}")
+        self.ok(f"not end-to-end encrypted: the backup ran and the database stayed out (Android says \"{result}\"; {len(names)} files kept)")
 
         if api < 31:
             # Before Android 12 the test transport has no real encryption flag (only a test flag the app's rules don't accept), so the
             # encrypted backup can't be made here; the rules are checked by tools/check_backup_rules.py and on the phone in UAT.
-            self.notes.append(f"Android {api}: an encrypted backup can't be simulated (no real encryption flag in the test transport)")
-            self.ok("the encrypted backup is checked on Android 12 and later, and on the phone in UAT")
+            self.notes.append(f"Android {api}: an encrypted backup and a device-to-device transfer can't be simulated (the test transport has no "
+                              "real encryption or transfer flag before Android 12); the Android 10-11 rules are checked by check_backup_rules.py")
             return
 
         self.step = "device-to-device transfer"
