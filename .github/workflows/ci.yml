@@ -97,7 +97,7 @@ jobs:
       - name: App unit tests and debug APK
         run: |
           set -o pipefail
-          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug 2>&1 | tee gradle-app.log
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest 2>&1 | tee gradle-app.log
           python3 -I tools/ci_summary.py "App unit tests=app/build/test-results/testDebugUnitTest/*.xml"
           ls -l app/build/outputs/apk/debug/*.apk | awk '{print "::notice title=Debug APK::" $NF " (" $5 " bytes)"}'
 

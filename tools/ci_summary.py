@@ -8,17 +8,23 @@ def esc(s):
     return s.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
 
 
-def excerpt(label, path):
-    """A text file (such as the phone's crash log) as one annotation, when it has anything in it: its last lines, which hold the cause."""
+def excerpt(label, path, level="error"):
+    """A text file as one annotation, when it has anything in it. An error (the phone's crash log): its last lines, which hold the
+    cause. A notice (a list such as the accessibility findings): the summary line first, then the list from the top."""
     try:
         lines = [l.rstrip() for l in open(path, errors="replace") if l.strip()]
     except OSError:
         return
-    if lines:
-        print(f"::error title={label.replace(',', ' ·').replace(':', ' ')}::{esc(chr(10).join(lines[-40:]))[:4000]}")
+    if not lines:
+        return
+    shown = lines[-40:] if level == "error" else lines[-1:] + lines[:-1]
+    print(f"::{level} title={label.replace(',', ' ·').replace(':', ' ')}::{esc(chr(10).join(shown))[:4000]}")
 
 
 for arg in sys.argv[1:]:
+    if "@~=" in arg:
+        excerpt(*arg.split("@~=", 1), level="notice")
+        continue
     if "@=" in arg:
         excerpt(*arg.split("@=", 1))
         continue

@@ -144,18 +144,22 @@ object ExerciseProgress {
                         val raw = l.workingLoad * (1.0 + (lastReps + lastRir) / P.INT_004.divisor)
                         val x = E1rm.loadFor(raw, item.reps.first, item.targetRir)
                         val supported = avail.filter { it <= x + 1e-9 }.maxOrNull() ?: avail.min()
-                        found(s, minOf(l.workingLoad, supported), item, day)
+                        found(s, minOf(l.workingLoad, supported), item, day, heavy = PlateMath.belowLightest(x, avail))
                     }
                 }
                 // A set not lifted at all (0 reps) says nothing about what can be lifted: the last load lifted before it is the working
                 // load, and with none the ramp goes on next session from 5% lower (review of D-115).
-                is CalibrationStep.Stop -> if (missed) prevRated?.let { found(s, it, item, day) } ?: next(l.nextSessionLoad) else {
+                // Not lifted at the lightest load with nothing lighter: that load is too heavy, so an easier version comes next (Phase 4 Part 4).
+                is CalibrationStep.Stop -> if (missed) (prevRated?.let { found(s, it, item, day) }
+                    ?: (if (l.nextSessionLoad >= lastRated!! - 1e-9 && lastRated <= avail.min() + 1e-9) found(s, lastRated, item, day, heavy = true)
+                    else next(l.nextSessionLoad))) else {
                     // RIR ≤ 2: "stop; next session uses this load −5%" (CAL-001 step 2) — and no more than the stopping set supports. Its
                     // e1RM, where valid, is the starting estimate ("from the final calibration set", step 4), and the working load is the
                     // lower of the two, so a set short of its reps (6 of 10) never leads to working sets near failure (review of D-115).
                     val e = E1rm.fromSet(lastRated!!, lastReps, lastRir)
-                    val supported = e?.let { est -> E1rm.loadFor(est, item.reps.first, item.targetRir).let { x -> avail.filter { it <= x + 1e-9 }.maxOrNull() ?: avail.min() } }
-                    found(s, minOf(l.nextSessionLoad, supported ?: l.nextSessionLoad), item, day, e)
+                    val x = e?.let { E1rm.loadFor(it, item.reps.first, item.targetRir) }
+                    val supported = x?.let { avail.filter { a -> a <= it + 1e-9 }.maxOrNull() ?: avail.min() }
+                    found(s, minOf(l.nextSessionLoad, supported ?: l.nextSessionLoad), item, day, e, heavy = x != null && PlateMath.belowLightest(x, avail))
                 }
                 is CalibrationStep.Continue, null -> next(restart)
             }
@@ -179,7 +183,10 @@ object ExerciseProgress {
                     s.loadBeforeReductions, formNo, ctx.level, ctx.age))
                 d += next.decisions
                 val reduced = next.value.action == ProgressionAction.REDUCE || next.value.action == ProgressionAction.REDUCE_AND_REVIEW
-                s = s.copy(prescription = next.value, prescriptionDay = day, formNoStreak = formNo, previousWasReduction = reduced,
+                // At the lightest load, sets that show it is too heavy for the bottom of the range at the target effort (Phase 4 Part 4).
+                val heavy = next.value.load <= avail.min() + 1e-9 && PlateMath.belowLightest(E1rm.loadFor(work.maxOf { w ->
+                    w.load * (1.0 + (w.reps + (w.rir ?: item.targetRir)) / P.INT_004.divisor) }, next.value.repRange.first, item.targetRir), avail)
+                s = s.copy(prescription = next.value.copy(lightestTooHeavy = heavy), prescriptionDay = day, formNoStreak = formNo, previousWasReduction = reduced,
                     loadBeforeReductions = if (!reduced) null else if (s.previousWasReduction) s.loadBeforeReductions ?: load else load,
                     calibration = null)
             }
@@ -192,8 +199,9 @@ object ExerciseProgress {
      * progression follows from them. (Before, a load found without a valid e1RM was ramped to again for up to four sessions, so the
      * exercise had no working sets for weeks — Phase 4 scenario S19.)
      */
-    private fun found(s: ExerciseState, load: Double, item: com.personalfitnesscoach.data.core.session.ItemDoc, day: Int, e1rm: Double? = null): ExerciseState =
-        s.copy(calibration = null, prescription = Prescription(load, item.reps, item.reps.first, ProgressionAction.HOLD), prescriptionDay = day,
+    private fun found(s: ExerciseState, load: Double, item: com.personalfitnesscoach.data.core.session.ItemDoc, day: Int, e1rm: Double? = null,
+                      heavy: Boolean = false): ExerciseState =
+        s.copy(calibration = null, prescription = Prescription(load, item.reps, item.reps.first, ProgressionAction.HOLD, lightestTooHeavy = heavy), prescriptionDay = day,
             e1rm = e1rm ?: s.e1rm, e1rmDay = if (e1rm != null) day else s.e1rmDay)
 
     /** Bodyweight, assisted and core: the ladder decides the next rung, reps or assistance (BW-001, BW-002, CORE-002). */

@@ -114,7 +114,8 @@ class SessionLog(private val store: RowStore, private val clock: AppClock) {
                 it.rest.minSec, it.rest.defaultSec, it.rest.maxSec, it.calibrating, it.main,
                 rampSets = it.warmupSets.map { r -> RampRef(r.load, r.reps) },
                 reducedRange = it.range == com.personalfitnesscoach.engine.planning.RangeOfMotion.REDUCED,
-                calibrationCeiling = if (it.calibrating) calibrationCeilings[it.exercise.id] else null, supersetWith = it.supersetWith)
+                calibrationCeiling = if (it.calibrating) calibrationCeilings[it.exercise.id] else null, supersetWith = it.supersetWith,
+                lightestRecheck = it.lightestRecheck, easierOffer = it.easierOffer)
             store.insertExercise(ExerciseRow(workoutId = id, position = i, exerciseId = it.exercise.id, slotKey = it.slotKey, status = Status.PLANNED,
                 json = item.encode()))
         }

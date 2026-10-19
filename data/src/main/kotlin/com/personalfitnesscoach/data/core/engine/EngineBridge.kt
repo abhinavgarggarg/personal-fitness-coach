@@ -115,6 +115,8 @@ data class HistoryMaps(
     val lastWeekLoads: Map<String, Double>,
     val bodyweightKg: Double?,
     val decisions: List<Decision> = emptyList(),
+    /** The day each exercise was last lifted (for the new-block re-check of a lightest load that was too heavy). */
+    val lastDone: Map<String, Int> = emptyMap(),
 )
 
 /** Totals of a span of days, from finished workouts and logged walks. */
@@ -217,7 +219,9 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val prog = HashMap<String, Prescription>()
         val cal = HashMap<String, Double>()
         val ceilings = HashMap<String, Double>()
+        val lastDone = HashMap<String, Int>()
         for (s in states.values) {
+            s.lastDoneDay?.let { lastDone[s.exerciseId] = it }
             s.e1rm?.let { e1rm[s.exerciseId] = it }
             s.prescription?.let { prog[s.exerciseId] = it }
             if (s.e1rm == null) s.calibration?.let { c -> cal[s.exerciseId] = c.nextLoad; c.ceiling?.let { ceilings[s.exerciseId] = it } }
@@ -241,7 +245,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
                 KnownStart.Invalid -> Unit
             }
         }
-        return HistoryMaps(e1rm, prog, cal, ceilings, lastWeekLoads(today), latestWeight(), d)
+        return HistoryMaps(e1rm, prog, cal, ceilings, lastWeekLoads(today), latestWeight(), d, lastDone)
     }
 
     /**
@@ -808,6 +812,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             painCaution = caution, jointLimits = painLimits, regions = regions(today).value + u.injuries.regions, blockedTags = u.injuries.blockedTags,
             excludedModalities = u.preferences.excludedModalities, excludedIds = u.preferences.excludedIds, preferences = u.preferences.exerciseScores,
             inDeload = plan.deload, week = validationContext(u, program, plan, day), conditions = u.conditions, circuitJumps = u.preferences.circuitJumps,
+            lastDone = h.lastDone, blockStartDay = program.blockStartDay,
         )
         return PreparedSession(req, factors, d)
     }

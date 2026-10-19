@@ -124,6 +124,10 @@
     <string name="reason_aerobic_check_failed">The week\'s cardio didn\'t add up as planned; it\'s adjusted.</string>
     <string name="reason_illness_rest_day">Rest today: you reported symptoms of being unwell.</string>
     <string name="reason_load_cannot_reduce">Even the lightest weight is too heavy for today\'s limit, so an easier version is used.</string>
+    <string name="reason_load_cannot_reduce_left_out">Even the lightest weight is too heavy for today\'s limit and no easier version fits, so one exercise is left out today.</string>
+    <string name="reason_lightest_too_heavy">The lightest weight here is still too heavy for these reps, so an easier version is used for now.</string>
+    <string name="reason_lightest_too_heavy_left_out">The lightest weight here is still too heavy for these reps and no easier version fits, so one exercise is left out today.</string>
+    <string name="reason_lightest_recheck">A new block: one weight-finding set checks whether the lightest weight now suits you.</string>
     <string name="reason_goal_default_chosen">Your suggested goal fits your age and answers; you can change it.</string>
     <string name="reason_activity_target_set">Your weekly activity target is set and grows gradually.</string>
     <string name="reason_fat_loss_mix">The mix of strength and cardio suits your goal and age.</string>

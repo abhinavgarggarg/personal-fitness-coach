@@ -414,6 +414,8 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         // A swap is only for an exercise not started yet (R5-15); once sets are logged, "skip" ends it at the sets done.
         if (!l.hasLoggedWork) {
+            // PROG-008: after two "form not solid" answers the easier version is offered; the user chooses.
+            l.item.easierOffer?.let { id -> SmallAction(stringResource(R.string.wk_try_easier, exerciseName(id)), { a.run { swap(l.rowId, id) } }) }
             SmallAction(stringResource(R.string.wk_replace), { a.run { openReplace(l.rowId, occupied = false) } })
             SmallAction(stringResource(R.string.wk_busy), { a.run { openReplace(l.rowId, occupied = true) } })
         }

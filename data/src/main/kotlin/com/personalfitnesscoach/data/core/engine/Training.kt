@@ -93,8 +93,9 @@ class ProgressRecorder(private val docs: Docs, private val log: SessionLog, priv
             // keeping the count and the "own number used" flag. Only after such a gap: in history from before D-115, a found weight was
             // ramped to again a week later, and replaying that keeps its CAL-002 ceiling and session count (review of D-115).
             val gap = stored.lastDoneDay?.let { w.day - it }
-            val recalibration = e.doc.calibrating && (stored.e1rm != null || stored.prescription != null) &&
-                (gap == null || gap >= com.personalfitnesscoach.engine.progression.ReturnToTraining.recalibrationMinDays(ctx.age, ctx.flaggedScreen))
+            // A new block's ramp at the lightest load after that load was too heavy (Phase 4 Part 4) starts afresh the same way.
+            val recalibration = e.doc.calibrating && (stored.e1rm != null || stored.prescription != null) && (e.doc.lightestRecheck ||
+                gap == null || gap >= com.personalfitnesscoach.engine.progression.ReturnToTraining.recalibrationMinDays(ctx.age, ctx.flaggedScreen))
             val state = if (recalibration) ExerciseState(ex.id, exposures = stored.exposures, knownApplied = true, lastDoneDay = stored.lastDoneDay) else stored
             val ladderType = ex.assisted || ex.loadType == LoadType.BODYWEIGHT || ex.loadType == LoadType.TIME || ex.loadType == LoadType.DISTANCE
             val recent = if (!ladderType) listOf(e) else log.history(ex.id, w.day - 56, w.day)

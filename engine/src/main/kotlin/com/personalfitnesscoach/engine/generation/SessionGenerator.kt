@@ -110,6 +110,10 @@ data class GenerationRequest(
     val conditions: ConditionLimits = ConditionLimits.NONE,
     /** EQ-003: the user wants jumping moves in bodyweight circuits (used only where impact is allowed; no-jump by default). */
     val circuitJumps: Boolean = false,
+    /** The day each exercise was last lifted (its stored state), for the new-block re-check of a lightest load that was too heavy. */
+    val lastDone: Map<String, Int> = emptyMap(),
+    /** The day the current training block started; null when unknown (no re-check). */
+    val blockStartDay: Int? = null,
 )
 
 /** CON-004 1.1.0: the osteoporosis entry's short bone-loading block (not an impact session); the variant fits today's pain limits. */
@@ -140,6 +144,10 @@ data class WorkoutItem(
      * The guided workout alternates their working sets with REST-004's rest between them.
      */
     val supersetWith: String? = null,
+    /** A weight-finding ramp at the lightest load, a new block after that load was too heavy: the exercise's history starts afresh. */
+    val lightestRecheck: Boolean = false,
+    /** PROG-008: two "form not solid" answers in a row: the easier version offered for this exercise (its ID), the user's choice. */
+    val easierOffer: String? = null,
 )
 
 data class Workout(
@@ -524,16 +532,33 @@ object SessionGenerator {
 
     private fun slotRir(it: WorkoutItem, r: GenerationRequest): Double = fullTierRir(it.slotKey, it.targetRir, r)
 
+    /**
+     * A slot's normal (FULL-day) load and whether a calibration ramp sets it. `tooHeavy`: even the lightest load is above what the
+     * history supports for the bottom of the rep range at the target effort, so PROG-003 has no load within 2% of the target.
+     */
+    private data class NormalLoad(val load: Double?, val calibrating: Boolean, val tooHeavy: Boolean = false, val recheck: Boolean = false)
+
     /** Normal working load (FULL day) from e1RM (INT-005), the progression engine, or calibration (CAL-001, IND-001). */
-    private fun normalLoad(s: PlannedSlot, e: Exercise, r: GenerationRequest, rir: Double, d: MutableList<Decision>): Pair<Double?, Boolean> {
-        if (e.loadType == LoadType.BODYWEIGHT || e.loadType == LoadType.TIME || e.loadType == LoadType.DISTANCE) return null to false
+    private fun normalLoad(s: PlannedSlot, e: Exercise, r: GenerationRequest, rir: Double, d: MutableList<Decision>): NormalLoad {
+        if (e.loadType == LoadType.BODYWEIGHT || e.loadType == LoadType.TIME || e.loadType == LoadType.DISTANCE) return NormalLoad(null, false)
         val available = PlateMath.loadsFor(e, r.inventory)
-        if (available.isEmpty()) return null to false
-        if (e.assisted) return (r.progression[e.id]?.load ?: PlateMath.choose(available.max() * 0.5, available)) to (e.id !in r.progression)
+        if (available.isEmpty()) return NormalLoad(null, false)
+        if (e.assisted) return NormalLoad(r.progression[e.id]?.load ?: PlateMath.choose(available.max() * 0.5, available), e.id !in r.progression)
         val est = r.e1rm[e.id]
         val ceiling = r.calibrationCeilings[e.id]
         fun capped(x: Double): Double = if (ceiling == null || x <= ceiling + 1e-9) x else available.filter { it <= ceiling + 1e-9 }.maxOrNull() ?: available.min()
-        if (est == null) r.calibrationLoads[e.id]?.let { return capped(PlateMath.choose(it, available)) to true }
+        // Too heavy at the lightest load: an easier version for this block; in a later block, one ramp at the lightest load checks again
+        // (CAL-001: it stops at the target reps or with about 3 left, so a load still too heavy is never pushed).
+        fun heavy(load: Double): NormalLoad {
+            val since = r.blockStartDay
+            if (since != null && (r.lastDone[e.id] ?: Int.MIN_VALUE) < since) {
+                d += Decision(DecisionKind.LOAD_PRESCRIPTION, listOf(RuleIds.CAL_001, RuleIds.PROG_003), ReasonKey.LIGHTEST_RECHECK,
+                    inputs = mapOf("exercise" to e.id, "lastDone" to r.lastDone[e.id], "blockStart" to since), outputs = mapOf("load" to available.min()))
+                return NormalLoad(available.min(), calibrating = true, recheck = true)
+            }
+            return NormalLoad(load, false, tooHeavy = true)
+        }
+        if (est == null) r.calibrationLoads[e.id]?.let { return NormalLoad(capped(PlateMath.choose(it, available)), true) }
         // FS-5 / D-055: the next-exposure prescription (PROG-001..008) sets the load whenever it was made for today's rep
         // range, for e1RM lifts too, so double progression (PROG-002) and the under-loaded jump (D-052) work within a block.
         // Progression.next already applies PROG-007 to load jumps through the implied intensity (PROG-002 resets reps on a
@@ -542,15 +567,41 @@ object SessionGenerator {
         if (prog != null && (est == null || prog.repRange.first == s.reps.first)) {
             d += Decision(DecisionKind.LOAD_PRESCRIPTION, listOf(RuleIds.PROG_001, RuleIds.PROG_002), ReasonKey.LOAD_FROM_PROGRESSION,
                 inputs = mapOf("exercise" to e.id, "action" to prog.action.name), outputs = mapOf("load" to prog.load, "reps" to prog.repRange.toString()))
-            return prog.load to false
+            if (prog.lightestTooHeavy && prog.load <= available.min() + 1e-9) return heavy(prog.load)
+            return NormalLoad(prog.load, false)
         }
-        if (est == null) return Individual.calibrationStart(e, r.bodyweightKg, available)?.let { capped(it) } to true
+        if (est == null) return NormalLoad(Individual.calibrationStart(e, r.bodyweightKg, available)?.let { capped(it) }, true)
+        // INT-005 / PROG-003: the lightest load must allow the bottom of the rep range at the target effort.
+        if (PlateMath.belowLightest(E1rm.loadFor(est, s.reps.first, rir), available)) return heavy(available.min())
         val proposed = E1rm.prescribe(est, (s.reps.first + s.reps.last) / 2, rir, available).also { d += it.decisions }.value
         // PROG-007 / SAF-005: an e1RM-based load never rises faster than the weekly intensity cap over last week's load for this exposure.
-        val last = r.lastWeekLoads[loadKey(s.spec.key, e.id)] ?: return proposed to false
+        val last = r.lastWeekLoads[loadKey(s.spec.key, e.id)] ?: return NormalLoad(proposed, false)
         val capped = ProgressionCaps.capLoad(proposed, last, r.level, available, r.age)
         d += capped.decisions
-        return capped.value to false
+        return NormalLoad(capped.value, false)
+    }
+
+    /**
+     * An easier exercise for a slot whose lightest load is too heavy: the regression first, then the best same-or-adjacent-pattern
+     * swaps (SUB-001/002), each dosed as usual; the first that can be loaded for the slot's reps. Null when none can.
+     */
+    private fun easier(s: PlannedSlot, r: GenerationRequest, tier: Tier, rir: Double, lastToFailure: Boolean, d: MutableList<Decision>): WorkoutItem? {
+        val e = s.exercise
+        val sub = subContext(r)
+        val taken = r.day.slots.map { it.exercise.id }.toSet()
+        val power = s.spec.role == SlotRole.POWER
+        val pool = Library.all.filter { !it.userAddOnly && it.id !in taken && (if (power) it.powerCapable else !it.powerOnly) }
+        val reg = Library.regressionOf(e)?.takeIf { it.id !in taken && allowedToday(it, r, sub) }
+        val swaps = Substitution.options(e, pool, sub).value.ranked.filter { it.fits.pattern >= P.SUB_002.min_pattern_for_auto }.map { it.exercise }
+        for (c in (listOfNotNull(reg) + swaps).distinctBy { it.id }) {
+            val trial = ArrayList<Decision>()
+            val slot = s.copy(exercise = c, unit = c.unit, perSide = c.unilateral, rest = Rest.forSets(c, s.reps.last),
+                reps = if (c.unit == s.unit) s.reps else c.defaultRepRange)
+            val it = item(slot, r, tier, rir, lastToFailure, trial, allowRegression = false) ?: continue
+            d += trial
+            return it
+        }
+        return null
     }
 
     /**
@@ -561,7 +612,16 @@ object SessionGenerator {
      */
     private fun item(s: PlannedSlot, r: GenerationRequest, tier: Tier, rir: Double, lastToFailure: Boolean, d: MutableList<Decision>, allowRegression: Boolean = true): WorkoutItem? {
         val e = s.exercise
-        val (normal, calibrating) = normalLoad(s, e, r, s.targetRir.coerceAtLeast(1.0), d)
+        val n = normalLoad(s, e, r, s.targetRir.coerceAtLeast(1.0), d)
+        if (n.tooHeavy) {
+            val alt = if (allowRegression) easier(s, r, tier, rir, lastToFailure, d) else null
+            d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_003, RuleIds.INT_005),
+                if (alt != null) ReasonKey.LIGHTEST_TOO_HEAVY else ReasonKey.LIGHTEST_TOO_HEAVY_LEFT_OUT,
+                inputs = mapOf("exercise" to e.id, "lightest" to n.load, "reps" to s.reps.toString()), outputs = mapOf("instead" to alt?.exercise?.id))
+            return alt
+        }
+        val normal = n.load
+        val calibrating = n.calibrating
         var factor = SessionValidator.maxLoadFactor(s.main, tier, r.inDeload)
         if (s.spec.role == SlotRole.POWER) factor = minOf(factor, 1.0)
         var load = normal
@@ -581,14 +641,18 @@ object SessionGenerator {
         if (lf > factor + 1e-9) {
             val reg = if (allowRegression) Library.regressionOf(e)?.takeIf { allowedToday(it, r, SubContext(r.equipmentToday, r.level, mergedLimits(r), r.blockedTags, r.excludedIds)) } else null
             val alt = reg?.let { item(s.copy(exercise = it, unit = it.unit, perSide = it.unilateral, rest = Rest.forSets(it, s.reps.last)), r, tier, rir, lastToFailure, d, allowRegression = false) }
-            d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.RDY_004, RuleIds.PROG_003), ReasonKey.LOAD_CANNOT_REDUCE,
-                inputs = mapOf("exercise" to e.id, "normal" to normal, "lightest" to load, "cap" to factor), outputs = mapOf("regression" to alt?.exercise?.id))
+            d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.RDY_004, RuleIds.PROG_003),
+                if (alt != null) ReasonKey.LOAD_CANNOT_REDUCE else ReasonKey.LOAD_CANNOT_REDUCE_LEFT_OUT, inputs = mapOf("exercise" to e.id, "normal" to normal, "lightest" to load, "cap" to factor), outputs = mapOf("regression" to alt?.exercise?.id))
             return alt
         }
         // MOB-004 1.1.0: pain caution or a SAF-010 range-limited tag (deep knee or hip bending with osteoarthritis) shortens the range.
         val range = Mobility.rangeFor(painCaution = e.jointStress.keys.any { it in r.painCaution } || e.limitationTags.any { it in r.conditions.rangeLimitedTags })
+        // PROG-008: after two "form not solid" answers in a row the easier version is offered (the user chooses; the plan keeps this one).
+        val offer = if (calibrating || r.progression[e.id]?.offerRegression != true) null else Library.regressionOf(e)
+            ?.takeIf { reg -> r.day.slots.none { it.exercise.id == reg.id } && allowedToday(reg, r, subContext(r)) }?.id
         return WorkoutItem(e, s.spec.key, s.spec.role, s.priority, s.sets, s.reps, s.unit, s.perSide, rir, lastToFailure, load, Num.round2(minOf(lf, 1.0)),
-            Rest.forSets(e, s.reps.last, r.e1rm[e.id]?.let { est -> load?.let { it / est * 100 } }), emptyList(), range, calibrating, s.main)
+            Rest.forSets(e, s.reps.last, r.e1rm[e.id]?.let { est -> load?.let { it / est * 100 } }), emptyList(), range, calibrating, s.main,
+            lightestRecheck = n.recheck, easierOffer = offer)
     }
 
     /** RDY-004 / DEL-003 set cuts on the whole session: lowest priority first, each exercise keeps ≥ 1 set, then drop. */

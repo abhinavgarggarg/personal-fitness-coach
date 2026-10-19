@@ -451,6 +451,7 @@
     <string name="wk_reps">Reps</string>
     <string name="wk_seconds">Seconds</string>
     <string name="wk_replace">Replace</string>
+    <string name="wk_try_easier">Try the easier version: %1$s</string>
     <string name="wk_busy">Busy</string>
     <string name="wk_skip_exercise">Skip exercise</string>
     <string name="wk_skip_ramp">Skip warm-up sets</string>

@@ -206,7 +206,7 @@ data class ExerciseState(
             put("exerciseId", v.exerciseId); put("e1rm", v.e1rm); put("e1rmDay", v.e1rmDay)
             v.prescription?.let { p -> put("prescription", obj {
                 put("load", p.load); ints("repRange", listOf(p.repRange.first, p.repRange.last), sort = false); put("repTarget", p.repTarget)
-                put("action", p.action); flag("offerRegression", p.offerRegression) }) }
+                put("action", p.action); flag("offerRegression", p.offerRegression); flag("lightestTooHeavy", p.lightestTooHeavy) }) }
             put("prescriptionDay", v.prescriptionDay)
             v.calibration?.let { c -> put("calibration", obj { put("nextLoad", c.nextLoad); put("sessions", c.sessions); put("ceiling", c.ceiling) }) }
             if (v.formNoStreak != 0) put("formNoStreak", v.formNoStreak); flag("previousWasReduction", v.previousWasReduction)
@@ -216,7 +216,7 @@ data class ExerciseState(
         override fun read(o: JsonObject, version: Int) = ExerciseState(
             o.str("exerciseId"), o.dblOrNull("e1rm"), o.intOrNull("e1rmDay"),
             o.objOrNull("prescription")?.let { p -> Prescription(p.dbl("load"), p.range("repRange"), p.int("repTarget"), p.enum<ProgressionAction>("action"),
-                p.bool("offerRegression")) },
+                p.bool("offerRegression"), p.bool("lightestTooHeavy")) },
             o.intOrNull("prescriptionDay"), o.objOrNull("calibration")?.let { CalibrationState(it.dbl("nextLoad"), it.int("sessions"), it.dblOrNull("ceiling")) },
             o.int("formNoStreak", 0), o.bool("previousWasReduction"), o.dblOrNull("loadBeforeReductions"), o.intOrNull("lastDoneDay"),
             o.int("exposures"), o.bool("knownApplied"))

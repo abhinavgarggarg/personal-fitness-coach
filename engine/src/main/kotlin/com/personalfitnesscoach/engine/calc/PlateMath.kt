@@ -80,6 +80,13 @@ object PlateMath {
         return eligible.minByOrNull { Math.abs(it - target) }!!
     }
 
+    /**
+     * PROG-003 cannot be met: every available load is more than 2% above `target`, so even the lightest is too heavy for the
+     * dose the target was worked out for (Phase 4 Part 4: the empty 20 kg bar for someone it is too heavy for).
+     */
+    fun belowLightest(target: Double, available: List<Double>): Boolean =
+        available.isNotEmpty() && available.min() > target * (1.0 + P.PROG_003.over_target_tolerance_pct / 100.0) + 1e-9
+
     /** Smallest available load strictly above `current`, or null at the top of the range. */
     fun nextAbove(current: Double, available: List<Double>): Double? =
         available.filter { it > current + 1e-9 }.minOrNull()

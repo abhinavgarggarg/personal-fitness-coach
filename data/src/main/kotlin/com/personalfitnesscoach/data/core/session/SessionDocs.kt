@@ -234,6 +234,10 @@ data class ItemDoc(
     val addedSets: Int = 0,
     /** TIME-002 superset (D-109): the slot key of the partner whose working sets alternate with this one's. */
     val supersetWith: String? = null,
+    /** A new block's ramp at the lightest load after it was too heavy: the exercise's history starts afresh (Phase 4 Part 4). */
+    val lightestRecheck: Boolean = false,
+    /** PROG-008: the easier version offered for this exercise (its ID), after two "form not solid" answers in a row. */
+    val easierOffer: String? = null,
 ) {
     init {
         require(sets in 0..50 && !reps.isEmpty() && reps.first >= 0 && reps.last <= 1000) { "dose out of range" }
@@ -253,6 +257,7 @@ data class ItemDoc(
         objs("rampSets", rampSets.map { r -> obj { put("load", r.load); range("reps", r.reps) } }); flag("reducedRange", reducedRange)
         put("calibrationCeiling", calibrationCeiling); flag("painReduced", painReduced); if (addedSets != 0) put("addedSets", addedSets)
         if (supersetWith != null) put("supersetWith", supersetWith)
+        flag("lightestRecheck", lightestRecheck); if (easierOffer != null) put("easierOffer", easierOffer)
     }.toString()
 
     companion object {
@@ -264,7 +269,8 @@ data class ItemDoc(
                 o.bool("lastSetToFailure"), o.dblOrNull("load"), o.dbl("loadFactor"), o.int("restMinSec"), o.int("restDefaultSec"), o.int("restMaxSec"),
                 o.bool("calibrating"), o.bool("main"), o.strOrNull("swappedFrom"), o.bool("fromKnownNumber"),
                 o.objs("rampSets").map { r -> RampRef(r.dbl("load"), r.range("reps")) }, o.bool("reducedRange"), o.dblOrNull("calibrationCeiling"),
-                o.bool("painReduced"), o.int("addedSets", 0), o.strOrNull("supersetWith")?.take(64))
+                o.bool("painReduced"), o.int("addedSets", 0), o.strOrNull("supersetWith")?.take(64), o.bool("lightestRecheck"),
+                o.strOrNull("easierOffer")?.takeIf { Library[it] != null })
         }
     }
 }

@@ -34,6 +34,8 @@ androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
 compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+# Phase 4 Part 4 (D-120): Android's accessibility checks (ATF) in the device tests only; never in the shipped app.
+compose-ui-test-junit4-accessibility = { group = "androidx.compose.ui", name = "ui-test-junit4-accessibility" }
 room3-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref = "room3" }
 room3-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref = "room3" }
 room3-testing = { group = "androidx.room3", name = "room3-testing", version.ref = "room3" }

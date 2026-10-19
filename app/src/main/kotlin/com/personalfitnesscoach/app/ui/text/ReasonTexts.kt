@@ -128,6 +128,10 @@ object ReasonTexts {
         ReasonKey.AEROBIC_CHECK_FAILED -> R.string.reason_aerobic_check_failed
         ReasonKey.ILLNESS_REST_DAY -> R.string.reason_illness_rest_day
         ReasonKey.LOAD_CANNOT_REDUCE -> R.string.reason_load_cannot_reduce
+        ReasonKey.LOAD_CANNOT_REDUCE_LEFT_OUT -> R.string.reason_load_cannot_reduce_left_out
+        ReasonKey.LIGHTEST_TOO_HEAVY -> R.string.reason_lightest_too_heavy
+        ReasonKey.LIGHTEST_TOO_HEAVY_LEFT_OUT -> R.string.reason_lightest_too_heavy_left_out
+        ReasonKey.LIGHTEST_RECHECK -> R.string.reason_lightest_recheck
         ReasonKey.GOAL_DEFAULT_CHOSEN -> R.string.reason_goal_default_chosen
         ReasonKey.ACTIVITY_TARGET_SET -> R.string.reason_activity_target_set
         ReasonKey.FAT_LOSS_MIX -> R.string.reason_fat_loss_mix

@@ -762,7 +762,7 @@ class SessionPlayer(private val d: PfcData) {
         return ItemDoc(it.role, it.priority, sets, it.reps, it.unit, it.perSide, it.targetRir, it.lastSetToFailure, it.load, it.loadFactor,
             it.rest.minSec, it.rest.defaultSec, it.rest.maxSec, it.calibrating, it.main, rampSets = it.warmupSets.map { r -> RampRef(r.load, r.reps) },
             reducedRange = it.range == com.personalfitnesscoach.engine.planning.RangeOfMotion.REDUCED,
-            calibrationCeiling = if (it.calibrating) req.calibrationCeilings[ex.id] else null, supersetWith = pair)
+            calibrationCeiling = if (it.calibrating) req.calibrationCeilings[ex.id] else null, supersetWith = pair, lightestRecheck = it.lightestRecheck)
     }
 
     /**

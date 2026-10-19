@@ -25,6 +25,11 @@ data class Prescription(
     val action: ProgressionAction,
     /** PROG-008: the coach should offer an easier variation. */
     val offerRegression: Boolean = false,
+    /**
+     * The load is the lightest the equipment allows and the last exposure shows it is still too heavy for the bottom of the rep range
+     * at the target effort (PROG-003 has no load within 2% of the target): the generator plans an easier version (Phase 4 Part 4).
+     */
+    val lightestTooHeavy: Boolean = false,
 )
 
 /** The last exposure of one exercise, plus the context the progression rules need. */
