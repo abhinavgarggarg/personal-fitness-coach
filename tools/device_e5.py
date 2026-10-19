@@ -370,7 +370,8 @@ class Device(Smoke):
         adb("shell", "settings", "put", "secure", "backup_local_transport_parameters", "fake_encryption_flag=true,is_encrypted=true")
         time.sleep(2)
         adb("shell", "bmgr", "wipe", TRANSPORT, self.pkg)
-        adb("shell", "am", "force-stop", self.pkg)
+        # Not force-stopped: Android backs up no app in the stopped state ("Backup is not allowed").
+        self.home()
         out = adb("shell", "bmgr", "backupnow", self.pkg, timeout=240)
         self.log.append(f"backupnow: {' '.join(out.split())[:300]}")
         if "Success" not in out:

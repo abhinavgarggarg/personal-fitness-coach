@@ -133,6 +133,10 @@ class Smoke:
             if n.pkg == "android" and n.says("Wait"):
                 self.tap(n)
                 return True
+            # Another app (the launcher, on a slow emulator) not responding: closed, so the app under test goes on.
+            if n.says("Close app") and n.pkg != self.pkg and any("isn't responding" in (m.text or "") and "Fitness" not in (m.text or "") for m in nodes):
+                self.tap(n)
+                return True
         return False
 
     def tap(self, n):
