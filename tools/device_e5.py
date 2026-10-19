@@ -534,7 +534,8 @@ class Device(Smoke):
         # Not force-stopped: Android backs up no app in the stopped state ("Backup is not allowed").
         self.home()
         out = " ".join(adb("shell", "bmgr", "backupnow", self.pkg, timeout=240).split())
-        result = out.split(f"Package {self.pkg} with result:")[-1].split("Package")[0].strip() if self.pkg in out else out[:120]
+        # "Package <pkg> with result: Success Backup finished with result: Success": the package's own result.
+        result = out.split(f"Package {self.pkg} with result:")[-1].split("Package")[0].split(" Backup finished")[0].strip() if self.pkg in out else out[:120]
         return result, self.stored()
 
     def backup(self, apk):
