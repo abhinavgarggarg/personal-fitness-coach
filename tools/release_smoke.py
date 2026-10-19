@@ -233,9 +233,17 @@ class Smoke:
 
         self.step = "onboarding: about you"
         self.scroll_top()
-        field, _ = self.wait_any([S["onb_birth_year"]])
-        self.tap(field)
-        adb("shell", "input", "text", birth_year)
+        # Typed again if a slow emulator dropped a key ("185" for "1985"): the field must show the year.
+        for _ in range(3):
+            field, _ = self.wait_any([S["onb_birth_year"]])
+            self.tap(field)
+            adb("shell", "input", "keyevent", "KEYCODE_MOVE_END")
+            for _ in range(6):
+                adb("shell", "input", "keyevent", "KEYCODE_DEL")
+            adb("shell", "input", "text", birth_year)
+            time.sleep(1)
+            if any(n.text == birth_year for n in screen()):
+                break
         self.hide_keyboard()
         self.tap_text(S["exp_1_3"], enabled=False)
         self.tap_text(S["action_continue"])

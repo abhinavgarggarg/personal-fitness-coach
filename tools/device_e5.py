@@ -309,10 +309,15 @@ class Device(Smoke):
         return self.pkg in self.focus()
 
     def unlock(self):
-        adb("shell", "input", "keyevent", "224")
-        time.sleep(1)
-        adb("shell", "wm", "dismiss-keyguard")
-        adb("shell", "input", "keyevent", "82")
+        # A slow emulator (just rebooted) may not answer at once: each step is tried again rather than failing the run.
+        for args in (("input", "keyevent", "224"), ("wm", "dismiss-keyguard"), ("input", "keyevent", "82")):
+            for _ in range(3):
+                try:
+                    adb("shell", *args, timeout=60)
+                    break
+                except subprocess.TimeoutExpired:
+                    time.sleep(5)
+            time.sleep(1)
         time.sleep(2)
 
     def wait_boot(self):
