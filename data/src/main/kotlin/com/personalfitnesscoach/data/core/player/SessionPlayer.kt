@@ -327,7 +327,7 @@ class SessionPlayer(private val d: PfcData) {
             // Every weight-finding set stops at its target reps or with 3 reps in reserve, whichever comes first, so the ramp stays
             // within RPE 8 however big the step; the reps done and the rating then set the next step (CAL-001 2.1.0, D-116).
             return SetTarget(SetKind.CALIBRATION, cal + 1, P.CAL_001.max_ramp_sets, load, reps..reps, item.unit, item.perSide, Calibration.RAMP_STOP_RIR,
-                askForm = false, askHowManyMore = cal + 1 < P.CAL_001.max_ramp_sets && Calibration.bigStepAhead(load, avail, coarse))
+                askForm = false, askHowManyMore = cal + 1 < P.CAL_001.max_ramp_sets && Calibration.bigStepAhead(load, avail, coarse, item.calibrationCeiling))
         }
         if (work >= item.sets) return null
         val lastSet = work + 1 == item.sets
@@ -522,7 +522,8 @@ class SessionPlayer(private val d: PfcData) {
                 val rir = requireNotNull(entry.rir) { "a calibration set needs the effort answer" }
                 // The reps done (a set short of its target says the load is heavier than the rating alone), as the replay reads it.
                 val step = Calibration.next(load, minOf(t.reps.first, entry.reps ?: t.reps.first), rir, lift.sets.count { it.kind == SetKind.CALIBRATION } + 1, avail, item.calibrationCeiling,
-                    Calibration.coarseStepsAllowed(lift.exercise.loadType, u.coarseFreeWeights && !item.painReduced), askedReps = t.reps.first)
+                    Calibration.coarseStepsAllowed(lift.exercise.loadType, u.coarseFreeWeights && !item.painReduced), askedReps = t.reps.first,
+                    freeWeight = Calibration.isFreeWeight(lift.exercise.loadType))
                 dec += step.decisions
                 calStep = step.value
                 next = when (val st = step.value) {

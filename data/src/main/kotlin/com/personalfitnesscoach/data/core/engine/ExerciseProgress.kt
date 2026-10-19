@@ -121,7 +121,7 @@ object ExerciseProgress {
                 // The reps done, not the reps asked for: a set short of its target is what the estimate and the working load go by.
                 lastReps = minOf(target, set.reps!!)
                 val step = Calibration.next(set.loadKg!!, lastReps, rir, i + 1, avail, ceiling,
-                    Calibration.coarseStepsAllowed(ex.loadType, ctx.coarseFreeWeights && !item.painReduced), askedReps = target)
+                    Calibration.coarseStepsAllowed(ex.loadType, ctx.coarseFreeWeights && !item.painReduced), askedReps = target, freeWeight = Calibration.isFreeWeight(ex.loadType))
                 d += step.decisions
                 last = step.value
                 if (last !is CalibrationStep.Continue) break

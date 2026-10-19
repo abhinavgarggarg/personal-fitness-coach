@@ -86,7 +86,9 @@ class RestorePreview internal constructor(val summary: BackupSummary, internal v
  */
 object BackupFormat {
     const val MAGIC = "PFCBACKUP"
-    const val FORMAT_VERSION = 1
+    /** 2: a weight-finding set may hold "about how many more" up to 50 (D-116), so an older build says "update the app" instead of
+     * "damaged". Version 1 files still restore. */
+    const val FORMAT_VERSION = 2
     const val PBKDF2_ITERATIONS = 600_000
     private const val SALT_BYTES = 16
     private const val IV_BYTES = 12

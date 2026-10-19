@@ -393,15 +393,16 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
         SetKind.CALIBRATION -> {
             Note(stringResource(R.string.wk_calibration_hint))
             if (t.askHowManyMore) Note(stringResource(R.string.wk_calibration_more))
-            // "About 3 left" with the reps untouched may be a set stopped early whose reps weren't set: asked once, since the working
-            // weight goes by the reps done (review of D-116).
+            // An answer of 3 or fewer left with the reps untouched may be a set stopped early whose reps weren't set: asked once, since
+            // the working weight goes by the reps done (review of D-116 and its re-check).
             var askAll by remember(l.rowId, t.kind, t.number) { mutableStateOf(false) }
+            var pending by remember(l.rowId, t.kind, t.number) { mutableStateOf(Calibration.RAMP_STOP_RIR) }
             if (askAll) {
                 Text(stringResource(R.string.wk_cal_all_q, t.reps.last), style = MaterialTheme.typography.bodyLarge)
-                PrimaryButton(stringResource(R.string.wk_cal_all_yes, t.reps.last), { askAll = false; logIt(Calibration.RAMP_STOP_RIR) }, enabled = canLog)
+                PrimaryButton(stringResource(R.string.wk_cal_all_yes, t.reps.last), { val r = pending; askAll = false; logIt(r) }, enabled = canLog)
                 SecondaryButton(stringResource(R.string.wk_cal_fewer), { askAll = false })
             } else EffortButtons(v.effortPrompt, includeFivePlus = true, enabled = canLog, howManyMore = t.askHowManyMore) { rir ->
-                if (rir == Calibration.RAMP_STOP_RIR && t.unit == DoseUnit.REPS && amount == t.reps.last) askAll = true else logIt(rir)
+                if (rir <= Calibration.RAMP_STOP_RIR && t.unit == DoseUnit.REPS && amount == t.reps.last) { pending = rir; askAll = true } else logIt(rir)
             }
         }
         else -> {
@@ -479,9 +480,9 @@ private fun EffortButtons(style: Effort.PromptStyle, includeFivePlus: Boolean, e
     Text(stringResource(if (style == Effort.PromptStyle.RIR_QUESTION) R.string.wk_effort_q else R.string.wk_effort_q_rpe),
         style = MaterialTheme.typography.bodyLarge)
     val five = stringResource(R.string.wk_effort_5plus)
-    // Before a big step "5+" is asked more closely (D-116): 5–9, 10–19, 20–29, 30 or more, each saved as its lower end.
+    // Before a big step "5+" is asked more closely (D-116): 5–9, 10–19, 20–29, 30–49, 50 or more, each saved as its lower end.
     val more = listOf(stringResource(R.string.wk_effort_5_9), stringResource(R.string.wk_effort_10_19), stringResource(R.string.wk_effort_20_29),
-        stringResource(R.string.wk_effort_30plus)).zip(com.personalfitnesscoach.engine.progression.Calibration.MORE_CHOICES)
+        stringResource(R.string.wk_effort_30_49), stringResource(R.string.wk_effort_50plus)).zip(com.personalfitnesscoach.engine.progression.Calibration.MORE_CHOICES)
     val options: List<Pair<String, Double>> =
         if (includeFivePlus && howManyMore) listOf("0" to 0.0, "1" to 1.0, "2" to 2.0, "3" to 3.0, "4" to 4.0) + more
         else if (includeFivePlus) listOf("0" to 0.0, "1" to 1.0, "2" to 2.0, "3" to 3.0, "4" to 4.0, five to 5.0)

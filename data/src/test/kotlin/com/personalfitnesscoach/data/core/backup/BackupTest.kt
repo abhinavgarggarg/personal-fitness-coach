@@ -45,7 +45,7 @@ class BackupTest {
         val before = d.store.snapshot()
         val (name, bytes) = d.backup.export(iterations = fast)
         assertTrue(name.matches(Regex("PersonalFitnessCoach-\\d{4}-\\d{2}-\\d{2}\\.pfcbackup")))
-        assertTrue(String(bytes, Charsets.UTF_8).startsWith("PFCBACKUP 1\n{"))
+        assertTrue(String(bytes, Charsets.UTF_8).startsWith("PFCBACKUP 2\n{"))
         d.eraseAll()
         assertTrue(d.store.snapshot().isEmpty)
         val preview = d.backup.inspect(bytes)
@@ -119,7 +119,9 @@ class BackupTest {
         problem(BackupProblem.DAMAGED) { d.backup.inspect(bytes.copyOf(20)) }
         val flipped = bytes.copyOf().also { it[it.size - 10] = (it[it.size - 10] + 1).toByte() }
         problem(BackupProblem.DAMAGED) { d.backup.inspect(flipped) }
-        problem(BackupProblem.NEWER_FORMAT) { d.backup.inspect(text.replaceFirst("PFCBACKUP 1", "PFCBACKUP 2").toByteArray()) }
+        problem(BackupProblem.NEWER_FORMAT) { d.backup.inspect(text.replaceFirst("PFCBACKUP 2", "PFCBACKUP 3").toByteArray()) }
+        // A file from before format 2 (D-116) still opens.
+        d.backup.inspect(text.replaceFirst("PFCBACKUP 2", "PFCBACKUP 1").toByteArray())
         problem(BackupProblem.NEWER_SCHEMA) { d.backup.inspect(text.replaceFirst("\"schemaVersion\":1", "\"schemaVersion\":7").toByteArray()) }
         val encrypted = d.backup.export("pw".toCharArray(), iterations = fast).second
         val broken = encrypted.copyOf().also { val i = it.size - 5; it[i] = (if (it[i] == 'A'.code.toByte()) 'B' else 'A').code.toByte() }

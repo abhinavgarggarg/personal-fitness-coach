@@ -227,20 +227,27 @@ class CalibrationTest {
         // 2.5 → 5 kg is +100%. A plain "5+" may mean exactly 5 — a one-rep max as low as 1.5 × the load at 10 reps — so it never
         // takes the big step: the start weight is the working weight (D-038).
         assertEquals(CalibrationStep.Found(2.5, null), Calibration.next(2.5, 10, 5.0, 1, db, coarseStepsAllowed = free).value)
-        // "30 or more" supports double (2.5 × 2.33 / 1.17), "20–29" up to ×1.71, "10–19" ×1.43 (D-116, review of D-116).
-        assertEquals(CalibrationStep.Continue(5.0), Calibration.next(2.5, 10, 30.0, 1, db, coarseStepsAllowed = free).value)
-        assertEquals(CalibrationStep.Found(2.5, null), Calibration.next(2.5, 10, 20.0, 1, db, coarseStepsAllowed = free).value)
-        assertEquals(CalibrationStep.Continue(7.5), Calibration.next(5.0, 10, 20.0, 1, db, coarseStepsAllowed = free).value)
-        assertEquals(CalibrationStep.Found(5.0, null), Calibration.next(5.0, 10, 10.0, 1, db, coarseStepsAllowed = free).value)
-        assertEquals(CalibrationStep.Continue(10.0), Calibration.next(7.5, 10, 10.0, 1, db, coarseStepsAllowed = free).value)
+        // A count of 30 supports double (× 2.33 / 1.17), 20 up to ×1.71, 10 ×1.43. On free weights the step goes by the range below
+        // the one chosen, so a count one range too high still leaves room (re-check of D-116): "50+" for a doubled dumbbell.
+        fun fw(load: Double, rir: Double) = Calibration.next(load, 10, rir, 1, db, coarseStepsAllowed = free, freeWeight = true).value
+        assertEquals(CalibrationStep.Continue(5.0), fw(2.5, 50.0))
+        assertEquals(CalibrationStep.Found(2.5, null), fw(2.5, 30.0))
+        assertEquals(CalibrationStep.Continue(7.5), fw(5.0, 30.0))
+        assertEquals(CalibrationStep.Found(5.0, null), fw(5.0, 20.0))
+        assertEquals(CalibrationStep.Continue(10.0), fw(7.5, 20.0))
+        assertEquals(20.0, Calibration.rangeBelow(30.0), 0.0)
+        assertEquals(0.0, Calibration.rangeBelow(5.0), 0.0)
+        // A machine stack goes by the range chosen.
+        assertEquals(CalibrationStep.Continue(5.0), Calibration.next(2.5, 10, 30.0, 1, db, coarseStepsAllowed = true).value)
         assertEquals(2.0, Calibration.bigStepLimit(1.0, 10, 30.0), 1e-9)
         // Never at "4 more" (the +10–15% band holds), never without coarse steps.
         assertTrue(Calibration.next(2.5, 10, 4.0, 1, db, coarseStepsAllowed = true).value is CalibrationStep.Found)
-        assertEquals(CalibrationStep.Found(2.5, null), Calibration.next(2.5, 10, 30.0, 1, db, coarseStepsAllowed = Calibration.coarseStepsAllowed(LoadType.DUMBBELL)).value)
+        assertEquals(CalibrationStep.Found(2.5, null), Calibration.next(2.5, 10, 50.0, 1, db, coarseStepsAllowed = Calibration.coarseStepsAllowed(LoadType.DUMBBELL), freeWeight = true).value)
         // The screen asks for the closer count exactly when only a big step is ahead.
         assertTrue(Calibration.bigStepAhead(2.5, db, true))
         assertFalse(Calibration.bigStepAhead(12.5, db, true))
         assertFalse(Calibration.bigStepAhead(2.5, db, false))
+        assertFalse("an own-number ceiling below the next pair", Calibration.bigStepAhead(2.5, db, true, ceiling = 4.0))
         // Who: not a beginner, under 60 (age known), standard screening, no health condition or injury. Machines for everyone (D-070).
         assertTrue(Calibration.freeWeightCoarseSteps(Level.INTERMEDIATE, 41, flaggedScreen = false, hasCondition = false))
         assertFalse(Calibration.freeWeightCoarseSteps(Level.BEGINNER, 41, false, false))

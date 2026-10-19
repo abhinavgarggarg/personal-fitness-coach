@@ -167,7 +167,7 @@ class ScreensTest {
         assertTouchTargets()
         tap(s(R.string.preview_start))
         assertTrue(c.screen.value is Screen.Workout)
-        // Warm-up, then the first lift: the effort answer logs the set in one tap and the rest timer follows.
+        // Warm-up, then the first lift: the effort answer logs the set (a weight-finding set confirms its reps) and the rest timer follows.
         shown(s(R.string.wk_warmup_title))
         tap(s(R.string.wk_stage_next))
         var guard = 0
@@ -180,7 +180,13 @@ class ScreensTest {
         if (first.next?.kind == SetKind.WARMUP) tap(s(R.string.wk_skip_ramp))
         val before = (c.screen.value as Screen.Workout).view.lifts.sumOf { it.sets.size }
         assertTouchTargets()
+        val target = ((c.screen.value as Screen.Workout).view.step as Step.Lift).lift.next!!
         tap("3")
+        // A weight-finding set answered "3" with its reps untouched asks once whether all were done (D-116).
+        if (target.kind == SetKind.CALIBRATION) {
+            assertTouchTargets()
+            tap(s(R.string.wk_cal_all_yes, target.reps.last))
+        }
         val after = (c.screen.value as Screen.Workout).view
         assertEquals(before + 1, after.lifts.sumOf { it.sets.size })
         shown(s(R.string.wk_rest_over))

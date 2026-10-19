@@ -135,7 +135,7 @@ class SessionPlayerTest {
         assertTrue(r2.view.lifts.first { it.rowId == cal.rowId }.finished)
     }
 
-    @Test fun `CAL-001 a light dumbbell takes the next pair only outside the risk groups, on a count of 30 or more (D-116)`() = runBlocking {
+    @Test fun `CAL-001 a light dumbbell takes the next pair only outside the risk groups, on a count of 50 or more (D-116)`() = runBlocking {
         // Who may: intermediate, 46, standard screening, no condition. Who may not: a beginner, someone of 66 (D-116, option C).
         var checked = 0
         for ((level, born, coarse) in listOf(Triple(Level.INTERMEDIATE, 1980, true), Triple(Level.BEGINNER, 1980, false), Triple(Level.INTERMEDIATE, 1960, false))) {
@@ -150,7 +150,7 @@ class SessionPlayerTest {
             val t = lift.next!!
             // Who may take the big step is asked "about how many more?" instead of "5+", and the answer sizes the step (D-116).
             assertEquals("$level $born asked how many more", coarse, t.askHowManyMore)
-            val next = p.log(lift.rowId, LiftEntry(t.load, t.reps.first, rir = if (coarse) 30.0 else 5.0)).view.lifts.first { it.rowId == lift.rowId }.next
+            val next = p.log(lift.rowId, LiftEntry(t.load, t.reps.first, rir = if (coarse) 50.0 else 5.0)).view.lifts.first { it.rowId == lift.rowId }.next
             if (coarse) assertTrue("$level $born: the next pair (${t.load} → ${next?.load})", next != null && next.kind == SetKind.CALIBRATION && next.load!! > t.load!!)
             else assertTrue("$level $born: the start weight is the working weight (${t.load} → $next)", next == null || next.kind != SetKind.CALIBRATION)
             checked++

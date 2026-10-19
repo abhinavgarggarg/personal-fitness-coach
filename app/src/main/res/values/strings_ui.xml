@@ -441,7 +441,8 @@
     <string name="wk_effort_5_9">5–9</string>
     <string name="wk_effort_10_19">10–19</string>
     <string name="wk_effort_20_29">20–29</string>
-    <string name="wk_effort_30plus">30+</string>
+    <string name="wk_effort_30_49">30–49</string>
+    <string name="wk_effort_50plus">50+</string>
     <string name="wk_form_q">Did your form feel solid?</string>
     <string name="form_yes">Yes</string>
     <string name="form_unsure">Not sure</string>
