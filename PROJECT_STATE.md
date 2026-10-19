@@ -1,16 +1,16 @@
 # PROJECT STATE — Personal Fitness Coach
 
-Last updated: 2026-10-19 (Phase 4 Part 2 done; Registry 3.0.0 — finding your weights — approved by the PO and applied (D-117); Part 3 device tests in progress) · Master prompt: v3.0 (7 Oct 2026)
+Last updated: 2026-10-19 (Phase 4 Parts 1–3 done: Part 3 interruption, data, backup and upgrade tests pass on Android 10, 14 and 16 (D-118); next Part 4, safety and evidence audit) · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
-**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Parts 1–2 of 5 done: weekly-limit tuning (Registry 2.0.0, D-112, D-113; report `docs/phase4/part1_report.md`) and the 30-scenario suite with its fixes (D-114, D-115; report `docs/phase4/part2_report.md`). The PO's choice on the dumbbell ramp (option C, D-116) became Registry 3.0.0 (CAL-001 2.0.0, MAJOR), approved 19 Oct 2026 (D-117) and applied; report `docs/phase4/registry_3_0_0_report.md`. In progress: Part 3, interruption, data-integrity and upgrade tests on emulators. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
+**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Parts 1–2 of 5 done: weekly-limit tuning (Registry 2.0.0, D-112, D-113; report `docs/phase4/part1_report.md`) and the 30-scenario suite with its fixes (D-114, D-115; report `docs/phase4/part2_report.md`). The PO's choice on the dumbbell ramp (option C, D-116) became Registry 3.0.0 (CAL-001 2.0.0, MAJOR), approved 19 Oct 2026 (D-117) and applied; report `docs/phase4/registry_3_0_0_report.md`. Part 3 done: interruption, data-integrity, backup and upgrade tests on emulators (D-118; report `docs/phase4/part3_report.md`). Next: Part 4, the safety and evidence audit. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
 
 | Phase | Status | Date |
 |---|---|---|
 | 1 Fitness research & evidence engine | APPROVED | 2026-10-07 |
 | 2 Product requirements, UX & architecture | APPROVED (D-028) | 2026-10-07 |
 | 3 Application development | APPROVED (D-110) | 2026-10-13 |
-| 4 Testing, validation & UAT | IN PROGRESS — Parts 1–2 of 5 done; Registry 3.0.0 applied (D-111, D-113…D-117) | 2026-10-19 |
+| 4 Testing, validation & UAT | IN PROGRESS — Parts 1–3 of 5 done; Registry 3.0.0 applied (D-111, D-113…D-118) | 2026-10-19 |
 | 5 Production build & APK delivery | NOT STARTED | — |
 
 ## Phase 4 progress (D-111)
@@ -18,7 +18,7 @@ Last updated: 2026-10-19 (Phase 4 Part 2 done; Registry 3.0.0 — finding your w
 |---|---|---|
 | 1 | Weekly-limit tuning (D-110, D-112): 12-month simulations (`YearOfTrainingTest`, 8 personas × 4 ways of turning up); reference weeks at the level planned and done (missed sessions, cut-short weeks, readiness-lightened days; last 8 weeks); the week planned within the limits; easy conditioning before dropping it; a floor at 50% of the plan under a 2× spike guard on the weeks as done; independent review (1 high, 4 medium, 4 low) and re-check (2 more), all fixed. MAJOR change set `rules/proposals/registry_2.0.0.json` | **VERIFIED; approved by the PO 19 Oct 2026 (D-113) and applied** — Registry 2.0.0; 670 tests locally (engine 427, data core 174, app 69); CI run 39191821452 for bcd1ad6 green (engine 427, data incl. the 52-week simulation, app 85, rule coverage 152/152 with 315 test IDs, engine line coverage 96.8%, release APK 4.22 MB, no INTERNET); Devices run 39191852998: 9/9 on all 5 devices plus the release smoke test. Report `docs/phase4/part1_report.md` |
 | 2 | The 30-scenario suite (E2), automated on every push (D-114): S01–S30 through `AppController` on the real data layer and engine (`ScenarioSuiteTest`, list `docs/phase4/scenarios.md`). Found and fixed (D-115): calibration ended with working sets as CAL-001 says (was up to 4 ramp-only sessions), read by the reps done; welcome back after weeks without the app; "only N minutes left" uses the time and keeps ramps whole; 100-rep / 500 kg limits for logged and corrected sets. Independent review: 12 findings (2 high, 4 medium, 6 low) and re-check (6 more), all addressed | **VERIFIED; merged to main** — 705 tests locally (engine 428, data core 178, app 99 incl. the 30 scenarios); CI run 39227662972 for a043eb2 green (engine 428, data and app incl. the 30 scenarios, rule coverage 152/152 with 315 test IDs, release APK 4.24 MB, permissions PASS, no INTERNET); on main e5a7992: CI 39229701890 green, Devices 39229743264 green on all 5 devices plus the release smoke test. The dumbbell decision (option C) led to Registry 3.0.0: a stop at about 3 reps left on every weight-finding set and big steps only on a closer count (D-116), approved and applied (D-117); on main 6a955b7: CI 39274731645 green (rule coverage 152/152 with 317 test IDs), Devices 39274741164 green on all 5 devices plus the release smoke test |
-| 3 | Interruption, data-integrity and upgrade tests on emulators (E5); Android backup | NOT STARTED |
+| 3 | Interruption, data-integrity and upgrade tests on emulators (E5); Android backup (D-118): `tools/device_e5.py`, Devices job "Interruptions and data (E5)" on Android 16, 14 and 10. Content of every set, the resume point, the resume prompt, crashes, the rest alert; backup only when end-to-end encrypted or device-to-device; upgrade from the Phase 3 build. App fix: device-to-device transfer on Android 10–11. Independent review (4 high, 5 medium, low) and re-check | **VERIFIED on the branch** — Devices run 39297906315: Android 16 29/29, Android 14 29/29, Android 10 28/28 (encrypted backup not simulable before Android 12; checked on the phone in UAT) |
 | 4 | Safety and evidence audit: independent expert review, the nine pending sources, TalkBack pass, device performance | NOT STARTED |
 | 5 | UAT on the PO's Motorola Edge 50 (E7), fixes, Phase 4 gate | NOT STARTED |
 
@@ -100,5 +100,5 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 13. Before any public release: clinician and regulatory review of the condition table and wording (D-058).
 
 ## Next actions
-1. Phase 4 Part 3 (D-111): interruption, data-integrity and upgrade tests on emulators (E5) — `tools/device_e5.py`, the Devices workflow's E5 job; then Parts 4–5.
+1. Phase 4 Part 4 (D-111): safety and evidence audit — independent expert review, the nine pending sources, TalkBack pass, device performance; then Part 5 (UAT on the PO's phone, including Android backup on the real device).
 2. Part 4 follow-up: a very weak person for whom the empty bar is already too heavy gets a load they can't lift for the rep range (pre-existing; offer the easier version of the exercise). The PO may install the debug build from the CI artifacts at any time (instructions sent 13 Oct 2026).

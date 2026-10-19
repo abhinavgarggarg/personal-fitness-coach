@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-19 — Phase 4 Part 3: interruptions, data integrity, backup and upgrade (E5)
+- `tools/device_e5.py` drives the debug build from outside on emulators. A session is logged set by set through home, screen off, rotation (logging sideways), an answered call, low memory, Android closing it in the background, a stop on screen, four stops 0–0.3 s after a tap, and a reboot. Also covered: an upgrade from the Phase 3 build with a session left open, and Android backup.
+- Checks after every step: every set's content unchanged and exactly one complete row per tap; the saved resume point unchanged; "Continue where you stopped?" exactly when the app started afresh; the rest alert set again; no crash or not-responding. Backup: the database only in an end-to-end encrypted backup or a device-to-device transfer, back identical after a reinstall.
+- Devices workflow: new E5 job on Android 16, 14 and 10 (run 39297906315: 29, 29 and 28 checks pass). `release_smoke.py` split into reusable steps.
+- App fix (review): on Android 10–11 a device-to-device transfer now takes the data, as on Android 12+ (`backup_rules.xml`; `check_backup_rules.py` checks both).
+- Independent review: 4 high, 5 medium, several low on the first version; all addressed. Report `docs/phase4/part3_report.md`.
+
 ## 2026-10-19 — Registry 3.0.0: finding your weights (approved)
 - The PO chose option C for light dumbbells and kettlebells (D-116). Built, reviewed by an independent safety reviewer (2 high, 2 medium, 5 low on the first draft; re-check: nothing blocking, 1 medium and 4 low), redrawn and approved as Registry 3.0.0 (CAL-001 2.0.0, MAJOR, D-117), applied with `tools/research_update.py`.
 - Every weight-finding set stops at its target reps or with about 3 reps left, and the reps done are entered ("Reps done" on screen; "Did you do all N reps?" when 3 or fewer left is tapped with the reps untouched). A set stopped short ends the ramp; the working weight is never more than the set supports for the bottom of the rep range.

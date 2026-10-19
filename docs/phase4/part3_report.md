@@ -15,7 +15,7 @@ After every step it reads the app's own database directly. It checks three thing
 - the session would resume at the same place: the same stage, exercise, next weight and rest;
 - the app hasn't crashed or stopped responding.
 
-[Result summary to be added.] The test runs every week and before each release, on Android 10, 14 and 16. Android 16 is what your phone runs.
+**On Android 10, 14 and 16 every check passes: no set was lost, changed or doubled, and every session came back where it stopped.** The test runs every week and before each release. Android 16 is what your phone runs.
 
 ## What is tested
 
@@ -44,7 +44,20 @@ Two things these tests don't cover:
 Export, erase and restore of the app's own backup file is checked on every device in the device tests (Phase 3), and in scenario S28.
 
 ## Results
-[to be added]
+GitHub Devices run 39297906315, branch `phase4/e5-device-tests` at 8feced0:
+
+| | Android 16 | Android 14 | Android 10 |
+|---|---|---|---|
+| Checks passed | 29 of 29 | 29 of 29 | 28 of 28 |
+| Sets logged through the interruptions, all kept unchanged | 11 | 11 | 11 |
+| Upgrade from the Phase 3 build with a session left open | passed | passed | passed |
+| Stopped 0 / 0.05 / 0.15 / 0.3 s after a tap | not saved, saved, saved, saved | the same | the same |
+| Rest alert set again after reopening | yes | yes | yes |
+| Not encrypted: the database stays out | yes (0 files) | yes (0 files) | yes (0 files) |
+| Device-to-device: the database goes | yes | yes | can't be simulated |
+| Encrypted backup: back identical after a reinstall | yes, at install | yes, at install | can't be simulated |
+
+The four stops right after a tap gave both outcomes, and each was whole. Either the set and the session's next step were saved together, or nothing changed.
 
 ## What the runs and the review found
 **In the app:** on Android 10 and 11, the rules sent the training history only into an encrypted backup, so a phone-to-phone transfer (for example, when you get a new phone) would have left it behind. Android 12 and later already allowed it. The rules now allow a device-to-device transfer on every version, and `tools/check_backup_rules.py` checks both.
