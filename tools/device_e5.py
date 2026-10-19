@@ -105,7 +105,8 @@ class Device(Smoke):
         tapped = None
         for _ in range(60):
             nodes = screen()
-            if self.find(S["wk_effort_5plus"], nodes) or self.find(S["wk_done_as_planned"], nodes) or self.find(S["wk_effort_q"], nodes):
+            if self.find(S["wk_effort_5plus"], nodes) or self.find(S["wk_done_as_planned"], nodes) or self.find(S["wk_effort_q"], nodes) or \
+                    (S.get("wk_effort_5_9") and self.find(S["wk_effort_5_9"], nodes)):
                 return nodes
             confirm = self.find(S["addset_confirm_go"], nodes, enabled=True)
             if confirm:
@@ -128,14 +129,29 @@ class Device(Smoke):
                     self.scroll()
         self.fail("no set to log appeared")
 
+    def find_prefix(self, text, nodes):
+        """A node whose text starts with `text` (a screen text with a number in it, such as "Yes, all 10")."""
+        hits = [n for n in nodes if n.pkg == self.pkg and (n.text or n.desc).startswith(text)]
+        return hits[0] if hits else None
+
     def tap_set(self, effort):
-        """One tap that logs the set on screen: the effort answer on a weight-finding set, else "Done as planned"."""
+        """The taps that log the set on screen: the effort answer on a weight-finding set, else "Done as planned". Before a big step
+        the weight-finding answers are ranges (5–9 …, D-116): the lowest is tapped, so the ramp ends safely; and a "did you do all the
+        reps?" question is answered yes."""
         S = self.S
         nodes = self.to_next_set()
+        low = S.get("wk_effort_5_9")
         if self.find(S["wk_effort_5plus"], nodes):
             self.tap_text(effort, scrolls=10)
+        elif low and self.find(low, nodes):
+            self.tap_text(low, scrolls=10)
         else:
             self.tap_text(S["wk_done_as_planned"], scrolls=10)
+        yes = S.get("wk_cal_all_yes")
+        if yes:
+            n = self.find_prefix(yes.split("%")[0], screen())
+            if n:
+                self.tap(n)
 
     def log_set(self, effort="5+"):
         """Logs one set and checks it is in the database at once (NFR-06). Returns the number of sets saved."""
@@ -326,7 +342,8 @@ class Device(Smoke):
             self.fail(f"after finishing: {c['sets']} sets (expected {n}), {c['open']} open sessions, {c['done']} finished workouts")
         self.ok(f"finished: all {n} sets kept, the session closed and in the history")
         self.tap_text(S["tab_history"], scrolls=2)
-        self.wait(S["hist_outcome_done"], 30)
+        # Finished from "End" before the cool-down: "Ended early" (or "Done" had everything been done).
+        self.wait_any([S["hist_outcome_partial"], S["hist_outcome_done"]], 30)
         self.ok("History shows the session")
 
     def backup(self, apk):
