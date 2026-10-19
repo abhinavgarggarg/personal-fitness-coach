@@ -101,7 +101,7 @@ The same reviewer then re-checked the fixes. It confirmed the scenarios now pin 
 ## Tests
 - Local: engine 428, data 178 and app 99 tests all pass. The app count includes the 30 scenarios.
 - The year-long simulations give the same weekly-limit results as in Part 1: no week above twice the three before, no recovery days from the limits.
-- On GitHub: CI run 39227662972 for a043eb2 is green: all engine, data and app tests including the 30 scenarios, every rule's test cases (152 of 152), the release build (4.24 MB) and no internet permission. The on-device tests run once this is on main.
+- On GitHub: CI run 39227662972 for a043eb2 is green: all engine, data and app tests including the 30 scenarios, every rule's test cases (152 of 152), the release build (4.24 MB) and no internet permission. On main, CI run 39229701890 is green, and the on-device run 39229743264 passed on all five emulated phones and tablets (Android 10 to 16, including 200% text) plus the release-build check.
 
 ## Next
 - Your decision on the dumbbell ramp (A, B or C).
