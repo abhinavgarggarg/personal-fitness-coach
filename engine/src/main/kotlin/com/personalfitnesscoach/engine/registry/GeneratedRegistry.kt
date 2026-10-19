@@ -5,8 +5,8 @@
 package com.personalfitnesscoach.engine.registry
 
 object Registry {
-    const val VERSION: String = "1.1.2"
-    const val SHA256: String = "8718513afb0c3d8f5768b9ae8d77403ccd14daccb068c80f8df831189aff8f00"
+    const val VERSION: String = "2.0.0"
+    const val SHA256: String = "b661789de066f22ae973770570d548611166239f1a6f0b7fa27907cdbe15b7b5"
     const val RULE_COUNT: Int = 152
 
     /** Every rule ID with its confidence label, for the coach's "Why?" detail. */
@@ -697,6 +697,12 @@ object P {
         }
         const val rolling_multiplier: Double = 1.15
         const val k_after_weeks: Int = 4
+        const val reference_min_turnout_pct: Int = 50
+        const val plan_floor_pct: Int = 50
+        const val spike_guard_multiplier: Double = 2.0
+        const val spike_guard_after_days: Int = 21
+        const val calibration_sets_counted: Int = 2
+        const val reference_window_weeks: Int = 8
     }
     object VOL_008 {
         object cap {

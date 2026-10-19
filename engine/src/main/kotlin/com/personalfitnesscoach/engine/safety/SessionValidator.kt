@@ -206,7 +206,7 @@ object SessionValidator {
      * A weight still being found is expected to count as this many sets at the target effort (VOL-007): a ramp's last two sets are
      * usually within 4 reps in reserve (review R8-06, which found one set too few).
      */
-    const val CALIBRATION_SETS_COUNTED = 2
+    const val CALIBRATION_SETS_COUNTED = P.VOL_007.calibration_sets_counted
     private const val MAX_STEPS = 500
     private val IMPACT_JOINTS = setOf(Joint.KNEE, Joint.ANKLE, Joint.HIP, Joint.SPINE)
     /** Replacement order for conditioning; a no-jump bodyweight circuit is last because it needs no equipment (review R3-10). */

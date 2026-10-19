@@ -1,6 +1,6 @@
 # Phase 4, Part 1 report: weekly limits that follow how often you train
 
-Date: 18 October 2026 · Proposal: Rule Registry 2.0.0 (MAJOR), changing VOL-007 and LOAD-005 · Decisions D-110 to D-112 · **Waiting for your approval**
+Date: 18 October 2026 · Proposal: Rule Registry 2.0.0 (MAJOR), changing VOL-007 and LOAD-005 · Decisions D-110 to D-113 · **Approved by you on 19 October 2026 (D-113)**
 
 ## Summary
 Two of the app's safety rules stop training from growing too fast:
@@ -135,10 +135,9 @@ A reviewer who had not seen the work being built checked the proposal. It read t
 The year simulation fails if any session breaks a safety rule, or if any week outside a return or a deload goes above the spike guard.
 
 ## Your decision
-Please approve Registry 2.0.0, or tell me what to change. On approval I will:
-1. move the change set into the approved history and apply it with the research-update tool;
-2. move the new numbers into the rule registry;
-3. merge the branch into the app, then run CI and the device tests;
-4. report back, and go on to Phase 4 Part 2 (the 30 test scenarios).
+You approved Registry 2.0.0 on 19 October 2026 (D-113). It was then:
+1. moved into the approved history (`rules/changes/registry_2.0.0.json`) and applied with the research-update tool;
+2. given its numbers in the rule registry (VOL-007's parameters), instead of in the code;
+3. merged into the app, with CI and the device tests run again.
 
-If you don't approve, the app keeps today's limits. Please still don't train with the test build, because they shrink training when sessions are missed.
+Next is Phase 4 Part 2: the 30 test scenarios.

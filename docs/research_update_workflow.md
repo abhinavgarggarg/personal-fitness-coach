@@ -103,5 +103,6 @@ The full format, with every key, is in the header of `tools/research_update.py`.
 | 1.1.0 | `rules/changes/registry_1.1.0.json` | Research Update 1.1 (D-066) |
 | 1.1.1 | `rules/changes/registry_1.1.1.json` | Condition-table reference (D-069). This is the baseline archived in `rules/archive/rule_registry_1.1.1.json` |
 | 1.1.2 | `rules/changes/registry_1.1.2.json` | Source verification before Phase 4. The first change set applied by this tool (D-106) |
+| 2.0.0 | `rules/changes/registry_2.0.0.json` | Weekly limits that follow how often you train: reference weeks at the level planned and done, the week planned within the limits, a floor under a spike guard (VOL-007, LOAD-005; MAJOR, approved by the PO 19 Oct 2026, D-112, D-113). Drafted in `rules/proposals/` with an independent safety review before approval |
 
 The health-condition table (`rules/health_conditions_v1.0.json`) is versioned on its own through `tools/build_health_conditions.py`. Any change to it is treated as a safety change: it needs the Product Owner's approval and a safety review, and `check_registry.py` keeps it consistent with SAF-010.

@@ -1,7 +1,7 @@
 {
-  "registry_version": "1.1.2",
-  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 1.1.2 approved by Delegated: evidence verification only (no wording, parameter or confidence change), reported to the Product Owner at the Phase 3 gate on 2026-10-12",
-  "generated": "2026-10-12",
+  "registry_version": "2.0.0",
+  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 2.0.0 approved by Product Owner on 2026-10-19",
+  "generated": "2026-10-19",
   "confidence_scale": [
     "High Evidence",
     "Moderate Evidence",
@@ -797,6 +797,10 @@
       "citation": "Campbell KL, Winters-Stone KM, Wiskemann J, et al. Exercise Guidelines for Cancer Survivors: Consensus Statement from International Multidisciplinary Roundtable. Med Sci Sports Exerc. 2019;51(11):2375-2390. doi:10.1249/MSS.0000000000002116",
       "verification": "checked (abstract)",
       "url": "https://doi.org/10.1249/MSS.0000000000002116"
+    },
+    "PFCSim2026": {
+      "citation": "Personal Fitness Coach, Phase 4 Part 1. Twelve-month simulations of the weekly limits: eight personas (Phase 2 P1-P3, P5, an advanced lifter, two condition personas and a bodyweight-only user) x three ways of turning up, through the app's data layer and engine. Internal report, not peer reviewed: docs/phase4/part1_report.md; reproduced by data/src/test/.../YearOfTrainingTest.kt",
+      "verification": "internal; reproducible on every CI run (YearOfTrainingTest 'Measured' lines)"
     }
   },
   "rules": [
@@ -1599,10 +1603,10 @@
     },
     {
       "rule_id": "VOL-007",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "category": "volume",
       "title": "Systemic stress units (planning)",
-      "statement": "SSU = sum over sets C_ex x E_RIR + sum over conditioning t_min x Z_zone x J_modality. Weekly SSU <= level ceiling and (after 4 weeks) <= 1.15 x 3-week mean. Personal factor k = median(sRPE load / SSU) after 4 weeks.",
+      "statement": "SSU = sum over sets C_ex x E_RIR + sum over conditioning t_min x Z_zone x J_modality. Weekly SSU <= level ceiling and, with 4 reference weeks, <= 1.15 x the mean of the last 3 of them. Reference weeks are the finished weeks of the last 8: a week with fewer than half of its planned sessions done is left out, like a missed week; a week with fewer sessions done than planned counts at the level of the sessions done (its SSU x planned / done sessions); a session the readiness check made lighter counts at the size it was planned, in proportion to how much of it was done. A weight still being found counts as 2 sets at the target effort (never more than planned), in the plan and once done. The week is planned within the limit: other exercises' sets first, then steady conditioning shortened by up to 40% (not below 10 minutes) or made easy (Z1), then interval blocks shortened by whole repeats (up to 40%) or made easy where that lowers their SSU, then main lifts; a session over its share of the week is cut in the same order, conditioning made easy (Z1, on a low-impact modality) before it is dropped. The weekly limits never cut a week below 50% of its plan's SSU (about the training stress of a deload week, DEL-003). A spike guard caps every week, floor included, at 2 x the mean SSU of the last 3 weeks as done (missed weeks 0), from 3 weeks after the first session and not during a return or a deload, whose own ramps set the dose. Personal factor k = median(sRPE load / SSU) of the last 4 reference weeks.",
       "parameters": {
         "C": {
           "isolation_or_core": 0.5,
@@ -1632,15 +1636,22 @@
           "advanced": 180
         },
         "rolling_multiplier": 1.15,
-        "k_after_weeks": 4
+        "k_after_weeks": 4,
+        "reference_min_turnout_pct": 50,
+        "plan_floor_pct": 50,
+        "spike_guard_multiplier": 2.0,
+        "spike_guard_after_days": 21,
+        "calibration_sets_counted": 2,
+        "reference_window_weeks": 8
       },
       "confidence": "Expert Practice",
       "evidence": [
-        "Foster2001"
+        "Foster2001",
+        "PFCSim2026"
       ],
-      "uncertainty": "Novel model; coefficients are judgement and must be validated in Phase 4 simulations.",
+      "uncertainty": "Novel model; coefficients are judgement. The reference weeks, the floor and the spike guard were chosen in Phase 4 simulations and an independent review (D-110, D-112). They loosen the limit for people who miss sessions or whose days the readiness check makes lighter: after such weeks a full week may be up to 2 x the recent weekly total as done (each session its normal size). LOAD-004's soft flag still reports high acute:chronic ratios.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-19",
       "affected_algorithms": [
         "volume_allocation",
         "workload",
@@ -1648,9 +1659,18 @@
       ],
       "tests": [
         "TC-VOL-007a",
-        "TC-VOL-007b"
+        "TC-VOL-007b",
+        "TC-VOL-007h",
+        "TC-VOL-007i",
+        "TC-VOL-007j",
+        "TC-VOL-007k",
+        "TC-VOL-007l",
+        "TC-VOL-007m",
+        "TC-VOL-007n",
+        "TC-VOL-007o",
+        "TC-VOL-007p"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "MAJOR: Twelve-month simulations (D-110): measured against the weeks actually done, the relative limit falls whenever turnout is below about 87% (1 / 1.15) or the readiness check makes days lighter, calibration weeks set a low starting point, and conditioning blocks dropped whole left weeks far below their limit. Past weeks now count at the level they were planned and done, a weight being found counts as planned, the week is planned within the limit, conditioning is made easy before it is dropped, and the limit never cuts a week below half of its plan; a spike guard on the weeks as done bounds the loosening. — Weekly limits that follow how often you train, with a floor and a spike guard (Phase 4 Part 1) (registry 2.0.0, D-112, D-113)",
       "status": "approved"
     },
     {
@@ -4149,10 +4169,10 @@
     },
     {
       "rule_id": "LOAD-005",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "category": "workload",
       "title": "Planned weekly load cap",
-      "statement": "Predicted weekly load (k x planned SSU) <= 1.20 x mean of last 3 weeks; before 4 weeks <= +20% week over week; deload/return ramps exempt.",
+      "statement": "Predicted weekly load (k x planned SSU) <= 1.20 x mean of the last 3 reference weeks (VOL-007's reference weeks, their loads scaled in the same way); before 4 reference weeks <= +20% over the last reference week; deload/return ramps exempt; never cuts a week below VOL-007's plan floor, which never exceeds VOL-007's spike guard.",
       "parameters": {
         "multiplier": 1.2,
         "early_week_over_week_pct": 20,
@@ -4160,20 +4180,24 @@
       },
       "confidence": "Expert Practice",
       "evidence": [
-        "Gabbett2016"
+        "Gabbett2016",
+        "Impellizzeri2021",
+        "PFCSim2026"
       ],
-      "uncertainty": "",
+      "uncertainty": "Workload ratios have statistical flaws and weak causal support (Lolli 2019, Impellizzeri 2021); the cap is used to smooth planning, never described as injury risk. The reference weeks and floor were chosen in Phase 4 simulations (D-110, D-112).",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-19",
       "affected_algorithms": [
         "weekly_scheduling",
         "safety_validator"
       ],
       "tests": [
         "TC-LOAD-005a",
-        "TC-LOAD-005b"
+        "TC-LOAD-005b",
+        "TC-LOAD-005j",
+        "TC-LOAD-005k"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "MAJOR: The same reference weeks and floor as VOL-007 (D-110), so the two weekly limits agree. — Weekly limits that follow how often you train, with a floor and a spike guard (Phase 4 Part 1) (registry 2.0.0, D-112, D-113)",
       "status": "approved"
     },
     {

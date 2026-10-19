@@ -1,16 +1,16 @@
 # PROJECT STATE — Personal Fitness Coach
 
-Last updated: 2026-10-18 (Phase 4 Part 1: weekly-limit proposal Registry 2.0.0 reviewed and ready, waiting for the PO's approval) · Master prompt: v3.0 (7 Oct 2026)
+Last updated: 2026-10-19 (Phase 4 Part 1 done: Registry 2.0.0 approved by the PO and applied; next Part 2, the 30 test scenarios) · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
-**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Part 1 of 5: weekly-limit tuning (VOL-007, LOAD-005) — proposal Registry 2.0.0 (MAJOR, D-112) on branch `phase4/weekly-limits`, independently reviewed, waiting for the PO's approval; report `docs/phase4/part1_report.md`. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
+**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Part 1 of 5 done: weekly-limit tuning (VOL-007, LOAD-005) — Registry 2.0.0 (MAJOR, D-112) approved by the PO on 19 Oct 2026 (D-113) and applied; report `docs/phase4/part1_report.md`. Next: Part 2, the 30-scenario suite. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
 
 | Phase | Status | Date |
 |---|---|---|
 | 1 Fitness research & evidence engine | APPROVED | 2026-10-07 |
 | 2 Product requirements, UX & architecture | APPROVED (D-028) | 2026-10-07 |
 | 3 Application development | APPROVED (D-110) | 2026-10-13 |
-| 4 Testing, validation & UAT | IN PROGRESS — Part 1 of 5 (D-111) | 2026-10-13 |
+| 4 Testing, validation & UAT | IN PROGRESS — Part 1 of 5 done (D-111, D-113) | 2026-10-19 |
 | 5 Production build & APK delivery | NOT STARTED | — |
 
 ## Phase 4 progress (D-111)
@@ -57,7 +57,7 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 | Phase 3 Part 8 report and **Phase 3 gate report** | `docs/phase3/part8_report.md` · rule coverage `docs/phase3/rule_coverage_part8.md` · acceptance traceability `docs/phase3/acceptance_traceability.md` · research-update workflow `docs/research_update_workflow.md` |
 | Exercise figures | `app/src/main/kotlin/.../app/figure/` (pose model `Figure.kt`, one figure per exercise `ExerciseFigures.kt`; plain Kotlin, compiled and tested locally) · renderer `app/ui/ExerciseFigure.kt` · tests `app/src/test/.../figure/ExerciseFiguresTest.kt` |
 | Exercise library (source) | `library/v1/*.json` (v1.1.1) → `tools/gen_library_kotlin.py` (writes `engine/.../library/GeneratedLibrary*.kt`; `--check` fails if stale) |
-| Rule Registry (approved, registry_version 1.1.2, 152 rules) | `rules/rule_registry_v1.0.json`, built by `tools/build_registry.py` from the Phase 1 rules plus `rules/changes/registry_1.1.0.json` and `registry_1.1.1.json`; from 1.1.1 on, updates only through `tools/research_update.py` change sets (D-106; `docs/research_update_workflow.md`): `rules/changes/registry_1.1.2.json` (evidence-only, for PO review); Phase 1 snapshot `rules/archive/rule_registry_1.0.1.json`; `tools/check_registry.py` |
+| Rule Registry (approved, registry_version 2.0.0, 152 rules) | `rules/rule_registry_v1.0.json`, built by `tools/build_registry.py` from the Phase 1 rules plus `rules/changes/registry_1.1.0.json` and `registry_1.1.1.json`; from 1.1.1 on, updates only through `tools/research_update.py` change sets (D-106; `docs/research_update_workflow.md`): `rules/changes/registry_1.1.2.json` (evidence-only, accepted with the Phase 3 gate), `rules/changes/registry_2.0.0.json` (weekly limits, approved 19 Oct 2026, D-113); Phase 1 snapshot `rules/archive/rule_registry_1.0.1.json`; `tools/check_registry.py` |
 | Health-condition table (SAF-010, v1.0.1) | `rules/health_conditions_v1.0.json`, built by `tools/build_health_conditions.py`; `tools/gen_conditions_kotlin.py` writes `engine/.../safety/GeneratedConditions.kt` (`--check` fails if stale) |
 | Registry → Kotlin generator | `tools/gen_registry_kotlin.py` (writes `engine/.../registry/GeneratedRegistry.kt`; `--check` fails if stale) |
 | Engine source and tests | `engine/src/main/kotlin/com/personalfitnesscoach/engine/` (core, model, calc, progression, planning, safety, registry, library, dose, conditioning, program, generation) · `engine/src/test/...` (incl. `simulation/` property tests and 52-week simulation, `review/` regression tests) |
@@ -85,7 +85,7 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 - Phone: Motorola Edge 50, Android 16. Request: the app must work on any phone (→ D-044) and use the phone's Gemini instead of paid AI calls (→ D-045).
 
 ## Open items for the Product Owner
-1. **Approve Registry 2.0.0 (Phase 4 Part 1):** the weekly-limit change set (VOL-007, LOAD-005; D-112), report `docs/phase4/part1_report.md`. Until it is approved, the app keeps today's cautious limits, so please don't train with the test build yet.
+1. Registry 2.0.0 (weekly limits) is approved and in the app (D-113). The test build from CI now has the new limits, so you may train with it; your data can be carried to the final release with Backup and Restore.
 2. Optional: if you have the master prompt's Phase 4 section (deliverables E1–E7 and the list of 30 scenarios), paste it so Phase 4 follows its exact numbering; otherwise Phase 4 follows the approved Phase 2 test strategy.
 3. For awareness: Registry 1.1.2 (evidence-only, applied under delegation, D-106) was accepted with the Phase 3 gate; the nine sources still pending are re-tried in Phase 4 Part 4.
 4. Decision in Phase 4: fill extra time (TIME-003 extension is built and tested but off, since it adds training volume). Pounds stay deferred (D-097) unless you want them.
@@ -100,5 +100,5 @@ In the claude.ai "Fitness App" Project, every repo file is stored under the `cla
 13. Before any public release: clinician and regulatory review of the condition table and wording (D-058).
 
 ## Next actions
-1. On the PO's approval of Registry 2.0.0: move `rules/proposals/registry_2.0.0.json` to `rules/changes/`, fill in the approval, `python3 -I tools/research_update.py apply`, move the numbers from `WeeklyLimits` to the registry (P.VOL_007), update TC-VOL-008b's registry version, merge `phase4/weekly-limits` to main, CI + Devices, sync the Project; then Part 2.
+1. Phase 4 Part 2 (D-111): the 30-scenario suite (E2) as automated tests on every push, following the approved Phase 2 test strategy (section 18) and acceptance criteria (section 19).
 2. Then Parts 2–5 as in D-111. The PO may install the debug build from the CI artifacts at any time (instructions sent 13 Oct 2026).
