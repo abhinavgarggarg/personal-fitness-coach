@@ -56,6 +56,11 @@ class Node:
         return self.text == t or self.desc == t
 
 
+# The size of the screen as last seen, in its current orientation (the root node's bounds): swipes and taps stay on it when the
+# phone is turned sideways.
+SIZE = []
+
+
 def screen():
     """The nodes on screen now (UI Automator), or [] when the dump fails (the screen was changing)."""
     for _ in range(3):
@@ -64,7 +69,14 @@ def screen():
         xml = adb("exec-out", "cat", "/sdcard/ui.xml")
         if "<hierarchy" in xml:
             try:
-                return [Node(e) for e in ET.fromstring(xml[xml.index("<hierarchy"):]).iter("node")]
+                root = ET.fromstring(xml[xml.index("<hierarchy"):])
+                nodes = [Node(e) for e in root.iter("node")]
+                first = root.find("node")
+                if first is not None:
+                    b = list(map(int, re.findall(r"\d+", first.get("bounds") or "")))
+                    if len(b) == 4 and b[2] > 0 and b[3] > 0:
+                        SIZE[:] = [b[2], b[3]]
+                return nodes
             except ET.ParseError:
                 pass
         time.sleep(1)
@@ -127,8 +139,12 @@ class Smoke:
         adb("shell", "input", "tap", str(n.x), str(n.y))
         time.sleep(1.2)
 
+    def size(self):
+        return (SIZE[0], SIZE[1]) if SIZE else (self.w, self.h)
+
     def scroll(self):
-        adb("shell", "input", "swipe", str(self.w // 2), str(int(self.h * 0.72)), str(self.w // 2), str(int(self.h * 0.30)), "350")
+        w, h = self.size()
+        adb("shell", "input", "swipe", str(w // 2), str(int(h * 0.72)), str(w // 2), str(int(h * 0.30)), "350")
         time.sleep(0.8)
 
     def hide_keyboard(self):
@@ -141,8 +157,9 @@ class Smoke:
 
     def scroll_top(self):
         """A new step may open where the last one was scrolled to: back to its top."""
+        w, h = self.size()
         for _ in range(6):
-            adb("shell", "input", "swipe", str(self.w // 2), str(int(self.h * 0.30)), str(self.w // 2), str(int(self.h * 0.80)), "250")
+            adb("shell", "input", "swipe", str(w // 2), str(int(h * 0.30)), str(w // 2), str(int(h * 0.80)), "250")
         time.sleep(0.8)
 
     def wait_any(self, texts, seconds=30):
@@ -168,7 +185,8 @@ class Smoke:
         for _ in range(scrolls):
             nodes = screen()
             n = self.find(text, nodes, enabled=enabled)
-            if n and n.h > 0:
+            # On screen, not under the bottom edge (a node partly scrolled out of view is scrolled in first).
+            if n and n.h > 0 and n.y < self.size()[1] - 8:
                 self.tap(n)
                 return
             if not self.dismiss_system(nodes):
@@ -243,7 +261,8 @@ class Smoke:
         self.tap_text(S["onb_alerts_skip"])
 
         self.step = "today"
-        self.wait(S["today_start"], 60)
+        # On a small screen the Start button may be below the fold: the tab bar says Today is open.
+        self.wait_any([S["today_start"], S["tab_history"]], 60)
         self.alive()
 
     def to_preview(self):

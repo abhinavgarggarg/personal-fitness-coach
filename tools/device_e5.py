@@ -95,16 +95,20 @@ class Device(Smoke):
     def to_next_set(self):
         """Past warm-up stages and rests to the next set of a lift; returns the screen."""
         S = self.S
+        tapped = None
         for _ in range(60):
             nodes = screen()
             if self.find(S["wk_effort_5plus"], nodes) or self.find(S["wk_done_as_planned"], nodes):
                 return nodes
             for t in (S["wk_rest_skip"], S["wk_rest_over"], S["wk_stage_next"]):
                 n = self.find(t, nodes, enabled=True)
-                if n:
+                # The same button again right after tapping it: it is out of reach, so scroll to it first (a short, sideways screen).
+                if n and (t, n.y) != tapped and n.y < self.size()[1] - 8:
                     self.tap(n)
+                    tapped = (t, n.y)
                     break
             else:
+                tapped = None
                 if not self.dismiss_system(nodes):
                     self.scroll()
         self.fail("no set to log appeared")
