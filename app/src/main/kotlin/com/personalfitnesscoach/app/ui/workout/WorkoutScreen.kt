@@ -81,6 +81,7 @@ import com.personalfitnesscoach.data.core.player.SetTarget
 import com.personalfitnesscoach.data.core.player.Step
 import com.personalfitnesscoach.data.core.session.DrillRef
 import com.personalfitnesscoach.data.core.session.SetKind
+import com.personalfitnesscoach.data.core.session.SetLimits
 import com.personalfitnesscoach.data.core.session.Stage
 import com.personalfitnesscoach.data.core.session.Status
 import com.personalfitnesscoach.engine.dose.Effort
@@ -372,9 +373,10 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
         }, { form = it })
     }
     if (adjusting) {
-        if (t.load != null) NumberField(stringResource(R.string.wk_weight), load, { x -> load = x?.takeIf { it in 0.0..1000.0 } })
+        // The fields stop at what a set can be logged with (SetLimits): nothing typed is refused only when saved.
+        if (t.load != null) NumberField(stringResource(R.string.wk_weight), load, { x -> load = x?.takeIf { it in 0.0..SetLimits.MAX_LOAD_KG } })
         NumberField(stringResource(if (t.unit == DoseUnit.SECONDS) R.string.wk_seconds else R.string.wk_reps), amount.toDouble(),
-            { x -> amount = (x?.toInt() ?: 0).coerceIn(0, 1000) }, decimals = false)
+            { x -> amount = (x?.toInt() ?: 0).coerceIn(0, if (t.unit == DoseUnit.SECONDS) 1000 else SetLimits.MAX_REPS) }, decimals = false)
         if (!canLog) Note(stringResource(R.string.wk_enter_weight))
     }
     when (t.kind) {

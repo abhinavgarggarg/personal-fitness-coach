@@ -106,12 +106,16 @@ object ExerciseProgress {
             val sessions = (state.calibration?.sessions ?: 0) + 1
             var last: CalibrationStep? = null
             var lastRated: Double? = null
+            var prevRated: Double? = null
+            var missed = false
             var lastRir = 0.0
             var lastReps = target
             for ((i, set) in ramp.withIndex()) {
                 val rir = set.rir ?: set.rpe?.let { 10.0 - it } ?: break // an unrated set ends the replay: next time starts from the last rated load
+                prevRated = lastRated
                 lastRated = set.loadKg
                 lastRir = rir
+                missed = set.reps!! < 1
                 // The reps done, not the reps asked for: a set short of its target is what the estimate and the working load go by.
                 lastReps = minOf(target, set.reps!!)
                 val step = Calibration.next(set.loadKg!!, lastReps, rir, i + 1, avail, ceiling, Calibration.coarseStepsAllowed(ex.loadType))
@@ -133,7 +137,9 @@ object ExerciseProgress {
                     // RIR 3 without a valid estimate (INT-004), or no safe heavier step (D-038): this is the working load.
                     else -> found(s, l.workingLoad, item, day)
                 }
-                is CalibrationStep.Stop -> {
+                // A set not lifted at all (0 reps) says nothing about what can be lifted: the last load lifted before it is the working
+                // load, and with none the ramp goes on next session from 5% lower (review of D-115).
+                is CalibrationStep.Stop -> if (missed) prevRated?.let { found(s, it, item, day) } ?: next(l.nextSessionLoad) else {
                     // RIR ≤ 2: "stop; next session uses this load −5%" (CAL-001 step 2) — and no more than the stopping set supports. Its
                     // e1RM, where valid, is the starting estimate ("from the final calibration set", step 4), and the working load is the
                     // lower of the two, so a set short of its reps (6 of 10) never leads to working sets near failure (review of D-115).

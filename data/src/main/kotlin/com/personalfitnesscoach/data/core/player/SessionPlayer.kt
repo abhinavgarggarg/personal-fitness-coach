@@ -1000,8 +1000,10 @@ class SessionPlayer(private val d: PfcData) {
         if (doc.copy(conditioning = cond) != w.doc) d.sessions.updateDoc(w.id, doc.copy(conditioning = cond))
         val view = save(d.sessions.load(w.id)!!, restAfterPairChange(w.id, state.copy(sheet = null), s.currentRowId))
         // What can't be cut (warm-up and cool-down floors with a condition's extras, one set of each main lift) still takes longer than
-        // asked: the user is told the shortest this session can be from here, as the express session does (D-071, re-check N7).
-        val shortest = if (view.remainingMinutes > minutesLeft + 0.5) Math.ceil(view.remainingMinutes - 1e-6).toInt() else null
+        // asked: the user is told the shortest this session can be from here, as the express session does (D-071, re-check N7). A ramp
+        // counts at the most it can take, as in the fit above (the estimate on screen counts a typical 3 sets; re-check of D-115).
+        val most = maxOf(view.remainingMinutes, TimeModel.minutes(plan) - (budget - minutesLeft))
+        val shortest = if (most > minutesLeft + 0.5) Math.ceil(most - 1e-6).toInt() else null
         val dec = fit.decisions + Decision(DecisionKind.TIME_FIT, listOf(RuleIds.TIME_001, RuleIds.TIME_002, RuleIds.TIME_004, RuleIds.SAF_008),
             ReasonKey.TIME_COMPRESSED, inputs = mapOf("minutesLeft" to minutesLeft),
             outputs = mapOf("changes" to changes.size, "belowFloors" to extra, "shortestSafeMinutes" to shortest))

@@ -126,9 +126,10 @@ class YearSimulationTest {
                 for (it in w.items) {
                     val key = SessionGenerator.loadKey(it.slotKey, it.exercise.id)
                     val load = it.load ?: continue
-                    // Last week's load for this exposure; a weight found on another day of the same exercise last week counts too (the
-                    // person lifted it), since a prescription without an e1RM carries to every slot of the exercise (D-055, D-115).
-                    val last = lastWeekLoads[key]?.let { l -> maxOf(l, lastWeekLoads.filterKeys { k -> k.endsWith("|${it.exercise.id}") }.values.max()) }
+                    // Last week's load for this exposure. Without an e1RM a prescription carries to every slot of the exercise (D-055,
+                    // D-115), so a weight lifted on another day of it last week counts too; with one, each slot goes by its own.
+                    val last = lastWeekLoads[key]?.let { l -> if (it.exercise.id in e1rm) l
+                        else maxOf(l, lastWeekLoads.filterKeys { k -> k.endsWith("|${it.exercise.id}") }.values.max()) }
                     val found = if (!it.calibrating) rampTop[it.exercise.id] else null
                     // Until its working sets move it on, the weight a ramp found (CAL-001) is never above what the ramp lifted.
                     if (found != null) assertTrue("${p.name} week $week ${it.exercise.id}: $load after a ramp up to $found", load <= found + 1e-9)

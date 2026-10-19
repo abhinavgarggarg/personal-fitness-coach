@@ -141,11 +141,13 @@ private fun EditSet(e: SetEdit, problem: Boolean) {
         Text(exerciseName(e.exerciseId), style = MaterialTheme.typography.titleMedium)
         e.loadKg?.let { load ->
             Stepper(stringResource(R.string.edit_weight, kg(load)), { a.edit { changeSetEdit { it.copy(loadKg = ((it.loadKg ?: 0.0) - 1.25).coerceAtLeast(0.0)) } } },
-                { a.edit { changeSetEdit { it.copy(loadKg = (it.loadKg ?: 0.0) + 1.25) } } }, minusEnabled = load > 0.0)
+                { a.edit { changeSetEdit { it.copy(loadKg = ((it.loadKg ?: 0.0) + 1.25).coerceAtMost(com.personalfitnesscoach.data.core.session.SetLimits.MAX_LOAD_KG)) } } },
+                minusEnabled = load > 0.0, plusEnabled = load < com.personalfitnesscoach.data.core.session.SetLimits.MAX_LOAD_KG)
         }
         e.reps?.let { reps ->
             Stepper(stringResource(R.string.edit_reps, reps), { a.edit { changeSetEdit { it.copy(reps = ((it.reps ?: 0) - 1).coerceAtLeast(0)) } } },
-                { a.edit { changeSetEdit { it.copy(reps = (it.reps ?: 0) + 1) } } }, minusEnabled = reps > 0)
+                { a.edit { changeSetEdit { it.copy(reps = ((it.reps ?: 0) + 1).coerceAtMost(com.personalfitnesscoach.data.core.session.SetLimits.MAX_REPS)) } } },
+                minusEnabled = reps > 0, plusEnabled = reps < com.personalfitnesscoach.data.core.session.SetLimits.MAX_REPS)
         }
         e.seconds?.let { secs ->
             Stepper(stringResource(R.string.edit_secs, secs), { a.edit { changeSetEdit { it.copy(seconds = ((it.seconds ?: 0) - 5).coerceAtLeast(0)) } } },

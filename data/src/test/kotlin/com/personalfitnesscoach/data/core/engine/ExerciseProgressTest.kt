@@ -72,6 +72,18 @@ class ExerciseProgressTest {
         assertNull(r.state.calibration)
     }
 
+    @Test fun `a ramp set not lifted at all never sets a working load from its own weight (review of D-115)`() {
+        // 0 reps at 60 kg, whatever effort was given: the last load lifted (50 kg, easy) is the working load, not 57.5 kg.
+        val after = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(50.0, 10, 5.0), cal(60.0, 0, 5.0)), day, ctx, null).value
+        assertEquals(50.0, after.state.prescription!!.load, 0.0)
+        assertNull(after.state.calibration)
+        assertNull(after.state.e1rm)
+        // The first ramp set not lifted: nothing found yet, so the ramp goes on next session from 5% lower.
+        val first = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(60.0, 0, 3.0)), day, ctx, null).value
+        assertEquals(CalibrationState(57.5, 1, null), first.state.calibration)
+        assertNull(first.state.prescription)
+    }
+
     @Test fun `a ramp still easy at its 5-set limit goes on next session, and no safe heavier step makes the load the working load`() {
         // RIR 5+ on every set up to the limit: the ramp continues from the last load (CAL-001 runs over sessions 1–4).
         val easy = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(20.0, 10, 5.0), cal(25.0, 10, 5.0), cal(30.0, 10, 5.0),
@@ -183,11 +195,19 @@ class ExerciseProgressTest {
         d.progress.record(workout(Fixtures.MONDAY + 7), u)
         assertEquals(80.0, d.docs.get(ExerciseState, bench.id)!!.e1rm!!, 0.0)
         assertEquals(60.0, d.docs.get(ExerciseState, bench.id)!!.prescription!!.load, 0.0)
+        // Four weeks off is still the "return ramp" band under 60 with a standard screen (REG-004): what was found stays.
+        val rtt = com.personalfitnesscoach.engine.progression.ReturnToTraining
+        assertTrue("an adult under 60: ${u.age}", (u.age ?: 0) < 60)
+        assertEquals(56, rtt.recalibrationMinDays(u.age, false))
+        assertEquals(28, rtt.recalibrationMinDays(66, false))
+        assertEquals(28, rtt.recalibrationMinDays(40, true))
+        d.docs.put(ExerciseState, found)
+        d.progress.record(workout(Fixtures.MONDAY + 28), u)
+        assertEquals(80.0, d.docs.get(ExerciseState, bench.id)!!.e1rm!!, 0.0)
         // After a layoff long enough for REG-004 to recalibrate, the exercise starts afresh.
         d.docs.put(ExerciseState, found)
-        d.progress.record(workout(Fixtures.MONDAY + com.personalfitnesscoach.engine.progression.ReturnToTraining.recalibrationMinDays), u)
+        d.progress.record(workout(Fixtures.MONDAY + 56), u)
         assertNull(d.docs.get(ExerciseState, bench.id)!!.e1rm)
         assertNull(d.docs.get(ExerciseState, bench.id)!!.prescription)
-        assertEquals(28, com.personalfitnesscoach.engine.progression.ReturnToTraining.recalibrationMinDays)
     }
 }

@@ -47,6 +47,7 @@ object Calibration {
 
     /**
      * @param load the load just lifted for the target reps
+     * @param targetReps the reps done, up to the target (0 = not lifted)
      * @param reportedRir the answer to "how many more could you have done?" (use 5.0 for "5+")
      * @param setsDone ramp sets completed for this exercise including this one
      * @param ceiling CAL-002: an old known number caps the ramp (the ramp never goes above it)
@@ -60,7 +61,8 @@ object Calibration {
         fun d(reason: ReasonKey, out: Map<String, Any?>) =
             listOf(Decision(DecisionKind.CALIBRATION, listOf(RuleIds.CAL_001, RuleIds.PROG_003), reason, inputs, out))
 
-        if (reportedRir <= P.CAL_001.stop_rir_lte + 1e-9) {
+        // A set not lifted at all (0 reps) is a failed attempt whatever effort was given: the ramp stops (review of D-115).
+        if (targetReps < 1 || reportedRir <= P.CAL_001.stop_rir_lte + 1e-9) {
             val next = Progression.lowerLoad(load * (1.0 - P.CAL_001.stop_reduction_pct / 100.0), load, available)
             return EngineResult(CalibrationStep.Stop(next), d(ReasonKey.CALIBRATION_STOPPED, mapOf("nextSessionLoad" to next)))
         }

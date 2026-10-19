@@ -10,6 +10,7 @@ import com.personalfitnesscoach.data.core.model.ExerciseState
 import com.personalfitnesscoach.data.core.model.Profile
 import com.personalfitnesscoach.data.core.model.WeekSummary
 import com.personalfitnesscoach.data.core.onboarding.OnboardingStep
+import com.personalfitnesscoach.data.core.player.Change
 import com.personalfitnesscoach.data.core.player.LiftEntry
 import com.personalfitnesscoach.data.core.player.PlayerView
 import com.personalfitnesscoach.data.core.player.SessionPlayer
@@ -679,10 +680,20 @@ class ScenarioSuiteTest {
         w2.train(0 until 7, body)
         w2.day(7); c2.onForeground()
         val (b2, v2, n2) = w2.onlyLeft(15, body)
-        println("METRIC S13 'only 15 minutes left' while weights are found: ${v2.remainingMinutes} min left (was ${b2.remainingMinutes}), shortest ${n2.shortestSafeMinutes}")
+        val ramps = b2.lifts.filter { !it.finished && it.item.calibrating }.map { it.rowId }.toSet()
+        println("METRIC S13 'only 15 minutes left' while weights are found: ${v2.remainingMinutes} min left (was ${b2.remainingMinutes}), " +
+            "shortest ${n2.shortestSafeMinutes}, ${ramps.size} ramps open, changes ${n2.changes}")
+        assertTrue("a weight is still being found when time runs short", ramps.isNotEmpty())
         checkRefit("weights being found", b2, v2, n2)
-        if (n2.shortestSafeMinutes == null) assertTrue("fitted: ${v2.remainingMinutes}", v2.remainingMinutes <= 15.5)
-        else assertTrue("only what can't be cut is left: ${v2.lifts.filter { !it.finished }.map { it.exercise.id to it.item.priority }}",
+        if (n2.shortestSafeMinutes == null) {
+            assertTrue("fitted: ${v2.remainingMinutes}", v2.remainingMinutes <= 15.5)
+            // Something that could be cut set by set went: only because the time was needed. The estimate counts an open ramp at a
+            // typical 3 sets, the fit at its full 5 — at most about 2.5 minutes a set more for each ramp still open.
+            val cut = n2.changes.any { (it is Change.Skipped && it.rowId !in ramps) || it is Change.SetsReduced }
+            val openRamps = v2.lifts.count { !it.finished && it.rowId in ramps }
+            if (cut) assertTrue("cut only as needed: ${v2.remainingMinutes} min with $openRamps ramps open, changes ${n2.changes}",
+                v2.remainingMinutes + 5.0 * openRamps >= 15.0 - 4.0)
+        } else assertTrue("only what can't be cut is left: ${v2.lifts.filter { !it.finished }.map { it.exercise.id to it.item.priority }}",
             v2.lifts.filter { !it.finished }.all { it.item.priority <= com.personalfitnesscoach.engine.planning.Priority.P2 })
     }
 

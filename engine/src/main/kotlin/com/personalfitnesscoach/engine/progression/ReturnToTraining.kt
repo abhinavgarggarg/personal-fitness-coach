@@ -145,12 +145,13 @@ object ReturnToTraining {
     private fun bandIndex(daysOff: Int): Int = BANDS.indices.last { daysOff >= bandStart(it) }
 
     /**
-     * The fewest days off after which REG-004 can recalibrate an exercise: the start of the band before "recalibrate", since age 60+
-     * or a flagged screen moves one band on (56 days → 28).
+     * The fewest days off after which REG-004 recalibrates an exercise: the start of the "recalibrate" band (56 days), one band earlier
+     * (28 days) at age 60+ or with a flagged screen, as [afterBreak] shifts it.
      */
-    val recalibrationMinDays: Int get() {
+    fun recalibrationMinDays(age: Int?, flaggedScreen: Boolean): Int {
         val i = BANDS.indexOfFirst { it["action"] == "recalibrate_and_restart_block" }
-        return bandStart(maxOf(0, i - P.REG_004.older_or_flagged_shift))
+        val shift = if ((age != null && age >= 60) || flaggedScreen) P.REG_004.older_or_flagged_shift else 0
+        return bandStart(maxOf(0, i - shift))
     }
 
     @Suppress("UNCHECKED_CAST")
