@@ -363,27 +363,40 @@ class Device(Smoke):
             self.fail("no data to back up")
         adb("shell", "bmgr", "enable", "true")
         adb("shell", "bmgr", "transport", TRANSPORT)
-        adb("shell", "settings", "put", "secure", "backup_local_transport_parameters", "fake_encryption_flag=true")
+        # The local test transport reports end-to-end encryption (the real flag from Android 12, the test flag before), as a phone with
+        # a screen lock does; the app's backup rules include its data only then.
+        adb("shell", "settings", "put", "secure", "backup_local_transport_parameters", "fake_encryption_flag=true,is_encrypted=true")
+        time.sleep(2)
         adb("shell", "bmgr", "wipe", TRANSPORT, self.pkg)
-        out = adb("shell", "bmgr", "backupnow", self.pkg, timeout=180)
+        adb("shell", "am", "force-stop", self.pkg)
+        out = adb("shell", "bmgr", "backupnow", self.pkg, timeout=240)
+        self.log = [f"backupnow: {' '.join(out.split())[:300]}"]
         if "Success" not in out:
             self.fail(f"the encrypted backup did not run: {out.strip()[:300]}")
+        sets = adb("shell", "bmgr", "list", "sets")
+        self.log.append(f"sets: {' '.join(sets.split())[:200]}")
         adb("uninstall", self.pkg, timeout=120)
         self.install(apk, replace=False)
         if self._read() is None:
-            token = next((ln.split()[0] for ln in adb("shell", "bmgr", "list", "sets").splitlines() if ln.strip() and ln.split()[0].isalnum()), None)
+            token = next((ln.split()[0] for ln in sets.splitlines() if ln.strip() and ln.split()[0].isalnum()), None)
             if token:
-                adb("shell", "bmgr", "restore", token, self.pkg, timeout=180)
+                r = adb("shell", "bmgr", "restore", token, self.pkg, timeout=240)
+                self.log.append(f"restore {token}: {' '.join(r.split())[:300]}")
                 time.sleep(5)
+        self.log.append(f"after restore: {self._read()}")
         self.launch()
-        self.wait(S["tab_history"], 60)
+        end = time.time() + 60
+        while time.time() < end and not self.find(S["tab_history"], screen()):
+            time.sleep(2)
+        if not self.find(S["tab_history"], screen()):
+            self.fail("the data did not come back from the encrypted backup (" + " | ".join(self.log) + ")")
         after = self.counts()
         if (after["sets"], after["done"]) != (before["sets"], before["done"]):
             self.fail(f"restored {after['sets']} sets and {after['done']} sessions, expected {before['sets']} and {before['done']}")
         self.ok(f"an end-to-end encrypted backup brought back all {after['sets']} sets and {after['done']} sessions after a reinstall")
 
         self.step = "no backup without encryption"
-        adb("shell", "settings", "put", "secure", "backup_local_transport_parameters", "fake_encryption_flag=false")
+        adb("shell", "settings", "put", "secure", "backup_local_transport_parameters", "fake_encryption_flag=false,is_encrypted=false")
         adb("shell", "bmgr", "wipe", TRANSPORT, self.pkg)
         adb("shell", "bmgr", "backupnow", self.pkg, timeout=180)
         adb("uninstall", self.pkg, timeout=120)
