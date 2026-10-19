@@ -12,6 +12,10 @@ on:
         description: "Run only the release build smoke test"
         type: boolean
         default: false
+      e5_only:
+        description: "Run only the interruption, data and upgrade tests (E5)"
+        type: boolean
+        default: false
   schedule:
     - cron: "17 3 * * 0" # Sundays 03:17 UTC
   push:
@@ -22,7 +26,7 @@ permissions:
 
 jobs:
   emulator:
-    if: ${{ !inputs.release_smoke_only }}
+    if: ${{ !inputs.release_smoke_only && !inputs.e5_only }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
@@ -78,6 +82,7 @@ jobs:
   # The release build as shipped (R8 shrinking and obfuscation on), signed with a throw-away key made in the job: installed, started,
   # taken through onboarding to Today and today's session from outside with UI Automator (tools/release_smoke.py).
   release-smoke:
+    if: ${{ !inputs.e5_only }}
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     name: Release build (R8), Android 14
@@ -120,3 +125,57 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none
           script: python3 -I tools/release_smoke.py "$SMOKE_APK"
+
+  # Phase 4 Part 3 (E5): a session logged set by set through every interruption (home, screen off, rotation, a call, low memory,
+  # process death, a stop while saving, a reboot), Android backup only when end-to-end encrypted, and an upgrade from the Phase 3
+  # build (D-110) with a session left open. Driven from outside with adb; the app's own database is the check that no set is lost
+  # (tools/device_e5.py). Android 10 uses the older backup rules, Android 14 the newer ones.
+  e5:
+    if: ${{ !inputs.release_smoke_only }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: "Android 14", api: 34, profile: "pixel_6" }
+          - { name: "Android 10", api: 29, profile: "Nexus 5" }
+    name: Interruptions and data (E5), ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Build this version and the Phase 3 build to upgrade from
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:assembleDebug 2>&1 | tail -n 5
+          echo "NEW_APK=$(ls "$PWD"/app/build/outputs/apk/debug/*.apk | head -n 1)" >> "$GITHUB_ENV"
+          # 35c7862: Phase 3 approved (D-110), the first build the Product Owner could install. Same runner, same debug key.
+          git worktree add "$RUNNER_TEMP/old" 35c7862
+          (cd "$RUNNER_TEMP/old" && ./gradlew --no-daemon :app:assembleDebug 2>&1 | tail -n 5)
+          echo "OLD_APK=$(ls "$RUNNER_TEMP"/old/app/build/outputs/apk/debug/*.apk | head -n 1)" >> "$GITHUB_ENV"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Interruptions, backup and upgrade
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none
+          script: python3 -I tools/device_e5.py all "$NEW_APK" "$OLD_APK" "$RUNNER_TEMP/old"

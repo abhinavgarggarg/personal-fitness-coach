@@ -20,9 +20,10 @@ PKG = "com.personalfitnesscoach"
 ACTIVITY = f"{PKG}/.app.MainActivity"
 
 
-def strings():
+def strings(root=ROOT):
+    """The app's English screen texts by name, from the res/values of the checkout at `root` (an older build has its own)."""
     out = {}
-    for f in sorted((ROOT / "app/src/main/res/values").glob("strings*.xml")):
+    for f in sorted((Path(root) / "app/src/main/res/values").glob("strings*.xml")):
         for e in ET.parse(f).getroot().findall("string"):
             t = "".join(e.itertext()).replace("\\'", "'").replace('\\"', '"').replace("\\n", "\n")
             out[e.get("name")] = t
@@ -75,25 +76,29 @@ def words(nodes):
 
 
 class Smoke:
-    def __init__(self):
+    """Drives the app from outside. `pkg`/`activity`: the release build by default; `texts`: the screen texts of the build under test."""
+
+    def __init__(self, pkg=PKG, activity=ACTIVITY, texts=None, title="Release smoke"):
         size = re.search(r"(\d+)x(\d+)", adb("shell", "wm", "size"))
         self.w, self.h = (int(size.group(1)), int(size.group(2))) if size else (1080, 1920)
         self.step = "start"
+        self.pkg, self.activity, self.title = pkg, activity, title
+        self.S = texts or S
 
     def fail(self, why, nodes=None):
         nodes = screen() if nodes is None else nodes
-        print(f"::error title=Release smoke: {self.step}::{why}. On screen: {words(nodes) or '(nothing readable)'}")
+        print(f"::error title={self.title}: {self.step}::{why}. On screen: {words(nodes) or '(nothing readable)'}")
         crash = adb("logcat", "-d", "-b", "crash", timeout=30).strip()
         if crash:
-            print(f"::error title=Release smoke: crash log::{crash[:1500].replace(chr(10), ' / ')}")
+            print(f"::error title={self.title}: crash log::{crash[:1500].replace(chr(10), ' / ')}")
         sys.exit(1)
 
     def alive(self):
-        if not adb("shell", "pidof", PKG).strip():
+        if not adb("shell", "pidof", self.pkg).strip():
             self.fail("the app is no longer running")
 
     def find(self, text, nodes, enabled=False):
-        hits = [n for n in nodes if n.says(text) and n.pkg == PKG and (n.enabled or not enabled)]
+        hits = [n for n in nodes if n.says(text) and n.pkg == self.pkg and (n.enabled or not enabled)]
         return hits[0] if hits else None
 
     def wait(self, text, seconds=30):
@@ -170,16 +175,20 @@ class Smoke:
                 self.scroll()
         self.fail(f"could not find '{text}' to tap")
 
-    def run(self, apk):
+    def install(self, apk, replace=True):
         self.step = "install"
-        adb("install", "-r", apk, timeout=240, check=True)
-        adb("logcat", "-c", timeout=30)
-        adb("shell", "am", "start", "-W", "-n", ACTIVITY, timeout=90, check=True)
+        adb("install", *(["-r"] if replace else []), apk, timeout=240, check=True)
 
+    def launch(self):
+        adb("logcat", "-c", timeout=30)
+        adb("shell", "am", "start", "-W", "-n", self.activity, timeout=90, check=True)
+
+    def onboard(self, birth_year="1985"):
+        """From the welcome screen to Today: an adult with one to three years of training, no condition, the defaults elsewhere."""
+        S = self.S
         self.step = "launch"
         self.wait(S["onb_welcome_title"], 60)
         self.alive()
-        print("::notice title=Release smoke::started and showed the welcome screen")
 
         self.step = "onboarding: welcome"
         self.tap_text(S["onb_welcome_accept"])
@@ -190,7 +199,7 @@ class Smoke:
             nodes = screen()
             if self.find(S["onb_about_title"], nodes) or self.find(S["onb_birth_year"], nodes) or self.find(S["exp_1_3"], nodes):
                 break
-            for n in [n for n in nodes if n.says(S["action_no"]) and n.pkg == PKG]:
+            for n in [n for n in nodes if n.says(S["action_no"]) and n.pkg == self.pkg]:
                 self.tap(n)
             nodes = screen()
             go = self.find(S["action_continue"], nodes, enabled=True)
@@ -204,7 +213,7 @@ class Smoke:
         self.scroll_top()
         field, _ = self.wait_any([S["onb_birth_year"]])
         self.tap(field)
-        adb("shell", "input", "text", "1985")
+        adb("shell", "input", "text", birth_year)
         self.hide_keyboard()
         self.tap_text(S["exp_1_3"], enabled=False)
         self.tap_text(S["action_continue"])
@@ -236,22 +245,10 @@ class Smoke:
         self.step = "today"
         self.wait(S["today_start"], 60)
         self.alive()
-        print("::notice title=Release smoke::onboarding finished on Today")
 
-        self.step = "cold start (NFR-01)"
-        times = []
-        for _ in range(3):
-            adb("shell", "am", "force-stop", PKG)
-            time.sleep(2)
-            out = adb("shell", "am", "start", "-W", "-n", ACTIVITY, timeout=90)
-            m = re.search(r"TotalTime:\s*(\d+)", out)
-            if m:
-                times.append(int(m.group(1)))
-            self.wait(S["today_start"], 60)
-        if times:
-            print(f"::notice title=Measured::cold start to Today on the emulator (software graphics, R8 release): "
-                  f"{sorted(times)[len(times) // 2]} ms median of {len(times)} ({', '.join(map(str, times))} ms); the 1.5 s target is checked on the phone in UAT")
-
+    def to_preview(self):
+        """Today → check-in → today's session (or a rest day)."""
+        S = self.S
         self.step = "check-in"
         self.tap_text(S["today_start"])
         self.tap_text(S["checkin_submit"], scrolls=15)
@@ -261,16 +258,37 @@ class Smoke:
         while time.time() < end:
             nodes = screen()
             if self.find(S["preview_start"], nodes) or self.find(S["preview_rest_day"], nodes):
-                break
+                return
             self.scroll()
-        else:
-            self.fail("today's session was not shown")
+        self.fail("today's session was not shown")
+
+    def run(self, apk):
+        S = self.S
+        self.install(apk)
+        self.launch()
+        self.onboard()
+        print("::notice title=Release smoke::started, showed the welcome screen and finished onboarding on Today")
+
+        self.step = "cold start (NFR-01)"
+        times = []
+        for _ in range(3):
+            adb("shell", "am", "force-stop", self.pkg)
+            time.sleep(2)
+            out = adb("shell", "am", "start", "-W", "-n", self.activity, timeout=90)
+            m = re.search(r"TotalTime:\s*(\d+)", out)
+            if m:
+                times.append(int(m.group(1)))
+            self.wait(S["today_start"], 60)
+        if times:
+            print(f"::notice title=Measured::cold start to Today on the emulator (software graphics, R8 release): "
+                  f"{sorted(times)[len(times) // 2]} ms median of {len(times)} ({', '.join(map(str, times))} ms); the 1.5 s target is checked on the phone in UAT")
+
+        self.to_preview()
         self.alive()
         crash = adb("logcat", "-d", "-b", "crash", timeout=30).strip()
-        if PKG in crash:
+        if self.pkg in crash:
             self.fail("a crash was logged")
         print("::notice title=Release smoke::PASS: installed, onboarded, planned and showed today's session on the R8-shrunk release build")
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

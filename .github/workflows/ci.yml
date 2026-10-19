@@ -40,6 +40,7 @@ jobs:
           python3 -I tools/gen_conditions_kotlin.py --check
           python3 -I tools/check_phase1.py
           python3 -I tools/check_registry.py
+          python3 -I -m py_compile tools/release_smoke.py tools/device_e5.py
           # Research-update workflow (Part 8): the registry is the baseline plus its change sets, and the tool's own tests pass.
           python3 -I tools/research_update.py replay --check
           python3 -I tools/test_research_update.py
