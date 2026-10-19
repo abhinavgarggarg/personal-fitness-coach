@@ -150,12 +150,20 @@ class YearSimulationTest {
                                         thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, step.workingLoad)
                                         val est = step.startE1rm
                                         if (est != null) { e1rm[ex.id] = est; startE1rm.putIfAbsent(ex.id, est); startWeek.putIfAbsent(ex.id, week); calLoads.remove(ex.id) }
-                                        else if ((calSessions.merge(ex.id, 1, Int::plus) ?: 1) < 4) calLoads[ex.id] = step.workingLoad // CAL-001 runs over sessions 1–4
+                                        // A ramp still easy at its 5-set limit goes on next session (CAL-001 runs over sessions 1–4) …
+                                        else if (set == 5 && rir >= 4.0 && (calSessions.merge(ex.id, 1, Int::plus) ?: 1) < 4) calLoads[ex.id] = step.workingLoad
+                                        // … otherwise the load is found and the next exposure confirms it with working sets (D-115).
                                         else { nextLoads[ex.id] = com.personalfitnesscoach.engine.progression.Prescription(step.workingLoad, it.reps, it.reps.first,
-                                            com.personalfitnesscoach.engine.progression.ProgressionAction.HOLD); calLoads.remove(ex.id) } // then progression takes over
+                                            com.personalfitnesscoach.engine.progression.ProgressionAction.HOLD); calLoads.remove(ex.id) }
                                         break
                                     }
-                                    is com.personalfitnesscoach.engine.progression.CalibrationStep.Stop -> { calLoads[ex.id] = step.nextSessionLoad; break }
+                                    is com.personalfitnesscoach.engine.progression.CalibrationStep.Stop -> {
+                                        // RIR ≤ 2: the next session works at this load −5% (CAL-001 step 2, D-115). This week's load is
+                                        // the heaviest ramp set done, as the app records it (EngineBridge.lastWeekLoads).
+                                        thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, cur)
+                                        nextLoads[ex.id] =com.personalfitnesscoach.engine.progression.Prescription(step.nextSessionLoad, it.reps, it.reps.first,
+                                            com.personalfitnesscoach.engine.progression.ProgressionAction.HOLD); calLoads.remove(ex.id); break
+                                    }
                                 }
                             }
                         } else {

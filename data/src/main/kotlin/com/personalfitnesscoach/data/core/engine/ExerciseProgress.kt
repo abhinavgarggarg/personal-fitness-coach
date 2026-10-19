@@ -49,7 +49,8 @@ data class ExposureOutcome(val state: ExerciseState, val ladder: Pair<String, St
  * finished workout and, from scratch, by [ProgressRecorder.rebuild]; both give the same result (tested).
  *
  *  - Calibration sets (CAL-001) are replayed in order through [Calibration.next]: a found load with a valid estimate seeds the
- *    e1RM; without one, calibration continues over sessions 1–4, then progression takes over from the found load.
+ *    e1RM; without one, the found load (or the "too hard" load −5%) is the next exposure's working load (D-115). A ramp still easy at
+ *    its 5-set limit goes on next session, over sessions 1–4; then progression takes over from the best load the ramp allowed.
  *  - Working sets update the e1RM (INT-004, smoothed, +5% cap) and, for a full-load exposure, the next prescription
  *    (PROG-001…008; the generator uses it for the same rep range, D-055).
  *  - Bodyweight, assisted and core exercises follow their ladders (BW-001/002, CORE-002, PROG-005).
@@ -105,9 +106,13 @@ object ExerciseProgress {
             val sessions = (state.calibration?.sessions ?: 0) + 1
             var last: CalibrationStep? = null
             var lastRated: Double? = null
+            var lastRir = 0.0
+            var setsReplayed = 0
             for ((i, set) in ramp.withIndex()) {
                 val rir = set.rir ?: set.rpe?.let { 10.0 - it } ?: break // an unrated set ends the replay: next time starts from the last rated load
                 lastRated = set.loadKg
+                lastRir = rir
+                setsReplayed = i + 1
                 val step = Calibration.next(set.loadKg!!, target, rir, i + 1, avail, ceiling, Calibration.coarseStepsAllowed(ex.loadType))
                 d += step.decisions
                 last = step.value
@@ -115,12 +120,20 @@ object ExerciseProgress {
             }
             // An unfinished ramp restarts from the last load the user rated (every rated set before it was easy), else from where it began.
             val restart = lastRated ?: ramp.first().loadKg!!
-            // CAL-001 runs over sessions 1–4; after the 4th, progression takes over from the best load the ramp allowed.
+            // A ramp still easy at its set limit goes on next session; CAL-001 runs over sessions 1–4, and after the 4th progression takes
+            // over from the best load the ramp allowed.
             fun next(load: Double) = if (sessions < P.CAL_001.sessions[1]) s.copy(calibration = CalibrationState(load, sessions, ceiling))
-                else s.copy(calibration = null, prescription = Prescription(load, item.reps, item.reps.first, ProgressionAction.HOLD), prescriptionDay = day)
+                else found(s, load, item, day)
             s = when (val l = last) {
-                is CalibrationStep.Found -> if (l.startE1rm != null) s.copy(e1rm = l.startE1rm, e1rmDay = day, calibration = null) else next(l.workingLoad)
-                is CalibrationStep.Stop -> next(l.nextSessionLoad)
+                is CalibrationStep.Found -> when {
+                    l.startE1rm != null -> s.copy(e1rm = l.startE1rm, e1rmDay = day, calibration = null)
+                    // The 5-set limit reached with the load still easy (RIR 4+): not found yet.
+                    lastRir >= 4.0 - 1e-9 && setsReplayed >= P.CAL_001.max_ramp_sets -> next(l.workingLoad)
+                    // RIR 3 without a valid estimate (INT-004), or no safe heavier step (D-038): this is the working load.
+                    else -> found(s, l.workingLoad, item, day)
+                }
+                // RIR ≤ 2: "stop; next session uses this load −5%" (CAL-001 step 2).
+                is CalibrationStep.Stop -> found(s, l.nextSessionLoad, item, day)
                 is CalibrationStep.Continue, null -> next(restart)
             }
         } else if (s.e1rm == null && item.calibrating && done.working.isEmpty()) {
@@ -150,6 +163,14 @@ object ExerciseProgress {
         }
         return EngineResult(ExposureOutcome(s), d)
     }
+
+    /**
+     * CAL-001 step 4 (D-115): the working load is found, so calibration ends and the next exposure confirms it with working sets; normal
+     * progression follows from them. (Before, a load found without a valid e1RM was ramped to again for up to four sessions, so the
+     * exercise had no working sets for weeks — Phase 4 scenario S19.)
+     */
+    private fun found(s: ExerciseState, load: Double, item: com.personalfitnesscoach.data.core.session.ItemDoc, day: Int): ExerciseState =
+        s.copy(calibration = null, prescription = Prescription(load, item.reps, item.reps.first, ProgressionAction.HOLD), prescriptionDay = day)
 
     /** Bodyweight, assisted and core: the ladder decides the next rung, reps or assistance (BW-001, BW-002, CORE-002). */
     private fun ladder(s0: ExerciseState, ex: Exercise, recent: List<StoredExercise>, ctx: ProgressContext, d: MutableList<Decision>): EngineResult<ExposureOutcome> {

@@ -903,18 +903,37 @@ class SessionPlayer(private val d: PfcData) {
         val floor = TimeBudget.warmupFloor(u.age, c.extraWarmupMin.toDouble())
         val budget = minutesLeft + if (rem.plan.warmupMin == 0.0) floor else 0.0
         val fit = TimeBudget.fit(rem.plan, budget, u.age, 1.0, u.preferences.crowdedGym, c.extraWarmupMin.toDouble(), c.extraCooldownMin.toDouble(), supersets = false)
-        var plan = fit.value.plan
+        // A ramp to find a weight (CAL-001) can't be cut set by set — the player plays it whole — so it stays whole in the fit, or goes.
+        val ramps = rem.lifts.withIndex().filter { (_, l) -> calibrates(l.exercise, l.item) }.associate { (i, l) -> "$i:${l.exercise.id}" to rem.slots[i].sets }
+        fun whole(p: SessionPlan) = p.copy(items = p.items.map { item -> ramps[item.id]?.let { item.copy(sets = it) } ?: item })
+        val over = whole(fit.value.plan)
+        var plan = over
         val extra = ArrayList<String>()
         // A hard limit mid-session: below TIME-002's floors, work goes in reverse TIME-001 priority (P5…P3, then P2 conditioning, then P1
         // down to one set); the cool-down (P0) always stays.
-        fun fits() = TimeModel.minutes(plan) <= budget + 1e-9
+        fun fits(p: SessionPlan = plan) = TimeModel.minutes(p) <= budget + 1e-9
         while (!fits()) {
             val victim = plan.items.filter { it.priority >= com.personalfitnesscoach.engine.planning.Priority.P3 }.maxWithOrNull(compareBy({ it.priority }, { plan.items.indexOf(it) }))
                 ?: plan.items.lastOrNull { it.isConditioning }
             // Only the victim goes; its superset partner stays, on its own (review R8-05).
             if (victim != null) { plan = plan.copy(items = plan.items.filter { it.id != victim.id }.map { if (it.pairedWith == victim.id) it.copy(pairedWith = null) else it }); extra += victim.id; continue }
-            val p1 = plan.items.lastOrNull { !it.isConditioning && it.sets > 1 } ?: break
+            val p1 = plan.items.lastOrNull { !it.isConditioning && it.sets > 1 && it.id !in ramps } ?: break
             plan = plan.copy(items = plan.items.map { if (it.id == p1.id) it.copy(sets = it.sets - 1) else it })
+        }
+        // Whole items go above, so the last one taken may leave much more time than asked for: what fits comes back, most important
+        // first — a conditioning block as it was fitted and a ramp whole, then sets one at a time (TimeBudget.backFill, as inside the
+        // fit; Phase 4 scenario S13 kept 4 of 15 minutes before this, D-115).
+        if (extra.isNotEmpty()) {
+            for (id in extra.reversed()) {
+                val o = over.items.firstOrNull { it.id == id && (it.isConditioning || it.id in ramps) } ?: continue
+                val keep = over.items.take(over.items.indexOf(o)).map { it.id }.toSet()
+                val at = plan.items.indexOfLast { it.id in keep } + 1
+                val trial = plan.copy(items = plan.items.take(at) + o.copy(pairedWith = null) + plan.items.drop(at))
+                if (fits(trial)) plan = trial
+            }
+            val rest = over.copy(items = over.items.filter { it.id !in ramps || plan.items.any { p -> p.id == it.id } })
+            plan = TimeBudget.backFill(plan, rest) { p -> fits(p) }.first
+            extra.retainAll { id -> plan.items.none { it.id == id } }
         }
         val byId = plan.items.associateBy { it.id }
         val changes = ArrayList<Change>()

@@ -293,9 +293,10 @@ object TimeBudget {
     /**
      * Gives back, most important first, what the last compression step took beyond what was needed: one set at a time (an item that was
      * dropped comes back with one set, in its place), then the warm-up and the conditioning toward their earlier length, then rests,
-     * while the plan still fits. Returns the plan and the ids of dropped items that came back.
+     * while the plan still fits. Returns the plan and the ids of dropped items that came back. Also used by the guided workout after a
+     * mid-session "only N minutes left" (D-115).
      */
-    internal fun backFill(fitted: SessionPlan, over: SessionPlan, fits: (SessionPlan) -> Boolean): Pair<SessionPlan, List<String>> {
+    fun backFill(fitted: SessionPlan, over: SessionPlan, fits: (SessionPlan) -> Boolean): Pair<SessionPlan, List<String>> {
         var cur = fitted
         val restored = ArrayList<String>()
         fun tryPlan(p: SessionPlan): Boolean = fits(p).also { if (it) cur = p }

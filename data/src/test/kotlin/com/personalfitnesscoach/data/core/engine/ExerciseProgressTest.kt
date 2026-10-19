@@ -32,8 +32,8 @@ class ExerciseProgressTest {
         ItemDoc(SlotRole.MAIN, Priority.P1, 3, reps, DoseUnit.REPS, targetRir = rir, load = load, loadFactor = factor, restMinSec = 120, restDefaultSec = 150,
             restMaxSec = 180, calibrating = calibrating, main = true)
 
-    private fun exposure(item: ItemDoc, vararg sets: Triple<String, Double, Pair<Int, Double?>>) = StoredExercise(
-        ExerciseRow(1, 1, 0, bench.id, "main", "DONE", item.encode()), item,
+    private fun exposure(item: ItemDoc, vararg sets: Triple<String, Double, Pair<Int, Double?>>, id: String = bench.id) = StoredExercise(
+        ExerciseRow(1, 1, 0, id, "main", "DONE", item.encode()), item,
         sets.mapIndexed { i, (kind, load, rr) -> SetRow(i + 1L, 1, i, kind, load, rr.first, rir = rr.second, loggedAtMs = i.toLong()) })
 
     private fun cal(load: Double, reps: Int, rir: Double?) = Triple(SetKind.CALIBRATION, load, reps to rir)
@@ -47,10 +47,26 @@ class ExerciseProgressTest {
         assertEquals(1, r.state.exposures)
     }
 
-    @Test fun `too hard stops the ramp and the next session starts 5 percent lower`() {
+    @Test fun `too hard stops the ramp and the next session works at 5 percent lower (D-115)`() {
         val r = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(60.0, 10, 1.0)), day, ctx, null).value
         assertNull(r.state.e1rm)
-        assertEquals(CalibrationState(57.5, 1, null), r.state.calibration)
+        // CAL-001 step 2: "RIR ≤ 2 → stop; next session uses this load −5%" — as its working load, confirmed with working sets (step 4).
+        assertNull(r.state.calibration)
+        assertEquals(57.5, r.state.prescription!!.load, 0.0)
+        assertEquals(ProgressionAction.HOLD, r.state.prescription!!.action)
+    }
+
+    @Test fun `a ramp still easy at its 5-set limit goes on next session, and no safe heavier step makes the load the working load`() {
+        // RIR 5+ on every set up to the limit: the ramp continues from the last load (CAL-001 runs over sessions 1–4).
+        val easy = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(20.0, 10, 5.0), cal(25.0, 10, 5.0), cal(30.0, 10, 5.0),
+            cal(37.5, 10, 5.0), cal(47.5, 10, 5.0)), day, ctx, null).value
+        assertEquals(CalibrationState(47.5, 1, null), easy.state.calibration)
+        assertNull(easy.state.prescription)
+        // A dumbbell whose next step is beyond the band (2.5 → 5 kg is +100%): D-038, this is the working load — found, not ramped to again.
+        val db = Library.require("db-bench-press")
+        val stuck = ExerciseProgress.apply(ExerciseState(db.id), db, exposure(item(true), cal(2.5, 10, 5.0), id = db.id), day, ctx, null).value
+        assertNull(stuck.state.calibration)
+        assertEquals(2.5, stuck.state.prescription!!.load, 0.0)
     }
 
     @Test fun `an unrated ramp set ends the ramp and the next session restarts from the last rated load`() {
@@ -75,10 +91,12 @@ class ExerciseProgressTest {
     }
 
     @Test fun `a ramp at 10 reps finds the load but leaves the e1RM to working sets`() {
-        // 8–12 reps: the ramp asks for 10; RIR 3 at 10 reps is outside INT-004's valid range, so calibration goes on.
+        // 8–12 reps: the ramp asks for 10; RIR 3 at 10 reps is outside INT-004's valid range, so there is no e1RM yet — but the working
+        // load is found: the next exposure confirms it with working sets (CAL-001 step 4, D-115), which then give the e1RM.
         val r = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(40.0, 10, 6.0), cal(50.0, 10, 3.0)), day, ctx, null).value
         assertNull(r.state.e1rm)
-        assertEquals(CalibrationState(50.0, 1, null), r.state.calibration)
+        assertNull(r.state.calibration)
+        assertEquals(50.0, r.state.prescription!!.load, 0.0)
     }
 
     @Test fun `working sets update the e1RM and write the next prescription`() {

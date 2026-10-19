@@ -700,7 +700,11 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         var n = 0
         var ws = Days.weekStart(lastDone)
         while (ws <= Days.weekStart(today)) {
-            docs.get(WeekPlanRecord, dayKey(ws))?.days?.forEach { (wd, _) -> if (ws + wd in (lastDone + 1) until today) n++ }
+            val rec = docs.get(WeekPlanRecord, dayKey(ws))
+            if (rec != null) rec.days.forEach { (wd, _) -> if (ws + wd in (lastDone + 1) until today) n++ }
+            // A whole week the app was never opened in still had its sessions planned, as the week's rollover counts them (PER-005):
+            // a long break without the app is a break too ("welcome back", ADH-002; Phase 4 scenario S09).
+            else if (ws > lastDone && ws + 6 < today) n += com.personalfitnesscoach.engine.program.Frequency.trainingDays(docs.get(Profile)?.daysPerWeek)
             ws += 7
         }
         return n

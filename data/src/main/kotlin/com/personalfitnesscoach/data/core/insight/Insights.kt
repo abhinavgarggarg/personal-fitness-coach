@@ -163,6 +163,10 @@ class Insights(private val d: PfcData) {
      * ("Why?"). The same ranges as logging apply (NewSet), and a set only belongs to its own exercise.
      */
     suspend fun correctSet(setId: Long, loadKg: Double?, reps: Int?, seconds: Int?, rir: Double?): Boolean = d.store.transaction {
+        // FS-5: what nobody lifts is refused, as logging a set asks about it (the stored ranges are wider, so older files still load;
+        // Phase 4 scenario S27).
+        require(reps == null || reps <= MAX_CORRECTED_REPS) { "reps out of range" }
+        require(loadKg == null || loadKg <= MAX_CORRECTED_LOAD_KG) { "load out of range" }
         val (w, e, s) = locate(setId)
         // Saving without a change changes nothing and logs nothing (review R6-12).
         if (s.loadKg == loadKg && s.reps == reps && s.seconds == seconds && s.rir == rir) return@transaction false
@@ -306,4 +310,10 @@ class Insights(private val d: PfcData) {
     }
 
     suspend fun excluded(): List<String> = d.store.transaction { (d.docs.get(PreferencesRecord) ?: PreferencesRecord()).excludedIds.sorted() }
+
+    companion object {
+        /** A corrected set above these is refused (FS-5): more reps than any set in the library asks for, more weight than anyone lifts. */
+        const val MAX_CORRECTED_REPS = 100
+        const val MAX_CORRECTED_LOAD_KG = 500.0
+    }
 }
