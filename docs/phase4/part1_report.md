@@ -101,7 +101,7 @@ A reviewer who had not seen the work being built checked the proposal. It read t
 | 2 (medium) | The floor (half the plan) could override the guard, so a week could still be 2.4–3.9 times the three before it. Also, "about a deload week" is only true for the total training stress, not for how hard the sessions are | The guard now always wins: the floor never goes above it. The report says plainly what the floor is |
 | 3 (medium) | When the planner trimmed a week in advance, you were never told | Each day the planner made lighter says so in its preview, with a clearer reason |
 | 4 (medium) | Some tests could pass without proving anything, and nothing tested how the guard is switched on and off | New tests cover the guard's on/off cases, the floor actually stopping the planner, and the load limit working with real history. The year simulation now fails if any week goes above the guard, and it has more ways of turning up: illness reported at the check-in, a warning-sign stop, and weeks of one session each |
-| 5 (medium) | The planner cut main lifts before shortening intervals | Intervals are now shortened, then made easy, before any main lift is touched |
+| 5 (medium) | The planner cut main lifts before shortening intervals | Intervals are now shortened, then made easy where that lowers their training stress, before any main lift is touched |
 | 6 (low) | Reference weeks could be months old | Only the last 8 weeks count |
 | 7 (low) | Making jump-rope intervals "easy" kept the jumping, for longer | Easy work moves to a low-impact machine, or to a circuit without jumps |
 | 8 (low) | The planner counted a weight still being found as all its sets, while the session check counts two | Both count two |
