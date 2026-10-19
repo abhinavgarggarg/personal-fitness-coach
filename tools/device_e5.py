@@ -365,6 +365,57 @@ class Device(Smoke):
         return self.expect_same(what, before)
 
     # ------------------------------------------------------------------------------------------------ the scenarios
+    def phone_call(self, s):
+        """An incoming call answered and on screen, then ended: the app kept as it was."""
+        self.step = "phone call"
+        pid = self.pid()
+        number = "5551234567"
+        rang = adb("emu", "gsm", "call", number, timeout=30)
+        if "OK" not in rang:
+            self.fail(f"the emulator could not ring: {rang.strip()[:200]}")
+        time.sleep(5)
+        # Answered as a person would: "Answer" on the call alert if it has one; else the phone's call key, then the emulator console.
+        active = lambda: "active" in adb("emu", "gsm", "list", timeout=30)  # noqa: E731
+        alert = next((n for n in screen() if (n.text or n.desc).strip().lower() == "answer"), None)
+        how = "not answered"
+        if alert:
+            self.tap(alert)
+            time.sleep(3)
+            how = "answered from the call alert"
+        if not active():
+            adb("shell", "input", "keyevent", "KEYCODE_CALL")
+            time.sleep(3)
+            how = "answered with the call key"
+        if not active():
+            adb("emu", "gsm", "accept", number, timeout=30)
+            time.sleep(3)
+            how = "answered from the emulator console"
+        if not active():
+            telecom = " ".join(ln.strip() for ln in adb("shell", "dumpsys", "telecom", timeout=60).splitlines() if "state" in ln.lower())[:300]
+            self.fail(f"the call could not be answered (gsm list: {' '.join(adb('emu', 'gsm', 'list').split())[:120]}; telecom: {telecom})")
+        time.sleep(2)
+        if self.in_front():
+            # The call screen opened, as when the person goes to it: the phone app comes in front of this one.
+            adb("shell", "am", "start", "-a", "android.intent.action.DIAL", timeout=30)
+            how += ", the phone app brought in front"
+            time.sleep(3)
+        on_call = self.focus()
+        if self.pkg in on_call:
+            self.fail(f"the call did not take over the screen (focus: {on_call[:200]})")
+        if not active():
+            self.fail("the call ended before it was hung up")
+        self.notes.append(f"call: {how}")
+        time.sleep(5)
+        hung = adb("emu", "gsm", "cancel", number, timeout=30)
+        if "OK" not in hung:
+            self.fail(f"the call could not be ended: {hung.strip()[:200]}")
+        time.sleep(3)
+        self.relaunch()
+        self.back_in("an answered call", resume=False)
+        s = self.kept(f"an answered call ({how})", pid, s)
+        s = self.log_set()
+        return s
+
     def interruptions(self, apk):
         """A session logged set by set through every interruption Phase 2 lists (call, background, lock, process death, reboot)."""
         S = self.S
@@ -415,44 +466,7 @@ class Device(Smoke):
         self.back_in("turned back", resume=False)
         s = self.kept("turned back", pid, s)
 
-        self.step = "phone call"
-        pid = self.pid()
-        number = "5551234567"
-        rang = adb("emu", "gsm", "call", number, timeout=30)
-        if "OK" not in rang:
-            self.fail(f"the emulator could not ring: {rang.strip()[:200]}")
-        time.sleep(5)
-        # Answered as a person would: "Answer" on the call alert (Android 10+ shows a banner over an open app), else from the console.
-        alert = next((n for n in screen() if (n.text or n.desc).strip().lower() == "answer"), None)
-        if alert:
-            self.tap(alert)
-            how = "answered from the call alert"
-        else:
-            if "OK" not in adb("emu", "gsm", "accept", number, timeout=30):
-                self.fail("the call could not be answered")
-            how = "answered"
-        time.sleep(4)
-        if self.in_front():
-            # The call screen opened, as when the person goes to it: the phone app comes in front of this one.
-            adb("shell", "am", "start", "-a", "android.intent.action.DIAL", timeout=30)
-            how += ", the phone app in front"
-            time.sleep(3)
-        on_call = self.focus()
-        if self.pkg in on_call:
-            self.fail(f"the call did not take over the screen (focus: {on_call[:200]})")
-        calls = " ".join(adb("emu", "gsm", "list", timeout=30).split())
-        if "active" not in calls:
-            self.fail(f"the call was not answered: {calls[:200]}")
-        self.notes.append(f"call: {how}")
-        time.sleep(5)
-        hung = adb("emu", "gsm", "cancel", number, timeout=30)
-        if "OK" not in hung:
-            self.fail(f"the call could not be ended: {hung.strip()[:200]}")
-        time.sleep(3)
-        self.relaunch()
-        self.back_in("an answered call", resume=False)
-        s = self.kept(f"an answered call ({how})", pid, s)
-        s = self.log_set()
+        s = self.phone_call(s)
 
         self.step = "low memory"
         pid = self.pid()
@@ -691,6 +705,16 @@ def main(argv):
         d.interruptions(argv[2])
     elif what == "backup":
         d.backup(argv[2])
+    elif what == "quick-call":
+        # A short session, then the call (for working on the call step alone).
+        d.step = "install"
+        adb("uninstall", PKG, timeout=120)
+        d.install(argv[2], replace=False)
+        d.launch()
+        d.onboard()
+        d.start_workout()
+        s = d.log_set()
+        d.phone_call(s)
     elif what == "quick-backup":
         # A short session, then the backup checks (for working on the backup step alone).
         d.step = "install"

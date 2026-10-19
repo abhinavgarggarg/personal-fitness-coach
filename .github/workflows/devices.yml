@@ -17,7 +17,7 @@ on:
         type: boolean
         default: false
       e5_mode:
-        description: "E5: all, or quick-backup (a short session, then the backup checks)"
+        description: "E5: all, quick-backup or quick-call (a short session, then that step alone)"
         type: string
         default: "all"
   schedule:
@@ -183,4 +183,4 @@ jobs:
           profile: ${{ matrix.profile }}
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none
-          script: if [ "${{ inputs.e5_mode || 'all' }}" = "quick-backup" ]; then python3 -I tools/device_e5.py quick-backup "$NEW_APK"; else python3 -I tools/device_e5.py all "$NEW_APK" "$OLD_APK" "$RUNNER_TEMP/old"; fi
+          script: if [ "${{ inputs.e5_mode || 'all' }}" != "all" ]; then python3 -I tools/device_e5.py "${{ inputs.e5_mode }}" "$NEW_APK"; else python3 -I tools/device_e5.py all "$NEW_APK" "$OLD_APK" "$RUNNER_TEMP/old"; fi
