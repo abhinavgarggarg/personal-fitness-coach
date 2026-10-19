@@ -1,6 +1,6 @@
 {
-  "registry_version": "3.0.0",
-  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 3.0.0 approved by Product Owner on 2026-10-19",
+  "registry_version": "3.0.1",
+  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 3.0.1 approved by Delegated: evidence verification only (no wording, parameter or confidence change), reported to the Product Owner at the Phase 4 gate on 2026-10-19",
   "generated": "2026-10-19",
   "confidence_scale": [
     "High Evidence",
@@ -247,8 +247,8 @@
     },
     "Fragala2019": {
       "citation": "Fragala MS, Cadore EL, Dorgo S, et al. Resistance training for older adults: position statement from the National Strength and Conditioning Association. J Strength Cond Res. 2019;33(8):2019-2052. doi:10.1519/JSC.0000000000003230",
-      "verification": "checked 2026-10-12 (record and abstract, UTEP repository); the program-design recommendations in the full text were not read",
-      "url": "https://scholarworks.utep.edu/kines_papers/60"
+      "verification": "checked 2026-10-19 (full text, NSCA PDF): 2-3 non-consecutive days a week per muscle group; working towards 2-3 sets of 1-2 multi-joint exercises per major muscle group at 70-85% 1RM (1 set and lighter loads to start for beginners and frail adults); power exercises fast in the lifting phase at 40-60% 1RM; multicomponent training (resistance, gait, balance) for older adults; frail adults may start at 20-30% 1RM",
+      "url": "https://www.nsca.com/contentassets/2a4112fb355a4a48853bbafbe070fb8e/resistance_training_for_older_adults__position.1.pdf"
     },
     "Behm2016": {
       "citation": "Behm DG, Blazevich AJ, Kay AD, McHugh M. Acute effects of muscle stretching on physical performance, range of motion, and injury incidence in healthy active individuals: a systematic review. Appl Physiol Nutr Metab. 2016;41(1):1-11.",
@@ -272,7 +272,7 @@
     },
     "LeSuer1997": {
       "citation": "LeSuer DA, McCormick JH, Mayhew JL, Wasserstein RL, Arnold MD. The accuracy of prediction equations for estimating 1-RM performance in the bench press, squat, and deadlift. J Strength Cond Res. 1997;11(4):211-213.",
-      "verification": "located; citation checked 2026-10-12 in Crossref (doi:10.1519/00124278-199711000-00001); abstract not read",
+      "verification": "partly checked 2026-10-19 (part of the abstract, Semantic Scholar): 67 untrained college students (40 men, 27 women); all correlations between predicted and achieved 1RM high (r > 0.95); the lift-by-lift accuracy part could not be read",
       "url": "https://doi.org/10.1519/00124278-199711000-00001",
       "note": "The earlier URL opened a different paper (Mayhew et al. 2008, bench press in women)."
     },
@@ -569,8 +569,8 @@
     },
     "Peterson2011": {
       "citation": "Peterson MD, Sen A, Gordon PM. Influence of resistance exercise on lean body mass in aging adults: a meta-analysis. Med Sci Sports Exerc. 2011;43(2):249-258.",
-      "verification": "located",
-      "url": ""
+      "verification": "checked 2026-10-19 (abstract, PEDro record 28020): 49 studies, 1,328 adults aged 50+; resistance exercise raised lean body mass by 1.1 kg (95% CI 0.9-1.2); higher-volume programmes gained more (beta 0.05), older age less (beta -0.03); I2 84%",
+      "url": "https://search.pedro.org.au/search-results/record-detail/28020"
     },
     "Mitchell2012": {
       "citation": "Mitchell WK, Williams J, Atherton P, Larvin M, Lund J, Narici M. Sarcopenia, dynapenia, and the impact of advancing age on human skeletal muscle size and strength; a quantitative review. Front Physiol. 2012;3:260. doi:10.3389/fphys.2012.00260",
@@ -639,9 +639,9 @@
     },
     "WHOSTEPS": {
       "citation": "WHO STEPwise approach (STEPS) waist-circumference protocol, as summarised by the MRC Epidemiology Unit / NIHR Cambridge BRC Measurement Toolkit.",
-      "verification": "located",
+      "verification": "partly checked 2026-10-19 through Statistics Canada Health Reports 2012 (82-003-X 2012003, article 11707), which uses the WHO protocol: the midpoint between the lowest rib and the top of the iliac crest, at the end of a normal breath out, and notes the WHO and NIH sites give different readings; the WHO 2011 report's PDF (iris.who.int) could not be read",
       "url": "",
-      "note": "Primary source to read: WHO. Waist circumference and waist-hip ratio: report of a WHO expert consultation, Geneva, 8-11 December 2008. WHO, 2011. ISBN 9789241501491 (record checked 2026-10-12; the report's text could not be opened)."
+      "note": "Primary source still to read: WHO. Waist circumference and waist-hip ratio: report of a WHO expert consultation, Geneva, 8-11 December 2008. WHO, 2011. ISBN 9789241501491."
     },
     "Greendale2019": {
       "citation": "Greendale GA, Sternfeld B, Huang M, et al. Changes in body composition and weight during the menopause transition. JCI Insight. 2019;4(5):e124865. doi:10.1172/jci.insight.124865",
@@ -765,7 +765,7 @@
     },
     "ACOG20": {
       "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 804. Obstet Gynecol. 2020;135(4):e178-e188. doi:10.1097/AOG.0000000000003772",
-      "verification": "located; citation checked 2026-10-12 in Crossref (pages e178-e188); the full text could not be opened (acog.org and the publisher refused the request)",
+      "verification": "located; citation checked 2026-10-12 in Crossref; the full text could not be opened on 2026-10-12 or 2026-10-19 (acog.org and the publisher refused the request). A secondary summary of ACOG's earlier (2015) opinion lists broadly the same contraindications and warning signs; the 2020 details the app uses (placenta praevia after 28 weeks, growth restriction, triplets or more) still rest on the unread 2020 text",
       "url": "https://doi.org/10.1097/AOG.0000000000003772"
     },
     "CAN25": {
@@ -795,12 +795,22 @@
     },
     "CAM19": {
       "citation": "Campbell KL, Winters-Stone KM, Wiskemann J, et al. Exercise Guidelines for Cancer Survivors: Consensus Statement from International Multidisciplinary Roundtable. Med Sci Sports Exerc. 2019;51(11):2375-2390. doi:10.1249/MSS.0000000000002116",
-      "verification": "checked (abstract)",
+      "verification": "checked (abstract); full text not opened on 2026-10-19 (PubMed/PMC refused the request). The International Bone Metastases Exercise Working Group's 2022 recommendations (Campbell et al.; UBC summary) agree with the app's caution for bone spread: risk assessment and medical consultation before exercise, qualified supervision, lesion location considered",
       "url": "https://doi.org/10.1249/MSS.0000000000002116"
     },
     "PFCSim2026": {
       "citation": "Personal Fitness Coach, Phase 4 Part 1. Twelve-month simulations of the weekly limits: eight personas (Phase 2 P1-P3, P5, an advanced lifter, two condition personas and a bodyweight-only user) x three ways of turning up, through the app's data layer and engine. Internal report, not peer reviewed: docs/phase4/part1_report.md; reproduced by data/src/test/.../YearOfTrainingTest.kt",
       "verification": "internal; reproducible on every CI run (YearOfTrainingTest 'Measured' lines)"
+    },
+    "FDA26": {
+      "citation": "U.S. Food and Drug Administration. General Wellness: Policy for Low Risk Devices. Guidance for Industry and FDA Staff, 6 January 2026 (supersedes 27 September 2019).",
+      "verification": "checked 2026-10-19 (primary text): general wellness = intended only for general wellness use and low risk; claims such as logging, tracking or trending exercise and 'may help reduce the risk of' / 'may help living well with' a chronic condition are in scope; products whose labelling, user interface or functionality references specific diseases, clinical conditions or diagnostic thresholds are not general wellness products; a prompt to see a health professional is acceptable without thresholds, diagnoses or treatment advice",
+      "url": "https://www.fda.gov/media/90652/download"
+    },
+    "MDCG19-11": {
+      "citation": "Medical Device Coordination Group. MDCG 2019-11 rev.1: Qualification and classification of software - Regulation (EU) 2017/745 and Regulation (EU) 2017/746. June 2025.",
+      "verification": "checked 2026-10-19 (primary text): software must have a medical purpose on its own to be a medical device; wellness or fitness apps do not qualify; the manufacturer's stated intended purpose decides qualification and class",
+      "url": "https://health.ec.europa.eu/document/download/b45335c5-1679-4c71-a91c-fc7a4d37f12b_en?filename=mdcg_2019_11_en.pdf"
     }
   },
   "rules": [
@@ -5826,7 +5836,7 @@
     },
     {
       "rule_id": "FL-003",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "category": "fat_loss",
       "title": "Training mix by age band",
       "statement": "The weekly mix for the fat-loss goal changes with age: strength stays at 3 days by default (2 minimum) in every band; steady Z1 cardio stays at 150–200 min; tempo (Z2) and intervals shrink with age and become low-impact only from 50; a power-emphasis slot (light load lifted fast, low impact) is added from 50; balance work starts at 50 and becomes ≥3 multicomponent days at 65+. Interval sessions need a base of regular training first, longer with age.",
@@ -5952,7 +5962,7 @@
       ],
       "uncertainty": "No trial compares age-banded exercise mixes. Floors (≥2 strength days, ≥3 multicomponent days at 65+, 150 min) are High Evidence; the band cut-points, tempo and HIIT tapers and base lengths are Expert Practice. HIIT safety data come from supervised settings.",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-12",
+      "date_reviewed": "2026-10-19",
       "affected_algorithms": [
         "weekly_scheduling",
         "workout_generation",
@@ -5963,12 +5973,8 @@
         "TC-FL-003a",
         "TC-FL-003b"
       ],
-      "change_reason": "PATCH: Bull 2020 checked in full text (2+ strength days; 3+ multicomponent balance and strength days at 65+); Fragala 2019 and Peterson 2011 still to read — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
-      "status": "approved",
-      "verification_pending": [
-        "Fragala2019",
-        "Peterson2011"
-      ]
+      "change_reason": "PATCH: Fragala 2019 checked in full text (2-3 non-consecutive strength days; power at 40-60% 1RM; multicomponent training for older adults) and Peterson 2011 in abstract (+1.1 kg lean mass at 50+, more with higher volume): both agree with the rule — Source verification in Phase 4 Part 4 (registry 3.0.1, D-106)",
+      "status": "approved"
     },
     {
       "rule_id": "FL-004",
@@ -6014,7 +6020,7 @@
     },
     {
       "rule_id": "FL-005",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "category": "fat_loss",
       "title": "Progress measures without food tracking",
       "statement": "Waist and strength are the main progress measures; weight is secondary. Waist (optional): every 2–4 weeks, midway between the lowest rib and the top of the hip bone, standing, after a normal breath out, three readings averaged; South Asian reference lines (≥90 cm men, ≥80 cm women) shown as information only. Weight (optional): daily or weekly under the same conditions; the app shows a 7-day mean and judges only 4-week trends. If the 7-day mean falls more than 1 kg/week for 3 weeks in a row, a neutral check-in suggests checking with a doctor if the user isn't trying to diet or feels unwell. No food advice.",
@@ -6045,7 +6051,7 @@
       ],
       "uncertainty": "Daily vs weekly weighing is equivalent (Moderate); averaging, the rate flag and the measuring site are Expert Practice. The Indian consensus measures just above the hip bone, not at the WHO midpoint; readings differ between sites.",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-12",
+      "date_reviewed": "2026-10-19",
       "affected_algorithms": [
         "progress_summary",
         "coach"
@@ -6054,7 +6060,7 @@
         "TC-FL-005a",
         "TC-FL-005b"
       ],
-      "change_reason": "PATCH: the South Asian waist reference lines (90 cm men, 80 cm women) confirmed by the IDF definition's authors; the WHO STEPS protocol text is still to read — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
+      "change_reason": "PATCH: WHO waist protocol checked through a paper that uses it (midpoint of the lowest rib and the iliac crest, end of a normal breath out); the WHO 2011 report itself still to read — Source verification in Phase 4 Part 4 (registry 3.0.1, D-106)",
       "status": "approved",
       "verification_pending": [
         "WHOSTEPS"
@@ -6253,7 +6259,7 @@
     },
     {
       "rule_id": "CAL-002",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "category": "calibration",
       "title": "Starting from your own numbers",
       "statement": "A user may enter, per exercise, a recent set (weight × reps and reps in reserve) or a best lift (counted as 0 reps in reserve). An estimated 1RM comes from INT-004 only when the entry is valid (reps + RIR ≤ 12, RIR ≤ 3); the first working load is the INT-005 load from 90% of that estimate (CAL-001 known-weights start). If the user last did the exercise 14–27 days ago the estimate is reduced 10%, 28–55 days 20%, and from 56 days the entry is used only as a ceiling for a normal CAL-001 ramp (age 60+ or a flagged screen moves one band longer, as REG-004). The first session confirms it with the CAL-001 rules.",
@@ -6279,7 +6285,7 @@
       ],
       "uncertainty": "e1RM formula accuracy is Moderate (INT-004); the 90% start and the age reductions follow existing CAL-001/REG-004 values rather than direct evidence for self-reported numbers, which may be optimistic.",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-12",
+      "date_reviewed": "2026-10-19",
       "affected_algorithms": [
         "calibration",
         "load_selection",
@@ -6289,7 +6295,7 @@
         "TC-CAL-002a",
         "TC-CAL-002b"
       ],
-      "change_reason": "PATCH: Halperin 2022 checked (abstract): predictions of reps to failure are about one rep low and better at 12 reps or fewer, as the reps + RIR <= 12 limit assumes; LeSuer 1997 citation confirmed, its abstract still to read — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
+      "change_reason": "PATCH: LeSuer 1997 abstract partly read (67 untrained students; predicted and achieved 1RM correlated r > 0.95); the lift-by-lift results still to read — Source verification in Phase 4 Part 4 (registry 3.0.1, D-106)",
       "status": "approved",
       "verification_pending": [
         "LeSuer1997"
@@ -6433,13 +6439,9 @@
   ],
   "verification_pending": [
     "ACOG20 (CO 804 full text)",
-    "ADA Standards of Care 2026, section 5 (not opened: unverified)",
-    "GINA 2026 exercise section",
-    "FDA General Wellness 2026 and MDCG 2019-11 rev.1 primary texts",
     "Campbell 2019 (CAM19) full text for the cancer entry's cautions",
-    "Peterson2011",
-    "Fragala2019 (program-design recommendations, full text)",
-    "LeSuer1997 (abstract or full text)",
-    "WHOSTEPS (WHO 2011 expert-consultation report, measuring protocol)"
+    "GINA 2026 exercise section (not relied on by the asthma entry)",
+    "WHOSTEPS (WHO 2011 expert-consultation report, primary text)",
+    "LeSuer1997 (lift-by-lift results)"
   ]
 }

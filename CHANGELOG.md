@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-10-19 — Registry 3.0.1: sources checked again (Phase 4 Part 4, evidence only)
+- Evidence-only PATCH under the D-106 delegation (D-119), applied with `tools/research_update.py`: Peterson 2011 and Fragala 2019 checked (FL-003 1.0.2, nothing pending); the WHO waist protocol (FL-005 1.0.2) and LeSuer 1997 (CAL-002 1.0.2) partly; FDA General Wellness (6 Jan 2026) and MDCG 2019-11 rev.1 added as checked sources. ACOG CO 804, Campbell 2019 and GINA 2026's exercise section stay pending. No rule wording, parameter or confidence changes.
+
 ## 2026-10-19 — Phase 4 Part 3: interruptions, data integrity, backup and upgrade (E5)
 - `tools/device_e5.py` drives the debug build from outside on emulators. A session is logged set by set through home, screen off, rotation (logging sideways), an answered call, low memory, Android closing it in the background, a stop on screen, four stops 0–0.3 s after a tap, and a reboot. Also covered: an upgrade from the Phase 3 build with a session left open, and Android backup.
 - Checks after every step: every set's content unchanged and exactly one complete row per tap; the saved resume point unchanged; "Continue where you stopped?" exactly when the app started afresh; the rest alert set again; no crash or not-responding. Backup: the database only in an end-to-end encrypted backup or a device-to-device transfer, back identical after a reinstall.

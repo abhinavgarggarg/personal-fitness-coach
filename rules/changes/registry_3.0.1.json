@@ -1,0 +1,85 @@
+{
+  "registry_version": "3.0.1",
+  "base_registry_version": "3.0.0",
+  "kind": "PATCH",
+  "date": "2026-10-19",
+  "title": "Source verification in Phase 4 Part 4",
+  "summary": "The nine sources still pending were looked up again on 19 October 2026. Now checked: Peterson 2011 (abstract, PEDro record), Fragala 2019 (full text, NSCA), FDA General Wellness 2026 and MDCG 2019-11 rev.1 (primary texts), ADA Standards 2026 section 5 (official recommendation summary). Partly checked: LeSuer 1997 (part of the abstract) and the WHO waist protocol (through a paper using it). Still not opened: ACOG CO 804 and Campbell 2019 full texts (the publisher and PubMed/PMC refused the requests), GINA 2026's exercise section (the PDF text stops at page 31; the app's asthma entry doesn't rely on GINA). No rule's wording, parameters or confidence changes; only evidence records and verification notes do. The health-condition table (ADA, ACOG, Campbell) is versioned separately; its notes are listed in the Part 4 report.",
+  "approval": {
+    "by": "Delegated: evidence verification only (no wording, parameter or confidence change), reported to the Product Owner at the Phase 4 gate",
+    "date": "2026-10-19",
+    "reference": "D-106"
+  },
+  "sources_update": {
+    "Peterson2011": {
+      "verification": "checked 2026-10-19 (abstract, PEDro record 28020): 49 studies, 1,328 adults aged 50+; resistance exercise raised lean body mass by 1.1 kg (95% CI 0.9-1.2); higher-volume programmes gained more (beta 0.05), older age less (beta -0.03); I2 84%",
+      "url": "https://search.pedro.org.au/search-results/record-detail/28020"
+    },
+    "Fragala2019": {
+      "verification": "checked 2026-10-19 (full text, NSCA PDF): 2-3 non-consecutive days a week per muscle group; working towards 2-3 sets of 1-2 multi-joint exercises per major muscle group at 70-85% 1RM (1 set and lighter loads to start for beginners and frail adults); power exercises fast in the lifting phase at 40-60% 1RM; multicomponent training (resistance, gait, balance) for older adults; frail adults may start at 20-30% 1RM",
+      "url": "https://www.nsca.com/contentassets/2a4112fb355a4a48853bbafbe070fb8e/resistance_training_for_older_adults__position.1.pdf"
+    },
+    "LeSuer1997": {
+      "verification": "partly checked 2026-10-19 (part of the abstract, Semantic Scholar): 67 untrained college students (40 men, 27 women); all correlations between predicted and achieved 1RM high (r > 0.95); the lift-by-lift accuracy part could not be read"
+    },
+    "WHOSTEPS": {
+      "verification": "partly checked 2026-10-19 through Statistics Canada Health Reports 2012 (82-003-X 2012003, article 11707), which uses the WHO protocol: the midpoint between the lowest rib and the top of the iliac crest, at the end of a normal breath out, and notes the WHO and NIH sites give different readings; the WHO 2011 report's PDF (iris.who.int) could not be read",
+      "note": "Primary source still to read: WHO. Waist circumference and waist-hip ratio: report of a WHO expert consultation, Geneva, 8-11 December 2008. WHO, 2011. ISBN 9789241501491."
+    },
+    "ACOG20": {
+      "verification": "located; citation checked 2026-10-12 in Crossref; the full text could not be opened on 2026-10-12 or 2026-10-19 (acog.org and the publisher refused the request). A secondary summary of ACOG's earlier (2015) opinion lists broadly the same contraindications and warning signs; the 2020 details the app uses (placenta praevia after 28 weeks, growth restriction, triplets or more) still rest on the unread 2020 text"
+    },
+    "CAM19": {
+      "verification": "checked (abstract); full text not opened on 2026-10-19 (PubMed/PMC refused the request). The International Bone Metastases Exercise Working Group's 2022 recommendations (Campbell et al.; UBC summary) agree with the app's caution for bone spread: risk assessment and medical consultation before exercise, qualified supervision, lesion location considered"
+    }
+  },
+  "sources_add": {
+    "FDA26": {
+      "citation": "U.S. Food and Drug Administration. General Wellness: Policy for Low Risk Devices. Guidance for Industry and FDA Staff, 6 January 2026 (supersedes 27 September 2019).",
+      "verification": "checked 2026-10-19 (primary text): general wellness = intended only for general wellness use and low risk; claims such as logging, tracking or trending exercise and 'may help reduce the risk of' / 'may help living well with' a chronic condition are in scope; products whose labelling, user interface or functionality references specific diseases, clinical conditions or diagnostic thresholds are not general wellness products; a prompt to see a health professional is acceptable without thresholds, diagnoses or treatment advice",
+      "url": "https://www.fda.gov/media/90652/download"
+    },
+    "MDCG19-11": {
+      "citation": "Medical Device Coordination Group. MDCG 2019-11 rev.1: Qualification and classification of software - Regulation (EU) 2017/745 and Regulation (EU) 2017/746. June 2025.",
+      "verification": "checked 2026-10-19 (primary text): software must have a medical purpose on its own to be a medical device; wellness or fitness apps do not qualify; the manufacturer's stated intended purpose decides qualification and class",
+      "url": "https://health.ec.europa.eu/document/download/b45335c5-1679-4c71-a91c-fc7a4d37f12b_en?filename=mdcg_2019_11_en.pdf"
+    }
+  },
+  "verification_pending": [
+    "ACOG20 (CO 804 full text)",
+    "Campbell 2019 (CAM19) full text for the cancer entry's cautions",
+    "GINA 2026 exercise section (not relied on by the asthma entry)",
+    "WHOSTEPS (WHO 2011 expert-consultation report, primary text)",
+    "LeSuer1997 (lift-by-lift results)"
+  ],
+  "changed_rules": [
+    {
+      "rule_id": "FL-003",
+      "from_version": "1.0.1",
+      "to_version": "1.0.2",
+      "change": "PATCH",
+      "reason": "Fragala 2019 checked in full text (2-3 non-consecutive strength days; power at 40-60% 1RM; multicomponent training for older adults) and Peterson 2011 in abstract (+1.1 kg lean mass at 50+, more with higher volume): both agree with the rule",
+      "verification_pending": null
+    },
+    {
+      "rule_id": "FL-005",
+      "from_version": "1.0.1",
+      "to_version": "1.0.2",
+      "change": "PATCH",
+      "reason": "WHO waist protocol checked through a paper that uses it (midpoint of the lowest rib and the iliac crest, end of a normal breath out); the WHO 2011 report itself still to read",
+      "verification_pending": [
+        "WHOSTEPS"
+      ]
+    },
+    {
+      "rule_id": "CAL-002",
+      "from_version": "1.0.1",
+      "to_version": "1.0.2",
+      "change": "PATCH",
+      "reason": "LeSuer 1997 abstract partly read (67 untrained students; predicted and achieved 1RM correlated r > 0.95); the lift-by-lift results still to read",
+      "verification_pending": [
+        "LeSuer1997"
+      ]
+    }
+  ]
+}
