@@ -544,9 +544,10 @@ class Device(Smoke):
         if not before["sets"]:
             self.fail("no data to back up")
         api = api_level()
-        adb("root", timeout=60)
+        rooted = " ".join(adb("root", timeout=60).split())
         self.wait_boot()
         time.sleep(3)
+        self.where = f"adb root: {rooted[:80]}; shell: {' '.join(adb('shell', 'id').split())[:60]}"
         adb("shell", "bmgr", "enable", "true")
         adb("shell", "bmgr", "transport", TRANSPORT)
         has_db = lambda names: any(n.endswith("db/pfc.db") for n in names)  # noqa: E731
@@ -567,7 +568,8 @@ class Device(Smoke):
         self.step = "device-to-device transfer"
         result, names = self.backup_now("fake_encryption_flag=false,is_encrypted=false,is_device_transfer=true")
         if not has_db(names):
-            self.fail(f"a device-to-device transfer left the database behind ({result}; {names[:5]})")
+            listing = " ".join(adb("shell", "ls", "-lR", "/data/cache/backup", timeout=60).split())[:900]
+            self.fail(f"a device-to-device transfer left the database behind ({result}; {names[:5]}; {self.where}; {listing})")
         self.ok(f"a device-to-device transfer takes the database ({result})")
 
         self.step = "Android backup"
