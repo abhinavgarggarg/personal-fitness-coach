@@ -97,6 +97,18 @@ class ExerciseProgressTest {
         assertEquals(2.5, stuck.state.prescription!!.load, 0.0)
     }
 
+    @Test fun `a ramp stopped late in a high rep range works one step lighter, and an early stop rated 5+ ends the ramp (review of D-116)`() {
+        // 12–15 reps asks for 13; stopped at 10 with 3 left: no valid estimate (13 > 12), and 60 kg would be 12 reps a rep too close
+        // to failure at RIR 2 — the working load is what the set supports (60 × 1.433 / 1.467 = 58.6 → 57.5).
+        val late = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true, reps = 12..15), cal(60.0, 10, 3.0)), day, ctx, null).value
+        assertEquals(57.5, late.state.prescription!!.load, 0.0)
+        assertNull(late.state.e1rm)
+        // Stopped at 6 of 10 but rated "5+": found, by the stop's 3 at most (60 × 1.3 = 78 kg), never a further step.
+        val early = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(50.0, 10, 5.0), cal(60.0, 6, 5.0)), day, ctx, null).value
+        assertEquals(78.0, early.state.e1rm!!, 1e-9)
+        assertNull(early.state.calibration)
+    }
+
     @Test fun `an unrated ramp set ends the ramp and the next session restarts from the last rated load`() {
         // R4-24: the unrated set may have been too hard; the last rated one was easy (RIR 6).
         val r = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(40.0, 10, 6.0), cal(50.0, 10, null)), day, ctx, null).value

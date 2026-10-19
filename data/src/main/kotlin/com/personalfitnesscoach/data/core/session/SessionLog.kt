@@ -51,7 +51,8 @@ data class NewSet(
         require(reps == null || reps in 0..1000) { "reps out of range" }
         require(seconds == null || seconds in 0..36_000) { "seconds out of range" }
         require(metres == null || metres in 0.0..100_000.0) { "metres out of range" }
-        require(rir == null || rir in 0.0..10.0) { "RIR is 0–10" }
+        // A weight-finding set may record "about how many more" up to 30 (D-116); every other set 0–10.
+        require(rir == null || rir in 0.0..(if (kind == SetKind.CALIBRATION) 30.0 else 10.0)) { "RIR is 0–10 (0–30 finding a weight)" }
         require(rpe == null || rpe in 0.0..10.0) { "RPE is 0–10" }
         require(deviation in setOf("AS_PLANNED", "ADJUSTED", "USER_ADDED")) { "unknown deviation $deviation" }
     }

@@ -120,7 +120,8 @@ object ExerciseProgress {
                 missed = set.reps!! < 1
                 // The reps done, not the reps asked for: a set short of its target is what the estimate and the working load go by.
                 lastReps = minOf(target, set.reps!!)
-                val step = Calibration.next(set.loadKg!!, lastReps, rir, i + 1, avail, ceiling, Calibration.coarseStepsAllowed(ex.loadType, ctx.coarseFreeWeights))
+                val step = Calibration.next(set.loadKg!!, lastReps, rir, i + 1, avail, ceiling,
+                    Calibration.coarseStepsAllowed(ex.loadType, ctx.coarseFreeWeights && !item.painReduced), askedReps = target)
                 d += step.decisions
                 last = step.value
                 if (last !is CalibrationStep.Continue) break
@@ -136,8 +137,15 @@ object ExerciseProgress {
                     l.startE1rm != null -> s.copy(e1rm = l.startE1rm, e1rmDay = day, calibration = null)
                     // The 5-set limit reached with the load still easy (RIR 4+): not found yet.
                     l.stillEasy -> next(l.workingLoad)
-                    // RIR 3 without a valid estimate (INT-004), or no safe heavier step (D-038): this is the working load.
-                    else -> found(s, l.workingLoad, item, day)
+                    // RIR 3 without a valid estimate (INT-004), or no safe heavier step (D-038): this is the working load — no more than
+                    // the set itself supports for the bottom of the rep range at its target effort (Epley, not stored as an e1RM), so a
+                    // stop at 10 reps in a 12–15 range doesn't ask for 12 a rep too close to failure (review of D-116).
+                    else -> {
+                        val raw = l.workingLoad * (1.0 + (lastReps + lastRir) / P.INT_004.divisor)
+                        val x = E1rm.loadFor(raw, item.reps.first, item.targetRir)
+                        val supported = avail.filter { it <= x + 1e-9 }.maxOrNull() ?: avail.min()
+                        found(s, minOf(l.workingLoad, supported), item, day)
+                    }
                 }
                 // A set not lifted at all (0 reps) says nothing about what can be lifted: the last load lifted before it is the working
                 // load, and with none the ramp goes on next session from 5% lower (review of D-115).

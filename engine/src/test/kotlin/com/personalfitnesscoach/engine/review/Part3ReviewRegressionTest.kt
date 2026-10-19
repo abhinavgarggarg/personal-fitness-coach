@@ -318,8 +318,10 @@ class Part3ReviewRegressionTest {
 
     @Test fun `R3-13 machine stacks climb past coarse steps in calibration, free weights do not overshoot, and the strength trend works without an e1RM`() {
         val stack = (1..20).map { it * 5.0 }
-        val step = Calibration.next(5.0, 10, 5.0, 1, stack, coarseStepsAllowed = Calibration.coarseStepsAllowed(LoadType.STACK)).value
+        // The doubled step needs the closer count ("30 or more"), since a plain "5+" may mean exactly 5 (D-116, review of D-116).
+        val step = Calibration.next(5.0, 10, 30.0, 1, stack, coarseStepsAllowed = Calibration.coarseStepsAllowed(LoadType.STACK)).value
         assertEquals(CalibrationStep.Continue(10.0), step)
+        assertTrue(Calibration.next(5.0, 10, 5.0, 1, stack, coarseStepsAllowed = true).value is CalibrationStep.Found)
         assertTrue(Calibration.next(5.0, 10, 5.0, 1, stack).value is CalibrationStep.Found) // free-weight default unchanged
         assertTrue(Calibration.next(5.0, 10, 4.0, 1, stack, coarseStepsAllowed = true).value is CalibrationStep.Found) // RIR 4: band kept
         assertFalse(Calibration.coarseStepsAllowed(LoadType.DUMBBELL))

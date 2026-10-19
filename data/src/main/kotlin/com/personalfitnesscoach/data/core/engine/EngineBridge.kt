@@ -98,9 +98,12 @@ data class UserState(
     /** SAF-001 conservative mode, also while a condition's doctor's OK is outstanding. */
     val effectiveScreening: ScreeningMode get() = if (conditions.conservative) ScreeningMode.CONSERVATIVE else screening
     val flaggedScreen: Boolean get() = effectiveScreening != ScreeningMode.STANDARD
-    /** CAL-001 coarse steps on free weights (D-116): not a beginner, under 60, standard screening, no health condition. */
+    /**
+     * CAL-001 big steps on free weights (D-116): not a beginner, under 60, standard screening, no health condition and no injury picked
+     * at onboarding (review of D-116). An exercise lightened after a pain report never takes one either (see its callers).
+     */
     val coarseFreeWeights: Boolean get() = com.personalfitnesscoach.engine.progression.Calibration.freeWeightCoarseSteps(profile.level, age, flaggedScreen,
-        conditions.entries.isNotEmpty() || conditions.unknown.isNotEmpty())
+        conditions.entries.isNotEmpty() || conditions.unknown.isNotEmpty() || injuries.sensitiveJoints.isNotEmpty() || injuries.regions.isNotEmpty())
 }
 
 /** History → engine inputs (FS-5): the maps the session generator reads. */

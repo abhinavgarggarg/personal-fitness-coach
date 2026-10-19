@@ -1,0 +1,53 @@
+{
+  "registry_version": "3.0.0",
+  "base_registry_version": "2.0.0",
+  "kind": "MAJOR",
+  "date": "2026-10-19",
+  "title": "Finding a weight: a stop at about 3 reps left on every ramp set, and bigger steps on light weights only as far as a closer count allows (Phase 4 Part 2)",
+  "summary": "Changes to CAL-001, the weight-finding ramp, after the Product Owner chose option C on 19 Oct 2026 (D-116) and an independent safety review of the first draft (2.1.0). (1) Every ramp set stops at its target reps or with about 3 reps left, whichever comes first, and the reps done are entered: the bands alone don't keep a ramp set within RPE 8 (at a 10-rep set, +10-15% after '4 more' is about 5 reps fewer); in 12 simulated weeks of an experienced lifter 8 of 78 ramp sets went past RPE 8 on the current rules, 1 of 136 with the stop. A set stopped short of its reps ends the ramp whatever was rated, and a set's working load is never more than it supports for the bottom of the rep range. (2) Big steps (no step inside the band, at most double): '5+' can mean exactly 5, so a doubled weight could be at or above the person's maximum (review finding 2). Before a big step the screen now asks 'about how many more?' (5-9, 10-19, 20-29, 30 or more) and the step is only as big as the lower end of that answer allows with 2 reps to spare before the stop; a plain '5+' never takes one. This applies to machine stacks (D-070, until now on '5+') and, per option C, to dumbbells, kettlebells and barbells for someone who is not a beginner, is under 60, has a standard screening and no health condition or injury; an exercise lightened after a pain report never takes one. MAJOR: it changes a safety boundary of the ramp (a free-weight limit set in the Part 1 review, and D-070 on machines).",
+  "changed_rules": [
+    {
+      "rule_id": "CAL-001",
+      "from_version": "1.0.0",
+      "to_version": "2.0.0",
+      "change": "MAJOR",
+      "reason": "The PO's option C for light free weights (D-116), made safe by a closer count before any big step (machine stacks included), with the risk groups kept on the band; and a stop at about 3 reps left on every ramp set, with the reps done entered, because the bands alone let about 1 ramp set in 10 go past RPE 8 in simulation (Phase 4 Part 2; independent safety review of the 2.1.0 draft, findings 1-9).",
+      "statement": "Conservative start; each ramp set is done to its target reps or until about 3 reps are left, whichever comes first, and the reps done are entered; after each set RIR 5+ -> +20-30%, 4 -> +10-15%, 3 or a set stopped short -> working load (with its estimate from the reps done), <=2 -> stop and use -5% next time; the working load is never more than the set supports for the bottom of the rep range; <=5 ramp sets; never above RPE 8; confirm at second exposure. When the equipment has no step inside the band, the screen asks about how many more reps were left (5-9, 10-19, 20-29, 30 or more) and the next step, up to double the load, is taken only if that count leaves at least 2 reps before the 3-left stop: on machine stacks for everyone, and on free weights for someone who is not a beginner, is under 60, has a standard screening and no health condition or injury; otherwise the ramp ends and this weight is the working weight.",
+      "uncertainty": "Expert Practice. The stop and the closer count rely on effort ratings, which run about one rep conservative at 12 reps or fewer (Halperin 2022); counts far from failure are less accurate, and the big step relies on the lower end of the count's range with 2 reps to spare, so it is kept from beginners, people aged 60 or over, gentle mode, health conditions and injuries. A person who taps 'about 3 left' without entering fewer reps is asked once whether they did them all. Low-rep ramps (3-5 reps) can still end harder after +25% from '5+' (1 set in about 100 in simulation). Simulated effects assume honest ratings; a very weak person for whom the empty bar is already too heavy is a separate, existing limit of the equipment.",
+      "tests_add": [
+        "TC-CAL-001c",
+        "TC-CAL-001d"
+      ],
+      "parameters_replace": {
+        "rir_5plus_increase_pct": [
+          20,
+          30
+        ],
+        "rir_4_increase_pct": [
+          10,
+          15
+        ],
+        "stop_rir_lte": 2,
+        "stop_reduction_pct": 5,
+        "max_ramp_sets": 5,
+        "max_rpe": 8,
+        "known_weights_start_pct": 90,
+        "sessions": [
+          1,
+          4
+        ],
+        "ramp_set_stop_rir": 3,
+        "coarse_step_max_factor": 2,
+        "big_step_min_reps": 2,
+        "more_choices": [
+          5,
+          10,
+          20,
+          30
+        ],
+        "coarse_step_free_weight_age_below": 60
+      }
+    }
+  ],
+  "safety_review": "Independent review of the 2.1.0 draft (19 Oct 2026): 2 high, 2 medium, 5 low findings, all addressed in this version - (1) the reps done are shown and entered on every ramp set, and 'about 3 left' with untouched reps asks once whether all were done; (2) '5+' never takes a big step: a closer count sizes it with 2 reps to spare (machines included); (3) injuries at onboarding and pain-lightened exercises are excluded; (4) a set stopped short ends the ramp whatever was rated; (5) a late stop in a high rep range lowers the load by what the set supports; (6) the strict PROG-007 simulation check restored; (7) MAJOR; (8) parameters in the registry; (9) wording. What tightens: every ramp set stops at about 3 left; machine big steps need the count. What loosens: free-weight big steps for the eligible group, bounded as above. Simulated (12 weeks, honest ratings and reps entered): experienced lifter 1 of 136 ramp sets past RPE 8 (8 of 78 now), dumbbells at 85% of the true working weight in weeks 3-5 (7-11 now); weak and 5 kg-increment personas no big step with fewer than 4 reps possible; 66-year-old beginner unchanged. [Re-check to be added.]"
+}

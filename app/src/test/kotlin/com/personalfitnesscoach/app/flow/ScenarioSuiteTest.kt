@@ -122,6 +122,10 @@ class ScenarioSuiteTest {
      * reserve are reported honestly from it ("5+" at most), so calibration finds real working weights and progression has room.
      */
     private class Body(private val scale: Double) {
+        /** The answer to "about how many more?" (D-116): 0–4 as they are, then the lower end of 5–9, 10–19, 20–29 or 30+. */
+        private fun howManyMore(left: Int): Double =
+            com.personalfitnesscoach.engine.progression.Calibration.MORE_CHOICES.lastOrNull { left >= it } ?: maxOf(0, left).toDouble()
+
         private val max = HashMap<String, Double>()
         private fun oneRm(e: Exercise): Double = max.getOrPut(e.id) {
             scale * when (e.loadType) {
@@ -149,7 +153,8 @@ class ScenarioSuiteTest {
                     val aim = t.targetRir?.let { r -> maxOf(1, can - Math.round(r).toInt()) } ?: t.reps.last
                     val reps = minOf(if (calibration) (if (t.targetRir != null) minOf(t.reps.first, aim) else t.reps.first) else minOf(t.reps.last, aim), can)
                     if (t.kind == SetKind.WORKING) trained(e)
-                    LiftEntry(load, reps, rir = minOf(5, can - reps).toDouble())
+                    // "About how many more?" before a big step (D-116): the lower end of the honest count's range.
+                    LiftEntry(load, reps, rir = if (calibration && t.askHowManyMore) howManyMore(can - reps) else minOf(5, can - reps).toDouble())
                 }
             }
         }

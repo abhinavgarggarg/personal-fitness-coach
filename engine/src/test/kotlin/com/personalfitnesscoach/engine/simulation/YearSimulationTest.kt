@@ -156,12 +156,16 @@ class YearSimulationTest {
                                 // The target reps, stopping early at 3 reps in reserve, as the app asks (CAL-001 2.1.0, D-116).
                                 val done = minOf(target, maxOf(1, possible(ex, cur) - com.personalfitnesscoach.engine.progression.Calibration.RAMP_STOP_RIR.toInt()))
                                 rampTop[ex.id] = maxOf(if (set == 1) 0.0 else rampTop[ex.id] ?: 0.0, cur)
-                                val rir = minOf(6, possible(ex, cur) - done).coerceAtLeast(0).toDouble()
+                                val left = (possible(ex, cur) - done).coerceAtLeast(0)
+                                // Before a big step the app asks "about how many more?" (D-116): the lower end of the honest count's range.
+                                val rir = if (com.personalfitnesscoach.engine.progression.Calibration.bigStepAhead(cur, avail, com.personalfitnesscoach.engine.progression.Calibration.coarseStepsAllowed(ex.loadType, freeCoarse)))
+                                    com.personalfitnesscoach.engine.progression.Calibration.MORE_CHOICES.lastOrNull { left >= it } ?: left.toDouble()
+                                    else minOf(6, left).toDouble()
                                 // This week's load for the exposure: the heaviest ramp set done at its target reps, or stopped early with 3
                                 // reps in reserve inside the rep range, as the app records it (EngineBridge.lastWeekLoads, D-116).
                                 if (done >= target || (done >= it.reps.first && rir >= 3.0)) thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, cur)
                                 when (val step = com.personalfitnesscoach.engine.progression.Calibration.next(cur, done, rir, set, avail,
-                                    coarseStepsAllowed = com.personalfitnesscoach.engine.progression.Calibration.coarseStepsAllowed(ex.loadType, freeCoarse)).value) {
+                                    coarseStepsAllowed = com.personalfitnesscoach.engine.progression.Calibration.coarseStepsAllowed(ex.loadType, freeCoarse), askedReps = target).value) {
                                     is com.personalfitnesscoach.engine.progression.CalibrationStep.Continue -> cur = step.nextLoad
                                     is com.personalfitnesscoach.engine.progression.CalibrationStep.Found -> {
                                         val est = step.startE1rm
