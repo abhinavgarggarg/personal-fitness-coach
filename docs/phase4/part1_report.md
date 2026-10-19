@@ -115,7 +115,24 @@ A reviewer who had not seen the work being built checked the proposal. It read t
 | B (low) | The year simulation didn't check weeks that started with a return session | It checks them now. That showed one small counting mismatch (a weight-finding exercise planned as one set but logged as up to five counted as two), fixed |
 
 ## How it was checked
-TESTS_SECTION
+**On this computer:**
+- 670 tests pass: engine 427, data core 174, app logic and figures 69.
+- Rule coverage is 152/152, and the strings and reason-text checks pass.
+- The change set passes the research-update tool's checks.
+
+**On GitHub** (CI run 39155505280 for commit 1352992 on the `phase4/weekly-limits` branch) everything passes:
+- engine 427, the data layer including the full 52-week simulation, and app 85;
+- engine line coverage 96.8%;
+- the release app is 4.22 MB, with no internet permission and every library on the allow-list.
+
+**New tests:**
+- the reference weeks, including missed sessions, cut-short weeks, tired days and the 8-week window;
+- the floor and the spike guard, and when the guard is on or off;
+- the planner's order;
+- easy cardio;
+- the reason shown on a lighter day.
+
+The year simulation fails if any session breaks a safety rule, or if any week outside a return or a deload goes above the spike guard.
 
 ## Your decision
 Please approve Registry 2.0.0, or tell me what to change. On approval I will:
