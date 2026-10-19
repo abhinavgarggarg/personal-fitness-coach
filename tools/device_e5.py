@@ -342,9 +342,17 @@ class Device(Smoke):
             self.fail(f"after finishing: {c['sets']} sets (expected {n}), {c['open']} open sessions, {c['done']} finished workouts")
         self.ok(f"finished: all {n} sets kept, the session closed and in the history")
         self.tap_text(S["tab_history"], scrolls=2)
-        # Finished from "End" before the cool-down: "Ended early" (or "Done" had everything been done).
-        self.wait_any([S["hist_outcome_partial"], S["hist_outcome_done"]], 30)
-        self.ok("History shows the session")
+        # Finished from "End" before the cool-down: its row starts "Ended early · …" (or "Done · …" had everything been done).
+        end = time.time() + 30
+        while time.time() < end:
+            nodes = screen()
+            row = self.find_prefix(S["hist_outcome_partial"], nodes) or self.find_prefix(S["hist_outcome_done"] + " ", nodes)
+            if row:
+                self.ok(f"History shows the session: {row.text or row.desc}")
+                break
+            time.sleep(1)
+        else:
+            self.fail("the session is not in History")
 
     def backup(self, apk):
         """Android backup (Phase 2 section 16): the database and settings go only into an end-to-end encrypted backup, and come back."""
