@@ -14,8 +14,11 @@ sealed class CalibrationStep {
     /** Do another ramp set at this load. */
     data class Continue(val nextLoad: Double) : CalibrationStep()
 
-    /** Working load found (RIR 3, or the 5-set limit was reached); starting e1RM where valid. */
-    data class Found(val workingLoad: Double, val startE1rm: Double?) : CalibrationStep()
+    /**
+     * The ramp ends here: the working load is found (RIR 3, or no safe heavier step, D-038), with the starting e1RM where valid. At the
+     * 5-set limit with the load still easy (RIR 4+), [stillEasy]: the next session carries on from it (CAL-001 over sessions 1–4, D-115).
+     */
+    data class Found(val workingLoad: Double, val startE1rm: Double?, val stillEasy: Boolean = false) : CalibrationStep()
 
     /** Too hard (RIR ≤ 2): stop now; next session uses this load −5%. */
     data class Stop(val nextSessionLoad: Double) : CalibrationStep()
@@ -66,8 +69,8 @@ object Calibration {
             return EngineResult(CalibrationStep.Found(load, e), d(ReasonKey.CALIBRATION_DONE, mapOf("workingLoad" to load, "e1rm" to e)))
         }
         if (setsDone >= P.CAL_001.max_ramp_sets) {
-            // Ramp-set limit: keep the last load as the working load; progression continues from there.
-            return EngineResult(CalibrationStep.Found(load, null), d(ReasonKey.CALIBRATION_CAPPED, mapOf("workingLoad" to load)))
+            // Ramp-set limit with the load still easy: the ramp ends for today and goes on from this load next session (D-115).
+            return EngineResult(CalibrationStep.Found(load, null, stillEasy = true), d(ReasonKey.CALIBRATION_CONTINUES, mapOf("nextSessionLoad" to load)))
         }
         val band = if (reportedRir >= 5.0 - 1e-9) P.CAL_001.rir_5plus_increase_pct else P.CAL_001.rir_4_increase_pct
         val mid = (band[0] + band[1]) / 2.0

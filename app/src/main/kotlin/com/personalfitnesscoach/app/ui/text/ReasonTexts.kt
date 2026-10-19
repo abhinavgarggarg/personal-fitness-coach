@@ -67,6 +67,7 @@ object ReasonTexts {
         ReasonKey.CALIBRATION_DONE -> R.string.reason_calibration_done
         ReasonKey.CALIBRATION_STOPPED -> R.string.reason_calibration_stopped
         ReasonKey.CALIBRATION_CAPPED -> R.string.reason_calibration_capped
+        ReasonKey.CALIBRATION_CONTINUES -> R.string.reason_calibration_continues
         ReasonKey.SCREEN_STANDARD -> R.string.reason_screen_standard
         ReasonKey.SCREEN_CONSERVATIVE -> R.string.reason_screen_conservative
         ReasonKey.SCREEN_MODERATE_ONLY -> R.string.reason_screen_moderate_only

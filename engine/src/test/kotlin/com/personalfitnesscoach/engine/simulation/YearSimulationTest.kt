@@ -61,6 +61,8 @@ class YearSimulationTest {
         val nextLoads = HashMap<String, com.personalfitnesscoach.engine.progression.Prescription>()
         val calLoads = HashMap<String, Double>()
         val calSessions = HashMap<String, Int>()
+        // The heaviest load each exercise's last ramp lifted, until the weight it found has been used once (CAL-001 sets that weight).
+        val rampTop = HashMap<String, Double>()
         // The user's true strength: a 1RM per exercise that grows a little with every exposure (diminishing by level).
         val levelFactor = p.level.pick(1.0, 1.4, 1.8)
         val growth = p.level.pick(0.004, 0.002, 0.001)
@@ -124,8 +126,13 @@ class YearSimulationTest {
                 for (it in w.items) {
                     val key = SessionGenerator.loadKey(it.slotKey, it.exercise.id)
                     val load = it.load ?: continue
-                    val last = lastWeekLoads[key]
-                    if (last != null && !it.calibrating && !it.exercise.assisted && it.exercise.id in e1rm) {
+                    // Last week's load for this exposure; a weight found on another day of the same exercise last week counts too (the
+                    // person lifted it), since a prescription without an e1RM carries to every slot of the exercise (D-055, D-115).
+                    val last = lastWeekLoads[key]?.let { l -> maxOf(l, lastWeekLoads.filterKeys { k -> k.endsWith("|${it.exercise.id}") }.values.max()) }
+                    val found = if (!it.calibrating) rampTop[it.exercise.id] else null
+                    // Until its working sets move it on, the weight a ramp found (CAL-001) is never above what the ramp lifted.
+                    if (found != null) assertTrue("${p.name} week $week ${it.exercise.id}: $load after a ramp up to $found", load <= found + 1e-9)
+                    else if (last != null && !it.calibrating && !it.exercise.assisted && (it.exercise.id in e1rm || it.exercise.id in nextLoads)) {
                         // At most the PROG-007 percentage, or one equipment step when that step is bigger (D-055).
                         val avail = PlateMath.loadsFor(it.exercise, inv)
                         val max = maxOf(ProgressionCaps.maxLoadThisWeek(last, p.level, avail, p.age), avail.filter { a -> a > last + 1e-9 }.minOrNull() ?: last)
@@ -139,30 +146,35 @@ class YearSimulationTest {
                         val avail = PlateMath.loadsFor(ex, inv)
                         val target = (it.reps.first + it.reps.last) / 2
                         if (it.calibrating) {
-                            // CAL-001 ramp within the session.
+                            // CAL-001 ramp within the session, mirroring the app (ExerciseProgress, D-115): the reps done count, a weight
+                            // found is next time's working weight, and a ramp still easy at its 5-set limit goes on next session.
                             var cur = load
                             for (set in 1..5) {
-                                val rir = minOf(6, possible(ex, cur) - target).coerceAtLeast(0).toDouble()
-                                when (val step = com.personalfitnesscoach.engine.progression.Calibration.next(cur, target, rir, set, avail,
+                                val done = minOf(target, maxOf(1, possible(ex, cur)))
+                                rampTop[ex.id] = maxOf(if (set == 1) 0.0 else rampTop[ex.id] ?: 0.0, cur)
+                                val rir = minOf(6, possible(ex, cur) - done).coerceAtLeast(0).toDouble()
+                                // This week's load for the exposure: the heaviest ramp set done at its target reps, as the app records it
+                                // (EngineBridge.lastWeekLoads).
+                                if (done >= target) thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, cur)
+                                when (val step = com.personalfitnesscoach.engine.progression.Calibration.next(cur, done, rir, set, avail,
                                     coarseStepsAllowed = com.personalfitnesscoach.engine.progression.Calibration.coarseStepsAllowed(ex.loadType)).value) {
                                     is com.personalfitnesscoach.engine.progression.CalibrationStep.Continue -> cur = step.nextLoad
                                     is com.personalfitnesscoach.engine.progression.CalibrationStep.Found -> {
-                                        thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, step.workingLoad)
                                         val est = step.startE1rm
                                         if (est != null) { e1rm[ex.id] = est; startE1rm.putIfAbsent(ex.id, est); startWeek.putIfAbsent(ex.id, week); calLoads.remove(ex.id) }
-                                        // A ramp still easy at its 5-set limit goes on next session (CAL-001 runs over sessions 1–4) …
-                                        else if (set == 5 && rir >= 4.0 && (calSessions.merge(ex.id, 1, Int::plus) ?: 1) < 4) calLoads[ex.id] = step.workingLoad
-                                        // … otherwise the load is found and the next exposure confirms it with working sets (D-115).
+                                        else if (step.stillEasy && (calSessions.merge(ex.id, 1, Int::plus) ?: 1) < 4) calLoads[ex.id] = step.workingLoad
                                         else { nextLoads[ex.id] = com.personalfitnesscoach.engine.progression.Prescription(step.workingLoad, it.reps, it.reps.first,
                                             com.personalfitnesscoach.engine.progression.ProgressionAction.HOLD); calLoads.remove(ex.id) }
                                         break
                                     }
                                     is com.personalfitnesscoach.engine.progression.CalibrationStep.Stop -> {
-                                        // RIR ≤ 2: the next session works at this load −5% (CAL-001 step 2, D-115). This week's load is
-                                        // the heaviest ramp set done, as the app records it (EngineBridge.lastWeekLoads).
-                                        thisWeekLoads[key] = maxOf(thisWeekLoads[key] ?: 0.0, cur)
-                                        nextLoads[ex.id] =com.personalfitnesscoach.engine.progression.Prescription(step.nextSessionLoad, it.reps, it.reps.first,
-                                            com.personalfitnesscoach.engine.progression.ProgressionAction.HOLD); calLoads.remove(ex.id); break
+                                        // The e1RM from the stopping set, where valid, caps the working load.
+                                        val e = E1rm.fromSet(cur, done, rir)
+                                        if (e != null) { e1rm[ex.id] = e; startE1rm.putIfAbsent(ex.id, e); startWeek.putIfAbsent(ex.id, week) }
+                                        val supported = e?.let { est -> E1rm.loadFor(est, it.reps.first, it.targetRir).let { x -> avail.filter { a -> a <= x + 1e-9 }.maxOrNull() ?: avail.min() } }
+                                        nextLoads[ex.id] = com.personalfitnesscoach.engine.progression.Prescription(minOf(step.nextSessionLoad, supported ?: step.nextSessionLoad),
+                                            it.reps, it.reps.first, com.personalfitnesscoach.engine.progression.ProgressionAction.HOLD)
+                                        calLoads.remove(ex.id); break
                                     }
                                 }
                             }
@@ -179,6 +191,7 @@ class YearSimulationTest {
                                 val next = com.personalfitnesscoach.engine.progression.Progression.next(com.personalfitnesscoach.engine.progression.ExposureInput(
                                     ex, it.reps, it.targetRir, load, sets, avail, recoveryOk = tier == Tier.FULL || tier == Tier.MODIFIED, level = p.level, age = p.age)).value
                                 nextLoads[ex.id] = next
+                                rampTop.remove(ex.id)
                             }
                         }
                         true1rm[ex.id] = trueOf(ex) * (1 + growth)

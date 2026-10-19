@@ -107,13 +107,14 @@ object ExerciseProgress {
             var last: CalibrationStep? = null
             var lastRated: Double? = null
             var lastRir = 0.0
-            var setsReplayed = 0
+            var lastReps = target
             for ((i, set) in ramp.withIndex()) {
                 val rir = set.rir ?: set.rpe?.let { 10.0 - it } ?: break // an unrated set ends the replay: next time starts from the last rated load
                 lastRated = set.loadKg
                 lastRir = rir
-                setsReplayed = i + 1
-                val step = Calibration.next(set.loadKg!!, target, rir, i + 1, avail, ceiling, Calibration.coarseStepsAllowed(ex.loadType))
+                // The reps done, not the reps asked for: a set short of its target is what the estimate and the working load go by.
+                lastReps = minOf(target, set.reps!!)
+                val step = Calibration.next(set.loadKg!!, lastReps, rir, i + 1, avail, ceiling, Calibration.coarseStepsAllowed(ex.loadType))
                 d += step.decisions
                 last = step.value
                 if (last !is CalibrationStep.Continue) break
@@ -128,12 +129,18 @@ object ExerciseProgress {
                 is CalibrationStep.Found -> when {
                     l.startE1rm != null -> s.copy(e1rm = l.startE1rm, e1rmDay = day, calibration = null)
                     // The 5-set limit reached with the load still easy (RIR 4+): not found yet.
-                    lastRir >= 4.0 - 1e-9 && setsReplayed >= P.CAL_001.max_ramp_sets -> next(l.workingLoad)
+                    l.stillEasy -> next(l.workingLoad)
                     // RIR 3 without a valid estimate (INT-004), or no safe heavier step (D-038): this is the working load.
                     else -> found(s, l.workingLoad, item, day)
                 }
-                // RIR ≤ 2: "stop; next session uses this load −5%" (CAL-001 step 2).
-                is CalibrationStep.Stop -> found(s, l.nextSessionLoad, item, day)
+                is CalibrationStep.Stop -> {
+                    // RIR ≤ 2: "stop; next session uses this load −5%" (CAL-001 step 2) — and no more than the stopping set supports. Its
+                    // e1RM, where valid, is the starting estimate ("from the final calibration set", step 4), and the working load is the
+                    // lower of the two, so a set short of its reps (6 of 10) never leads to working sets near failure (review of D-115).
+                    val e = E1rm.fromSet(lastRated!!, lastReps, lastRir)
+                    val supported = e?.let { est -> E1rm.loadFor(est, item.reps.first, item.targetRir).let { x -> avail.filter { it <= x + 1e-9 }.maxOrNull() ?: avail.min() } }
+                    found(s, minOf(l.nextSessionLoad, supported ?: l.nextSessionLoad), item, day, e)
+                }
                 is CalibrationStep.Continue, null -> next(restart)
             }
         } else if (s.e1rm == null && item.calibrating && done.working.isEmpty()) {
@@ -169,8 +176,9 @@ object ExerciseProgress {
      * progression follows from them. (Before, a load found without a valid e1RM was ramped to again for up to four sessions, so the
      * exercise had no working sets for weeks — Phase 4 scenario S19.)
      */
-    private fun found(s: ExerciseState, load: Double, item: com.personalfitnesscoach.data.core.session.ItemDoc, day: Int): ExerciseState =
-        s.copy(calibration = null, prescription = Prescription(load, item.reps, item.reps.first, ProgressionAction.HOLD), prescriptionDay = day)
+    private fun found(s: ExerciseState, load: Double, item: com.personalfitnesscoach.data.core.session.ItemDoc, day: Int, e1rm: Double? = null): ExerciseState =
+        s.copy(calibration = null, prescription = Prescription(load, item.reps, item.reps.first, ProgressionAction.HOLD), prescriptionDay = day,
+            e1rm = e1rm ?: s.e1rm, e1rmDay = if (e1rm != null) day else s.e1rmDay)
 
     /** Bodyweight, assisted and core: the ladder decides the next rung, reps or assistance (BW-001, BW-002, CORE-002). */
     private fun ladder(s0: ExerciseState, ex: Exercise, recent: List<StoredExercise>, ctx: ProgressContext, d: MutableList<Decision>): EngineResult<ExposureOutcome> {

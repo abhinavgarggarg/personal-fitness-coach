@@ -202,9 +202,10 @@ class CalibrationTest {
     @Test fun `TC-CAL-001b too hard stops at minus 5 percent, 5-set limit, known weights start at 90 percent`() {
         val stop = Calibration.next(32.5, 8, 2.0, 2, BAR).value as CalibrationStep.Stop
         assertEquals(30.0, stop.nextSessionLoad, 1e-9)
+        // At the 5-set limit and still easy, the ramp ends for today and goes on next session (D-115).
         val capped = Calibration.next(40.0, 8, 5.0, 5, BAR)
-        assertTrue(capped.value is CalibrationStep.Found)
-        assertEquals(ReasonKey.CALIBRATION_CAPPED, capped.decisions.single().reason)
+        assertEquals(CalibrationStep.Found(40.0, null, stillEasy = true), capped.value)
+        assertEquals(ReasonKey.CALIBRATION_CONTINUES, capped.decisions.single().reason)
         assertEquals(52.5, Calibration.startFromKnown(60.0, BAR), 1e-9)
         assertEquals(20.0, Calibration.startingLoad(BAR))
         // Property: a ramp never adds more than 30% (+ one rounding step) and never continues after RIR ≤ 2.

@@ -63,6 +63,7 @@
     <string name="reason_calibration_done">Found it: this is your working weight for this exercise.</string>
     <string name="reason_calibration_stopped">That was hard enough: next time starts a little lighter.</string>
     <string name="reason_calibration_capped">This is your working weight for now; it will go up from here.</string>
+    <string name="reason_calibration_continues">Still easy after five sets: next session carries on finding your weight from here.</string>
     <string name="reason_screen_standard">Your health questions are all clear: standard training.</string>
     <string name="reason_screen_conservative">Please check with your doctor before harder exercise. Until you confirm, training stays gentle.</string>
     <string name="reason_screen_moderate_only">Moderate effort only until your doctor has said harder exercise is fine.</string>

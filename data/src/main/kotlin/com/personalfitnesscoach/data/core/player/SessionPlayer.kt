@@ -12,6 +12,7 @@ import com.personalfitnesscoach.data.core.session.ItemDoc
 import com.personalfitnesscoach.data.core.session.NewSet
 import com.personalfitnesscoach.data.core.session.RampRef
 import com.personalfitnesscoach.data.core.session.SetKind
+import com.personalfitnesscoach.data.core.session.SetLimits
 import com.personalfitnesscoach.data.core.session.Sheet
 import com.personalfitnesscoach.data.core.session.Stage
 import com.personalfitnesscoach.data.core.session.Status
@@ -486,6 +487,7 @@ class SessionPlayer(private val d: PfcData) {
         if (expected != null && (nt == null || nt.kind != expected.kind || nt.number != expected.number))
             return@transaction LogResult(v, emptyList(), null, null, ignored = true)
         val t = lift.next ?: error("${lift.exercise.id} is finished for today")
+        SetLimits.check(entry.load, entry.reps)
         val item = lift.item
         val u = checkNotNull(d.bridge.user()) { "no profile" }
         val avail = PlateMath.loadsFor(lift.exercise, u.equipment.inventory)
@@ -502,7 +504,8 @@ class SessionPlayer(private val d: PfcData) {
             SetKind.CALIBRATION -> {
                 val load = requireNotNull(entry.load) { "a calibration set needs a load" }
                 val rir = requireNotNull(entry.rir) { "a calibration set needs the effort answer" }
-                val step = Calibration.next(load, t.reps.first, rir, lift.sets.count { it.kind == SetKind.CALIBRATION } + 1, avail, item.calibrationCeiling,
+                // The reps done (a set short of its target says the load is heavier than the rating alone), as the replay reads it.
+                val step = Calibration.next(load, minOf(t.reps.first, entry.reps ?: t.reps.first), rir, lift.sets.count { it.kind == SetKind.CALIBRATION } + 1, avail, item.calibrationCeiling,
                     Calibration.coarseStepsAllowed(lift.exercise.loadType))
                 dec += step.decisions
                 calStep = step.value
@@ -903,8 +906,10 @@ class SessionPlayer(private val d: PfcData) {
         val floor = TimeBudget.warmupFloor(u.age, c.extraWarmupMin.toDouble())
         val budget = minutesLeft + if (rem.plan.warmupMin == 0.0) floor else 0.0
         val fit = TimeBudget.fit(rem.plan, budget, u.age, 1.0, u.preferences.crowdedGym, c.extraWarmupMin.toDouble(), c.extraCooldownMin.toDouble(), supersets = false)
-        // A ramp to find a weight (CAL-001) can't be cut set by set — the player plays it whole — so it stays whole in the fit, or goes.
-        val ramps = rem.lifts.withIndex().filter { (_, l) -> calibrates(l.exercise, l.item) }.associate { (i, l) -> "$i:${l.exercise.id}" to rem.slots[i].sets }
+        // A ramp to find a weight (CAL-001) can't be cut set by set — the player plays it whole, up to its 5 sets — so it stays whole in
+        // the fit, timed at the most it can take (a hard limit must hold): a P3–P5 ramp goes whole, a main lift's ramp stays.
+        val ramps = rem.lifts.withIndex().filter { (_, l) -> calibrates(l.exercise, l.item) }
+            .associate { (i, l) -> "$i:${l.exercise.id}" to maxOf(1, P.CAL_001.max_ramp_sets - l.sets.count { it.kind == SetKind.CALIBRATION }) }
         fun whole(p: SessionPlan) = p.copy(items = p.items.map { item -> ramps[item.id]?.let { item.copy(sets = it) } ?: item })
         val over = whole(fit.value.plan)
         var plan = over
@@ -920,21 +925,25 @@ class SessionPlayer(private val d: PfcData) {
             val p1 = plan.items.lastOrNull { !it.isConditioning && it.sets > 1 && it.id !in ramps } ?: break
             plan = plan.copy(items = plan.items.map { if (it.id == p1.id) it.copy(sets = it.sets - 1) else it })
         }
-        // Whole items go above, so the last one taken may leave much more time than asked for: what fits comes back, most important
-        // first — a conditioning block as it was fitted and a ramp whole, then sets one at a time (TimeBudget.backFill, as inside the
-        // fit; Phase 4 scenario S13 kept 4 of 15 minutes before this, D-115).
-        if (extra.isNotEmpty()) {
-            for (id in extra.reversed()) {
-                val o = over.items.firstOrNull { it.id == id && (it.isConditioning || it.id in ramps) } ?: continue
-                val keep = over.items.take(over.items.indexOf(o)).map { it.id }.toSet()
-                val at = plan.items.indexOfLast { it.id in keep } + 1
-                val trial = plan.copy(items = plan.items.take(at) + o.copy(pairedWith = null) + plan.items.drop(at))
-                if (fits(trial)) plan = trial
-            }
-            val rest = over.copy(items = over.items.filter { it.id !in ramps || plan.items.any { p -> p.id == it.id } })
-            plan = TimeBudget.backFill(plan, rest) { p -> fits(p) }.first
-            extra.retainAll { id -> plan.items.none { it.id == id } }
+        // Whole items go above (and the fit dropped some before a ramp was timed whole), so the plan may leave much more time than asked
+        // for: what fits comes back, most important first — a conditioning block as it was fitted (or planned) and a ramp whole, then
+        // sets one at a time towards everything still to do (TimeBudget.backFill, as inside the fit). Phase 4 scenario S13 kept 4 of 15
+        // minutes before this (D-115).
+        val reference = whole(rem.plan)
+        val order = reference.items.map { it.id }
+        fun insert(o: PlanItem): SessionPlan {
+            val keep = order.take(maxOf(0, order.indexOf(o.id))).toSet()
+            val at = plan.items.indexOfLast { it.id in keep } + 1
+            return plan.copy(items = plan.items.take(at) + o.copy(pairedWith = null) + plan.items.drop(at))
         }
+        val gone = reference.items.filter { r -> plan.items.none { it.id == r.id } }.sortedBy { it.priority }
+        for (r in gone.filter { it.isConditioning || it.id in ramps }) {
+            val o = over.items.firstOrNull { it.id == r.id } ?: r
+            insert(o).let { if (fits(it)) plan = it }
+        }
+        plan = TimeBudget.backFill(plan, reference.copy(items = reference.items.filter { it.id !in ramps || plan.items.any { p -> p.id == it.id } },
+            warmupMin = plan.warmupMin)) { p -> fits(p) }.first
+        extra.retainAll { id -> plan.items.none { it.id == id } }
         val byId = plan.items.associateBy { it.id }
         val changes = ArrayList<Change>()
         var state = s

@@ -130,9 +130,12 @@ class ScenarioSuiteTest {
             }
         }
         fun possible(e: Exercise, load: Double): Int = maxOf(1, (30.0 * (oneRm(e) / load - 1.0)).toInt())
-        private fun trained(e: Exercise) { max[e.id] = oneRm(e) * 1.004 }
+        private fun trained(e: Exercise) { max[e.id] = oneRm(e) * 1.002 }
 
-        /** One set as asked, as far as the body allows, with honest reps in reserve. */
+        /**
+         * One set as asked, as far as the body allows, with honest reps in reserve. A working set stops at the target effort (reps in
+         * reserve), within the rep range; a ramp set does its target reps or as many as it can.
+         */
         fun entry(e: Exercise, t: SetTarget): LiftEntry {
             val calibration = t.kind == SetKind.CALIBRATION
             val load = t.load
@@ -141,7 +144,8 @@ class ScenarioSuiteTest {
                 load == null || load <= 0.0 -> LiftEntry(load, if (calibration) t.reps.first else t.reps.last, rir = t.targetRir ?: 2.0)
                 else -> {
                     val can = possible(e, load)
-                    val reps = minOf(if (calibration) t.reps.first else t.reps.last, can)
+                    val aim = t.targetRir?.let { r -> maxOf(1, can - Math.round(r).toInt()) } ?: t.reps.last
+                    val reps = minOf(if (calibration) t.reps.first else minOf(t.reps.last, aim), can)
                     if (t.kind == SetKind.WORKING) trained(e)
                     LiftEntry(load, reps, rir = minOf(5, can - reps).toDouble())
                 }
@@ -362,7 +366,10 @@ class ScenarioSuiteTest {
                 assertTrue("week ${d / 7}: strength days $strength", strength.size >= 2)
                 assertTrue("week ${d / 7}: strength days are not on consecutive days: $strength", strength.zipWithNext().all { (a, b) -> b - a >= 2 })
                 assertTrue("week ${d / 7}: no jumping or impact work", week.days.all { day -> day.slots.all { it.exercise.impact == 0 } && day.conditioning.all { it.impact == 0 } })
-                assertTrue("week ${d / 7}: balance work is planned", week.days.any { it.balanceMinutes > 0.0 })
+                // AGE-001 at 65+: balance work on 3 days a week — in the sessions, or as short home sessions on other days (FL-003).
+                val balanceDays = week.days.count { it.balanceMinutes > 0.0 } + (week.activity?.homeBalanceSessions ?: 0)
+                println("METRIC S04 week ${d / 7}: balance on ${week.days.count { it.balanceMinutes > 0.0 }} training days + ${week.activity?.homeBalanceSessions ?: 0} at home")
+                assertTrue("week ${d / 7}: balance work on ${P.AGE_001.age_65.balance_days}+ days ($balanceDays)", balanceDays >= P.AGE_001.age_65.balance_days)
                 // Type 2 diabetes: never more than two days in a row without activity; short walks fill longer gaps (SAF-010, STEP-002).
                 val active = week.days.filter { it.slots.isNotEmpty() || it.conditioning.isNotEmpty() }.map { it.weekday }.toSet() + week.walkDays
                 var run = 0
@@ -387,16 +394,28 @@ class ScenarioSuiteTest {
         val w = World()
         w.onboard()
         val body = Body(1.0)
-        val seen = LinkedHashMap<String, MutableList<Pair<Double, IntRange>>>()
-        // Five weeks: the first exposures find the weights (CAL-001), then the working weeks.
-        for (r in w.train(0 until 35, body)) {
+        // Five weeks: the first exposures find the weights (CAL-001), then the working weeks. After each session, each main lift's next
+        // target as the exercise page shows it (weight × reps, PROG-001/002), and the weight each session asks for, per lift and rep range.
+        val mains = HashSet<String>()
+        val targets = LinkedHashMap<String, MutableList<Pair<Double, Int>>>()
+        val asked = LinkedHashMap<String, MutableList<Double>>()
+        for (d in 0 until 35) {
+            val r = w.trainDay(d, body)
             if (!r.trained) continue
-            r.preview!!.session.workout.items.filter { it.main && !it.calibrating && it.load != null }
-                .forEach { seen.getOrPut(it.exercise.id) { ArrayList() } += it.load!! to it.reps }
+            r.preview!!.session.workout.items.filter { it.main && !it.calibrating && it.load != null }.forEach {
+                mains += it.exercise.id
+                asked.getOrPut("${it.exercise.id} ${it.reps}") { ArrayList() } += it.load!!
+            }
+            for (st in w.data().docs.all(ExerciseState)) if (st.exerciseId in mains) st.prescription?.let { p ->
+                val list = targets.getOrPut(st.exerciseId) { ArrayList() }
+                if (list.lastOrNull() != p.load to p.repTarget) list += p.load to p.repTarget
+            }
         }
-        val up = seen.filterValues { v -> v.zipWithNext().any { (a, b) -> b.first > a.first + 1e-9 || (b.first == a.first && b.second.first > a.second.first) } }
-        println("METRIC S05 main-lift targets over 5 weeks: " + seen.entries.joinToString { (k, v) -> "$k ${v.joinToString("→") { "${it.first}x${it.second.first}-${it.second.last}" }}" })
-        assertTrue("a main lift's target load or reps went up: $seen", up.isNotEmpty())
+        println("METRIC S05 main-lift targets over 5 weeks: " + targets.entries.joinToString { (k, v) -> "$k ${v.joinToString("→") { "${it.first}x${it.second}" }}" } +
+            "; weights asked: " + asked.entries.joinToString { (k, v) -> "$k ${v.joinToString("→")}" })
+        val up = targets.filterValues { v -> v.size >= 2 && (v.last().first > v.first().first + 1e-9 || (v.last().first == v.first().first && v.last().second > v.first().second)) }
+        assertTrue("a main lift's target load or reps went up: $targets", up.isNotEmpty())
+        assertTrue("and a session asked for more weight at the same reps: $asked", asked.values.any { it.size >= 2 && it.last() > it.first() + 1e-9 })
         assertTrue("sessions done", w.data().completedWorkouts() >= 14)
     }
 
@@ -493,12 +512,15 @@ class ScenarioSuiteTest {
         // pre-break load, rounded down to real dumbbells).
         val loadsBefore = HashMap<String, Double>()
         for (s in before) for (e in s.exercises) e.working.mapNotNull { it.loadKg }.maxOrNull()?.let { loadsBefore[e.exerciseId] = it }
+        var compared = 0
         for (item in wk.items) {
             val was = loadsBefore[item.exercise.id] ?: continue
             val now = item.load ?: continue
+            compared++
             assertTrue("${item.exercise.id}: $now kg after the break, $was kg before", now <= was + 1e-9)
             if (!item.calibrating) assertTrue("${item.exercise.id}: recorded as reduced (${item.loadFactor})", item.loadFactor < 1.0)
         }
+        assertTrue("weights compared ($compared)", compared >= 2)
     }
 
     @Test fun `S10 a whole week missed - welcome back without guilt, the best streak kept, the plan carries on`() = runBlocking {
@@ -524,7 +546,9 @@ class ScenarioSuiteTest {
         assertTrue("MODIFIED at most", p.tier <= Tier.MODIFIED)
         c.startWorkout(); w.doWorkout("S10 back", body); c.rateSummary(6); c.closeToToday()
         c.openTab(Tab.PROGRESS)
-        assertTrue("the progress tab keeps the best streak", (c.s() as Screen.Progress).overview.streak.best >= bestBefore)
+        val o = (c.s() as Screen.Progress).overview
+        assertTrue("the progress tab keeps the best streak", o.streak.best >= bestBefore)
+        assertTrue("and gives the welcome-back milestone (ADH-002): ${o.achievements}", com.personalfitnesscoach.engine.program.Achievement.WELCOME_BACK in o.achievements)
     }
 
     /**
@@ -595,37 +619,71 @@ class ScenarioSuiteTest {
         assertTrue("short days checked ($checked)", checked >= 4)
     }
 
-    @Test fun `S13 only 15 minutes left mid-workout - the rest is fitted again, the warm-up done, the cool-down and the logged sets stay`() = runBlocking {
-        val w = World()
-        val c = w.onboard()
-        val body = Body(1.0)
-        w.train(0 until 7, body)
-        w.day(7); c.onForeground()
+    /** From the warm-up to two logged sets of the first exercise, then "only `minutes` left"; returns the view before and after. */
+    private suspend fun World.onlyLeft(minutes: Int, body: Body): Triple<PlayerView, PlayerView, WorkoutNotice.Replanned> {
         c.openCheckIn(); c.submitCheckIn(); c.startWorkout(); c.ok("start")
-        w.toLifts()
-        val first = (w.view().step as Step.Lift).lift.rowId
-        w.logNext(first, body); w.logNext(first, body)
-        val before = w.view()
-        val logged = before.lifts.associate { it.rowId to it.sets.size }
+        toLifts()
+        val first = (view().step as Step.Lift).lift.rowId
+        logNext(first, body); logNext(first, body)
+        val before = view()
         c.openChangeTime()
         assertTrue((c.s() as Screen.Workout).sheet is WorkoutSheet.ChangeTime)
-        c.changeTime(15); c.ok("15 minutes")
+        c.changeTime(minutes); c.ok("$minutes minutes")
         val s = c.s() as Screen.Workout
-        val notice = s.notice as WorkoutNotice.Replanned
-        val v = s.view
-        println("METRIC S13 remaining after 'only 15 minutes': ${v.remainingMinutes} min (was ${before.remainingMinutes}), shortest ${notice.shortestSafeMinutes}")
-        assertTrue("fitted to 15 minutes, or told the shortest safe rest: ${v.remainingMinutes} min, ${notice.shortestSafeMinutes}",
-            v.remainingMinutes <= 15.5 || (notice.shortestSafeMinutes != null && v.remainingMinutes <= notice.shortestSafeMinutes!! + 0.5))
-        assertTrue("something was cut: ${notice.changes}", notice.changes.isNotEmpty())
-        assertNotEquals("the warm-up done is not asked again", Stage.WARMUP, v.stage)
-        assertTrue("the cool-down stays", Stage.COOLDOWN in v.stages)
-        assertEquals("the cool-down keeps its length", before.workout.doc.cooldownMinutes, v.workout.doc.cooldownMinutes)
-        for ((row, n) in logged) assertEquals("logged sets stay", n, v.lifts.first { it.rowId == row }.sets.size)
+        return Triple(before, s.view, s.notice as WorkoutNotice.Replanned)
+    }
+
+    private fun checkRefit(where: String, before: PlayerView, v: PlayerView, notice: WorkoutNotice.Replanned) {
+        assertTrue("$where: something was cut: ${notice.changes}", notice.changes.isNotEmpty())
+        assertNotEquals("$where: the warm-up done is not asked again", Stage.WARMUP, v.stage)
+        assertTrue("$where: the cool-down stays", Stage.COOLDOWN in v.stages)
+        assertEquals("$where: the cool-down keeps its length", before.workout.doc.cooldownMinutes, v.workout.doc.cooldownMinutes)
+        for (l in before.lifts) assertEquals("$where: logged sets stay", l.sets.size, v.lifts.first { it.rowId == l.rowId }.sets.size)
+    }
+
+    @Test fun `S13 only 15 minutes left mid-workout - the rest is fitted again, the warm-up done, the cool-down and the logged sets stay`() = runBlocking {
+        val body = Body(1.0)
+        // Once the weights are found: what is left fits the 15 minutes, and what was cut beyond the need comes back — so no more
+        // than one exercise's set and rest (about 4 minutes) is left unused (TIME-001/002, D-115).
+        val w = World()
+        val c = w.onboard()
+        w.train(0 until 21, body)
+        var d = 21
+        while (true) {
+            w.day(d); c.onForeground(); c.refreshToday()
+            val t = (c.s() as Screen.Today).model
+            if (t.trainingDay()) {
+                c.openCheckIn(); c.submitCheckIn()
+                if (previewOf(c).session.workout.items.none { it.calibrating }) { c.closeToToday(); break }
+                c.startWorkout(); w.doWorkout("day $d", body); c.rateSummary(6); c.closeToToday()
+            }
+            assertTrue("a day with every weight found", ++d < 49)
+        }
+        val (before, v, notice) = w.onlyLeft(15, body)
+        println("METRIC S13 'only 15 minutes left': ${v.remainingMinutes} min left to do (was ${before.remainingMinutes})")
+        assertTrue("fitted within 15 minutes: ${v.remainingMinutes}", v.remainingMinutes <= 15.5)
+        assertTrue("and uses them, giving back what fits: ${v.remainingMinutes} min, changes ${notice.changes}", v.remainingMinutes >= 15.0 - 4.0)
+        assertNull(notice.shortestSafeMinutes)
+        checkRefit("weights found", before, v, notice)
         val id = v.workoutId
+        val logged = before.lifts.sumOf { it.sets.size }
         w.doWorkout("S13", body)
         val stored = w.data().sessions.load(id)!!
         assertEquals(Status.DONE, stored.row.status)
-        assertTrue("the logged sets are in the session", stored.exercises.first { it.row.id == first }.sets.size >= logged[first]!!)
+        assertTrue("the logged sets are in the session", stored.exercises.sumOf { it.sets.size } >= logged)
+
+        // While weights are still being found: a ramp can't be cut set by set, so it stays whole (a main lift's) or goes; when even
+        // that is more than 15 minutes, the shortest safe rest of the session is shown instead (D-071).
+        val w2 = World()
+        val c2 = w2.onboard()
+        w2.train(0 until 7, body)
+        w2.day(7); c2.onForeground()
+        val (b2, v2, n2) = w2.onlyLeft(15, body)
+        println("METRIC S13 'only 15 minutes left' while weights are found: ${v2.remainingMinutes} min left (was ${b2.remainingMinutes}), shortest ${n2.shortestSafeMinutes}")
+        checkRefit("weights being found", b2, v2, n2)
+        if (n2.shortestSafeMinutes == null) assertTrue("fitted: ${v2.remainingMinutes}", v2.remainingMinutes <= 15.5)
+        else assertTrue("only what can't be cut is left: ${v2.lifts.filter { !it.finished }.map { it.exercise.id to it.item.priority }}",
+            v2.lifts.filter { !it.finished }.all { it.item.priority <= com.personalfitnesscoach.engine.planning.Priority.P2 })
     }
 
     @Test fun `S14 90 minutes on a 60-minute plan - the session stays the planned length`() = runBlocking {
@@ -634,6 +692,7 @@ class ScenarioSuiteTest {
         val body = Body(1.0)
         w.train(0 until 7, body)
         w.day(7); c.onForeground()
+        assertEquals("a 60-minute plan", 60, w.data().docs.get(Profile)!!.sessionMinutes)
         c.openCheckIn(); c.editCheckIn { it.copy(minutes = 90) }; c.submitCheckIn(); c.ok("90 minutes")
         val long = previewOf(c).session.workout
         c.previewMinutes(60); c.ok("60 minutes")
@@ -741,6 +800,7 @@ class ScenarioSuiteTest {
         assertEquals(PainAction.STOP_REGION, res.outcome.action)
         assertTrue("see a professional", res.outcome.suggestProfessional)
         val open = s.view.lifts.filter { !it.finished }
+        assertTrue("exercises still to do", open.any { !it.hasLoggedWork })
         assertTrue("nothing left loads the knee: ${open.map { it.exercise.id to it.exercise.stress(Joint.KNEE) }}", open.all { it.exercise.stress(Joint.KNEE) == 0 })
         c.closeSheet()
         for (l in open.filter { !it.hasLoggedWork }) {
@@ -785,66 +845,62 @@ class ScenarioSuiteTest {
 
     @Test fun `S19 finding a working weight - at most 5 ramp sets, never to failure, and the next session uses it`() = runBlocking {
         val w = World()
-        val c = w.onboard()
-        val body = Body(1.0)
-        c.openCheckIn(); c.submitCheckIn(); c.startWorkout()
-        val id = w.view().workoutId
-        var guard = 0
-        while (guard++ < 400) {
-            val s = c.s() as Screen.Workout
-            if (s.sheet != null) { c.closeSheet(); continue }
-            val v = s.view
-            val step = v.step
-            if (step !is Step.Lift) { if (step is Step.Done) break; w.doWorkoutStep(step); continue }
-            val t = step.lift.next!!
-            if (t.kind == SetKind.CALIBRATION) {
-                assertTrue("${step.lift.exercise.id}: ramp set ${t.number} of at most ${P.CAL_001.max_ramp_sets}", t.number <= P.CAL_001.max_ramp_sets)
-                assertNull("a ramp set never asks for failure (no target of 0 in reserve)", t.targetRir)
-            }
-            w.clock.ms += 60_000
-            c.log(step.lift.rowId, body.entry(step.lift.exercise, t), confirmed = true, expected = t)
-            c.ok("log")
-        }
-        c.finishWorkout(); c.rateSummary(6); c.closeToToday()
-        val first = w.data().sessions.load(id)!!
-        val ramps = first.exercises.filter { it.calibration.isNotEmpty() }
-        assertTrue("weights were found", ramps.isNotEmpty())
-        for (e in ramps) {
-            assertTrue("${e.exerciseId}: ${e.calibration.size} ramp sets", e.calibration.size <= P.CAL_001.max_ramp_sets)
-            // CAL-001: the ramp ends at the first set with 2 or fewer reps in reserve (RPE 8), never closer to failure.
-            assertTrue("${e.exerciseId}: ${e.calibration.map { it.rir }}", e.calibration.dropLast(1).all { (it.rir ?: 5.0) > P.CAL_001.stop_rir_lte })
-        }
-        // Over the next exposures: an exercise whose weight was found does working sets at it next time (CAL-001 step 4: confirm with
-        // working sets); a ramp still easy at its 5-set limit goes on; every weight is found within the first four exposures.
-        var states = w.data().docs.all(ExerciseState).associateBy { it.exerciseId }
-        val exposures = HashMap<String, Int>()
-        ramps.forEach { exposures[it.exerciseId] = 1 }
-        val confirmed = LinkedHashMap<String, Double>()
-        for (d in 1 until 35) {
-            val r = w.trainDay(d, body)
-            if (r.trained) for (item in r.preview!!.session.workout.items) {
-                val ex = item.exercise.id
-                val n = exposures[ex] ?: continue
-                if (ex in confirmed) continue
-                if (item.calibrating) {
-                    assertTrue("$ex: calibrating on exposure ${n + 1}", n + 1 <= P.CAL_001.sessions[1])
-                    assertNull("$ex: a weight found is not ramped to again", states[ex]?.prescription)
-                } else {
-                    val st = states[ex]
-                    assertTrue("$ex: found before its working sets: $st", st?.prescription != null || st?.e1rm != null)
-                    st?.prescription?.let { p -> assertEquals("$ex: the next session uses the weight found", p.load, item.load!!, 1e-9) }
-                    confirmed[ex] = item.load ?: 0.0
+        w.onboard()
+        // Six weeks as planned, then every ramp in the log is checked against the next time the exercise came round, by CAL-001's own
+        // words (read from the stored sets, not from the app's state): RIR ≤ 2 → stop, next time lighter; RIR 3 → the working weight;
+        // still easy after 5 sets → carry on from there next time, within 4 sessions; no safe heavier step (D-038) → the working weight.
+        // "Confirm at the second exposure" means working sets, not another ramp (D-115).
+        w.train(0 until 42, Body(1.0))
+        val log = w.data().sessions.done(monday, monday + 41)
+        val loaded = setOf(LoadType.BARBELL, LoadType.DUMBBELL, LoadType.KETTLEBELL, LoadType.STACK)
+        val byExercise = LinkedHashMap<String, MutableList<com.personalfitnesscoach.data.core.session.StoredExercise>>()
+        for (wk in log) for (e in wk.exercises) if (e.row.status == Status.DONE) byExercise.getOrPut(e.exerciseId) { ArrayList() } += e
+        val cases = HashMap<String, Int>()
+        for ((id, exposures) in byExercise) {
+            val ex = com.personalfitnesscoach.engine.library.Library.require(id)
+            if (ex.loadType !in loaded || ex.assisted || ex.unit != DoseUnit.REPS) continue
+            assertTrue("$id: weight found within ${P.CAL_001.sessions[1]} sessions: ${exposures.count { it.doc.calibrating }}",
+                exposures.count { it.doc.calibrating } <= P.CAL_001.sessions[1])
+            for ((i, a) in exposures.withIndex()) {
+                if (!a.doc.calibrating || a.calibration.isEmpty()) continue
+                val ramp = a.calibration.sortedBy { it.setIndex }
+                assertTrue("$id: ${ramp.size} ramp sets", ramp.size <= P.CAL_001.max_ramp_sets)
+                // A ramp ends at the first set with 2 or fewer in reserve (RPE 8): it never asks for a set closer to failure.
+                assertTrue("$id: ${ramp.map { it.rir }}", ramp.dropLast(1).all { (it.rir ?: 5.0) > P.CAL_001.stop_rir_lte })
+                val last = ramp.last()
+                val rir = last.rir ?: continue
+                val load = last.loadKg!!
+                val b = exposures.getOrNull(i + 1) ?: continue
+                val nth = exposures.take(i + 1).count { it.doc.calibrating }
+                val case = when {
+                    rir <= P.CAL_001.stop_rir_lte -> "too hard"
+                    rir < 4.0 -> "found"
+                    ramp.size >= P.CAL_001.max_ramp_sets && nth < P.CAL_001.sessions[1] -> "still easy"
+                    else -> "working weight"
                 }
-                exposures[ex] = n + 1
+                cases.merge(case, 1, Int::plus)
+                when (case) {
+                    "still easy" -> {
+                        assertTrue("$id: a ramp still easy after 5 sets goes on next time", b.doc.calibrating)
+                        assertEquals("$id: from where it ended", load, b.calibration.sortedBy { it.setIndex }.firstOrNull()?.loadKg ?: b.doc.load!!, 1e-9)
+                    }
+                    "too hard" -> {
+                        assertFalse("$id: after a too-hard ramp set, working sets next time", b.doc.calibrating)
+                        assertTrue("$id: lighter than the too-hard set: ${b.doc.load} after $load", b.doc.load!! < load - 1e-9)
+                    }
+                    else -> {
+                        assertFalse("$id ($case): the weight found is confirmed with working sets next time, not ramped to again", b.doc.calibrating)
+                        // The same weight; at most one small step more when the found set also gave an estimated max and today's
+                        // target is 2 in reserve rather than the ramp's 3 (INT-005).
+                        assertTrue("$id ($case): ${b.doc.load} after $load", b.doc.load!! <= load * 1.06 + 1e-9)
+                        assertTrue("$id ($case): working sets done", b.working.isNotEmpty())
+                    }
+                }
             }
-            states = w.data().docs.all(ExerciseState).associateBy { it.exerciseId }
-            if (confirmed.keys.containsAll(exposures.keys)) break
         }
-        println("METRIC S19 working weights found (kg): " + confirmed.entries.joinToString { (k, v) -> "$k $v" } +
-            "; not found yet: " + (exposures.keys - confirmed.keys).joinToString { "$it (${exposures[it]} exposures)" })
-        assertTrue("weights found and used", confirmed.isNotEmpty())
-        val due = exposures.filterValues { it > P.CAL_001.sessions[1] }.keys
-        assertTrue("every weight found within ${P.CAL_001.sessions[1]} exposures: ${due - confirmed.keys}", confirmed.keys.containsAll(due))
+        println("METRIC S19 ramps by how they ended: $cases")
+        assertTrue("both a ramp that went on and a weight found were seen: $cases", (cases["still easy"] ?: 0) >= 1 &&
+            (cases["found"] ?: 0) + (cases["too hard"] ?: 0) + (cases["working weight"] ?: 0) >= 3)
     }
 
     /** One non-lift step of the workout, done as planned. */
@@ -887,20 +943,24 @@ class ScenarioSuiteTest {
                 val partner = SessionPlayer.supersetPartner(lift, v.lifts)
                 if (lift.next?.kind == SetKind.WARMUP) { c.skipRamp(lift.rowId); continue }
                 w.logNext(lift.rowId, body)
-                if (partner == null || partner.next?.kind != SetKind.WORKING) continue
+                if (partner == null || partner.next?.kind != SetKind.WORKING || lift.item.sets - lift.workingDone < 2) continue
+                assertTrue("the pair doesn't compete (ORD-003): ${lift.exercise.primary} / ${partner.exercise.primary}",
+                    (lift.exercise.primary intersect partner.exercise.primary).isEmpty() && !lift.item.main && !partner.item.main)
                 val after = w.view()
                 assertEquals("the partner's set is next", partner.rowId, (after.step as Step.Lift).lift.rowId)
                 assertEquals("after the superset's short rest (REST-004)", P.REST_004.default_s, after.state.restSec)
-                // The partner is skipped: the superset ends and the other exercise gets its own rest.
+                // The partner's set, then back to the first exercise, again after the short rest: the sets alternate.
+                w.logNext(partner.rowId, body)
+                val back = w.view()
+                assertEquals("back to the first exercise", lift.rowId, (back.step as Step.Lift).lift.rowId)
+                assertEquals(P.REST_004.default_s, back.state.restSec)
+                // The partner is skipped now: the superset ends and the first exercise gets its own rest.
                 c.skipExercise(partner.rowId); c.ok("skip the partner")
                 val v2 = w.view()
-                val next = (v2.step as? Step.Lift)?.lift
-                if (next != null) {
-                    assertNull("the superset has ended", SessionPlayer.supersetPartner(next, v2.lifts)?.takeIf { it.rowId == partner.rowId })
-                    val sec = v2.state.restSec
-                    if (sec != null && v2.state.restStartedAtMs != null && SessionPlayer.supersetPartner(next, v2.lifts) == null)
-                        assertTrue("${next.exercise.id}: its own rest ($sec s, minimum ${next.item.restMinSec} s)", sec >= next.item.restMinSec)
-                }
+                val next = (v2.step as Step.Lift).lift
+                assertEquals("the first exercise goes on", lift.rowId, next.rowId)
+                assertNull("the superset has ended", SessionPlayer.supersetPartner(next, v2.lifts))
+                assertTrue("its own rest (${v2.state.restSec} s, minimum ${next.item.restMinSec} s)", (v2.state.restSec ?: 0) >= next.item.restMinSec)
                 paired = true
                 break
             }
@@ -1030,15 +1090,22 @@ class ScenarioSuiteTest {
         assertTrue("with the reason: $reasons", reasons.any { it == ReasonKey.DELOAD_NOW.name || it == ReasonKey.LIGHTER_WEEK.name })
         assertTrue("Today says why", (c.s() as Screen.Today).model.reasons.any { it.reason == ReasonKey.DELOAD_NOW.name || it.reason == ReasonKey.LIGHTER_WEEK.name })
         val t = (c.s() as Screen.Today).model
-        if (t.plan.week.deload) {
-            // DEL-003: half the sets of the normal week it replaces (each day rounded down, every exercise kept at 1 set or dropped).
-            val why = t.plan.decisions.single { it.reason == ReasonKey.DELOAD_NOW && it.outputs["normalSets"] != null }
-            val now = (why.outputs["sets"] as Number).toInt()
-            val normal = (why.outputs["normalSets"] as Number).toInt()
-            assertEquals("the plan shows it", now, weekSets.getValue(week))
-            assertTrue("about half the sets: $now of $normal", now >= 0.4 * normal && now <= 0.5 * normal + 1e-9)
-            assertTrue("easy effort in the lighter week (RIR ${P.DEL_003.min_rir}+)", t.plan.week.days.all { d -> d.slots.all { it.targetRir >= P.DEL_003.min_rir } })
-        }
+        // Hard sessions, poor check-ins, soreness and stalled lifts are 3 or more fatigue signals at 41: a deload now (DEL-002).
+        assertTrue("a deload week (DEL-002/003), not only a lighter week", t.plan.week.deload)
+        assertTrue(reasons.contains(ReasonKey.DELOAD_NOW.name))
+        // DEL-003: at most half the sets of the normal week it replaces — that week planned here without the deload, independently of
+        // the deload's own numbers. Each day is rounded down and every exercise keeps at least a set or goes, so it is 35–50%.
+        val dd = w.data()
+        val tp = dd.planToday()!!
+        val input = dd.bridge.weekInput(tp.user, tp.program)
+        val normal = WeekPlanner.plan(input.copy(week = input.week.copy(kind = com.personalfitnesscoach.engine.program.WeekKind.LOADING), deload = false,
+            weeklySsuLimit = null, weeklyLoadSsu = null, weeklySsuGuard = null), dd.bridge.blueprint(tp.program)).value
+        val normalSets = normal.days.sumOf { d -> d.slots.sumOf { it.sets } }
+        val now = weekSets.getValue(week)
+        println("METRIC S25 the lighter week: $now sets, against $normalSets in the normal week it replaces and ${weekSets[week - 1]} the week before")
+        assertTrue("about half the sets: $now of $normalSets", now <= 0.5 * normalSets + 1e-9 && now >= 0.35 * normalSets)
+        assertTrue("easy effort in the lighter week (RIR ${P.DEL_003.min_rir}+)", t.plan.week.days.all { d -> d.slots.all { it.targetRir >= P.DEL_003.min_rir } })
+        assertTrue("no intervals in it (DEL-003)", t.plan.week.days.flatMap { it.conditioning }.none { it.hiit || it.interval != null })
     }
 
     @Test fun `S26 six weeks of training - progress shows rising strength, weekly minutes against 150 and the weeks in a row`() = runBlocking {
@@ -1059,6 +1126,9 @@ class ScenarioSuiteTest {
         assertEquals("the weekly target is 150 minutes (PH-001)", 150, P.PH_001.target_equivalent_minutes)
         assertTrue("the finished weeks are shown (${o.weeks.size})", o.weeks.size >= 5)
         assertTrue("weekly minutes counted: ${o.weeks.map { it.equivalentMinutes }}", o.weeks.all { it.equivalentMinutes > 0.0 })
+        // The line on each week: 150 equivalent minutes and 2 strength days (PH-001).
+        for (wl in o.weeks) assertEquals("week ${wl.weekStartDay}", wl.equivalentMinutes >= 150.0 && wl.strengthDays >= 2, wl.whoFloorMet)
+        assertTrue("strength days counted: ${o.weeks.map { it.strengthDays }}", o.weeks.all { it.strengthDays >= 2 })
         assertEquals(o.weeks.count { it.whoFloorMet }, o.whoWeeks)
         println("METRIC S26 weekly minutes: ${o.weeks.map { "%.0f".format(it.equivalentMinutes) }}, weeks at 150+: ${o.whoWeeks}, streak ${o.streak.current}")
         assertTrue("weeks in a row: ${o.streak}", o.streak.current >= 5)
@@ -1097,7 +1167,7 @@ class ScenarioSuiteTest {
         assertNotEquals("and the lift's estimate with it", stateBefore, h.state?.e1rm)
         // Impossible values are refused, and nothing changes.
         c.openTab(Tab.HISTORY); c.openSession(workout.id)
-        for (bad in listOf<(SetEdit) -> SetEdit>({ it.copy(reps = -3) }, { it.copy(loadKg = 2000.0) }, { it.copy(reps = 500) }, { it.copy(rir = 12.0) })) {
+        for (bad in listOf<(SetEdit) -> SetEdit>({ it.copy(reps = -3) }, { it.copy(loadKg = 600.0) }, { it.copy(loadKg = 2000.0) }, { it.copy(reps = 500) }, { it.copy(rir = 12.0) })) {
             c.startSetEdit(set.setId); c.changeSetEdit(bad); c.saveSetEdit()
             assertTrue("refused", (c.s() as Screen.SessionDetail).problem)
             c.cancelSetEdit()
@@ -1173,7 +1243,7 @@ class ScenarioSuiteTest {
         val a = (c.s() as Screen.Coach).model.answer!!
         assertEquals(Question.HARDER, a.question)
         assertTrue("the coach explains with the rules: ${a.rules}", listOf("SAF-009", "RDY-007", "SAF-003").all { it in a.rules })
-        assertTrue("it can only open the preview or the check-in: ${a.actions}", a.actions.all { it == CoachAction.OpenPreview || it == CoachAction.OpenCheckIn })
+        assertEquals("after the check-in it can only open the preview, where the engine decides: ${a.actions}", listOf<CoachAction>(CoachAction.OpenPreview), a.actions)
         for (action in a.actions) {
             c.coachAction(action); c.ok("$action")
             // From the check-in the knee isn't ticked again: the morning's report still holds for the day.
@@ -1186,12 +1256,17 @@ class ScenarioSuiteTest {
         c.openTab(Tab.TODAY); c.openCheckIn()
         if (c.s() is Screen.CheckIn) c.submitCheckIn()
         c.startWorkout(); w.toLifts()
-        for (l in w.view().lifts.filter { !it.hasLoggedWork && !it.finished }) {
+        val toCome = w.view().lifts.filter { !it.hasLoggedWork && !it.finished }
+        assertTrue("exercises to swap", toCome.isNotEmpty())
+        var offered = 0
+        for (l in toCome) {
             c.openReplace(l.rowId, occupied = false)
             val options = ((c.s() as Screen.Workout).sheet as WorkoutSheet.Replace).choice.options
+            offered += options.size
             assertTrue("${l.exercise.id}: ${options.map { it.exercise.id to it.exercise.stress(Joint.KNEE) }}", options.all { it.exercise.stress(Joint.KNEE) <= limit })
             c.closeSheet()
         }
+        assertTrue("swaps were offered ($offered)", offered > 0)
     }
 
     @Test fun `S30 upgrade over data saved by the earlier version - read in full, the weekly limits work from it, new sessions saved alongside`() = runBlocking {

@@ -16,6 +16,12 @@ import com.personalfitnesscoach.engine.model.Level
 import com.personalfitnesscoach.engine.planning.Priority
 import com.personalfitnesscoach.engine.program.SlotRole
 import com.personalfitnesscoach.engine.progression.ProgressionAction
+import com.personalfitnesscoach.data.core.Fixtures
+import com.personalfitnesscoach.data.core.session.Status
+import com.personalfitnesscoach.data.core.session.StoredWorkout
+import com.personalfitnesscoach.data.core.session.WorkoutDoc
+import com.personalfitnesscoach.data.core.store.WorkoutRow
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -49,11 +55,21 @@ class ExerciseProgressTest {
 
     @Test fun `too hard stops the ramp and the next session works at 5 percent lower (D-115)`() {
         val r = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(60.0, 10, 1.0)), day, ctx, null).value
-        assertNull(r.state.e1rm)
-        // CAL-001 step 2: "RIR ≤ 2 → stop; next session uses this load −5%" — as its working load, confirmed with working sets (step 4).
+        // CAL-001 step 2: "RIR ≤ 2 → stop; next session uses this load −5%" — as its working load, confirmed with working sets (step 4);
+        // the stopping set is a valid estimate (INT-004: 10 + 1 ≤ 12), so the e1RM starts from it ("from the final calibration set").
+        assertEquals(E1rm.fromSet(60.0, 10, 1.0)!!, r.state.e1rm!!, 1e-9)
         assertNull(r.state.calibration)
         assertEquals(57.5, r.state.prescription!!.load, 0.0)
         assertEquals(ProgressionAction.HOLD, r.state.prescription!!.action)
+    }
+
+    @Test fun `a ramp set short of its reps sets the working load by what was done, never near failure (review of D-115)`() {
+        // 10 asked, 6 done at RIR 0: −5% (57.5 kg) would be about a 9-rep max for 8–12 reps at RIR 2. The set's own estimate
+        // (60 × 1.2 = 72 kg) gives 54 kg for 8 reps at RIR 2, down to 52.5 kg.
+        val r = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(true), cal(50.0, 10, 5.0), cal(60.0, 6, 0.0)), day, ctx, null).value
+        assertEquals(72.0, r.state.e1rm!!, 1e-9)
+        assertEquals(52.5, r.state.prescription!!.load, 0.0)
+        assertNull(r.state.calibration)
     }
 
     @Test fun `a ramp still easy at its 5-set limit goes on next session, and no safe heavier step makes the load the working load`() {
@@ -152,5 +168,26 @@ class ExerciseProgressTest {
             (0 until 3).map { SetRow(id * 10 + it, id, it, SetKind.WORKING, null, 20, rir = 3.0, loggedAtMs = 1) })
         val r = ExerciseProgress.apply(ExerciseState(pushUp.id), pushUp, session(2), day, ctx, null, listOf(session(1), session(2))).value
         assertEquals(pushUp.family!! to Library.progressionOf(pushUp)!!.id, r.ladder)
+    }
+
+    @Test fun `a ramp soon after a found weight is history from before D-115, not a recalibration - only a long layoff starts afresh`() = runBlocking {
+        val (d, _) = Fixtures.data()
+        Fixtures.onboard(d)
+        val u = d.bridge.user()!!
+        fun workout(day: Int) = StoredWorkout(WorkoutRow(day.toLong(), day, Status.DONE, "FB_A", registryVersion = "1.1.2", json = WorkoutDoc(0, 60.0, 5.0).encode()),
+            WorkoutDoc(0, 60.0, 5.0), listOf(exposure(item(true), cal(60.0, 10, null))))
+        val found = ExerciseState(bench.id, e1rm = 80.0, e1rmDay = Fixtures.MONDAY, prescription = com.personalfitnesscoach.engine.progression.Prescription(60.0, 8..12, 8,
+            ProgressionAction.HOLD), lastDoneDay = Fixtures.MONDAY, exposures = 1)
+        // A week later the old app ramped again (here with an unrated set, so nothing is replayed): what was found stays.
+        d.docs.put(ExerciseState, found)
+        d.progress.record(workout(Fixtures.MONDAY + 7), u)
+        assertEquals(80.0, d.docs.get(ExerciseState, bench.id)!!.e1rm!!, 0.0)
+        assertEquals(60.0, d.docs.get(ExerciseState, bench.id)!!.prescription!!.load, 0.0)
+        // After a layoff long enough for REG-004 to recalibrate, the exercise starts afresh.
+        d.docs.put(ExerciseState, found)
+        d.progress.record(workout(Fixtures.MONDAY + com.personalfitnesscoach.engine.progression.ReturnToTraining.recalibrationMinDays), u)
+        assertNull(d.docs.get(ExerciseState, bench.id)!!.e1rm)
+        assertNull(d.docs.get(ExerciseState, bench.id)!!.prescription)
+        assertEquals(28, com.personalfitnesscoach.engine.progression.ReturnToTraining.recalibrationMinDays)
     }
 }

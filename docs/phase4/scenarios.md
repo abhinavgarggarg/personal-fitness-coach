@@ -18,13 +18,13 @@ The **Rules** column names the main rules each scenario exercises.
 | S01 | **First day** (J1): a 41-year-old intermediate lifter in a full gym installs the app, answers onboarding, checks in normally and does the first session | A profile, a first week and today's session. FULL tier. Loaded exercises without a known weight start with a ramp to find it. Every set logged is saved; the summary asks for one effort rating and Today shows the day as done | F1, F2, F11, CAL-001, GEN-001 |
 | S02 | **A warning sign in screening**: chest discomfort on exertion is answered "yes" | Gentle mode: no intervals or hard cardio in the plan, a "check with your doctor" line on Today. A doctor's OK recorded in Settings ends gentle mode | SAF-001, D-056 |
 | S03 | **Onboarding interrupted**: the app is closed after three steps | Opened again, onboarding is at the same step with the answers kept | F1 |
-| S04 | **Two health conditions**: a 66-year-old at home with type 2 diabetes and knee osteoarthritis | No jumping or impact work all week. Strength days aren't on consecutive days. The condition prompts are shown with the session. Balance work is in the plan | SAF-010, AGE-001, FL-003 |
+| S04 | **Two health conditions**: a 66-year-old at home with type 2 diabetes and knee osteoarthritis | No jumping or impact work all week, and the knee within its limit. Strength days aren't on consecutive days, and never more than 2 days in a row without activity. The condition prompts are shown with the session. Balance work on 3 days a week | SAF-010, AGE-001, FL-003 |
 
 ## Everyday training
 
 | # | Scenario | Expected | Rules |
 |---|---|---|---|
-| S05 | **A normal gym day, week after week** (J2): every session as planned for five weeks, targets met | Once the weights are found, a main lift's target load or reps goes up | PROG-001, PROG-002 |
+| S05 | **A normal gym day, week after week** (J2): every session as planned for five weeks, targets met | Once the weights are found, a main lift's next target (weight × reps, as its exercise page shows it) goes up, and a session asks for more weight at the same reps | PROG-001, PROG-002 |
 | S06 | **A bad night** (J3): 4.5 hours' sleep | The day is MODIFIED at most, with the reason. The user may choose easier, never more than one step harder | RDY-005, RDY-007 |
 | S07 | **A red flag at the check-in**: chest pain | Training stops at once. The stop stays until the user confirms it was checked. The first session back is LIGHT | SAF-002 |
 | S08 | **Illness**: a fever at the check-in | No training that day. The first session after it is lighter and says why | SAF-007, REG-005 |
@@ -37,7 +37,7 @@ The **Rules** column names the main rules each scenario exercises.
 | # | Scenario | Expected | Rules |
 |---|---|---|---|
 | S12 | **Only 30 minutes today** | The session takes at most 33 minutes and keeps the warm-up and the first main lift, or the express session is offered with the reason | TIME-001, TIME-002, ADH-004, F10 |
-| S13 | **"I only have 15 minutes left"** mid-workout | What is left is fitted again into the 15 minutes (or the shortest safe rest is shown). The warm-up already done, the cool-down and the logged sets stay | TIME-001, TIME-002, D-090 |
+| S13 | **"I only have 15 minutes left"** mid-workout | What is left is fitted again into the 15 minutes and uses them (no more than one set and rest left unused), or the shortest safe rest is shown when a main lift's weight is still being found. The warm-up already done, the cool-down and the logged sets stay | TIME-001, TIME-002, D-090 |
 | S14 | **90 minutes on a 60-minute plan** | The session stays the planned length: extra time isn't filled with extra training (TIME-003 extension is off, an open decision) | TIME-003 |
 
 ## In the workout
@@ -48,7 +48,7 @@ The **Rules** column names the main rules each scenario exercises.
 | S16 | **Knee pain 5/10 mid-set** | That exercise stops. Pain-free alternatives are offered, and nothing loads the knee more than a little for the rest of the session | SAF-003 |
 | S17 | **Sharp pain 8/10** | The region or the session stops. No exercise for that region is offered again that day | SAF-003, SAF-004 |
 | S18 | **A warning sign during the workout**: fainting | The workout ends at once and the stop screen shows; nothing is left running | SAF-002, D-081 |
-| S19 | **Finding a working weight** | Each ramp takes at most 5 sets and never asks for failure. Once a weight is found, the next session does working sets with it; a ramp still easy after 5 sets goes on next time, within the first 4 sessions | CAL-001, INT-003 |
+| S19 | **Finding a working weight** | Each ramp takes at most 5 sets and never asks for a set past 2 in reserve. Checked against the rule's own words for every ramp in six weeks: too hard → working sets next time, lighter; found → working sets at it; still easy after 5 sets → the ramp goes on from there; all within the first 4 sessions | CAL-001, INT-003, INT-004 |
 | S20 | **A short day with a superset** | Two exercises that don't compete alternate their sets with a short rest. Skipping one ends the superset and the other gets its own rest | ORD-003, REST-004, D-109 |
 | S21 | **The app is killed mid-workout** | Opened again, the workout is offered back exactly where it stopped, with every set saved | NFR-06, F6 |
 
@@ -64,7 +64,7 @@ The **Rules** column names the main rules each scenario exercises.
 
 | # | Scenario | Expected | Rules |
 |---|---|---|---|
-| S25 | **Tired for days in a row**: hard sessions, poor check-ins and stalled lifts | A lighter week is planned, with about half the sets of the week it replaces, easier effort, and the reason | DEL-001, DEL-002, DEL-003 |
+| S25 | **Tired for days in a row**: hard sessions, poor check-ins and stalled lifts | A deload week is planned, with the reason: at most half the sets of the normal week it replaces (35–50%, as each day is rounded down), easier effort and no intervals | DEL-001, DEL-002, DEL-003 |
 | S26 | **Six weeks of training** | Progress shows rising strength, weekly minutes against 150, and the weeks in a row | F12, PH-001, ADH-001 |
 | S27 | **Correcting a past set** | The corrected set is saved, the estimated maximum follows, and impossible values (negative or 500 reps, 2000 kg, 12 in reserve) are refused with nothing changed | F12, D-096 |
 | S28 | **Backup, erase, restore**, with a password | Everything comes back. A wrong password or a damaged file is refused with nothing changed | F14, D-075 |

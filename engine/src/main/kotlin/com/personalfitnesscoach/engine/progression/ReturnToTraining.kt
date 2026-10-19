@@ -144,6 +144,15 @@ object ReturnToTraining {
 
     private fun bandIndex(daysOff: Int): Int = BANDS.indices.last { daysOff >= bandStart(it) }
 
+    /**
+     * The fewest days off after which REG-004 can recalibrate an exercise: the start of the band before "recalibrate", since age 60+
+     * or a flagged screen moves one band on (56 days → 28).
+     */
+    val recalibrationMinDays: Int get() {
+        val i = BANDS.indexOfFirst { it["action"] == "recalibrate_and_restart_block" }
+        return bandStart(maxOf(0, i - P.REG_004.older_or_flagged_shift))
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun layoffPlan(band: Int, week: Int): ReturnPlan {
         val b = BANDS[band]

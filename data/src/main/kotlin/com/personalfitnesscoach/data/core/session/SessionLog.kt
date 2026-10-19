@@ -58,6 +58,21 @@ data class NewSet(
 }
 
 /**
+ * What a set logged or corrected in the app may say (FS-5): more reps than any set in the library asks for, or more weight than anyone
+ * lifts, is refused — when logging after the "unusual entry" question, and when correcting History. Stored sets keep [NewSet]'s wider
+ * ranges, so older files still load (Phase 4 scenario S27, review of D-115).
+ */
+object SetLimits {
+    const val MAX_REPS = 100
+    const val MAX_LOAD_KG = 500.0
+
+    fun check(loadKg: Double?, reps: Int?) {
+        require(reps == null || reps <= MAX_REPS) { "reps out of range" }
+        require(loadKg == null || loadKg <= MAX_LOAD_KG) { "load out of range" }
+    }
+}
+
+/**
  * Sessions on disk (Phase 2 entities Workout, WorkoutExercise, LoggedSet, ActiveSessionState). Every change that touches more than
  * one row is one transaction (Phase 2 data rule 4): a logged set and the resume point are written together, so a crash can never
  * leave a set without the state that points past it, or the reverse.

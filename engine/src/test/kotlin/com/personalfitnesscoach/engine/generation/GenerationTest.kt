@@ -74,6 +74,22 @@ class GenerationTest {
         assertTrue(r2.decisions.any { it.reason == ReasonKey.LOAD_FROM_E1RM })
     }
 
+    @Test fun `TC-GEN-001d without an e1RM a weight found is used at the reps it was found for, whatever the day's range (D-055, review of D-115)`() {
+        // A weight found by calibration without a valid estimate (D-115) is a prescription for the ramp's rep range. Another day's slot of the
+        // same exercise takes that range with it (PROG-002 owns the range without an e1RM), so the weight is never carried over to more reps.
+        val d = day()
+        val slot = d.slots.first { it.exercise.id == "back-squat" }
+        val noEst = req(d).copy(e1rm = mapOf("bench-press" to 90.0, "romanian-deadlift" to 130.0))
+        val found = com.personalfitnesscoach.engine.progression.Prescription(60.0, (slot.reps.first + 5)..(slot.reps.last + 7), slot.reps.first + 5,
+            com.personalfitnesscoach.engine.progression.ProgressionAction.HOLD)
+        val sq = SessionGenerator.generate(noEst.copy(progression = mapOf("back-squat" to found))).value.items.first { it.exercise.id == "back-squat" }
+        assertEquals(60.0, sq.load!!, 1e-9)
+        assertEquals("the reps it was found for", found.repRange, sq.reps)
+        // With an e1RM, a prescription for another range is not used: today's range takes its load from the e1RM (INT-005).
+        val withEst = SessionGenerator.generate(req(d).copy(progression = mapOf("back-squat" to found))).value.items.first { it.exercise.id == "back-squat" }
+        assertEquals(slot.reps, withEst.reps)
+    }
+
     @Test fun `no box in the gym - box work is never planned, and a missing box swaps power only to power`() {
         val gym = setOf("dumbbells", "bench", "incline_bench", "pullup_bar", "bands", "mat", "plyo_box", "rack", "barbell")
         val w = (1..52).first { Blueprint.context(program, it).block.type == com.personalfitnesscoach.engine.program.BlockType.POWER_ATHLETICISM &&
