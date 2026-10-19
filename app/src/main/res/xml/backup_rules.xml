@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 11 and lower: the database and settings, only into an end-to-end encrypted backup (screen lock set, Android 9+). -->
+<!-- Android 11 and lower: the database and settings, only into an end-to-end encrypted backup (screen lock set, Android 9+), or a
+     device-to-device transfer to a new phone, as the Android 12+ rules do (Phase 4 Part 3 review). -->
 <full-backup-content>
     <include domain="database" path="." requireFlags="clientSideEncryption" />
     <include domain="sharedpref" path="." requireFlags="clientSideEncryption" />
+    <include domain="database" path="." requireFlags="deviceToDeviceTransfer" />
+    <include domain="sharedpref" path="." requireFlags="deviceToDeviceTransfer" />
 </full-backup-content>

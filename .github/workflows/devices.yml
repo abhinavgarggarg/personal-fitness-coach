@@ -133,7 +133,7 @@ jobs:
   # Phase 4 Part 3 (E5): a session logged set by set through every interruption (home, screen off, rotation, a call, low memory,
   # process death, a stop while saving, a reboot), Android backup only when end-to-end encrypted, and an upgrade from the Phase 3
   # build (D-110) with a session left open. Driven from outside with adb; the app's own database is the check that no set is lost
-  # (tools/device_e5.py). Android 10 uses the older backup rules, Android 14 the newer ones.
+  # (tools/device_e5.py). Android 10 uses the older backup rules, Android 14 and 16 the newer ones (16 is the PO's phone).
   e5:
     if: ${{ !inputs.release_smoke_only }}
     runs-on: ubuntu-24.04
@@ -142,6 +142,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { name: "Android 16", api: 36, profile: "pixel_7" }
           - { name: "Android 14", api: 34, profile: "pixel_6" }
           - { name: "Android 10", api: 29, profile: "Nexus 5" }
     name: Interruptions and data (E5), ${{ matrix.name }}
