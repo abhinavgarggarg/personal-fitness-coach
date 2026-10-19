@@ -9,6 +9,7 @@ logged is in it at once, and stays there through each interruption.
     python3 -I tools/device_e5.py upgrade <older-debug.apk> <older-checkout> <debug.apk>
     python3 -I tools/device_e5.py interruptions <debug.apk>
     python3 -I tools/device_e5.py backup <debug.apk>          (uses the data `interruptions` left)
+    python3 -I tools/device_e5.py quick-backup <debug.apk>    (a short session, then the backup checks)
 
 Each check prints a GitHub annotation; on failure the annotation names the step and the words on screen, and the exit code is 1.
 """
@@ -457,6 +458,18 @@ def main(argv):
     elif what == "interruptions":
         d.interruptions(argv[2])
     elif what == "backup":
+        d.backup(argv[2])
+    elif what == "quick-backup":
+        # A short session, then the backup checks (for working on the backup step alone).
+        d.step = "install"
+        adb("uninstall", PKG, timeout=120)
+        d.install(argv[2], replace=False)
+        d.launch()
+        d.onboard()
+        d.start_workout()
+        d.log_set()
+        d.log_set()
+        d.finish()
         d.backup(argv[2])
     else:
         print(__doc__)
