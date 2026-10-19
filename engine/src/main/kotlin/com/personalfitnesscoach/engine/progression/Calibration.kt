@@ -30,8 +30,11 @@ sealed class CalibrationStep {
  * PROG-003; this reproduces the Phase 1 worked example (20 → 25 → 30 → 32.5 kg).
  */
 object Calibration {
-    /** D-070: at RIR 5+ a coarse machine-stack step may at most double the load. */
+    /** D-070: at RIR 5+ a coarse step may at most double the load. */
     private const val COARSE_STEP_MAX = 2.0
+
+    /** D-116 (option C): free-weight coarse steps only below this age. */
+    private const val FREE_WEIGHT_COARSE_AGE_BELOW = 60
 
     /** Starting load when the user enters known working weights: 90% of them, rounded down to real equipment. */
     fun startFromKnown(knownWorkingLoad: Double, available: List<Double>): Double {
@@ -39,8 +42,31 @@ object Calibration {
         return available.filter { it <= target + 1e-9 }.maxOrNull() ?: (available.minOrNull() ?: PlateMath.round(target))
     }
 
-    /** D-070: coarse steps are allowed for selectorised machines and cables only. */
-    fun coarseStepsAllowed(loadType: com.personalfitnesscoach.engine.model.LoadType): Boolean = loadType == com.personalfitnesscoach.engine.model.LoadType.STACK
+    /**
+     * Coarse steps: selectorised machines and cables for everyone (D-070); dumbbells, kettlebells and barbells only when
+     * [freeWeights] — see [freeWeightCoarseSteps] (D-116).
+     */
+    fun coarseStepsAllowed(loadType: com.personalfitnesscoach.engine.model.LoadType, freeWeights: Boolean = false): Boolean = when (loadType) {
+        com.personalfitnesscoach.engine.model.LoadType.STACK -> true
+        com.personalfitnesscoach.engine.model.LoadType.DUMBBELL, com.personalfitnesscoach.engine.model.LoadType.KETTLEBELL,
+        com.personalfitnesscoach.engine.model.LoadType.BARBELL -> freeWeights
+        else -> false
+    }
+
+    /**
+     * D-116 (the PO's option C): free weights take a coarse step only for someone who is not a beginner, is under 60 (age known), has a
+     * standard screening (not gentle mode) and no health condition. Everyone else keeps the band.
+     */
+    fun freeWeightCoarseSteps(level: com.personalfitnesscoach.engine.model.Level, age: Int?, flaggedScreen: Boolean, hasCondition: Boolean): Boolean =
+        level != com.personalfitnesscoach.engine.model.Level.BEGINNER && age != null && age < FREE_WEIGHT_COARSE_AGE_BELOW && !flaggedScreen && !hasCondition
+
+    /**
+     * Every ramp set stops at its target reps or with this many reps in reserve, whichever comes first (D-116): CAL-001's working-load
+     * rating, one rep inside RPE 8. The bands alone can't keep a set within RPE 8 — at 10 reps, +10–15% from "4 more" is about 5 reps
+     * fewer, near failure — and people tend to judge themselves about a rep closer to failure than they are (Halperin 2022), so the
+     * stop keeps "never above RPE 8" with a margin. The reps done and the rating then give the working load or its estimate.
+     */
+    const val RAMP_STOP_RIR = 3.0
 
     /** Conservative first guess: the lightest load the equipment allows. */
     fun startingLoad(available: List<Double>): Double? = available.minOrNull()

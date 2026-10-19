@@ -425,7 +425,7 @@
     <string name="wk_set_ramp">Warm-up set %1$d of %2$d</string>
     <string name="wk_set_calibration">Finding your weight · set %1$d</string>
     <string name="wk_set_added">Extra set %1$d</string>
-    <string name="wk_calibration_hint">Do the reps with good form, then say how many more you could have done. The next weight follows from your answer.</string>
+    <string name="wk_calibration_hint">Do the reps with good form, but stop early if you get to about 3 reps left. Then say how many more you could have done. The next weight follows from your answer.</string>
     <string name="wk_last_time">Last time: %1$s</string>
     <string name="wk_set_summary">%1$s × %2$s</string>
     <string name="wk_done_as_planned">Done as planned</string>

@@ -98,6 +98,9 @@ data class UserState(
     /** SAF-001 conservative mode, also while a condition's doctor's OK is outstanding. */
     val effectiveScreening: ScreeningMode get() = if (conditions.conservative) ScreeningMode.CONSERVATIVE else screening
     val flaggedScreen: Boolean get() = effectiveScreening != ScreeningMode.STANDARD
+    /** CAL-001 coarse steps on free weights (D-116): not a beginner, under 60, standard screening, no health condition. */
+    val coarseFreeWeights: Boolean get() = com.personalfitnesscoach.engine.progression.Calibration.freeWeightCoarseSteps(profile.level, age, flaggedScreen,
+        conditions.entries.isNotEmpty() || conditions.unknown.isNotEmpty())
 }
 
 /** History → engine inputs (FS-5): the maps the session generator reads. */
@@ -250,7 +253,11 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             for (e in w.exercises) {
                 val key = SessionGenerator.loadKey(e.row.slotKey, e.exerciseId)
                 if (key in out) continue
-                val load = if (e.doc.calibrating) e.calibration.filter { (it.reps ?: 0) >= ExerciseProgress.calibrationReps(e.doc.reps) }.mapNotNull { it.loadKg }.maxOrNull()
+                // A ramp's load: the heaviest set done at its target reps, or stopped early with 3 reps in reserve inside the rep range
+                // (CAL-001 2.1.0: that set is the working load, D-116).
+                val load = if (e.doc.calibrating) e.calibration.filter { (it.reps ?: 0) >= ExerciseProgress.calibrationReps(e.doc.reps) ||
+                        ((it.reps ?: 0) >= e.doc.reps.first && (it.rir ?: 0.0) >= com.personalfitnesscoach.engine.progression.Calibration.RAMP_STOP_RIR - 1e-9) }
+                        .mapNotNull { it.loadKg }.maxOrNull()
                     else if (e.doc.loadFactor >= 1.0 - 1e-9) e.working.mapNotNull { it.loadKg }.maxOrNull() else null
                 if (load != null && load > 0) out[key] = load
             }
@@ -261,7 +268,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
     suspend fun latestWeight(): Double? = docs.all(WeightRecord).maxByOrNull { it.day }?.kg
 
     fun progressContext(u: UserState, recoveryOk: Boolean) =
-        ProgressContext(u.equipment.inventory, u.profile.level, u.age, u.flaggedScreen, recoveryOk)
+        ProgressContext(u.equipment.inventory, u.profile.level, u.age, u.flaggedScreen, recoveryOk, u.coarseFreeWeights)
 
     // ------------------------------------------------------------------------------------------------ pain (SAF-003/004)
     /** SAF-004 persistent-pain regions from the last 90 days of joint/tendon reports. */

@@ -122,13 +122,37 @@ class SessionPlayerTest {
         val cal = p.view()!!.lifts.first { it.next?.kind == SetKind.CALIBRATION && it.exercise.loadType in setOf(com.personalfitnesscoach.engine.model.LoadType.BARBELL,
             com.personalfitnesscoach.engine.model.LoadType.STACK) }
         val t1 = cal.next!!
+        // Every ramp set stops at its target reps or with 3 reps in reserve, whichever comes first (CAL-001 2.1.0, D-116).
+        assertEquals(3.0, t1.targetRir!!, 0.0)
         val r1 = p.log(cal.rowId, LiftEntry(t1.load, t1.reps.first, rir = 5.0))
         val t2 = r1.view.lifts.first { it.rowId == cal.rowId }.next!!
         assertEquals(SetKind.CALIBRATION, t2.kind)
+        assertEquals(3.0, t2.targetRir!!, 0.0)
         assertTrue("ramp step up ${t1.load} → ${t2.load}", t2.load!! > t1.load!!)
         val r2 = p.log(cal.rowId, LiftEntry(t2.load, t2.reps.first, rir = 3.0))
         assertTrue(r2.calibration is com.personalfitnesscoach.engine.progression.CalibrationStep.Found)
         assertTrue(r2.view.lifts.first { it.rowId == cal.rowId }.finished)
+    }
+
+    @Test fun `CAL-001 a light dumbbell takes the next pair at 5+ only outside the risk groups (D-116)`() = runBlocking {
+        // Who may: intermediate, 46, standard screening, no condition. Who may not: a beginner, someone of 66 (D-116, option C).
+        var checked = 0
+        for ((level, born, coarse) in listOf(Triple(Level.INTERMEDIATE, 1980, true), Triple(Level.BEGINNER, 1980, false), Triple(Level.INTERMEDIATE, 1960, false))) {
+            val (d, _) = Fixtures.data()
+            Fixtures.onboard(d, level = level, birthYear = born)
+            // No estimated maxes for dumbbell lifts: they calibrate from the light start.
+            val p = SessionPlayer(d)
+            start(d)
+            p.completeStage(Stage.WARMUP)
+            val lift = p.view()!!.lifts.firstOrNull { it.next?.kind == SetKind.CALIBRATION && it.exercise.loadType == com.personalfitnesscoach.engine.model.LoadType.DUMBBELL &&
+                (it.next?.load ?: 99.0) <= 7.5 } ?: continue
+            val t = lift.next!!
+            val next = p.log(lift.rowId, LiftEntry(t.load, t.reps.first, rir = 5.0)).view.lifts.first { it.rowId == lift.rowId }.next
+            if (coarse) assertTrue("$level $born: the next pair (${t.load} → ${next?.load})", next != null && next.kind == SetKind.CALIBRATION && next.load!! > t.load!!)
+            else assertTrue("$level $born: the start weight is the working weight (${t.load} → $next)", next == null || next.kind != SetKind.CALIBRATION)
+            checked++
+        }
+        assertEquals("all three people had a light dumbbell lift to find", 3, checked)
     }
 
     @Test fun `pauses over 10 minutes do not count towards the session minutes, shorter ones do`() = runBlocking {

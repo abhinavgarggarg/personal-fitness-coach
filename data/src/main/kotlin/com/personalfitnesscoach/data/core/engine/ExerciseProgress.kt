@@ -39,6 +39,8 @@ data class ProgressContext(
     val flaggedScreen: Boolean,
     /** PROG-001: tier FULL or MODIFIED and fewer than 2 fatigue signals on the day. */
     val recoveryOk: Boolean,
+    /** CAL-001 coarse steps on free weights for this user (D-116); off unless set. */
+    val coarseFreeWeights: Boolean = false,
 )
 
 /** The result of one exposure: the exercise's new state and, for ladders, the rung to use next time. */
@@ -118,7 +120,7 @@ object ExerciseProgress {
                 missed = set.reps!! < 1
                 // The reps done, not the reps asked for: a set short of its target is what the estimate and the working load go by.
                 lastReps = minOf(target, set.reps!!)
-                val step = Calibration.next(set.loadKg!!, lastReps, rir, i + 1, avail, ceiling, Calibration.coarseStepsAllowed(ex.loadType))
+                val step = Calibration.next(set.loadKg!!, lastReps, rir, i + 1, avail, ceiling, Calibration.coarseStepsAllowed(ex.loadType, ctx.coarseFreeWeights))
                 d += step.decisions
                 last = step.value
                 if (last !is CalibrationStep.Continue) break

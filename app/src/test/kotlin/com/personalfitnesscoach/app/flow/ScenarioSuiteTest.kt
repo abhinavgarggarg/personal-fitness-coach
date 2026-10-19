@@ -135,7 +135,8 @@ class ScenarioSuiteTest {
 
         /**
          * One set as asked, as far as the body allows, with honest reps in reserve. A working set stops at the target effort (reps in
-         * reserve), within the rep range; a ramp set does its target reps or as many as it can.
+         * reserve), within the rep range; a ramp set does its target reps or as many as it can, stopping early at
+         * the reps in reserve shown (CAL-001 2.1.0, D-116).
          */
         fun entry(e: Exercise, t: SetTarget): LiftEntry {
             val calibration = t.kind == SetKind.CALIBRATION
@@ -146,7 +147,7 @@ class ScenarioSuiteTest {
                 else -> {
                     val can = possible(e, load)
                     val aim = t.targetRir?.let { r -> maxOf(1, can - Math.round(r).toInt()) } ?: t.reps.last
-                    val reps = minOf(if (calibration) t.reps.first else minOf(t.reps.last, aim), can)
+                    val reps = minOf(if (calibration) (if (t.targetRir != null) minOf(t.reps.first, aim) else t.reps.first) else minOf(t.reps.last, aim), can)
                     if (t.kind == SetKind.WORKING) trained(e)
                     LiftEntry(load, reps, rir = minOf(5, can - reps).toDouble())
                 }

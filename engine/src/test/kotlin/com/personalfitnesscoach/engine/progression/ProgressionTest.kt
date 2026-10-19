@@ -220,6 +220,37 @@ class CalibrationTest {
             if (step is CalibrationStep.Continue) assertTrue(step.nextLoad > load && step.nextLoad <= load * 1.30 + 2.5)
         }
     }
+
+    @Test fun `TC-CAL-001c coarse steps on free weights only outside the risk groups, up to double, at RIR 5+ only`() {
+        val db = PlateMath.loads(LoadType.DUMBBELL, Inventory())
+        // 2.5 → 5 kg is +100%: with coarse steps the next pair is taken at "5+" (D-116, option C) …
+        assertEquals(CalibrationStep.Continue(5.0), Calibration.next(2.5, 10, 5.0, 1, db, coarseStepsAllowed = Calibration.coarseStepsAllowed(LoadType.DUMBBELL, true)).value)
+        // … never at "4 more" (the +10–15% band holds), and without them the start weight is the working weight (D-038).
+        assertTrue(Calibration.next(2.5, 10, 4.0, 1, db, coarseStepsAllowed = true).value is CalibrationStep.Found)
+        assertEquals(CalibrationStep.Found(2.5, null), Calibration.next(2.5, 10, 5.0, 1, db, coarseStepsAllowed = Calibration.coarseStepsAllowed(LoadType.DUMBBELL)).value)
+        // Who: not a beginner, under 60 (age known), standard screening, no health condition. Machines for everyone (D-070).
+        assertTrue(Calibration.freeWeightCoarseSteps(Level.INTERMEDIATE, 41, flaggedScreen = false, hasCondition = false))
+        assertFalse(Calibration.freeWeightCoarseSteps(Level.BEGINNER, 41, false, false))
+        assertFalse(Calibration.freeWeightCoarseSteps(Level.ADVANCED, 60, false, false))
+        assertFalse(Calibration.freeWeightCoarseSteps(Level.ADVANCED, null, false, false))
+        assertFalse(Calibration.freeWeightCoarseSteps(Level.ADVANCED, 41, true, false))
+        assertFalse(Calibration.freeWeightCoarseSteps(Level.ADVANCED, 41, false, true))
+        assertTrue(Calibration.coarseStepsAllowed(LoadType.STACK))
+        assertFalse(Calibration.coarseStepsAllowed(LoadType.BODYWEIGHT, true))
+        // At most double: 8 → 16 kg is taken, 4 → 12 kg (×3) is not.
+        assertEquals(CalibrationStep.Continue(16.0), Calibration.next(8.0, 10, 5.0, 1, listOf(8.0, 16.0, 24.0), coarseStepsAllowed = true).value)
+        assertEquals(CalibrationStep.Found(4.0, null), Calibration.next(4.0, 10, 5.0, 1, listOf(4.0, 12.0), coarseStepsAllowed = true).value)
+    }
+
+    @Test fun `TC-CAL-001d every ramp set stops with 3 reps in reserve, and a set stopped early gives the working load from what was done`() {
+        assertEquals(3.0, Calibration.RAMP_STOP_RIR, 0.0)
+        // 5 of 10 reps with 3 left at 20 kg: RIR 3 is the working-load rating; the set's estimate (20 × (1 + 8/30)) sets the working
+        // load for more reps, so it is never used for 10 reps it couldn't do.
+        val stopped = Calibration.next(20.0, 5, 3.0, 4, BAR).value as CalibrationStep.Found
+        assertEquals(20.0 * (1 + 8.0 / 30), stopped.startE1rm!!, 1e-9)
+        // The target reps done with 3 left: the load itself (no valid estimate at 10 + 3 > 12, INT-004).
+        assertEquals(CalibrationStep.Found(20.0, null), Calibration.next(20.0, 10, 3.0, 4, BAR).value)
+    }
 }
 
 class ReturnToTrainingTest {
