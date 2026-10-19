@@ -45,20 +45,21 @@ Two things these tests don't cover:
 Export, erase and restore of the app's own backup file is checked on every device in the device tests (Phase 3), and in scenario S28.
 
 ## Results
-GitHub Devices run 39297906315, branch `phase4/e5-device-tests` at 8feced0:
+GitHub Devices run 39306190583, branch `phase4/e5-device-tests` at 1500ba7:
 
 | | Android 16 | Android 14 | Android 10 |
 |---|---|---|---|
-| Checks passed | 29 of 29 | 29 of 29 | 28 of 28 |
-| Sets logged through the interruptions, all kept unchanged | 11 | 11 | 11 |
+| Checks passed | 28 of 28 | 29 of 29 | 27 of 27 |
+| Sets logged through the interruptions, all kept unchanged | 11 | 11 | 10 |
 | Upgrade from the Phase 3 build with a session left open | passed | passed | passed |
-| Stopped 0 / 0.05 / 0.15 / 0.3 s after a tap | not saved, saved, saved, saved | the same | the same |
-| Rest alert set again after reopening | yes | yes | yes |
-| Not encrypted: the database stays out | yes (0 files) | yes (0 files) | yes (0 files) |
+| The call | answered with the phone's call key; the test brought the phone app in front | the same | the same |
+| Stopped within about a second of a tap, 4 times | not saved, saved, saved, saved | the same | not saved, not saved, saved, saved |
+| Rest alert set while the rest runs, gone once skipped | in the background, stopped on screen (the rest had ended by the restart) | in the background, stopped on screen, after the restart | the same as Android 14 |
+| Not encrypted: the backup runs, the database stays out | yes | yes | yes |
 | Device-to-device: the database goes | yes | yes | can't be simulated |
 | Encrypted backup: back identical after a reinstall | yes, at install | yes, at install | can't be simulated |
 
-The four stops right after a tap gave both outcomes, and each was whole. Either the set and the session's next step were saved together, or nothing changed.
+The stops right after a tap gave both outcomes, and each was whole. Either the set and the session's next step were saved together, or nothing changed.
 
 ## What the runs and the review found
 **In the app:** on Android 10 and 11, the rules sent the training history only into an encrypted backup, so a phone-to-phone transfer (for example, when you get a new phone) would have left it behind. Android 12 and later already allowed it. The Android 10–11 rules now allow a device-to-device transfer too, checked by `tools/check_backup_rules.py` (the emulators can't simulate that transfer before Android 12).
