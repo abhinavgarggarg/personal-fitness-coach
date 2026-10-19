@@ -375,7 +375,9 @@ class Device(Smoke):
             self.fail(f"the emulator could not ring: {rang.strip()[:200]}")
         time.sleep(5)
         # Answered as a person would: "Answer" on the call alert if it has one; else the phone's call key, then the emulator console.
-        active = lambda: "active" in adb("emu", "gsm", "list", timeout=30)  # noqa: E731
+        # Active as the phone sees it: the emulator's modem (Android 10), or the phone's call list (newer emulators report no calls to
+        # the console).
+        active = lambda: "active" in adb("emu", "gsm", "list", timeout=30) or "state=ACTIVE" in adb("shell", "dumpsys", "telecom", timeout=60)  # noqa: E731
         alert = next((n for n in screen() if (n.text or n.desc).strip().lower() == "answer"), None)
         how = "not answered"
         if alert:
