@@ -30,11 +30,11 @@ sealed class CalibrationStep {
  * PROG-003; this reproduces the Phase 1 worked example (20 → 25 → 30 → 32.5 kg).
  */
 object Calibration {
-    /** D-070: at RIR 5+ a coarse step may at most double the load. */
-    private const val COARSE_STEP_MAX = 2.0
+    /** D-070, CAL-001 2.0.0: a big step may at most double the load. */
+    private val COARSE_STEP_MAX: Double get() = P.CAL_001.coarse_step_max_factor.toDouble()
 
-    /** D-116 (option C): free-weight coarse steps only below this age. */
-    private const val FREE_WEIGHT_COARSE_AGE_BELOW = 60
+    /** D-116 (option C): free-weight big steps only below this age. */
+    private val FREE_WEIGHT_COARSE_AGE_BELOW: Int get() = P.CAL_001.coarse_step_free_weight_age_below
 
     /** Starting load when the user enters known working weights: 90% of them, rounded down to real equipment. */
     fun startFromKnown(knownWorkingLoad: Double, available: List<Double>): Double {
@@ -70,14 +70,14 @@ object Calibration {
      * fewer, near failure — and people tend to judge themselves about a rep closer to failure than they are (Halperin 2022), so the
      * stop keeps "never above RPE 8" with a margin. The reps done and the rating then give the working load or its estimate.
      */
-    const val RAMP_STOP_RIR = 3.0
+    val RAMP_STOP_RIR: Double get() = P.CAL_001.ramp_set_stop_rir.toDouble()
 
     /**
      * The answers to "about how many more?" on a set where the next weight could only be a big step: the lower ends of 5–9, 10–19,
      * 20–29, 30–49 and 50 or more. A plain "5+" may mean exactly 5, and at 10 reps that makes the one-rep max as low as 1.5 × the load, so a
      * doubled weight could be beyond it (review of D-116): the count is what lets a big step be taken safely.
      */
-    val MORE_CHOICES: List<Double> = listOf(5.0, 10.0, 20.0, 30.0, 50.0)
+    val MORE_CHOICES: List<Double> get() = P.CAL_001.more_choices.map { it.toDouble() }
 
     /**
      * On free weights a big step goes by the range below the one chosen ("50 or more" counts as 30, "30–49" as 20 …): a count one
@@ -87,7 +87,7 @@ object Calibration {
     fun rangeBelow(count: Double): Double = MORE_CHOICES.lastOrNull { it < count - 1e-9 } ?: 0.0
 
     /** A big step leaves, on the person's own count, at least this many reps before the stop at [RAMP_STOP_RIR] (review of D-116). */
-    const val BIG_STEP_MIN_REPS = 2
+    val BIG_STEP_MIN_REPS: Int get() = P.CAL_001.big_step_min_reps
 
     /**
      * The heaviest load a big step may reach after [reps] done with at least [rir] more: the one-rep max that count implies at the least
@@ -160,7 +160,7 @@ object Calibration {
             // of reps left supports with room to spare ([bigStepLimit]); a plain "5+" never allows it. The next set still stops at
             // about 3 left, and its rating governs.
             if (coarseStepsAllowed && next <= load + 1e-9 && reportedRir >= 5.0 - 1e-9 && up != null && up <= load * COARSE_STEP_MAX + 1e-9 &&
-                up <= bigStepLimit(load, targetReps, if (freeWeight) rangeBelow(reportedRir) else reportedRir) + 1e-9) { next = up; coarse = true }
+                up <= bigStepLimit(load, targetReps, if (freeWeight && P.CAL_001.free_weight_count_range_below) rangeBelow(reportedRir) else reportedRir) + 1e-9) { next = up; coarse = true }
         }
         if (ceiling != null && next > ceiling + 1e-9) next = maxOf(load, available.filter { it <= ceiling + 1e-9 }.maxOrNull() ?: load)
         if (next <= load + 1e-9) {

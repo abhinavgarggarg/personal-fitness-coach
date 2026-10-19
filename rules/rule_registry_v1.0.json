@@ -1,6 +1,6 @@
 {
-  "registry_version": "2.0.0",
-  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 2.0.0 approved by Product Owner on 2026-10-19",
+  "registry_version": "3.0.0",
+  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 3.0.0 approved by Product Owner on 2026-10-19",
   "generated": "2026-10-19",
   "confidence_scale": [
     "High Evidence",
@@ -4951,10 +4951,10 @@
     },
     {
       "rule_id": "CAL-001",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "category": "calibration",
       "title": "Initial load calibration",
-      "statement": "Conservative start; after each set RIR 5+ -> +20-30%, 4 -> +10-15%, 3 -> working load, <=2 -> stop and use -5% next time; <=5 ramp sets; never above RPE 8; confirm at second exposure.",
+      "statement": "Conservative start; each ramp set is done to its target reps or until about 3 reps are left, whichever comes first, and the reps done are entered; after each set RIR 5+ -> +20-30%, 4 -> +10-15%, 3 or a set stopped short -> working load (with its estimate from the reps done), <=2 -> stop and use -5% next time; the working load is never more than the set supports for the bottom of the rep range; <=5 ramp sets; never above RPE 8; confirm at second exposure. When the equipment has no step inside the band, the screen asks about how many more reps were left (5-9, 10-19, 20-29, 30-49, 50 or more) and the next step, up to double the load, is taken only if that count - on free weights the range below the one chosen - leaves at least 2 reps before the 3-left stop: on machine stacks for everyone, and on free weights for someone who is not a beginner, is under 60, has a standard screening and no health condition or injury; otherwise the ramp ends and this weight is the working weight.",
       "parameters": {
         "rir_5plus_increase_pct": [
           20,
@@ -4972,23 +4972,37 @@
         "sessions": [
           1,
           4
-        ]
+        ],
+        "ramp_set_stop_rir": 3,
+        "coarse_step_max_factor": 2,
+        "big_step_min_reps": 2,
+        "more_choices": [
+          5,
+          10,
+          20,
+          30,
+          50
+        ],
+        "coarse_step_free_weight_age_below": 60,
+        "free_weight_count_range_below": true
       },
       "confidence": "Expert Practice",
       "evidence": [
         "Halperin2022"
       ],
-      "uncertainty": "",
+      "uncertainty": "Expert Practice. The stop and the closer count rely on effort ratings, which run about one rep conservative at 12 reps or fewer (Halperin 2022); counts far from failure are less accurate, and the big step relies on the lower end of the count's range with 2 reps to spare (on free weights the range below the one chosen), so it is kept from beginners, people aged 60 or over, gentle mode, health conditions and injuries. A person who taps 'about 3 left' without entering fewer reps is asked once whether they did them all. Low-rep ramps (3-5 reps) can still end harder after +25% from '5+' (1 set in about 100 in simulation). Simulated effects assume honest ratings; a very weak person for whom the empty bar is already too heavy is a separate, existing limit of the equipment.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-19",
       "affected_algorithms": [
         "calibration"
       ],
       "tests": [
         "TC-CAL-001a",
-        "TC-CAL-001b"
+        "TC-CAL-001b",
+        "TC-CAL-001c",
+        "TC-CAL-001d"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "MAJOR: The PO's option C for light free weights (D-116), made safe by a closer count before any big step (machine stacks included), with the risk groups kept on the band; and a stop at about 3 reps left on every ramp set, with the reps done entered, because the bands alone let about 1 ramp set in 10 go past RPE 8 in simulation (Phase 4 Part 2; independent safety review of the 2.1.0 draft, findings 1-9). — Finding a weight: a stop at about 3 reps left on every ramp set, and bigger steps on light weights only as far as a closer count allows (Phase 4 Part 2) (registry 3.0.0, D-117)",
       "status": "approved"
     },
     {

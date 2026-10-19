@@ -1,13 +1,15 @@
-# Finding your weights: Registry 3.0.0 for your approval
+# Finding your weights: Registry 3.0.0 (approved)
 
-Date: 19 October 2026 · Decision D-116 · Change set `rules/proposals/registry_3.0.0.json` · Impact `docs/phase4/impact_registry_3_0_0.md`
+Date: 19 October 2026 · Decisions D-116, D-117 · Change set `rules/changes/registry_3.0.0.json` · Impact `docs/phase4/impact_registry_3_0_0.md`
+
+**Approved by you on 19 October 2026 (D-117) and applied.**
 
 ## Summary
 On 19 October you chose **option C**: faster dumbbell and kettlebell weights for experienced lifters, with beginners, people aged 60 or over, gentle mode and health conditions kept on the safe path.
 
 I built it. The independent safety review then showed that my first version could, in some cases, put a weight close to the person's maximum. It also found a bigger problem: the weight-finding rule itself, as approved in Phase 1, can push a set close to failure on every kind of equipment.
 
-Both are now fixed in one rule update, **Registry 3.0.0**. It changes one rule, CAL-001 (finding your weight). The reviewer re-checked it and found **nothing that blocks approval**. It needs your approval before it goes into the app.
+Both are now fixed in one rule update, **Registry 3.0.0**. It changes one rule, CAL-001 (finding your weight). The reviewer re-checked it and found **nothing that blocks approval**, and you approved it.
 
 ## What I found
 

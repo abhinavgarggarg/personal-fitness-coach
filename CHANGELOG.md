@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-10-19 — Registry 3.0.0: finding your weights (approved)
+- The PO chose option C for light dumbbells and kettlebells (D-116). Built, reviewed by an independent safety reviewer (2 high, 2 medium, 5 low on the first draft; re-check: nothing blocking, 1 medium and 4 low), redrawn and approved as Registry 3.0.0 (CAL-001 2.0.0, MAJOR, D-117), applied with `tools/research_update.py`.
+- Every weight-finding set stops at its target reps or with about 3 reps left, and the reps done are entered ("Reps done" on screen; "Did you do all N reps?" when 3 or fewer left is tapped with the reps untouched). A set stopped short ends the ramp; the working weight is never more than the set supports for the bottom of the rep range.
+- Before a big step (no step inside the +20–30% band, at most double) the screen asks "about how many more?" (5–9, 10–19, 20–29, 30–49, 50+); the step is only as big as that count allows with 2 reps to spare, on free weights by the range below the one chosen; a plain "5+" never takes one. Free weights: not beginners, under 60, standard screening, no condition or injury, not a pain-lightened exercise. Machine stacks: everyone (D-070 took the step on "5+").
+- Simulated: experienced lifter, ramp sets past RPE 8 8 of 78 → 1 of 136; dumbbells at 85% of the real weight in weeks 3–5 (7–11 before); 66-year-old beginner unchanged; answers one range too high leave every big step at least 4 possible reps.
+- Also: a ramp set stopped early inside the rep range counts as last week's load (PROG-007); weight-finding sets store "how many more" up to 50; backup format 2 (format 1 still restores); History corrections up to 50 on weight-finding sets.
+- Report `docs/phase4/registry_3_0_0_report.md`.
+
 ## 2026-10-19 — Phase 4 Part 2: the 30-scenario suite
 - 30 scenarios written at the PO's request (D-114), from the Phase 2 journeys, test strategy and acceptance criteria; 29 and 30 keep their Phase 2 meaning. Each runs through the app's own controller on the real data layer and engine over simulated days, on every push (`ScenarioSuiteTest` S01–S30, about 15 seconds). List: `docs/phase4/scenarios.md`.
 - Found and fixed (D-115; no rule, number or wording change): a weight found by calibration is now the next session's working weight (it was ramped to again for up to four sessions, so an exercise could go a month without a working set), read by the reps done, with a stopping set's e1RM capping the working weight; "welcome back" after weeks without opening the app; "only 15 minutes left" now uses the 15 minutes (it kept 4) and times a weight-finding ramp whole; sets logged or corrected above 100 reps or 500 kg are refused.
