@@ -326,4 +326,36 @@ class ScreensTest {
         shown(s(R.string.wk_red_flag))
     }
 
+    @Test fun `PROG-008 - after two form-not-solid answers the workout offers the easier version, and one tap swaps to it`() {
+        val clock = FixedClock(0, ZoneId.of("UTC")).also { it.setDay(monday, hour = 8) }
+        val store = InMemoryRowStore()
+        var data: PfcData? = null
+        val c = AppController({ PfcData(store, clock, "test").also { data = it } }, FakePlatform(), "test")
+        runBlocking {
+            onboardQuickly(c)
+            // Every lift with an easier version has "form not solid" twice on record (Progression sets offerRegression).
+            for (e in com.personalfitnesscoach.engine.library.Library.all) if (e.regressionId != null)
+                data!!.docs.put(com.personalfitnesscoach.data.core.model.ExerciseState, com.personalfitnesscoach.data.core.model.ExerciseState(e.id,
+                    prescription = com.personalfitnesscoach.engine.progression.Prescription(20.0, e.defaultRepRange, e.defaultRepRange.first,
+                        com.personalfitnesscoach.engine.progression.ProgressionAction.HOLD, offerRegression = true), lastDoneDay = monday - 2))
+            c.openCheckIn(); c.submitCheckIn(); c.startWorkout()
+            var guard = 0
+            while ((c.screen.value as Screen.Workout).view.step !is Step.Lift && guard++ < 6) (c.screen.value as Screen.Workout).view.stage?.let { c.completeStage(it) }
+            val offered = (c.screen.value as Screen.Workout).view.lifts.firstOrNull { it.item.easierOffer != null && !it.hasLoggedWork }
+            org.junit.Assert.assertNotNull("some lift today offers its easier version", offered)
+            c.select(offered!!.rowId)
+        }
+        val actions = Actions(CoroutineScope(SupervisorJob()), c, Dispatchers.Main, doubleTapMs = 0)
+        compose.setContent { PfcTheme { PfcApp(actions) } }
+        compose.waitForIdle()
+        val lift = ((c.screen.value as Screen.Workout).view.step as Step.Lift).lift
+        val easier = lift.item.easierOffer!!
+        val label = s(R.string.wk_try_easier, com.personalfitnesscoach.app.ui.workout.exerciseName(easier))
+        shown(label)
+        assertTouchTargets()
+        tap(label)
+        val after = (c.screen.value as Screen.Workout).view.lifts.first { it.rowId == lift.rowId }
+        assertEquals(easier, after.exercise.id)
+        assertEquals(null, after.item.easierOffer)
+    }
 }
