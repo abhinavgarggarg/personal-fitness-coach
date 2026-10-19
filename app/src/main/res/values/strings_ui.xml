@@ -425,7 +425,12 @@
     <string name="wk_set_ramp">Warm-up set %1$d of %2$d</string>
     <string name="wk_set_calibration">Finding your weight · set %1$d</string>
     <string name="wk_set_added">Extra set %1$d</string>
-    <string name="wk_calibration_hint">Do the reps with good form, then say how many more you could have done. The next weight follows from your answer.</string>
+    <string name="wk_calibration_hint">Do the reps with good form, and stop sooner if you could only do about 3 more. Set the reps you did, then tap how many more you could have done. The next weight follows from your answer.</string>
+    <string name="wk_calibration_more">The next weight is a big jump, so it needs a closer count: about how many more could you have done?</string>
+    <string name="wk_reps_done">Reps done</string>
+    <string name="wk_cal_all_q">Did you do all %1$d reps?</string>
+    <string name="wk_cal_all_yes">Yes, all %1$d</string>
+    <string name="wk_cal_fewer">Fewer: I’ll set the reps</string>
     <string name="wk_last_time">Last time: %1$s</string>
     <string name="wk_set_summary">%1$s × %2$s</string>
     <string name="wk_done_as_planned">Done as planned</string>
@@ -433,6 +438,11 @@
     <string name="wk_effort_q">How many more could you have done?</string>
     <string name="wk_effort_q_rpe">Reps left in reserve (0 = none left)</string>
     <string name="wk_effort_5plus">5+</string>
+    <string name="wk_effort_5_9">5–9</string>
+    <string name="wk_effort_10_19">10–19</string>
+    <string name="wk_effort_20_29">20–29</string>
+    <string name="wk_effort_30_49">30–49</string>
+    <string name="wk_effort_50plus">50+</string>
     <string name="wk_form_q">Did your form feel solid?</string>
     <string name="form_yes">Yes</string>
     <string name="form_unsure">Not sure</string>

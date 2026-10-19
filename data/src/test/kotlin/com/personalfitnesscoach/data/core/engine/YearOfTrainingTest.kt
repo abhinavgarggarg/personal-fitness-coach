@@ -165,9 +165,16 @@ class YearOfTrainingTest {
                     val target = ExerciseProgress.calibrationReps(item.reps)
                     var cur = item.load!!
                     for (n in 1..5) {
-                        val rir = minOf(6, body.possible(ex, cur) - target).coerceAtLeast(0).toDouble()
-                        d.sessions.logSet(e.row.id, set(SetKind.CALIBRATION, cur, target, null, rir), "{}")
-                        val step = Calibration.next(cur, target, rir, n, avail, null, Calibration.coarseStepsAllowed(ex.loadType)).value
+                        // As the app asks (CAL-001 2.1.0, D-116): the target reps, stopping early at 3 reps in reserve.
+                        val can = body.possible(ex, cur)
+                        val reps = minOf(target, maxOf(1, can - Calibration.RAMP_STOP_RIR.toInt()))
+                        val coarse = Calibration.coarseStepsAllowed(ex.loadType, t.user.coarseFreeWeights && !e.doc.painReduced)
+                        val left = (can - reps).coerceAtLeast(0)
+                        // Before a big step the app asks "about how many more?" (D-116): the lower end of the honest count's range.
+                        val rir = if (Calibration.bigStepAhead(cur, avail, coarse)) Calibration.MORE_CHOICES.lastOrNull { left >= it } ?: left.toDouble()
+                            else minOf(6, left).toDouble()
+                        d.sessions.logSet(e.row.id, set(SetKind.CALIBRATION, cur, reps, null, rir), "{}")
+                        val step = Calibration.next(cur, reps, rir, n, avail, null, coarse, askedReps = target).value
                         if (step is CalibrationStep.Continue) cur = step.nextLoad else break
                     }
                 } else if (loaded && item.unit == DoseUnit.REPS) {

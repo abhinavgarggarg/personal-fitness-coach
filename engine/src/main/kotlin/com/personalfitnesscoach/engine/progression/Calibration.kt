@@ -30,8 +30,11 @@ sealed class CalibrationStep {
  * PROG-003; this reproduces the Phase 1 worked example (20 → 25 → 30 → 32.5 kg).
  */
 object Calibration {
-    /** D-070: at RIR 5+ a coarse machine-stack step may at most double the load. */
-    private const val COARSE_STEP_MAX = 2.0
+    /** D-070, CAL-001 2.0.0: a big step may at most double the load. */
+    private val COARSE_STEP_MAX: Double get() = P.CAL_001.coarse_step_max_factor.toDouble()
+
+    /** D-116 (option C): free-weight big steps only below this age. */
+    private val FREE_WEIGHT_COARSE_AGE_BELOW: Int get() = P.CAL_001.coarse_step_free_weight_age_below
 
     /** Starting load when the user enters known working weights: 90% of them, rounded down to real equipment. */
     fun startFromKnown(knownWorkingLoad: Double, available: List<Double>): Double {
@@ -39,8 +42,73 @@ object Calibration {
         return available.filter { it <= target + 1e-9 }.maxOrNull() ?: (available.minOrNull() ?: PlateMath.round(target))
     }
 
-    /** D-070: coarse steps are allowed for selectorised machines and cables only. */
-    fun coarseStepsAllowed(loadType: com.personalfitnesscoach.engine.model.LoadType): Boolean = loadType == com.personalfitnesscoach.engine.model.LoadType.STACK
+    /**
+     * Coarse steps: selectorised machines and cables for everyone (D-070); dumbbells, kettlebells and barbells only when
+     * [freeWeights] — see [freeWeightCoarseSteps] (D-116).
+     */
+    fun coarseStepsAllowed(loadType: com.personalfitnesscoach.engine.model.LoadType, freeWeights: Boolean = false): Boolean = when (loadType) {
+        com.personalfitnesscoach.engine.model.LoadType.STACK -> true
+        com.personalfitnesscoach.engine.model.LoadType.DUMBBELL, com.personalfitnesscoach.engine.model.LoadType.KETTLEBELL,
+        com.personalfitnesscoach.engine.model.LoadType.BARBELL -> freeWeights
+        else -> false
+    }
+
+    /** Dumbbells, kettlebells and barbells (a big step on them goes by [rangeBelow] the count given, D-116). */
+    fun isFreeWeight(loadType: com.personalfitnesscoach.engine.model.LoadType): Boolean = loadType == com.personalfitnesscoach.engine.model.LoadType.DUMBBELL ||
+        loadType == com.personalfitnesscoach.engine.model.LoadType.KETTLEBELL || loadType == com.personalfitnesscoach.engine.model.LoadType.BARBELL
+
+    /**
+     * D-116 (the PO's option C): free weights take a coarse step only for someone who is not a beginner, is under 60 (age known), has a
+     * standard screening (not gentle mode) and no health condition. Everyone else keeps the band.
+     */
+    fun freeWeightCoarseSteps(level: com.personalfitnesscoach.engine.model.Level, age: Int?, flaggedScreen: Boolean, hasCondition: Boolean): Boolean =
+        level != com.personalfitnesscoach.engine.model.Level.BEGINNER && age != null && age < FREE_WEIGHT_COARSE_AGE_BELOW && !flaggedScreen && !hasCondition
+
+    /**
+     * Every ramp set stops at its target reps or with this many reps in reserve, whichever comes first (D-116): CAL-001's working-load
+     * rating, one rep inside RPE 8. The bands alone can't keep a set within RPE 8 — at 10 reps, +10–15% from "4 more" is about 5 reps
+     * fewer, near failure — and people tend to judge themselves about a rep closer to failure than they are (Halperin 2022), so the
+     * stop keeps "never above RPE 8" with a margin. The reps done and the rating then give the working load or its estimate.
+     */
+    val RAMP_STOP_RIR: Double get() = P.CAL_001.ramp_set_stop_rir.toDouble()
+
+    /**
+     * The answers to "about how many more?" on a set where the next weight could only be a big step: the lower ends of 5–9, 10–19,
+     * 20–29, 30–49 and 50 or more. A plain "5+" may mean exactly 5, and at 10 reps that makes the one-rep max as low as 1.5 × the load, so a
+     * doubled weight could be beyond it (review of D-116): the count is what lets a big step be taken safely.
+     */
+    val MORE_CHOICES: List<Double> get() = P.CAL_001.more_choices.map { it.toDouble() }
+
+    /**
+     * On free weights a big step goes by the range below the one chosen ("50 or more" counts as 30, "30–49" as 20 …): a count one
+     * range too high must still leave the first reps well short of the maximum (re-check of D-116). A machine stack, which a set can
+     * be stopped on safely, goes by the range chosen.
+     */
+    fun rangeBelow(count: Double): Double = MORE_CHOICES.lastOrNull { it < count - 1e-9 } ?: 0.0
+
+    /** A big step leaves, on the person's own count, at least this many reps before the stop at [RAMP_STOP_RIR] (review of D-116). */
+    val BIG_STEP_MIN_REPS: Int get() = P.CAL_001.big_step_min_reps
+
+    /**
+     * The heaviest load a big step may reach after [reps] done with at least [rir] more: the one-rep max that count implies at the least
+     * (Epley), less [BIG_STEP_MIN_REPS] + [RAMP_STOP_RIR] reps. After "5+" at 10 reps that is +29%, inside the band anyway; "30 or
+     * more" allows a doubled weight.
+     */
+    fun bigStepLimit(load: Double, reps: Int, rir: Double): Double =
+        load * (1.0 + (reps + rir) / P.INT_004.divisor) / (1.0 + (BIG_STEP_MIN_REPS + RAMP_STOP_RIR) / P.INT_004.divisor)
+
+    /**
+     * Whether the next ramp set after [load] could only be a big step (no heavier step inside the band, the next one at most double):
+     * the screen then asks "about how many more?" instead of "5+".
+     */
+    fun bigStepAhead(load: Double?, available: List<Double>, coarseStepsAllowed: Boolean, ceiling: Double? = null): Boolean {
+        if (!coarseStepsAllowed || load == null) return false
+        if (ceiling != null && (PlateMath.nextAbove(load, available) ?: return false) > ceiling + 1e-9) return false
+        val band = P.CAL_001.rir_5plus_increase_pct
+        if (PlateMath.choose(load * (1.0 + (band[0] + band[1]) / 200.0), available) > load + 1e-9) return false
+        val up = PlateMath.nextAbove(load, available) ?: return false
+        return up > load * (1.0 + band[1] / 100.0) * (1.0 + P.PROG_003.over_target_tolerance_pct / 100.0) + 1e-9 && up <= load * COARSE_STEP_MAX + 1e-9
+    }
 
     /** Conservative first guess: the lightest load the equipment allows. */
     fun startingLoad(available: List<Double>): Double? = available.minOrNull()
@@ -51,12 +119,13 @@ object Calibration {
      * @param reportedRir the answer to "how many more could you have done?" (use 5.0 for "5+")
      * @param setsDone ramp sets completed for this exercise including this one
      * @param ceiling CAL-002: an old known number caps the ramp (the ramp never goes above it)
-     * @param coarseStepsAllowed selectorised machines and cables (LoadType.STACK): at RIR 5+ a step beyond the band is taken when
-     *   the equipment has nothing smaller, up to double the load (D-070). Free weights keep the band (no overshoot with a dumbbell
-     *   or kettlebell, Part 1 review).
+     * @param coarseStepsAllowed machine stacks (D-070), and free weights outside the risk groups (D-116): when the equipment has
+     *   nothing inside the band, a bigger step up to double the load — only as far as [bigStepLimit] allows on the person's count.
+     * @param askedReps the reps the set asked for: a set stopped short of them ends the ramp (review of D-116)
+     * @param freeWeight a dumbbell, kettlebell or barbell: a big step goes by [rangeBelow] the count given
      */
     fun next(load: Double, targetReps: Int, reportedRir: Double, setsDone: Int, available: List<Double>, ceiling: Double? = null,
-             coarseStepsAllowed: Boolean = false): EngineResult<CalibrationStep> {
+             coarseStepsAllowed: Boolean = false, askedReps: Int = targetReps, freeWeight: Boolean = false): EngineResult<CalibrationStep> {
         val inputs = mapOf("load" to load, "reps" to targetReps, "rir" to reportedRir, "setsDone" to setsDone)
         fun d(reason: ReasonKey, out: Map<String, Any?>) =
             listOf(Decision(DecisionKind.CALIBRATION, listOf(RuleIds.CAL_001, RuleIds.PROG_003), reason, inputs, out))
@@ -66,8 +135,10 @@ object Calibration {
             val next = Progression.lowerLoad(load * (1.0 - P.CAL_001.stop_reduction_pct / 100.0), load, available)
             return EngineResult(CalibrationStep.Stop(next), d(ReasonKey.CALIBRATION_STOPPED, mapOf("nextSessionLoad" to next)))
         }
-        if (reportedRir < 4.0 - 1e-9) {
-            val e = E1rm.fromSet(load, targetReps, reportedRir)
+        // Stopped short of the reps asked for (the stop at about 3 left): the weight is found, whatever more was rated — the estimate
+        // goes by the stop's 3 at most, so a set stopped early is never followed by a step sized for a full one (review of D-116).
+        if (reportedRir < 4.0 - 1e-9 || targetReps < askedReps) {
+            val e = E1rm.fromSet(load, targetReps, minOf(reportedRir, RAMP_STOP_RIR))
             return EngineResult(CalibrationStep.Found(load, e), d(ReasonKey.CALIBRATION_DONE, mapOf("workingLoad" to load, "e1rm" to e)))
         }
         if (setsDone >= P.CAL_001.max_ramp_sets) {
@@ -84,10 +155,12 @@ object Calibration {
             val up = PlateMath.nextAbove(load, available)
             val limit = load * (1.0 + band[1] / 100.0) * (1.0 + P.PROG_003.over_target_tolerance_pct / 100.0)
             next = if (up != null && up <= limit + 1e-9) up else load
-            // Very light loads on a machine stack (a 5 kg step from 5 kg is +100%): at RIR 5+ the next step is taken anyway,
-            // up to double the load, so calibration does not stop at a load far below a working weight (review R3-13, D-070). The next
-            // set's effort rating still governs: RIR ≤ 2 stops, RIR 3 is the working load.
-            if (coarseStepsAllowed && next <= load + 1e-9 && reportedRir >= 5.0 - 1e-9 && up != null && up <= load * COARSE_STEP_MAX + 1e-9) { next = up; coarse = true }
+            // Very light loads (a 5 kg step from 5 kg is +100%): at RIR 5+ the next step is taken anyway, up to double the load, so
+            // calibration does not stop far below a working weight (review R3-13, D-070, D-116) — but only as far as the person's count
+            // of reps left supports with room to spare ([bigStepLimit]); a plain "5+" never allows it. The next set still stops at
+            // about 3 left, and its rating governs.
+            if (coarseStepsAllowed && next <= load + 1e-9 && reportedRir >= 5.0 - 1e-9 && up != null && up <= load * COARSE_STEP_MAX + 1e-9 &&
+                up <= bigStepLimit(load, targetReps, if (freeWeight && P.CAL_001.free_weight_count_range_below) rangeBelow(reportedRir) else reportedRir) + 1e-9) { next = up; coarse = true }
         }
         if (ceiling != null && next > ceiling + 1e-9) next = maxOf(load, available.filter { it <= ceiling + 1e-9 }.maxOrNull() ?: load)
         if (next <= load + 1e-9) {

@@ -84,12 +84,20 @@ data class SetTarget(
     val reps: IntRange,
     val unit: DoseUnit,
     val perSide: Boolean,
-    /** Target reps in reserve for a working set (0 on a last set to failure); null for ramp-up sets. */
+    /**
+     * Target reps in reserve for a working set (0 on a last set to failure); on a weight-finding set, the reps in reserve to stop at
+     * even before its target reps (CAL-001 2.1.0, D-116); null for ramp-up sets.
+     */
     val targetRir: Double?,
     /** PROG-008: ask "form felt solid?" after this set (last working set of a main lift or a new exercise). */
     val askForm: Boolean,
     /** The user added this set (SAF-006). */
     val userAdded: Boolean = false,
+    /**
+     * A weight-finding set whose next weight could only be a big step (D-116): "5+" is asked as "about how many more?" —
+     * [com.personalfitnesscoach.engine.progression.Calibration.MORE_CHOICES] — so the step is only as big as that count allows.
+     */
+    val askHowManyMore: Boolean = false,
 )
 
 /** One exercise of the workout as the player shows it. */
@@ -228,7 +236,8 @@ class SessionPlayer(private val d: PfcData) {
     private suspend fun build(w: StoredWorkout, s0: ActiveState): PlayerView {
         val now = d.clock.nowMs()
         val doc = w.doc
-        val lifts = w.exercises.sortedBy { it.row.position }.mapNotNull { e -> liftView(w, e, s0) }
+        val user = d.bridge.user()
+        val lifts = w.exercises.sortedBy { it.row.position }.mapNotNull { e -> liftView(w, e, s0, user) }
         val stages = stagesOf(w, lifts)
         // A reset resume point (a restore resets it) never sends the user back: the logged work shows how far they got.
         val inferred = when {
@@ -261,7 +270,7 @@ class SessionPlayer(private val d: PfcData) {
         val start = w.row.startedAtMs ?: now
         val pausedNow = s.pausedAtMs?.let { p -> (now - p).takeIf { it > PAUSE_EXCLUDED_MS } ?: 0L } ?: 0L
         val elapsed = ((now - start - s.pausedMs - pausedNow - openIdle(w, s, now)) / 60_000.0).coerceIn(0.0, 600.0)
-        val u = d.bridge.user()
+        val u = user
         val program = d.docs.get(com.personalfitnesscoach.data.core.model.ProgramRecord)
         val prompt = Effort.promptStyle(u?.profile?.level ?: com.personalfitnesscoach.engine.model.Level.BEGINNER, program?.weeksTraining ?: 0)
         val restWin = s.currentRowId?.let { id -> lifts.firstOrNull { it.rowId == id } }?.item?.let { RestWindow(it.restMinSec, it.restDefaultSec, it.restMaxSec, "") }
@@ -288,16 +297,20 @@ class SessionPlayer(private val d: PfcData) {
         else -> s.stage.ordinal > stage.ordinal
     }
 
-    private suspend fun liftView(w: StoredWorkout, e: StoredExercise, s: ActiveState): LiftView? {
+    private suspend fun liftView(w: StoredWorkout, e: StoredExercise, s: ActiveState, u: com.personalfitnesscoach.data.core.engine.UserState?): LiftView? {
         val ex = Library[e.exerciseId] ?: return null
         val last = d.sessions.history(ex.id, w.day - 365, w.day).lastOrNull { (day, x) -> x.row.workoutId != w.id && day <= w.day }?.second?.working ?: emptyList()
         val calDone = e.row.id in s.calibrationDone
-        val next = if (e.row.status == Status.SKIPPED || e.row.status == Status.DONE) null else target(ex, e, s, calDone, last.isEmpty())
+        // A big step ahead (D-116): the screen asks "about how many more?" on this set, so the step is only as big as that count allows.
+        val coarse = u != null && Calibration.coarseStepsAllowed(ex.loadType, u.coarseFreeWeights && !e.doc.painReduced)
+        val avail = if (coarse) PlateMath.loadsFor(ex, u!!.equipment.inventory) else emptyList()
+        val next = if (e.row.status == Status.SKIPPED || e.row.status == Status.DONE) null else target(ex, e, s, calDone, last.isEmpty(), coarse, avail)
         return LiftView(e.row.id, e.row.position, ex, e.doc, e.row.status, e.sets, next, last, calDone, e.row.slotKey)
     }
 
     /** The next set of an exercise, or null when it is finished for today. */
-    private fun target(ex: Exercise, e: StoredExercise, s: ActiveState, calDone: Boolean, firstExposure: Boolean): SetTarget? {
+    private fun target(ex: Exercise, e: StoredExercise, s: ActiveState, calDone: Boolean, firstExposure: Boolean, coarse: Boolean = false,
+                       avail: List<Double> = emptyList()): SetTarget? {
         val item = e.doc
         val warm = e.sets.count { it.kind == SetKind.WARMUP }
         val cal = e.sets.count { it.kind == SetKind.CALIBRATION }
@@ -311,7 +324,10 @@ class SessionPlayer(private val d: PfcData) {
         if (calibrates(ex, item)) {
             if (calDone || cal >= P.CAL_001.max_ramp_sets) return null
             val reps = ExerciseProgress.calibrationReps(item.reps)
-            return SetTarget(SetKind.CALIBRATION, cal + 1, P.CAL_001.max_ramp_sets, load, reps..reps, item.unit, item.perSide, null, askForm = false)
+            // Every weight-finding set stops at its target reps or with 3 reps in reserve, whichever comes first, so the ramp stays
+            // within RPE 8 however big the step; the reps done and the rating then set the next step (CAL-001 2.1.0, D-116).
+            return SetTarget(SetKind.CALIBRATION, cal + 1, P.CAL_001.max_ramp_sets, load, reps..reps, item.unit, item.perSide, Calibration.RAMP_STOP_RIR,
+                askForm = false, askHowManyMore = cal + 1 < P.CAL_001.max_ramp_sets && Calibration.bigStepAhead(load, avail, coarse, item.calibrationCeiling))
         }
         if (work >= item.sets) return null
         val lastSet = work + 1 == item.sets
@@ -506,7 +522,8 @@ class SessionPlayer(private val d: PfcData) {
                 val rir = requireNotNull(entry.rir) { "a calibration set needs the effort answer" }
                 // The reps done (a set short of its target says the load is heavier than the rating alone), as the replay reads it.
                 val step = Calibration.next(load, minOf(t.reps.first, entry.reps ?: t.reps.first), rir, lift.sets.count { it.kind == SetKind.CALIBRATION } + 1, avail, item.calibrationCeiling,
-                    Calibration.coarseStepsAllowed(lift.exercise.loadType))
+                    Calibration.coarseStepsAllowed(lift.exercise.loadType, u.coarseFreeWeights && !item.painReduced), askedReps = t.reps.first,
+                    freeWeight = Calibration.isFreeWeight(lift.exercise.loadType))
                 dec += step.decisions
                 calStep = step.value
                 next = when (val st = step.value) {

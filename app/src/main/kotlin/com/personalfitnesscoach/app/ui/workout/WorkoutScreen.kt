@@ -82,6 +82,7 @@ import com.personalfitnesscoach.data.core.player.Step
 import com.personalfitnesscoach.data.core.session.DrillRef
 import com.personalfitnesscoach.data.core.session.SetKind
 import com.personalfitnesscoach.data.core.session.SetLimits
+import com.personalfitnesscoach.engine.progression.Calibration
 import com.personalfitnesscoach.data.core.session.Stage
 import com.personalfitnesscoach.data.core.session.Status
 import com.personalfitnesscoach.engine.dose.Effort
@@ -372,13 +373,18 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
             stringResource(when (it) { FormCheck.YES -> R.string.form_yes; FormCheck.UNSURE -> R.string.form_unsure; else -> R.string.form_no })
         }, { form = it })
     }
-    if (adjusting) {
+    // A weight-finding set may stop early (about 3 reps left): its reps are always shown, set to the target, to change before the
+    // effort answer saves them (review of D-116).
+    val repsShown = adjusting || t.kind == SetKind.CALIBRATION
+    if (adjusting && t.load != null) {
         // The fields stop at what a set can be logged with (SetLimits): nothing typed is refused only when saved.
-        if (t.load != null) NumberField(stringResource(R.string.wk_weight), load, { x -> load = x?.takeIf { it in 0.0..SetLimits.MAX_LOAD_KG } })
-        NumberField(stringResource(if (t.unit == DoseUnit.SECONDS) R.string.wk_seconds else R.string.wk_reps), amount.toDouble(),
-            { x -> amount = (x?.toInt() ?: 0).coerceIn(0, if (t.unit == DoseUnit.SECONDS) 1000 else SetLimits.MAX_REPS) }, decimals = false)
-        if (!canLog) Note(stringResource(R.string.wk_enter_weight))
+        NumberField(stringResource(R.string.wk_weight), load, { x -> load = x?.takeIf { it in 0.0..SetLimits.MAX_LOAD_KG } })
     }
+    if (repsShown) {
+        NumberField(stringResource(if (t.unit == DoseUnit.SECONDS) R.string.wk_seconds else if (t.kind == SetKind.CALIBRATION) R.string.wk_reps_done else R.string.wk_reps),
+            amount.toDouble(), { x -> amount = (x?.toInt() ?: 0).coerceIn(0, if (t.unit == DoseUnit.SECONDS) 1000 else SetLimits.MAX_REPS) }, decimals = false)
+    }
+    if (adjusting && !canLog) Note(stringResource(R.string.wk_enter_weight))
     when (t.kind) {
         SetKind.WARMUP -> {
             PrimaryButton(stringResource(R.string.wk_done_as_planned), { logIt(null) }, enabled = canLog)
@@ -386,7 +392,18 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
         }
         SetKind.CALIBRATION -> {
             Note(stringResource(R.string.wk_calibration_hint))
-            EffortButtons(v.effortPrompt, includeFivePlus = true, enabled = canLog) { rir -> logIt(rir) }
+            if (t.askHowManyMore) Note(stringResource(R.string.wk_calibration_more))
+            // An answer of 3 or fewer left with the reps untouched may be a set stopped early whose reps weren't set: asked once, since
+            // the working weight goes by the reps done (review of D-116 and its re-check).
+            var askAll by remember(l.rowId, t.kind, t.number) { mutableStateOf(false) }
+            var pending by remember(l.rowId, t.kind, t.number) { mutableStateOf(Calibration.RAMP_STOP_RIR) }
+            if (askAll) {
+                Text(stringResource(R.string.wk_cal_all_q, t.reps.last), style = MaterialTheme.typography.bodyLarge)
+                PrimaryButton(stringResource(R.string.wk_cal_all_yes, t.reps.last), { val r = pending; askAll = false; logIt(r) }, enabled = canLog)
+                SecondaryButton(stringResource(R.string.wk_cal_fewer), { askAll = false })
+            } else EffortButtons(v.effortPrompt, includeFivePlus = true, enabled = canLog, howManyMore = t.askHowManyMore) { rir ->
+                if (rir <= Calibration.RAMP_STOP_RIR && t.unit == DoseUnit.REPS && amount == t.reps.last) { pending = rir; askAll = true } else logIt(rir)
+            }
         }
         else -> {
             if (!adjusting) PrimaryButton(stringResource(R.string.wk_done_as_planned), { logIt(t.targetRir) }, enabled = canLog)
@@ -459,12 +476,16 @@ internal fun TargetNumbers(load: Double?, dose: String) {
 
 /** INT-006: "how many more could you have done?" 0 / 1 / 2 / 3 / 4+ (and 5+ while finding a weight, CAL-001). One tap logs the set. */
 @Composable
-private fun EffortButtons(style: Effort.PromptStyle, includeFivePlus: Boolean, enabled: Boolean = true, onPick: (Double) -> Unit) {
+private fun EffortButtons(style: Effort.PromptStyle, includeFivePlus: Boolean, enabled: Boolean = true, howManyMore: Boolean = false, onPick: (Double) -> Unit) {
     Text(stringResource(if (style == Effort.PromptStyle.RIR_QUESTION) R.string.wk_effort_q else R.string.wk_effort_q_rpe),
         style = MaterialTheme.typography.bodyLarge)
     val five = stringResource(R.string.wk_effort_5plus)
+    // Before a big step "5+" is asked more closely (D-116): 5–9, 10–19, 20–29, 30–49, 50 or more, each saved as its lower end.
+    val more = listOf(stringResource(R.string.wk_effort_5_9), stringResource(R.string.wk_effort_10_19), stringResource(R.string.wk_effort_20_29),
+        stringResource(R.string.wk_effort_30_49), stringResource(R.string.wk_effort_50plus)).zip(com.personalfitnesscoach.engine.progression.Calibration.MORE_CHOICES)
     val options: List<Pair<String, Double>> =
-        if (includeFivePlus) listOf("0" to 0.0, "1" to 1.0, "2" to 2.0, "3" to 3.0, "4" to 4.0, five to 5.0)
+        if (includeFivePlus && howManyMore) listOf("0" to 0.0, "1" to 1.0, "2" to 2.0, "3" to 3.0, "4" to 4.0) + more
+        else if (includeFivePlus) listOf("0" to 0.0, "1" to 1.0, "2" to 2.0, "3" to 3.0, "4" to 4.0, five to 5.0)
         else Effort.rirOptions.map { it to (Effort.rirFromAnswer(it) ?: 4.0) }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         options.forEach { (label, rir) ->

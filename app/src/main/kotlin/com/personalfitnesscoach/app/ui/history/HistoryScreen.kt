@@ -155,8 +155,10 @@ private fun EditSet(e: SetEdit, problem: Boolean) {
         }
         if (e.kind != SetKind.WARMUP) {
             val rir = e.rir ?: 2.0
+            // A weight-finding set may hold "about how many more" up to 50 (D-116); other sets 0–10.
+            val maxRir = if (e.kind == SetKind.CALIBRATION) 50.0 else 10.0
             Stepper(stringResource(R.string.edit_rir, minutes(rir)), { a.edit { changeSetEdit { it.copy(rir = ((it.rir ?: 2.0) - 1.0).coerceAtLeast(0.0)) } } },
-                { a.edit { changeSetEdit { it.copy(rir = ((it.rir ?: 2.0) + 1.0).coerceAtMost(10.0)) } } }, minusEnabled = rir > 0.0, plusEnabled = rir < 10.0)
+                { a.edit { changeSetEdit { it.copy(rir = ((it.rir ?: 2.0) + 1.0).coerceAtMost(maxRir)) } } }, minusEnabled = rir > 0.0, plusEnabled = rir < maxRir)
         }
         if (problem) Body(stringResource(R.string.edit_problem))
         if (e.confirmDelete) {

@@ -5,8 +5,8 @@
 package com.personalfitnesscoach.engine.registry
 
 object Registry {
-    const val VERSION: String = "2.0.0"
-    const val SHA256: String = "b661789de066f22ae973770570d548611166239f1a6f0b7fa27907cdbe15b7b5"
+    const val VERSION: String = "3.0.0"
+    const val SHA256: String = "f0c2fa02e3748f6aaca64308c6b52103a6acd1cd3d33f71fc3ae98d9d22af464"
     const val RULE_COUNT: Int = 152
 
     /** Every rule ID with its confidence label, for the coach's "Why?" detail. */
@@ -1292,6 +1292,12 @@ object P {
         const val max_rpe: Int = 8
         const val known_weights_start_pct: Int = 90
         val sessions: List<Int> = listOf(1, 4)
+        const val ramp_set_stop_rir: Int = 3
+        const val coarse_step_max_factor: Int = 2
+        const val big_step_min_reps: Int = 2
+        val more_choices: List<Int> = listOf(5, 10, 20, 30, 50)
+        const val coarse_step_free_weight_age_below: Int = 60
+        const val free_weight_count_range_below: Boolean = true
     }
     object SUB_001 {
         const val skill_margin: Int = 1
