@@ -364,14 +364,15 @@ class Device(Smoke):
             self.fail("no data to back up")
         adb("shell", "bmgr", "enable", "true")
         adb("shell", "bmgr", "transport", TRANSPORT)
-        # The local test transport reports end-to-end encryption (the real flag from Android 12, the test flag before), as a phone with
-        # a screen lock does; the app's backup rules include its data only then.
+        # End-to-end encryption as on a phone with a screen lock: a PIN, and the local test transport reporting encryption (the real
+        # flag from Android 12, the test flag before). The app's backup rules include its data only then.
+        self.log = [f"pin: {' '.join(adb('shell', 'locksettings', 'set-pin', '1111').split())[:120]}"]
         adb("shell", "settings", "put", "secure", "backup_local_transport_parameters", "fake_encryption_flag=true,is_encrypted=true")
         time.sleep(2)
         adb("shell", "bmgr", "wipe", TRANSPORT, self.pkg)
         adb("shell", "am", "force-stop", self.pkg)
         out = adb("shell", "bmgr", "backupnow", self.pkg, timeout=240)
-        self.log = [f"backupnow: {' '.join(out.split())[:300]}"]
+        self.log.append(f"backupnow: {' '.join(out.split())[:300]}")
         if "Success" not in out:
             self.fail(f"the encrypted backup did not run: {out.strip()[:300]}")
         sets = adb("shell", "bmgr", "list", "sets")
@@ -397,6 +398,7 @@ class Device(Smoke):
         self.ok(f"an end-to-end encrypted backup brought back all {after['sets']} sets and {after['done']} sessions after a reinstall")
 
         self.step = "no backup without encryption"
+        adb("shell", "locksettings", "clear", "--old", "1111")
         adb("shell", "settings", "put", "secure", "backup_local_transport_parameters", "fake_encryption_flag=false,is_encrypted=false")
         adb("shell", "bmgr", "wipe", TRANSPORT, self.pkg)
         adb("shell", "bmgr", "backupnow", self.pkg, timeout=180)
@@ -482,4 +484,11 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    try:
+        sys.exit(main(sys.argv))
+    except SystemExit:
+        raise
+    except Exception as e:  # an adb call that timed out or failed: reported like a failed step
+        import traceback
+        print(f"::error title=E5: unexpected error::{type(e).__name__}: {str(e)[:400]} / {' / '.join(traceback.format_exc().splitlines()[-6:])[:800]}")
+        sys.exit(1)
