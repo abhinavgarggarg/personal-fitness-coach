@@ -5,8 +5,8 @@
 package com.personalfitnesscoach.engine.registry
 
 object Registry {
-    const val VERSION: String = "4.1.0"
-    const val SHA256: String = "0cd89107f8dee9a2367b6cb265a6a1c0545404dddd3a45bdcdec4399569b7d8d"
+    const val VERSION: String = "5.0.0"
+    const val SHA256: String = "f13a429b811f7a79ddab36fec220e7c1787d3b6b0ef32f2122ecc4c6c1fe76cc"
     const val RULE_COUNT: Int = 152
 
     /** Every rule ID with its confidence label, for the coach's "Why?" detail. */
@@ -35,12 +35,12 @@ object Registry {
         "VOL-006" to "Expert Practice",
         "VOL-007" to "Expert Practice",
         "VOL-008" to "Expert Practice",
-        "INT-001" to "Moderate Evidence",
+        "INT-001" to "Limited Evidence",
         "INT-002" to "Moderate Evidence",
         "INT-003" to "Moderate Evidence",
         "INT-004" to "Limited Evidence",
         "INT-005" to "Limited Evidence",
-        "INT-006" to "Moderate Evidence",
+        "INT-006" to "Expert Practice",
         "INT-007" to "Expert Practice",
         "REP-001" to "High Evidence",
         "REP-002" to "Expert Practice",
@@ -100,7 +100,7 @@ object Registry {
         "RDY-006" to "Expert Practice",
         "RDY-007" to "Product Rule (not an evidence claim)",
         "LOAD-001" to "Expert Practice",
-        "LOAD-002" to "Moderate Evidence",
+        "LOAD-002" to "Expert Practice",
         "LOAD-003" to "Expert Practice",
         "LOAD-004" to "Limited Evidence",
         "LOAD-005" to "Expert Practice",

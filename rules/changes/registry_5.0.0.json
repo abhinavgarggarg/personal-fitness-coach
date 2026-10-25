@@ -1,30 +1,32 @@
 {
-  "registry_version": "4.1.0",
+  "registry_version": "5.0.0",
   "base_registry_version": "4.0.0",
-  "kind": "MINOR",
+  "kind": "MAJOR",
   "date": "2026-10-25",
   "title": "Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review)",
-  "summary": "An independent evidence review (Phase 4 Part 4) found ratings higher than the sources actually read. The Product Owner chose ratings that match (D-122): 14 rules whose sources were located but never opened become Expert Practice; pre-exercise screening (SAF-001, SAF-002) becomes Moderate (consensus); AGE-001 Moderate; the estimated-maximum rules INT-004 and INT-005 Limited. No rule's wording changes; the ratings change the coach's 'How sure?' answers only. SAF-010 moves to health-condition table 1.0.2, approved with these changes: cancer spread to the bones follows a supervised programme from the care team; pregnancy uses the stricter of the Canadian 2019 guideline and ACOG; a past foot ulcer or Charcot foot needs a doctor's OK. Source records are corrected: ACOG 804's three details actually come from the Canadian 2019 guideline (checked); the 2022 bone-metastases recommendations are read in full and the app now follows them for bone spread (condition table 1.0.2); ADA Standards of Care 2026 section 5, ACOG Committee Opinion 650 and Campbell 2022 are added as read sources; the FDA and EU summaries now include the exclusions that matter for this app; every source located but not yet opened is listed as pending.",
+  "summary": "An independent evidence review and its re-check (Phase 4 Part 4) found ratings higher than the sources actually read. The Product Owner chose ratings that match (D-122): 14 rules whose sources were located but never opened, and two whose actual claim rests on unread sources (LOAD-002, INT-006), become Expert Practice; INT-001's reps-in-reserve mapping becomes Limited; pre-exercise screening (SAF-001, SAF-002) becomes Moderate (consensus); AGE-001 Moderate; the estimated-maximum rules INT-004 and INT-005 Limited. No rule's wording changes; the ratings change the coach's 'How sure?' answers only. SAF-010 moves to health-condition table 1.0.2 (MAJOR: the table's limits are stricter), approved with these changes: cancer spread to the bones follows a supervised programme from the care team; pregnancy uses the stricter of the Canadian 2019 guideline and ACOG; a past foot ulcer or Charcot foot needs a doctor's OK. Source records are corrected: ACOG 804's three details actually come from the Canadian 2019 guideline (checked); the 2022 bone-metastases recommendations are read in full and the app now follows them for bone spread (condition table 1.0.2); ADA Standards of Care 2026 section 5, ACOG Committee Opinion 650 and Campbell 2022 are added as read sources; the FDA and EU summaries now include the exclusions that matter for this app; every source located but not yet opened is listed as pending.",
   "approval": {
     "by": "Product Owner",
     "date": "2026-10-25",
     "reference": "D-122"
   },
-  "safety_review": "Phase 4 Part 4 independent evidence review (findings 1, 2, 3, 4 and 7). The ratings change nothing the app does. The condition-table changes make the cancer, pregnancy and diabetic-foot entries stricter, as the review recommended and the Product Owner chose; they are re-checked by an independent reviewer before the Phase 4 gate.",
+  "safety_review": "Phase 4 Part 4 independent evidence review (findings 1, 2, 3, 4 and 7) and its re-check (findings 1-8). The ratings change nothing the app does. The condition-table changes make the cancer, pregnancy and diabetic-foot entries stricter, as the review recommended and the Product Owner chose (pregnancy: the stricter of the two guidelines everywhere, per the re-check); they are re-checked by the independent reviewers before the Phase 4 gate.",
   "sources_add": {
     "ADA26": {
       "citation": "American Diabetes Association Professional Practice Committee. 5. Facilitating Positive Health Behaviors and Well-being to Improve Health Outcomes: Standards of Care in Diabetes-2026. Diabetes Care. 2026;49(Suppl 1):S89-S131.",
-      "verification": "checked 2026-10-25 (full section, hosted copy; independent evidence review): recommendations 5.34 and 5.36-5.38 agree with the t2d entry (break up sitting every 30 minutes; 150+ minutes over at least 3 days with no more than 2 days in a row off; resistance training 2-3 times a week on non-consecutive days; balance work for older adults); its pre-exercise list includes a history of foot ulcers or Charcot foot (now in diabetes_feet, table 1.0.2)",
-      "url": "https://doi.org/10.2337/dc26-S005"
+      "verification": "checked 2026-10-19 by the independent evidence reviewer (part of section 5 in a hosted copy whose text stopped part-way: recommendations 5.34-5.39 and the pre-exercise paragraph; the hypoglycaemia and complications text not seen): the recommendations seen agree with the t2d entry (break up sitting every 30 minutes; 150+ minutes over at least 3 days with no more than 2 days in a row off; resistance training 2-3 times a week on non-consecutive days; balance work for older adults); the pre-exercise paragraph lists a history of foot ulcers or Charcot foot (now in diabetes_feet, table 1.0.2)",
+      "url": "https://education.weitzmaninstitute.org/sites/default/files/course/2025-12/Facilitating%20Positive%20Health%20Behaviors%20and%20Well-being%20to%20Improve%20Health%20Outcomes%20-%20Standards%20of%20Care%20in%20Diabetes-2026.pdf",
+      "note": "DOI 10.2337/dc26-S005 (could not be opened)."
     },
     "CAM22": {
-      "citation": "Campbell KL, Cormie P, Weller S, et al. Exercise Recommendation for People With Bone Metastases: Expert Consensus for Health Care Providers and Exercise Professionals. JCO Oncol Pract. 2022;18(5):e697-e709. doi:10.1200/OP.21.00454",
-      "verification": "checked 2026-10-25 (full text, university repository copy; independent evidence review): risk assessment and consultation with the medical team before exercise; prescription by a physiotherapist or clinical exercise physiologist with cancer training; supervised instruction before unsupervised exercise; avoid rapid or loaded end-range movement at the lesion and high loads on the spine and the hip end of the thigh bone; start low and progress slowly; watch for new or increasing pain, new weakness or numbness and bladder or bowel change. The app follows a supervised programme from the care team for bone spread (table 1.0.2)",
-      "url": "https://doi.org/10.1200/OP.21.00454"
+      "citation": "Campbell KL, Cormie P, Weller S, et al. Exercise Recommendation for People With Bone Metastases: Expert Consensus for Health Care Providers and Exercise Professionals. JCO Oncol Pract. 2022. doi:10.1200/OP.21.00454",
+      "verification": "checked 2026-10-25 by the independent evidence reviewer (full text, university repository copy): risk assessment and consultation with the medical team before exercise; prescription by a physiotherapist or clinical exercise physiologist with cancer training; supervised instruction before unsupervised exercise, which can follow; avoid rapid or loaded end-range movement at the lesion and high-load tests at the spine and the hip end of the thigh bone; near a lesion, caution: start with no or low load and progress slowly; watch for new or increasing pain, new weakness or numbness and bladder or bowel change. The app follows a supervised programme from the care team for bone spread (table 1.0.2); a way back to the app's plan after the supervised start is for the clinician review",
+      "url": "https://napier-repository.worktribe.com/OutputFile/2840638"
     },
     "ACOG15": {
-      "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 650 (2015, reaffirmed 2019; replaced by No. 804 in 2020).",
-      "verification": "checked 2026-10-25 (full text, hosted copy; independent evidence review): absolute contraindications include placenta praevia after 26 weeks, a multiple pregnancy at risk of premature labour, severe anaemia, pre-eclampsia or pregnancy-induced hypertension, an incompetent cervix or cerclage; relative ones include an unevaluated arrhythmia, chronic bronchitis, extreme under- or overweight, poorly controlled seizures or hyperthyroidism, heavy smoking, orthopaedic limits and an extremely sedentary lifestyle; warning signs add headache, muscle weakness affecting balance and calf pain or swelling. Two summaries of No. 804 report the same lists and add abdominal pain"
+      "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 650. Obstet Gynecol. 2015;126(6):e135-e142 (reaffirmed 2019; replaced by No. 804 in 2020).",
+      "verification": "checked 2026-10-25 by the independent evidence reviewer (full text, hosted copy): absolute contraindications include persistent second- or third-trimester bleeding, placenta praevia after 26 weeks, a multiple pregnancy at risk of premature labour, severe anaemia, pre-eclampsia or pregnancy-induced hypertension, an incompetent cervix or cerclage, restrictive lung disease and haemodynamically significant heart disease; relative ones include anaemia, an unevaluated arrhythmia, chronic bronchitis, extreme under- or overweight, poorly controlled seizures or hyperthyroidism, heavy smoking, orthopaedic limits and an extremely sedentary lifestyle; warning signs include chest pain, dizziness, headache, muscle weakness affecting balance, calf pain or swelling and amniotic fluid leakage; avoid scuba diving; up to 6,000 ft appears safe for lowlanders. For No. 804: the ObG Project summary lists the warning signs (adding abdominal pain); a comparison table gives the 26-week cut-off and multiple pregnancy under ACOG 2015/2017/2020",
+      "url": "https://gerringongphysio.com/wp-content/uploads/2026/01/Physical-Activity-and-Exercise-During-Pregnancy.pdf"
     }
   },
   "sources_update": {
@@ -41,7 +43,9 @@
       "verification": "checked 2026-10-19 and 2026-10-25 (primary text): software needs a medical purpose of its own to be a medical device; wellness or fitness apps do not qualify; the stated intended purpose decides; software 'intended to alleviate pain by recommending personalised rehabilitation exercises' is given as medical-device software, which the app's pain-adapted handling of arthritis and back pain comes close to: a regulatory question for any public release (D-058)"
     },
     "WHOSTEPS": {
-      "note": "The protocol is in the WHO STEPS surveillance manual; the WHO 2011 expert-consultation report (ISBN 9789241501491) is the primary source still to read. The app's instructions match the protocol as reported by Statistics Canada 2012."
+      "citation": "WHO STEPwise approach to noncommunicable disease risk factor surveillance (STEPS): waist-circumference protocol (STEPS manual).",
+      "url": "",
+      "note": "The protocol is in the WHO STEPS manual (not yet opened); the WHO 2011 expert-consultation report (ISBN 9789241501491) is also still to read. The app's instructions match the protocol as reported by Statistics Canada 2012 (Patry-Parisien et al., checked). The earlier citation named an MRC toolkit summary that was never read."
     },
     "LeSuer1997": {
       "verification": "partly checked 2026-10-19 (part of the abstract) and 2026-10-25 (two secondary sources: Whisenant 2003, JSCR; an arXiv 2026 review): 67 untrained students; loads of 10 reps or fewer taken to failure; correlations r > 0.95, but only 2 of 7 formulas matched the bench press maximum and all underestimated the deadlift; the app's reps-in-reserve version was not tested"
@@ -60,7 +64,7 @@
     "Bosquet2013 (located, not yet opened)",
     "Brzycki1993 (located, not yet opened)",
     "Buchheit2013 (located, not yet opened)",
-    "Epley1985 (located, not yet opened)",
+    "Epley1985 (an unpublished chart: unverified, nothing to open)",
     "Foster1998 (located, not yet opened)",
     "Foster2001 (located, not yet opened)",
     "Fradkin2010 (located, not yet opened)",
@@ -330,8 +334,8 @@
     {
       "rule_id": "SAF-010",
       "from_version": "1.0.2",
-      "to_version": "1.1.0",
-      "change": "MINOR",
+      "to_version": "2.0.0",
+      "change": "MAJOR",
       "reason": "The health-condition table moves to 1.0.2 (D-122, after the Phase 4 Part 4 evidence review): cancer that has spread to the bones follows a supervised programme from the care team; pregnancy uses the stricter of the Canadian 2019 guideline and ACOG; a past foot ulcer or Charcot foot needs a doctor's OK; the internal stop-sign text is in words.",
       "parameters_replace": {
         "table": "health_conditions",
@@ -372,7 +376,50 @@
           "copd",
           "cancer"
         ]
-      }
+      },
+      "evidence_add": [
+        "ACOG15",
+        "ACOG20",
+        "CAM19",
+        "CAM22",
+        "ADA26"
+      ],
+      "uncertainty": "Benefit of exercise is High Evidence for type 2 diabetes, knee/hip osteoarthritis, high blood pressure and pregnancy; nearly every numeric cap is an Expert Practice translation of guideline intensity into app controls. Stroke, COPD and cancer entries rest on less-verified sources. No diagnosis, no clinical values, no treatment claims (D-058); the table names conditions and adapts training to them, which FDA 2026 and MDCG 2019-11 make a regulatory question for any public release (D-122)."
+    },
+    {
+      "rule_id": "CAL-002",
+      "from_version": "1.0.2",
+      "to_version": "1.0.3",
+      "change": "PATCH",
+      "reason": "The note named INT-004's accuracy as Moderate; INT-004 is Limited since this change set.",
+      "uncertainty": "e1RM formula accuracy is Limited (INT-004, D-122); the 90% start and the age reductions follow existing CAL-001/REG-004 values rather than direct evidence for self-reported numbers, which may be optimistic."
+    },
+    {
+      "rule_id": "LOAD-002",
+      "from_version": "1.0.1",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Rated Moderate, but its timing claim (asking at least 10 minutes after) rests on Foster 2001, not yet opened; the abstracts read (Harkin 2016, Michie 2009) are about prompting behaviour change, not timing (evidence re-check, D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its timing claim (asking at least 10 minutes after) rests on Foster 2001, not yet opened; the abstracts read (Harkin 2016, Michie 2009) are about prompting behaviour change, not timing."
+    },
+    {
+      "rule_id": "INT-006",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Rated Moderate, but Halperin 2022's abstract found no clear difference by training background; Helms 2016 is not yet opened (evidence re-check, D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): Halperin 2022's abstract found no clear difference by training background; Helms 2016 is not yet opened."
+    },
+    {
+      "rule_id": "INT-001",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Rated Moderate, but the reps-in-reserve = 10 − RPE mapping rests on Zourdos 2016 and Helms 2016, not yet opened; Halperin 2022's abstract covers the size of the error, not the mapping (evidence re-check, D-122).",
+      "confidence": "Limited Evidence",
+      "uncertainty": "RIR error ~1 rep; larger far from failure and in novices. Rating lowered on 25 Oct 2026 (D-122): the reps-in-reserve = 10 − RPE mapping rests on Zourdos 2016 and Helms 2016, not yet opened; Halperin 2022's abstract covers the size of the error, not the mapping."
     }
   ]
 }

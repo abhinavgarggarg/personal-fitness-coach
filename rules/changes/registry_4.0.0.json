@@ -77,7 +77,10 @@
         "bone_loading_heel_drops_weeks": 4,
         "bone_loading_hops_age_below": 65,
         "bone_loading_pain_lookback_days": 28
-      }
+      },
+      "evidence_add": [
+        "ROS22"
+      ]
     }
   ]
 }

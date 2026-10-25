@@ -128,7 +128,7 @@
     <string name="onb_goal_suggested">Suggested for you</string>
     <string name="onb_goal_rank">Goal %1$d</string>
     <string name="onb_weight_off">Turn off weight features (no weight or waist tracking)</string>
-    <string name="onb_goal_expectation">What to expect: in studies of people carrying extra weight who didn’t change what they ate, %5$d to %6$d minutes of activity a week gave on average about %1$d to %2$d kg less and a %3$d to %4$d cm smaller waist over a few months. Results vary from person to person. Strength training helps keep your muscle.</string>
+    <string name="onb_goal_expectation">What to expect: in studies of people carrying extra weight who weren’t put on a diet, %5$d to %6$d minutes of exercise a week gave on average about %1$d to %2$d kg less and a %3$d to %4$d cm smaller waist over a few months. Results vary from person to person. Strength training helps keep your muscle.</string>
     <string name="problem_no_priority">Pick at least one goal.</string>
     <string name="problem_blocked_goal">That goal isn’t offered right now because of a health answer.</string>
     <string name="goal_fat_loss">Lose fat, keep muscle</string>
@@ -803,7 +803,7 @@
     <string name="why_confidence">How sure: %1$s</string>
     <string name="why_rule_id">Rule %1$s</string>
     <string name="why_conf_high">strong research evidence</string>
-    <string name="why_conf_moderate">good research evidence</string>
+    <string name="why_conf_moderate">good research evidence or an expert consensus</string>
     <string name="why_conf_limited">some research evidence</string>
     <string name="why_conf_expert">common coaching practice</string>
     <string name="why_conf_product">a choice made for this app, not a research finding</string>

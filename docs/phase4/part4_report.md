@@ -1,6 +1,6 @@
 # Phase 4, Part 4 report: safety and evidence audit
 
-Date: 25 October 2026 · Decisions D-119 to D-122 · Change sets `rules/changes/registry_3.0.1.json`, `registry_4.0.0.json`, `registry_4.1.0.json` · Health-condition table 1.0.2 · Tests `Part4AuditEngineTest`, `Part4AuditDataTest`, `AccessibilityOnDeviceTest`, `SpeedOnDeviceTest`
+Date: 25 October 2026 · Decisions D-119 to D-122 · Change sets `rules/changes/registry_3.0.1.json`, `registry_4.0.0.json`, `registry_5.0.0.json` · Health-condition table 1.0.2 · Tests `Part4AuditEngineTest`, `Part4AuditDataTest`, `AccessibilityOnDeviceTest`, `SpeedOnDeviceTest`
 
 ## Summary
 Part 4 checked three things: that the app does what its rules say and tells you only what is true; that each rule's evidence is what we claim; and that the app works for people using a screen reader, large text or a slow phone.
@@ -8,7 +8,7 @@ Part 4 checked three things: that the app does what its rules say and tells you 
 Two independent reviewers looked at the app. One thought like a cautious strength coach and tester, the other like an exercise scientist who checks sources. Between them they found **25 problems: 5 high, 12 medium and 8 low**.
 
 - **Fixed in the app without changing any rule (D-120).** The most important: a person too weak for the empty bar was given a weight they couldn't lift; bodyweight exercises disappeared on every lighter day; confirming a warning sign the same day skipped the gentle first session back; and several on-screen messages promised things that didn't happen.
-- **You decided eight things on 25 October**, each time choosing the cautious option I recommended. Four became **Registry 4.0.0** (D-121) and four became **Registry 4.1.0 and health-condition table 1.0.2** (D-122).
+- **You decided eight things on 25 October**, each time choosing the cautious option I recommended. Four became **Registry 4.0.0** (D-121) and four became **Registry 5.0.0 and health-condition table 1.0.2** (D-122).
 - **On the test phones:** Android's own accessibility checks found **no errors** on any of the 5 phones. (RESULTS FROM THE LAST RUN: see section 5.)
 - **Re-checks:** (TO FILL)
 
@@ -39,10 +39,10 @@ Each fix has a test that reproduces the reviewer's case.
 | Form not solid and reps missed | 5% lighter next time, with the form tip | PROG-008 2.0.0 |
 | Cancer that has spread to the bones | No training plan: follow a supervised programme from the care team | Condition table 1.0.2 |
 | Pregnancy | The stricter of the Canadian and US (ACOG) guidelines wherever they differ, with the warning signs of both | Condition table 1.0.2 |
-| Evidence ratings | Match what was actually read | Registry 4.1.0 |
+| Evidence ratings | Match what was actually read | Registry 5.0.0 |
 | Diabetes with foot numbness | A past foot ulcer or Charcot foot needs a doctor's OK first | Condition table 1.0.2 |
 
-For pregnancy this means: placenta praevia from 26 weeks (not 28); twins at risk of early labour; severe anaemia; and high blood pressure caused by the pregnancy all now mean "follow your provider instead of a training plan". ACOG's other cautions, such as an unchecked irregular heartbeat, heavy smoking or very little activity before pregnancy, need your provider's OK. The warning signs now include headache, calf pain or swelling, muscle weakness that affects balance, and tummy pain.
+For pregnancy this means: placenta praevia from 26 weeks (not 28); twins at risk of early labour; severe anaemia; high blood pressure caused by the pregnancy; ongoing bleeding in the second or third trimester; and restrictive lung disease all now mean "follow your provider instead of a training plan". ACOG's other cautions, such as an unchecked irregular heartbeat, heavy smoking or very little activity before pregnancy, need your provider's OK. So do any anaemia and any other significant medical condition. The warning signs now include any chest pain or dizziness, headache, calf pain or swelling, muscle weakness that affects balance, and tummy pain. The tips say to avoid scuba diving and to check with your provider before exercising above 1,800 m.
 
 ## 3. Evidence: what was read
 I looked up the sources still pending again (19 October), and the evidence reviewer checked my notes and read further (25 October).
@@ -51,24 +51,25 @@ I looked up the sources still pending again (19 October), and the evidence revie
 |---|---|---|
 | Peterson 2011 (strength training and muscle, 50+) | Abstract | About +1.1 kg lean mass; agrees with FL-003 |
 | Fragala 2019 (strength training for older adults) | Full text | 2–3 days a week, working towards 70–85% of the maximum, power work at 40–60%; agrees with FL-003 |
-| ADA Standards of Care 2026, section 5 (diabetes) | Full section (a hosted copy) | Agrees with the type 2 diabetes entry; lists a past foot ulcer or Charcot foot as a reason to see a doctor first, now in the app |
-| ACOG 650 (2015, pregnancy) | Full text (a hosted copy) | Stricter than the Canadian guideline in places; now applied |
-| ACOG 804 (2020, pregnancy) | Not opened (refused three times) | Two summaries report the same lists as ACOG 650. **Correction:** my note said three details came from ACOG; they came from the Canadian guideline |
-| Campbell 2022 (exercise with bone metastases) | Full text (a university copy) | Supervised start, avoid loaded bending and twisting at the lesion. **Correction:** my note said the app agreed; it didn't, and now it follows the care team |
+| ADA Standards of Care 2026, section 5 (diabetes) | Part of the section (a hosted copy that stopped part-way) | The recommendations seen agree with the type 2 diabetes entry. Its list of reasons to see a doctor first includes a past foot ulcer or Charcot foot, now in the app |
+| ACOG 650 (2015, pregnancy) | Full text (a hosted copy) | Stricter than the Canadian guideline in places; now applied everywhere they differ |
+| ACOG 804 (2020, pregnancy) | Not opened (refused three times) | A summary of it lists the same warning signs plus tummy pain; a comparison table gives the same 26-week cut-off. **Correction:** my note said three details came from ACOG; they came from the Canadian guideline |
+| Campbell 2022 (exercise with bone metastases) | Full text (a university copy) | Supervised start; near the affected bone, avoid fast or loaded end-of-range movement and start with little or no load. **Correction:** my note said the app agreed; it didn't, and now it follows the care team |
 | Campbell 2019 (exercise in cancer) | Abstract | The lymphoedema caution is still to read in full |
 | LeSuer 1997 (estimating the maximum) | Part of the abstract, plus two papers describing it | Estimates differ by formula and lift. The app's version wasn't tested, so INT-004 and INT-005 are now rated Limited |
 | WHO waist protocol | Through a paper that uses it | The app's instructions match; the WHO report itself still to read |
 | FDA general wellness (Jan 2026), EU MDCG 2019-11 | Full texts | See section 6 |
 
-**Ratings that were higher than what was read (Registry 4.1.0):**
-- 14 rules whose sources were found but never opened are now "expert practice". Examples are rep ranges, rest times and warm-ups.
+**Ratings that were higher than what was read (Registry 5.0.0):**
+- 14 rules whose sources were found but never opened are now "expert practice". Examples are rep ranges, rest times and warm-ups. Two more follow after the re-check: the timing of the session-effort question, and teaching beginners to rate effort.
 - The health screening rules are now "moderate (consensus)".
 - AGE-001 is now "moderate".
-- The two rules that estimate your maximum are now "limited".
+- The two rules that estimate your maximum, and the rule that turns "reps left" into effort, are now "limited".
+- The coach's wording for "moderate" now reads "good research evidence or an expert consensus", since the screening rules are a consensus.
 
 Nothing the app does changes; only the coach's "How sure?" answers do. A rating goes back up when its sources are read. All 47 sources found but not yet opened are now listed as pending.
 
-**Wording on screen:** the fat-loss expectation now says it is the average in studies of people carrying extra weight, and that results vary. "Strength training keeps your muscle" now says "helps keep".
+**Wording on screen:** the fat-loss expectation now says it is the average in studies of people carrying extra weight who weren't put on a diet, counts minutes of exercise, and says results vary. "Strength training keeps your muscle" now says "helps keep".
 
 ## 4. Accessibility on the phones
 A new device test runs Android's Accessibility Test Framework on every main screen:
@@ -108,6 +109,7 @@ The app's health-condition list names conditions and adapts training to them. It
 
 ## 7. Kept for the clinician review before any public release
 These were found, but changing them would loosen a limit or needs a clinician's judgement, so they stay as they are:
+- cancer spread to the bones: a way back to the app's plan once the care team's supervised start is done;
 - lymphoedema: slow upper-body progression and a supervised start;
 - diabetic eye disease: easy effort only, even after an eye doctor's OK;
 - spine fractures: a physio's OK instead of a doctor's;

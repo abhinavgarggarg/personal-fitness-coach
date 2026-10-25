@@ -8,8 +8,8 @@ Three safety boundaries change after the Phase 4 Part 4 independent safety revie
 
 | Rule | Change | Safety rule | Algorithms | Code that uses it | Tests (registry → found) |
 | --- | --- | --- | --- | --- | --- |
-| SAF-003 | MAJOR 1.0.0→2.0.0: wording; parameters replaced; uncertainty note | yes | guided_workout, substitution, safety_validator | AppController.kt, Pain.kt, Coach.kt, SessionPlayer.kt, PainGate.kt, SessionValidator.kt | TC-SAF-003a ✓, TC-SAF-003b ✓ |
-| PROG-008 | MAJOR 1.0.0→2.0.0: wording; uncertainty note | no | progressive_overload, guided_workout | EngineBridge.kt, ExerciseProgress.kt, Progression.kt | TC-PROG-008a ✓, TC-PROG-008b ✓ |
-| CON-004 | MAJOR 1.1.0→2.0.0: wording; parameters replaced; uncertainty note | no | conditioning_selection | SessionGenerator.kt, WeekPlanner.kt, SessionValidator.kt | TC-CON-004a ✓, TC-CON-004b ✓ |
+| SAF-003 | MAJOR 1.0.0→2.0.0: wording; parameters replaced; uncertainty note | yes | guided_workout, substitution, safety_validator | AppController.kt, Pain.kt, Coach.kt, SessionPlayer.kt, PainGate.kt, SessionValidator.kt | TC-SAF-003a ✓, TC-SAF-003b ✓, TC-SAF-003e ✓ |
+| PROG-008 | MAJOR 1.0.0→2.0.0: wording; uncertainty note | no | progressive_overload, guided_workout | EngineBridge.kt, ExerciseProgress.kt, Progression.kt | TC-PROG-008a ✓, TC-PROG-008b ✓, TC-PROG-008c ✓, TC-PROG-008d ✓ |
+| CON-004 | MAJOR 1.1.0→2.0.0: wording; parameters replaced; evidence + ROS22; uncertainty note | no | conditioning_selection | EngineBridge.kt, SessionGenerator.kt, WeekPlanner.kt, SessionValidator.kt | TC-CON-004a ✓, TC-CON-004b ✓, TC-CON-004d ✓, TC-CON-004e ✓ |
 
 **Before release:** every rule above keeps its two tests passing (rule coverage 100%); safety rules need the safety review note; the Product Owner approves the change set; the app is rebuilt and the whole test suite runs (Phase 1 step 10).

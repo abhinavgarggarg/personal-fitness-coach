@@ -143,7 +143,8 @@ object Conditions {
         // shoulders or chest and no arm-driven cardio machines), their text is shown as a prompt.
         val avoidModalities = LinkedHashSet<Modality>()
         for (f in u.subFlags) e.subFlagEffects[f]?.let { eff -> avoid += eff.avoidTags; eff.avoidModalities.mapNotNullTo(avoidModalities) { Modality.byKey(it) } }
-        for (f in u.subFlags) e.subFlags[f]?.let { prompts += it }
+        // Shown as a sentence on Today and the preview (the table writes them as phrases, e.g. "only if your doctor says it is stable").
+        for (f in u.subFlags) e.subFlags[f]?.let { prompts += it.replaceFirstChar { c -> c.uppercaseChar() } }
         e.environment.forEach { prompts += it }
         e.positionsNote?.let { prompts += it }
 

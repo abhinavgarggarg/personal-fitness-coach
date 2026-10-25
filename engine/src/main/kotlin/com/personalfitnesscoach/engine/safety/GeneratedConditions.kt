@@ -7,7 +7,7 @@ import com.personalfitnesscoach.engine.model.Zone
 /** Health-condition table 1.0.2 (SAF-010). APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release. */
 object GeneratedConditions {
     const val VERSION: String = "1.0.2"
-    const val SHA256: String = "04fb9e8dc41f0865fe5e5df3308bb007406ba8c5b48a2448b9bc6a7c76b041a7"
+    const val SHA256: String = "cc3c510398fb7071892fa1ef7805d8933cd78091d2c2949f12dcd8624e3888f6"
     val statusQuestion: String = "Has a doctor or nurse told you this is currently under control / stable? (yes / no / not sure; not sure counts as no)"
     val never: List<String> = listOf("read or threshold clinical values (blood pressure, glucose, ketones, oxygen, ECG)", "name a medicine, dose, carbohydrate amount or value target", "diagnose or interpret symptoms", "claim to treat, manage, relieve or lower a condition")
     /** Parent groups: an add-on picked without any member brings every member (SAF-010 1.0.1). */
@@ -1213,12 +1213,12 @@ object GeneratedConditions {
             flareKeep = emptyList(),
             flareExitSessions = null,
             painRuleDuringMax = null,
-            blockIf = listOf("If your pregnancy care provider has told you any of these apply: waters broken; premature labour; unexplained ongoing vaginal bleeding; placenta praevia after 26 weeks; pre-eclampsia or high blood pressure caused by the pregnancy; weak cervix or a cervical stitch; baby not growing as expected; triplets or more, or twins at risk of premature labour; severe anaemia; uncontrolled type 1 diabetes, high blood pressure or thyroid disease; another serious heart, lung or whole-body condition — follow your provider's advice instead of a training plan"),
-            attestIf = listOf("If your provider has told you any of these apply: repeated pregnancy loss; an earlier premature birth; mild or moderate heart or lung disease; an irregular heartbeat not yet checked; long-term bronchitis; anaemia with symptoms; under-nutrition, an eating disorder, or very low or very high body weight; seizures or an overactive thyroid that aren't well controlled; heavy smoking; joint or bone problems that limit movement; very little activity before this pregnancy; twins after 28 weeks — 'my provider has OK'd exercise'"),
+            blockIf = listOf("If your pregnancy care provider has told you any of these apply: waters broken; premature labour; ongoing vaginal bleeding (unexplained, or in the second or third trimester); placenta praevia after 26 weeks; pre-eclampsia or high blood pressure caused by the pregnancy; weak cervix or a cervical stitch; baby not growing as expected; triplets or more, or twins at risk of premature labour; severe anaemia; restrictive lung disease; uncontrolled type 1 diabetes, high blood pressure or thyroid disease; another serious heart, lung or whole-body condition — follow your provider's advice instead of a training plan"),
+            attestIf = listOf("If your provider has told you any of these apply: repeated pregnancy loss; an earlier premature birth; mild or moderate heart or lung disease; an irregular heartbeat not yet checked; long-term bronchitis; anaemia; under-nutrition, an eating disorder, or very low or very high body weight; seizures that aren't well controlled; heavy smoking; joint or bone problems that limit movement; very little activity before this pregnancy; twins after 28 weeks; another significant medical condition — 'my provider has OK'd exercise'"),
             asks = emptyList(),
             prompts = listOf("Talk with your pregnancy care provider about your exercise plan.", "Aim for regular moderate activity most days.", "Pelvic floor exercises can be done daily; a pelvic health physio can teach the technique.", "If you feel dizzy or unwell lying on your back, switch position."),
-            stopSigns = listOf("Breathlessness that doesn't settle with rest, or breathless before you start", "Severe chest pain", "Regular painful contractions", "Pain in the tummy", "Vaginal bleeding", "Ongoing fluid leakage", "Headache", "Muscle weakness that affects your balance", "Pain or swelling in a calf", "Dizziness or faintness that doesn't settle with rest — stop and contact your provider or maternity unit"),
-            environment = listOf("No hot or humid rooms (including hot yoga); drink water", "Altitude above 1,800 m (6,000 ft) and scuba diving: informational note"),
+            stopSigns = listOf("Breathlessness that doesn't settle with rest, or breathless before you start", "Chest pain", "Regular painful contractions", "Pain in the tummy", "Vaginal bleeding", "Fluid leakage", "Headache", "Muscle weakness that affects your balance", "Pain or swelling in a calf", "Dizziness or faintness — stop and contact your provider or maternity unit"),
+            environment = listOf("No hot or humid rooms (including hot yoga); drink water", "Avoid scuba diving. Above 1,800 m (6,000 ft), check with your provider before exercising"),
             positionsNote = null,
             neverRecommend = emptyList(),
             goalEffects = "fat-loss goal not offered; no weight-loss expectations, weight trend or rate check-in (FL-001)",
@@ -1692,7 +1692,7 @@ object GeneratedConditions {
             effortBy = null,
             defaultOrder = null,
             warmupStyle = null,
-            subFlags = mapOf("cancer_has_spread_to_the_bones" to "follow a supervised exercise programme from your care team (a physiotherapist or exercise physiologist with cancer training) instead of a training plan"),
+            subFlags = mapOf("cancer_has_spread_to_the_bones" to "Follow a supervised exercise programme from your care team (a physiotherapist or exercise physiologist with cancer training) instead of a training plan"),
             subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
@@ -1703,7 +1703,7 @@ object GeneratedConditions {
             attestIf = emptyList(),
             asks = emptyList(),
             prompts = listOf("Exercise is generally safe and helpful during and after cancer care; your care team can tell you about any limits."),
-            stopSigns = listOf("Any of the warning signs listed under the workout's Warning sign button: stop and get help."),
+            stopSigns = listOf("Any of the app's warning signs (the Warning signs button in a workout lists them): stop and get help."),
             environment = emptyList(),
             positionsNote = null,
             neverRecommend = emptyList(),

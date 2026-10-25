@@ -2582,7 +2582,8 @@
       },
       "confidence": "Moderate Evidence",
       "evidence": [
-        "Wilson2012"
+        "Wilson2012",
+        "ROS22"
       ],
       "uncertainty": "The UK consensus (ROS22) advises building impact up gradually; the 4 weeks and the age of 65 are expert practice for this app.",
       "date_introduced": "2026-10-07",

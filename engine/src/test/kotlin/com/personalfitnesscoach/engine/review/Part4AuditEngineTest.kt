@@ -229,6 +229,12 @@ class Part4AuditEngineTest {
         assertTrue(preg.blockIf.single().contains("twins at risk of premature labour"))
         assertTrue(preg.blockIf.single().contains("severe anaemia"))
         assertTrue(preg.stopSigns.any { it.contains("calf", ignoreCase = true) } && preg.stopSigns.any { it == "Headache" })
+        // The evidence re-check: the stricter of the two guidelines everywhere.
+        assertTrue(preg.blockIf.single().contains("restrictive lung disease") && preg.blockIf.single().contains("second or third trimester"))
+        assertTrue(preg.attestIf.single().contains("; anaemia;") && preg.attestIf.single().contains("another significant medical condition"))
+        assertFalse("thyroid only in the block list", preg.attestIf.single().contains("thyroid"))
+        assertTrue(preg.stopSigns.contains("Chest pain") && preg.stopSigns.contains("Fluid leakage"))
+        assertTrue(preg.environment.any { it.startsWith("Avoid scuba diving") })
         val feet = C.resolve(listOf(U("t2d"), U("diabetes_feet", subFlags = setOf("a_past_foot_ulcer_or_charcot_foot")))).value
         val plain = C.resolve(listOf(U("t2d"), U("diabetes_feet"))).value
         assertTrue("a past ulcer needs the doctor's OK first: ${feet.conservative}", feet.conservative && !plain.conservative || feet.clearancePrompts.size > plain.clearancePrompts.size)

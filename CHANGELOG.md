@@ -1,9 +1,9 @@
 # CHANGELOG
 
-## 2026-10-25 — Phase 4 Part 4: safety and evidence audit (Registry 4.0.0 and 4.1.0, condition table 1.0.2)
+## 2026-10-25 — Phase 4 Part 4: safety and evidence audit (Registry 4.0.0 and 5.0.0, condition table 1.0.2)
 - Two independent reviews: safety (15 findings: 3 high, 7 medium, 5 low) and evidence (10 findings: 2 high, 5 medium, 3 low). Fixes without a rule change (D-120): an easier version when even the lightest weight is too heavy for the reps (down the regression chain, never harder or heavier), re-checked each block and during returns; the PROG-008 easier-version offer on the workout screen; bodyweight and timed work kept on lighter days and in deloads; a same-day red-flag confirmation still gives a LIGHT first session; honest texts at the lightest weight and after a pain report; SAF-004 pain-free sessions must load the area; Replace lists only swaps that can be dosed.
 - Registry 4.0.0 (MAJOR, PO 25 Oct, D-121): strong muscle pain (7/10+) stops the exercise (SAF-003 2.0.0); missed reps reduce the weight even when form wasn't solid (PROG-008 2.0.0); the bone-loading block starts with heel drops and keeps going with controlled high blood pressure (CON-004 2.0.0).
-- Registry 4.1.0 (MINOR, PO 25 Oct, D-122): evidence ratings match what was read (19 rules); source records corrected and three read sources added; SAF-010 names condition table 1.0.2: cancer spread to the bones follows the care team, pregnancy uses the stricter of the Canadian and ACOG guidelines, a past foot ulcer or Charcot foot needs a doctor's OK, stop signs in words.
+- Registry 5.0.0 (MAJOR, PO 25 Oct, D-122): evidence ratings match what was read (22 rules; SAF-010 MAJOR for the stricter table); source records corrected and three read sources added; SAF-010 names condition table 1.0.2: cancer spread to the bones follows the care team, pregnancy uses the stricter of the Canadian and ACOG guidelines, a past foot ulcer or Charcot foot needs a doctor's OK, stop signs in words.
 - Screens: the fat-loss expectation says it is a study average and results vary; Yes/No answers name their question for screen readers. Device tests: Android's accessibility checks on every main screen and speed on the phone.
 - Report `docs/phase4/part4_report.md`.
 

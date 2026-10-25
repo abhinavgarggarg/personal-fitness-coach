@@ -17,7 +17,7 @@ def entry(id, name, group, clearance, max_zone, hiit, impact, confidence, source
     return e
 
 # 1.0.2: shown to the user, so in words (it read "Universal red flags (SAF-002) always apply.").
-STOP_UNIVERSAL = "Any of the warning signs listed under the workout's Warning sign button: stop and get help."
+STOP_UNIVERSAL = "Any of the app's warning signs (the Warning signs button in a workout lists them): stop and get help."
 E = [
  entry("hbp_controlled", "High blood pressure — a doctor or nurse has told you it is under control", "heart_and_circulation",
    clearance="none", max_zone="Z3", hiit="after_base", min_rir=2, impact="as_tolerated",
@@ -145,17 +145,17 @@ E = [
    # 1.0.2 (D-122): where the Canadian 2019 guideline and ACOG differ, the stricter applies (placenta praevia from 26 weeks; a multiple
    # pregnancy at risk of premature labour; severe anaemia; high blood pressure caused by the pregnancy; a cervical stitch), and the
    # warning signs of both are shown.
-   clearance="always", block_if=["If your pregnancy care provider has told you any of these apply: waters broken; premature labour; unexplained ongoing vaginal bleeding; placenta praevia after 26 weeks; pre-eclampsia or high blood pressure caused by the pregnancy; weak cervix or a cervical stitch; baby not growing as expected; triplets or more, or twins at risk of premature labour; severe anaemia; uncontrolled type 1 diabetes, high blood pressure or thyroid disease; another serious heart, lung or whole-body condition — follow your provider's advice instead of a training plan"],
-   attest_if=["If your provider has told you any of these apply: repeated pregnancy loss; an earlier premature birth; mild or moderate heart or lung disease; an irregular heartbeat not yet checked; long-term bronchitis; anaemia with symptoms; under-nutrition, an eating disorder, or very low or very high body weight; seizures or an overactive thyroid that aren't well controlled; heavy smoking; joint or bone problems that limit movement; very little activity before this pregnancy; twins after 28 weeks — 'my provider has OK'd exercise'"],
+   clearance="always", block_if=["If your pregnancy care provider has told you any of these apply: waters broken; premature labour; ongoing vaginal bleeding (unexplained, or in the second or third trimester); placenta praevia after 26 weeks; pre-eclampsia or high blood pressure caused by the pregnancy; weak cervix or a cervical stitch; baby not growing as expected; triplets or more, or twins at risk of premature labour; severe anaemia; restrictive lung disease; uncontrolled type 1 diabetes, high blood pressure or thyroid disease; another serious heart, lung or whole-body condition — follow your provider's advice instead of a training plan"],
+   attest_if=["If your provider has told you any of these apply: repeated pregnancy loss; an earlier premature birth; mild or moderate heart or lung disease; an irregular heartbeat not yet checked; long-term bronchitis; anaemia; under-nutrition, an eating disorder, or very low or very high body weight; seizures that aren't well controlled; heavy smoking; joint or bone problems that limit movement; very little activity before this pregnancy; twins after 28 weeks; another significant medical condition — 'my provider has OK'd exercise'"],
    max_zone="Z1", max_zone_if_previously_vigorous_and_ok="Z2", hiit="no", min_rir=3, impact="only_if_already_doing_it",
    avoid_tags=["breath_hold_max", "high_fall_risk", "contact", "olympic_lift"], avoid_tags_from_week={"20": ["supine_lying", "prone_lying"]},
    avoid_supine_any_time_if="dizzy or unwell lying on the back", goal_effects="fat-loss goal not offered; no weight-loss expectations, weight trend or rate check-in (FL-001)", extra_warmup_min=5,
-   environment=["No hot or humid rooms (including hot yoga); drink water", "Altitude above 1,800 m (6,000 ft) and scuba diving: informational note"],
+   environment=["No hot or humid rooms (including hot yoga); drink water", "Avoid scuba diving. Above 1,800 m (6,000 ft), check with your provider before exercising"],
    prompts=["Talk with your pregnancy care provider about your exercise plan.", "Aim for regular moderate activity most days.",
             "Pelvic floor exercises can be done daily; a pelvic health physio can teach the technique.", "If you feel dizzy or unwell lying on your back, switch position."],
-   stop_signs=["Breathlessness that doesn't settle with rest, or breathless before you start", "Severe chest pain", "Regular painful contractions", "Pain in the tummy", "Vaginal bleeding", "Ongoing fluid leakage",
+   stop_signs=["Breathlessness that doesn't settle with rest, or breathless before you start", "Chest pain", "Regular painful contractions", "Pain in the tummy", "Vaginal bleeding", "Fluid leakage",
                "Headache", "Muscle weakness that affects your balance", "Pain or swelling in a calf",
-               "Dizziness or faintness that doesn't settle with rest — stop and contact your provider or maternity unit"],
+               "Dizziness or faintness — stop and contact your provider or maternity unit"],
    confidence="High Evidence (activity is safe) / Expert Practice (caps)", sources=["CAN19", "ACOG20", "ACOG15"]),
  entry("postpartum", "Had a baby in the last 12 months", "pregnancy",
    clearance="suggest", phases=[
@@ -198,7 +198,7 @@ E = [
    # 1.0.2 (D-122, Campbell 2022 bone-metastases recommendations): cancer that has spread to the bones follows a supervised programme
    # from the care team instead of a training plan.
    clearance="suggest", clearance_always_if=["in active treatment", "cancer has spread to the bones", "lymphoedema"], block_if_flags=["cancer has spread to the bones"],
-   sub_flags={"cancer_has_spread_to_the_bones": "follow a supervised exercise programme from your care team (a physiotherapist or exercise physiologist with cancer training) instead of a training plan"},
+   sub_flags={"cancer_has_spread_to_the_bones": "Follow a supervised exercise programme from your care team (a physiotherapist or exercise physiologist with cancer training) instead of a training plan"},
    pending_verification=["lymphoedema cautions (Campbell 2019 full text not read)"],
    goal_effects_if="in active treatment: fat-loss goal not the default; no weight-loss expectations or rate check-in (FL-001)",
    max_zone="Z2", hiit="no", min_rir=2, impact="as_tolerated", impact_none_if=["cancer has spread to the bones"], extra_warmup_min=5,
@@ -214,7 +214,8 @@ doc = {
      "items": ["cancer: cancer that has spread to the bones follows a supervised programme from the care team instead of a training plan (Campbell 2022)",
                "pregnancy: the stricter of the Canadian 2019 guideline and ACOG where they differ (placenta praevia from 26 weeks, a multiple pregnancy at risk of premature labour, severe anaemia, high blood pressure caused by the pregnancy, a cervical stitch; ACOG's relative contraindications need the provider's OK; altitude note at 1,800 m), and the warning signs of both",
                "diabetes_feet: a past foot ulcer or Charcot foot needs a doctor's OK (ADA Standards of Care 2026)",
-               "stop signs: the internal text 'Universal red flags (SAF-002) always apply.' is replaced by words"]},
+               "stop signs: the internal text 'Universal red flags (SAF-002) always apply.' is replaced by words",
+               "pregnancy (evidence re-check): bleeding in the second or third trimester and restrictive lung disease in the block list; any anaemia and other significant medical conditions need the provider's OK; the warning signs in their broader ACOG form; scuba diving to be avoided and altitude above 1,800 m checked with the provider"]},
     {"version": "1.0.1", "date": "2026-10-09", "kind": "PATCH (encoding of the approved wording; no entry becomes less restrictive)",
      "items": ["parent_groups: a diabetes add-on picked without type 1 or type 2 brings both base entries (review R3-04)",
                "heart: sub_flag_effects encode 'recent breastbone surgery' as controls (review R3-01)",
