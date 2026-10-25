@@ -226,6 +226,7 @@ object Labels {
         "in_active_treatment" to R.string.subflag_in_active_treatment,
         "cancer_has_spread_to_the_bones" to R.string.subflag_cancer_has_spread_to_the_bones,
         "lymphoedema" to R.string.subflag_lymphoedema,
+        "a_past_foot_ulcer_or_charcot_foot" to R.string.subflag_a_past_foot_ulcer_or_charcot_foot,
     )
 
     /** A readable form of an ID with no string (never shown for the IDs above). */

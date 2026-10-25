@@ -20,6 +20,7 @@ import com.personalfitnesscoach.data.core.model.WeightRecord
 import com.personalfitnesscoach.data.core.model.dayKey
 import com.personalfitnesscoach.data.core.repo.Docs
 import com.personalfitnesscoach.data.core.session.SessionLog
+import com.personalfitnesscoach.data.core.session.SetKind
 import com.personalfitnesscoach.data.core.session.Status
 import com.personalfitnesscoach.data.core.session.StoredWorkout
 import com.personalfitnesscoach.data.core.time.AppClock
@@ -41,6 +42,7 @@ import com.personalfitnesscoach.engine.core.EngineResult
 import com.personalfitnesscoach.engine.generation.GenerationRequest
 import com.personalfitnesscoach.engine.generation.SessionGenerator
 import com.personalfitnesscoach.engine.library.Library
+import com.personalfitnesscoach.engine.model.LoadType
 import com.personalfitnesscoach.engine.model.Joint
 import com.personalfitnesscoach.engine.model.Muscle
 import com.personalfitnesscoach.engine.model.Pattern
@@ -117,6 +119,8 @@ data class HistoryMaps(
     val decisions: List<Decision> = emptyList(),
     /** The day each exercise was last lifted (for the new-block re-check of a lightest load that was too heavy). */
     val lastDone: Map<String, Int> = emptyMap(),
+    /** PROG-008 on ladders: bodyweight and assisted moves with "form not solid" twice in a row (the easier version is offered). */
+    val easierOffers: Set<String> = emptySet(),
 )
 
 /** Totals of a span of days, from finished workouts and logged walks. */
@@ -220,7 +224,10 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         val cal = HashMap<String, Double>()
         val ceilings = HashMap<String, Double>()
         val lastDone = HashMap<String, Int>()
+        val offers = HashSet<String>()
         for (s in states.values) {
+            if (s.formNoStreak >= P.PROG_008.regress_after_no && Library[s.exerciseId]?.let { it.assisted || it.loadType == LoadType.BODYWEIGHT ||
+                    it.loadType == LoadType.TIME } == true) offers += s.exerciseId
             s.lastDoneDay?.let { lastDone[s.exerciseId] = it }
             s.e1rm?.let { e1rm[s.exerciseId] = it }
             s.prescription?.let { prog[s.exerciseId] = it }
@@ -245,7 +252,7 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
                 KnownStart.Invalid -> Unit
             }
         }
-        return HistoryMaps(e1rm, prog, cal, ceilings, lastWeekLoads(today), latestWeight(), d, lastDone)
+        return HistoryMaps(e1rm, prog, cal, ceilings, lastWeekLoads(today), latestWeight(), d, lastDone, offers)
     }
 
     /**
@@ -282,7 +289,9 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
     suspend fun regions(today: Int): EngineResult<List<RegionConstraint>> {
         // Joint/tendon pain, and any report the pain gate stopped (sharp, swelling, after a fall … whatever kind was tapped).
         val reports = docs.between(PainRecord, today - 90, today).filter {
-            (it.report.kind == PainKind.JOINT_OR_TENDON && it.report.rating >= 1) || it.action == PainAction.STOP_REGION || it.action == PainAction.STOP_EXERCISE }
+            // A stop for muscle pain (SAF-003 2.0.0) ends one exercise only; it doesn't make the region conservative.
+            (it.report.kind == PainKind.JOINT_OR_TENDON && it.report.rating >= 1) || it.action == PainAction.STOP_REGION ||
+                (it.action == PainAction.STOP_EXERCISE && it.report.kind == PainKind.JOINT_OR_TENDON) }
         if (reports.isEmpty()) return EngineResult(emptyList())
         val done = log.done(today - 90, today)
         val out = ArrayList<RegionConstraint>()
@@ -290,7 +299,10 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         for ((region, rs) in reports.groupBy { it.report.region }.toSortedMap()) {
             val sessions = rs.map { it.workoutId ?: -it.day.toLong() }.toSet().size
             val last = rs.maxOf { it.atMs }
-            val after = done.filter { (it.row.startedAtMs ?: Days.startMs(it.day, clock.zone())) > last }
+            // A pain-free session is one that loaded this region (an exercise with stress on it, done) without a new report: two
+            // upper-body days say nothing about the knee (Part 4 review).
+            val after = done.filter { (it.row.startedAtMs ?: Days.startMs(it.day, clock.zone())) > last && it.exercises.any { e ->
+                e.row.status == Status.DONE && (Library[e.exerciseId]?.stress(region) ?: 0) > 0 && e.sets.any { s -> s.kind != SetKind.WARMUP } } }
             val painFree = after.size
             val exitDay = if (painFree >= P.SAF_004.pain_free_sessions_to_exit) after[P.SAF_004.pain_free_sessions_to_exit - 1].day else null
             val h = RegionHistory(region, sessions, rs.maxOf { it.day } - rs.minOf { it.day }, painFree,
@@ -736,7 +748,13 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
         var stop: SafetyStop? = null
         docs.get(SafetyStopRecord)?.let { s ->
             if (s.confirmedDay == null) { stop = SafetyStop(s.symptoms, P.SAF_002.emergency_number_default); capAt(Tier.RECOVERY) }
-            else if (log.done(s.confirmedDay, today).isEmpty()) RedFlags.tierAfterStop(true)?.let { capAt(it) }
+            else {
+                // The first session back is the first finished session after the stop: the stopped session itself (saved as done, so it
+                // counts towards caps) is not one, nor is anything that day before it (Part 4 review: a same-day confirmation skipped LIGHT).
+                val stoppedId = log.done(s.day, s.day).filter { it.doc.stoppedBySafety }.maxOfOrNull { it.id }
+                val back = log.done(s.confirmedDay, today).any { w -> !w.doc.stoppedBySafety && (w.row.day > s.day || stoppedId == null || w.id > stoppedId) }
+                if (!back) RedFlags.tierAfterStop(true)?.let { capAt(it) }
+            }
         }
         val ret = returnPlan(u, program).also { d += it.decisions }.value
         ret.tierCap?.let { capAt(it) }
@@ -812,9 +830,27 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             painCaution = caution, jointLimits = painLimits, regions = regions(today).value + u.injuries.regions, blockedTags = u.injuries.blockedTags,
             excludedModalities = u.preferences.excludedModalities, excludedIds = u.preferences.excludedIds, preferences = u.preferences.exerciseScores,
             inDeload = plan.deload, week = validationContext(u, program, plan, day), conditions = u.conditions, circuitJumps = u.preferences.circuitJumps,
-            lastDone = h.lastDone, blockStartDay = program.blockStartDay,
+            // While a return or post-deload reduction runs, an exercise too heavy at its lightest load uses its easier version, not a
+            // new-block ramp (the reduction is what REG-003…005 and DEL-004 ask for).
+            lastDone = h.lastDone, blockStartDay = if (factors.isEmpty()) program.blockStartDay else null, easierOffers = h.easierOffers,
+            boneHopsAllowed = u.conditions.boneLoading && boneHopsAllowed(u, today),
         )
         return PreparedSession(req, factors, d)
+    }
+
+    /**
+     * CON-004 2.0.0 (D-121): small hops may be the bone-loading block only after it has run 4 weeks (a block done at least 28 days ago,
+     * within the last year), for someone who is not a beginner, is under 65 (an unknown age counts as not) and reported no hip, knee or
+     * ankle pain in the last 4 weeks (normal muscle burn aside). Otherwise heel drops.
+     */
+    suspend fun boneHopsAllowed(u: UserState, today: Int): Boolean {
+        if (u.profile.level == com.personalfitnesscoach.engine.model.Level.BEGINNER) return false
+        if ((u.age ?: Int.MAX_VALUE) >= P.CON_004.bone_loading_hops_age_below) return false
+        val weeks = P.CON_004.bone_loading_heel_drops_weeks * 7
+        if (log.done(today - 365, today - weeks).none { it.doc.boneLoading != null }) return false
+        val lower = setOf(Joint.HIP, Joint.KNEE, Joint.ANKLE)
+        return docs.between(PainRecord, today - P.CON_004.bone_loading_pain_lookback_days, today).none { p ->
+            p.report.region in lower && (p.report.kind == PainKind.JOINT_OR_TENDON || p.action != PainAction.CONTINUE) }
     }
 
     /**
@@ -865,9 +901,13 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             val avail = PlateMath.loadsFor(ex, u.equipment.inventory)
             return avail.filter { it <= x + 1e-9 }.maxOrNull() ?: avail.minOrNull() ?: x
         }
+        // The reduced load can't be made when even the lightest is above it (within PROG-003's 2%): the generator then uses the easier
+        // version, as RDY-004 does, instead of the unreduced weight (Part 4 review).
+        fun belowLightest(id: String, x: Double): Boolean = Library[id]?.let { PlateMath.belowLightest(x, PlateMath.loadsFor(it, u.equipment.inventory)) } ?: false
         return out.copy(
             e1rm = out.e1rm.mapValues { (id, v) -> v * f(id) },
-            progression = out.progression.mapValues { (id, p) -> if (f(id) >= 1.0) p else p.copy(load = down(id, p.load * f(id))) },
+            progression = out.progression.mapValues { (id, p) -> if (f(id) >= 1.0) p else
+                p.copy(load = down(id, p.load * f(id)), lightestTooHeavy = p.lightestTooHeavy || belowLightest(id, p.load * f(id))) },
             calibrationLoads = out.calibrationLoads.mapValues { (id, v) -> if (f(id) >= 1.0) v else down(id, v * f(id)) },
         )
     }

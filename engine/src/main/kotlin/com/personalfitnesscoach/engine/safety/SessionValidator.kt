@@ -151,6 +151,8 @@ data class ValidationContext(
     val planIntervalModalities: Set<Modality>? = null,
     /** SAF-010 merged health-condition limits: tags, joints, zone, intervals, impact, effort and failure. */
     val conditions: ConditionLimits = ConditionLimits.NONE,
+    /** CON-004 2.0.0: small hops may be the bone-loading block today (else heel drops only). */
+    val boneHopsAllowed: Boolean = true,
     /** Resistance work was done yesterday (SAF-010 "no strength on consecutive days", type 2 diabetes; D-071). */
     val strengthYesterday: Boolean = false,
 ) {
@@ -242,7 +244,7 @@ object SessionValidator {
         }
         // CON-004 1.1.0 / SAF-010: a bone-loading block only with the osteoporosis entry and within pain limits and blocked tags (review R3-11).
         s.boneLoading?.let { bl ->
-            if (!c.conditions.boneLoading || !BoneLoading.allowed(bl, c.allJointLimits, c.allBlockedTags, c.regions))
+            if (!c.conditions.boneLoading || !BoneLoading.allowed(bl, c.allJointLimits, c.allBlockedTags, c.regions, hopsAllowed = c.boneHopsAllowed))
                 v += Violation(RuleIds.SAF_010, "BONE_LOADING_NOT_ALLOWED", detail = bl.name)
         }
         // SAF-010 (type 2 diabetes): never resistance work on consecutive days — enforced here so no screen or moved session can bypass it.
@@ -493,7 +495,7 @@ object SessionValidator {
                 d(ReasonKey.VALIDATOR_WARMUP_RESTORED)
             "COOLDOWN_SHORT" -> s.copy(cooldownMinutes = P.TIME_001.cooldown_min_minutes + c.conditions.extraCooldownMin.toDouble()) to d(ReasonKey.VALIDATOR_WARMUP_RESTORED)
             "BONE_LOADING_NOT_ALLOWED" -> {
-                val alt = if (c.conditions.boneLoading) BoneLoading.choose(c.allJointLimits, c.allBlockedTags, c.regions) else null
+                val alt = if (c.conditions.boneLoading) BoneLoading.choose(c.allJointLimits, c.allBlockedTags, c.regions, hopsAllowed = c.boneHopsAllowed) else null
                 s.copy(boneLoading = alt) to d(ReasonKey.VALIDATOR_CONDITIONING_CHANGED, mapOf("boneLoading" to alt?.name))
             }
             "MODALITY", "CONDITIONING_JOINT" -> {

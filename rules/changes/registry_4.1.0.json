@@ -1,0 +1,378 @@
+{
+  "registry_version": "4.1.0",
+  "base_registry_version": "4.0.0",
+  "kind": "MINOR",
+  "date": "2026-10-25",
+  "title": "Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review)",
+  "summary": "An independent evidence review (Phase 4 Part 4) found ratings higher than the sources actually read. The Product Owner chose ratings that match (D-122): 14 rules whose sources were located but never opened become Expert Practice; pre-exercise screening (SAF-001, SAF-002) becomes Moderate (consensus); AGE-001 Moderate; the estimated-maximum rules INT-004 and INT-005 Limited. No rule's wording changes; the ratings change the coach's 'How sure?' answers only. SAF-010 moves to health-condition table 1.0.2, approved with these changes: cancer spread to the bones follows a supervised programme from the care team; pregnancy uses the stricter of the Canadian 2019 guideline and ACOG; a past foot ulcer or Charcot foot needs a doctor's OK. Source records are corrected: ACOG 804's three details actually come from the Canadian 2019 guideline (checked); the 2022 bone-metastases recommendations are read in full and the app now follows them for bone spread (condition table 1.0.2); ADA Standards of Care 2026 section 5, ACOG Committee Opinion 650 and Campbell 2022 are added as read sources; the FDA and EU summaries now include the exclusions that matter for this app; every source located but not yet opened is listed as pending.",
+  "approval": {
+    "by": "Product Owner",
+    "date": "2026-10-25",
+    "reference": "D-122"
+  },
+  "safety_review": "Phase 4 Part 4 independent evidence review (findings 1, 2, 3, 4 and 7). The ratings change nothing the app does. The condition-table changes make the cancer, pregnancy and diabetic-foot entries stricter, as the review recommended and the Product Owner chose; they are re-checked by an independent reviewer before the Phase 4 gate.",
+  "sources_add": {
+    "ADA26": {
+      "citation": "American Diabetes Association Professional Practice Committee. 5. Facilitating Positive Health Behaviors and Well-being to Improve Health Outcomes: Standards of Care in Diabetes-2026. Diabetes Care. 2026;49(Suppl 1):S89-S131.",
+      "verification": "checked 2026-10-25 (full section, hosted copy; independent evidence review): recommendations 5.34 and 5.36-5.38 agree with the t2d entry (break up sitting every 30 minutes; 150+ minutes over at least 3 days with no more than 2 days in a row off; resistance training 2-3 times a week on non-consecutive days; balance work for older adults); its pre-exercise list includes a history of foot ulcers or Charcot foot (now in diabetes_feet, table 1.0.2)",
+      "url": "https://doi.org/10.2337/dc26-S005"
+    },
+    "CAM22": {
+      "citation": "Campbell KL, Cormie P, Weller S, et al. Exercise Recommendation for People With Bone Metastases: Expert Consensus for Health Care Providers and Exercise Professionals. JCO Oncol Pract. 2022;18(5):e697-e709. doi:10.1200/OP.21.00454",
+      "verification": "checked 2026-10-25 (full text, university repository copy; independent evidence review): risk assessment and consultation with the medical team before exercise; prescription by a physiotherapist or clinical exercise physiologist with cancer training; supervised instruction before unsupervised exercise; avoid rapid or loaded end-range movement at the lesion and high loads on the spine and the hip end of the thigh bone; start low and progress slowly; watch for new or increasing pain, new weakness or numbness and bladder or bowel change. The app follows a supervised programme from the care team for bone spread (table 1.0.2)",
+      "url": "https://doi.org/10.1200/OP.21.00454"
+    },
+    "ACOG15": {
+      "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 650 (2015, reaffirmed 2019; replaced by No. 804 in 2020).",
+      "verification": "checked 2026-10-25 (full text, hosted copy; independent evidence review): absolute contraindications include placenta praevia after 26 weeks, a multiple pregnancy at risk of premature labour, severe anaemia, pre-eclampsia or pregnancy-induced hypertension, an incompetent cervix or cerclage; relative ones include an unevaluated arrhythmia, chronic bronchitis, extreme under- or overweight, poorly controlled seizures or hyperthyroidism, heavy smoking, orthopaedic limits and an extremely sedentary lifestyle; warning signs add headache, muscle weakness affecting balance and calf pain or swelling. Two summaries of No. 804 report the same lists and add abdominal pain"
+    }
+  },
+  "sources_update": {
+    "ACOG20": {
+      "verification": "located; citation checked 2026-10-12 in Crossref; full text not opened (acog.org and the publisher refused the request on 2026-10-12, 19 and 25). Correction (25 Oct 2026): the three details the app used (placenta praevia after 28 weeks, growth restriction, triplets or more) come from the Canadian 2019 guideline (CAN19, checked), not from ACOG; ACOG is stricter in places (see ACOG15). Since table 1.0.2 the stricter of the two applies. A 2021 correction (Obstet Gynecol 2021;138:683) is to be checked with the full text"
+    },
+    "CAM19": {
+      "verification": "checked (abstract and a Breastcancer.org summary); full text not opened (PubMed/PMC refused the request on 2026-10-19 and 25). Correction (25 Oct 2026): the earlier note said the 2022 bone-metastases recommendations agree with the app; they asked for more (supervision, lesion-specific limits). Since table 1.0.2 bone spread follows the care team (CAM22). Lymphoedema: supervised, slowly progressed resistance training is recommended; still to read in full"
+    },
+    "FDA26": {
+      "verification": "checked 2026-10-19 and 2026-10-25 (primary text): general wellness = intended only for general wellness use and low risk; logging, tracking and 'may help living well with' a chronic condition are in scope; NOT general wellness when labelling, user interface or functionality includes references to specific diseases, clinical conditions or diagnostic thresholds, alerts or prompts that recommend or require specific clinical action or medical management, or treatment guidance; a prompt to see a professional is acceptable only if it does not name a specific disease or condition, has no thresholds and gives no ongoing alerts. The app's condition table names conditions and adapts training to them: a regulatory question for any public release (D-058)"
+    },
+    "MDCG19-11": {
+      "verification": "checked 2026-10-19 and 2026-10-25 (primary text): software needs a medical purpose of its own to be a medical device; wellness or fitness apps do not qualify; the stated intended purpose decides; software 'intended to alleviate pain by recommending personalised rehabilitation exercises' is given as medical-device software, which the app's pain-adapted handling of arthritis and back pain comes close to: a regulatory question for any public release (D-058)"
+    },
+    "WHOSTEPS": {
+      "note": "The protocol is in the WHO STEPS surveillance manual; the WHO 2011 expert-consultation report (ISBN 9789241501491) is the primary source still to read. The app's instructions match the protocol as reported by Statistics Canada 2012."
+    },
+    "LeSuer1997": {
+      "verification": "partly checked 2026-10-19 (part of the abstract) and 2026-10-25 (two secondary sources: Whisenant 2003, JSCR; an arXiv 2026 review): 67 untrained students; loads of 10 reps or fewer taken to failure; correlations r > 0.95, but only 2 of 7 formulas matched the bench press maximum and all underestimated the deadlift; the app's reps-in-reserve version was not tested"
+    }
+  },
+  "verification_pending": [
+    "ACOG20 (CO 804 full text and its 2021 correction)",
+    "Campbell 2019 (CAM19) full text for the lymphoedema caution",
+    "GINA 2026 exercise section (not relied on by the asthma entry)",
+    "WHOSTEPS (WHO 2011 expert-consultation report, primary text)",
+    "LeSuer1997 (lift-by-lift results, primary text)",
+    "Afonso2021 (located, not yet opened)",
+    "AndroulakisKorakakis2020 (located, not yet opened)",
+    "Behm2016 (located, not yet opened)",
+    "Borg1982 (located, not yet opened)",
+    "Bosquet2013 (located, not yet opened)",
+    "Brzycki1993 (located, not yet opened)",
+    "Buchheit2013 (located, not yet opened)",
+    "Epley1985 (located, not yet opened)",
+    "Foster1998 (located, not yet opened)",
+    "Foster2001 (located, not yet opened)",
+    "Fradkin2010 (located, not yet opened)",
+    "Gabbett2016 (located, not yet opened)",
+    "Garber2011 (located, not yet opened)",
+    "Grgic2018freq (located, not yet opened)",
+    "Grgic2018rest (located, not yet opened)",
+    "Grgic2022fail (located, not yet opened)",
+    "Helms2016 (located, not yet opened)",
+    "Impellizzeri2021 (located, not yet opened)",
+    "Israetel2021 (located, not yet opened)",
+    "Iversen2021 (located, not yet opened)",
+    "Jeffreys2019 (located, not yet opened)",
+    "Kibler2006 (located, not yet opened)",
+    "Lally2010 (located, not yet opened)",
+    "Lolli2019 (located, not yet opened)",
+    "Mazeas2022 (located, not yet opened)",
+    "Meeusen2013 (located, not yet opened)",
+    "Milanovic2015 (located, not yet opened)",
+    "Moesgaard2022 (located, not yet opened)",
+    "Murlasits2018 (located, not yet opened)",
+    "Nunes2021 (located, not yet opened)",
+    "Refalo2023 (located, not yet opened)",
+    "Roberts2020 (located, not yet opened)",
+    "Robineau2016 (located, not yet opened)",
+    "Sabag2018 (located, not yet opened)",
+    "Schoenfeld2016freq (located, not yet opened)",
+    "Schoenfeld2017load (located, not yet opened)",
+    "Schoenfeld2019freq (located, not yet opened)",
+    "Schoenfeld2021reps (located, not yet opened)",
+    "Schumann2022 (located, not yet opened)",
+    "Silbernagel2007 (located, not yet opened)",
+    "UpperLimits2026 (located, not yet opened)",
+    "Warburton2011 (located, not yet opened)",
+    "Wen2019 (located, not yet opened)",
+    "Weston2014 (located, not yet opened)",
+    "Williams2017 (located, not yet opened)",
+    "Wilson2012 (located, not yet opened)",
+    "Zourdos2016 (located, not yet opened)"
+  ],
+  "changed_rules": [
+    {
+      "rule_id": "REP-002",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence High Evidence rested on sources not yet opened (Schoenfeld2017load, Schoenfeld2021reps); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Schoenfeld2017load",
+        "Schoenfeld2021reps"
+      ]
+    },
+    {
+      "rule_id": "REP-003",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Schoenfeld2021reps); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Schoenfeld2021reps"
+      ]
+    },
+    {
+      "rule_id": "REST-001",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Grgic2018rest); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Grgic2018rest"
+      ]
+    },
+    {
+      "rule_id": "CON-001",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Murlasits2018, Schumann2022); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Murlasits2018",
+        "Schumann2022"
+      ]
+    },
+    {
+      "rule_id": "CON-004",
+      "from_version": "2.0.0",
+      "to_version": "2.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Wilson2012); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "The UK consensus (ROS22) advises building impact up gradually; the 4 weeks and the age of 65 are expert practice for this app. Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Wilson2012"
+      ]
+    },
+    {
+      "rule_id": "CON-005",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Schumann2022); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Schumann2022"
+      ]
+    },
+    {
+      "rule_id": "HIIT-002",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Buchheit2013, Wen2019, Milanovic2015); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Buchheit2013",
+        "Wen2019",
+        "Milanovic2015"
+      ]
+    },
+    {
+      "rule_id": "MOB-001",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Behm2016, Fradkin2010); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Behm2016",
+        "Fradkin2010"
+      ]
+    },
+    {
+      "rule_id": "MOB-002",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Behm2016); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Wind-down breathing is expert practice. Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Behm2016"
+      ]
+    },
+    {
+      "rule_id": "WU-001",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Fradkin2010, Jeffreys2019); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Fradkin2010",
+        "Jeffreys2019"
+      ]
+    },
+    {
+      "rule_id": "LOAD-001",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Foster2001); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Foster2001"
+      ]
+    },
+    {
+      "rule_id": "LOAD-003",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Foster1998); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Foster1998"
+      ]
+    },
+    {
+      "rule_id": "REG-004",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Bosquet2013); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Direction moderate; exact percentages expert practice. Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Bosquet2013"
+      ]
+    },
+    {
+      "rule_id": "IND-001",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Confidence Moderate Evidence rested on sources not yet opened (Roberts2020); the Product Owner chose ratings that match what was read (D-122).",
+      "confidence": "Expert Practice",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
+      "verification_pending": [
+        "Roberts2020"
+      ]
+    },
+    {
+      "rule_id": "SAF-001",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Rated High on an abstract of ACSM's screening update and a located PAR-Q+ source; pre-exercise screening is expert consensus (the Phase 1 report itself says 'High (consensus)'). Rating matched to what was read (D-122).",
+      "confidence": "Moderate Evidence",
+      "uncertainty": "Screen wording is original and untested; licence check needed before using PAR-Q+ text verbatim. Moderate (consensus): the screening scheme is an expert consensus, not trial evidence (D-122)."
+    },
+    {
+      "rule_id": "SAF-002",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "Rated High on an abstract of ACSM's screening update and a located PAR-Q+ source; pre-exercise screening is expert consensus (the Phase 1 report itself says 'High (consensus)'). Rating matched to what was read (D-122).",
+      "confidence": "Moderate Evidence",
+      "uncertainty": "Symptom list is conservative by design. Moderate (consensus): the screening scheme is an expert consensus, not trial evidence (D-122)."
+    },
+    {
+      "rule_id": "AGE-001",
+      "from_version": "1.1.0",
+      "to_version": "1.2.0",
+      "change": "MINOR",
+      "reason": "The rating (High) contradicted its own note (part of the direction rests on one trial). Fragala 2019 was read in full and supports training older adults; the age-specific dose numbers are expert practice (D-122).",
+      "confidence": "Moderate Evidence",
+      "uncertainty": "Training older adults: supported (Fragala 2019, read in full). Keeping a higher minimum volume with age rests on one trial (Bickel 2011: reduced doses kept muscle gains in 20-35-year-olds but not in 60-75-year-olds): Limited Evidence. The numbers are expert practice."
+    },
+    {
+      "rule_id": "INT-004",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "LeSuer 1997 shows high correlation but formula- and lift-specific error (per two secondary sources: only 2 of 7 formulas matched the bench press maximum; all underestimated the deadlift), and it did not test this app's version (Epley adjusted for reps in reserve, valid to reps + RIR <= 12). Rated Limited until the full results are read (D-122).",
+      "confidence": "Limited Evidence",
+      "uncertainty": "Formula accuracy falls above ~10 reps and varies by lift. Estimates differ by formula and lift (LeSuer 1997 via secondary sources); the app's reps-in-reserve version is untested. The 90% start and the first-session confirmation limit the risk; a deadlift estimate tends to be low (the cautious direction).",
+      "verification_pending": [
+        "LeSuer1997"
+      ]
+    },
+    {
+      "rule_id": "INT-005",
+      "from_version": "1.0.0",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "LeSuer 1997 shows high correlation but formula- and lift-specific error (per two secondary sources: only 2 of 7 formulas matched the bench press maximum; all underestimated the deadlift), and it did not test this app's version (Epley adjusted for reps in reserve, valid to reps + RIR <= 12). Rated Limited until the full results are read (D-122).",
+      "confidence": "Limited Evidence",
+      "uncertainty": "Estimates differ by formula and lift (LeSuer 1997 via secondary sources); the app's reps-in-reserve version is untested. The 90% start and the first-session confirmation limit the risk; a deadlift estimate tends to be low (the cautious direction).",
+      "verification_pending": [
+        "LeSuer1997"
+      ]
+    },
+    {
+      "rule_id": "SAF-010",
+      "from_version": "1.0.2",
+      "to_version": "1.1.0",
+      "change": "MINOR",
+      "reason": "The health-condition table moves to 1.0.2 (D-122, after the Phase 4 Part 4 evidence review): cancer that has spread to the bones follows a supervised programme from the care team; pregnancy uses the stricter of the Canadian 2019 guideline and ACOG; a past foot ulcer or Charcot foot needs a doctor's OK; the internal stop-sign text is in words.",
+      "parameters_replace": {
+        "table": "health_conditions",
+        "table_version": "1.0.2",
+        "combine": "most_restrictive",
+        "status_values": [
+          "yes",
+          "no",
+          "not_sure"
+        ],
+        "not_sure_counts_as": "no",
+        "clearance_scopes": [
+          "light_moderate",
+          "vigorous",
+          "intervals"
+        ],
+        "clinical_value_gates": false,
+        "entries": [
+          "hbp_controlled",
+          "hbp_not_controlled",
+          "t2d",
+          "diabetes_eye",
+          "diabetes_feet",
+          "diabetes_autonomic",
+          "t1d",
+          "heart",
+          "asthma",
+          "oa_knee",
+          "oa_hip",
+          "low_back_pain",
+          "osteoporosis",
+          "osteoporosis_spine_fracture",
+          "pregnancy",
+          "postpartum",
+          "obesity",
+          "obesity_severe",
+          "stroke",
+          "copd",
+          "cancer"
+        ]
+      }
+    }
+  ]
+}

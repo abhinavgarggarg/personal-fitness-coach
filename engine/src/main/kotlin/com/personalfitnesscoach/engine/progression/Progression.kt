@@ -76,30 +76,37 @@ object Progression {
             EngineResult(p, listOf(Decision(DecisionKind.LOAD_CHANGE, rules, reason, inputs,
                 mapOf("load" to p.load, "range" to "${p.repRange.first}-${p.repRange.last}", "repTarget" to p.repTarget, "action" to p.action))) + extra)
 
-        // PROG-008: technique gate first.
+        // PROG-008 2.0.0: technique gate first — except that missed reps or sets much harder than planned still reduce (PROG-004), with
+        // the form tip (D-121). The easier version is offered only when the library has one (Part 4 review: 93 of 157 exercises have
+        // none, and the offer text was shown anyway).
         val worstForm = work.map { it.formOk }.maxByOrNull { it.ordinal } ?: FormCheck.YES
-        if (worstForm != FormCheck.YES) {
-            val regress = worstForm == FormCheck.NO && e.consecutiveFormNo >= P.PROG_008.regress_after_no
-            val extra = ArrayList<Decision>()
-            if (worstForm == FormCheck.NO) extra += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_008), ReasonKey.TECHNIQUE_CUE)
-            if (regress) extra += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.PROG_008), ReasonKey.REGRESSION_OFFERED,
-                inputs = mapOf("consecutiveNo" to e.consecutiveFormNo))
+        val setsBelow = work.count { it.reps < lo }
+        val tooHard = over > P.PROG_004.hold_band[1] || setsBelow >= 2
+        val twice = worstForm == FormCheck.NO && e.consecutiveFormNo >= P.PROG_008.regress_after_no
+        val easier = com.personalfitnesscoach.engine.library.Library.regressionOf(e.exercise)
+        val regress = twice && easier != null
+        val formExtra = ArrayList<Decision>()
+        if (worstForm == FormCheck.NO) formExtra += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_008), ReasonKey.TECHNIQUE_CUE)
+        if (twice) formExtra += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.PROG_008), if (regress) ReasonKey.REGRESSION_OFFERED else ReasonKey.FORM_HOLD_NO_EASIER,
+            inputs = mapOf("consecutiveNo" to e.consecutiveFormNo), outputs = mapOf("easier" to easier?.id))
+        if (worstForm != FormCheck.YES && !tooHard) {
             return result(Prescription(e.load, e.repRange, repTargetHold(work, lo, hi), ProgressionAction.HOLD, offerRegression = regress),
-                listOf(RuleIds.PROG_008), ReasonKey.LOAD_HOLD_TECHNIQUE, extra)
+                listOf(RuleIds.PROG_008), ReasonKey.LOAD_HOLD_TECHNIQUE, formExtra)
         }
 
         // PROG-004: reduce when clearly too hard or reps fell short on ≥2 sets.
-        val setsBelow = work.count { it.reps < lo }
-        if (over > P.PROG_004.hold_band[1] || setsBelow >= 2) {
+        if (tooHard) {
+            val rules = if (worstForm != FormCheck.YES) listOf(RuleIds.PROG_008) else emptyList()
             return if (e.previousWasReduction) {
                 val base = e.loadBeforeReductions ?: e.load
                 val target = base * (1.0 - P.PROG_004.second_reduce_pct / 100.0)
                 val load = lowerLoad(target, e.load, e.available)
-                result(Prescription(load, e.repRange, lo, ProgressionAction.REDUCE_AND_REVIEW),
-                    listOf(RuleIds.PROG_004, RuleIds.REG_001), ReasonKey.LOAD_REDUCE_REPEATED)
+                result(Prescription(load, e.repRange, lo, ProgressionAction.REDUCE_AND_REVIEW, offerRegression = regress),
+                    listOf(RuleIds.PROG_004, RuleIds.REG_001) + rules, ReasonKey.LOAD_REDUCE_REPEATED, formExtra)
             } else {
                 val load = lowerLoad(e.load * (1.0 - P.PROG_004.reduce_pct / 100.0), e.load, e.available)
-                result(Prescription(load, e.repRange, lo, ProgressionAction.REDUCE), listOf(RuleIds.PROG_004), ReasonKey.LOAD_REDUCE_EFFORT_HIGH)
+                result(Prescription(load, e.repRange, lo, ProgressionAction.REDUCE, offerRegression = regress), listOf(RuleIds.PROG_004) + rules,
+                    ReasonKey.LOAD_REDUCE_EFFORT_HIGH, formExtra)
             }
         }
         if (over > P.PROG_004.hold_band[0]) {
@@ -263,6 +270,8 @@ object Autoregulation {
         if (rpeDelta > P.INT_007.hard_threshold || set.reps < rangeBottom) {
             val down = Progression.lowerLoad(currentLoad * (1.0 - P.INT_007.step_down_pct / 100.0), currentLoad, available)
             if (down < minDown - 1e-9) return EngineResult(currentLoad, d(ReasonKey.INSESSION_LIMIT_REACHED, currentLoad))
+            // Already the lightest load: nothing lighter to give, so the notice says so instead of promising a lighter set (Part 4 review).
+            if (down >= currentLoad - 1e-9) return EngineResult(currentLoad, d(ReasonKey.INSESSION_AT_LIGHTEST, currentLoad))
             return EngineResult(down, d(ReasonKey.INSESSION_LOAD_DOWN, down))
         }
         if (rpeDelta < P.INT_007.easy_threshold && set.reps >= targetReps) {

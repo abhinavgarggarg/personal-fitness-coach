@@ -71,7 +71,11 @@ fun WorkoutSheetPanel(v: PlayerView, sheet: WorkoutSheet) {
             is WorkoutSheet.HurtsResult -> {
                 Heading(stringResource(R.string.sheet_hurts_title))
                 val o = sheet.outcome
-                InfoCard(stringResource(Labels.painAction(o.action)), if (o.endSession || o.regionConservative) Tone.WARN else Tone.NEUTRAL) {
+                // "The weight is lower" only when it really is (Part 4 review: at the lightest weight, or on bodyweight work, nothing was lowered).
+                val lowered = sheet.changes.any { it is com.personalfitnesscoach.data.core.player.Change.LoadLowered }
+                val head = if (o.action == com.personalfitnesscoach.engine.safety.PainAction.CONTINUE_CAUTION && !lowered) R.string.pain_result_caution_range
+                    else Labels.painAction(o.action)
+                InfoCard(stringResource(head), if (o.endSession || o.regionConservative) Tone.WARN else Tone.NEUTRAL) {
                     if (o.suggestProfessional) Text(stringResource(R.string.pain_result_professional))
                     if (o.endSession) Text(stringResource(R.string.pain_result_end))
                 }

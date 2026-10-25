@@ -1,0 +1,83 @@
+{
+  "registry_version": "4.0.0",
+  "base_registry_version": "3.0.1",
+  "kind": "MAJOR",
+  "date": "2026-10-25",
+  "title": "Safety audit decisions: strong muscle pain, form with missed reps, the bone-loading block",
+  "summary": "Three safety boundaries change after the Phase 4 Part 4 independent safety review, each chosen by the Product Owner on 25 October 2026. SAF-003: muscle pain (a burn or soreness) rated 7/10 or more stops that exercise for today; it was always 'carry on'. PROG-008: a form answer other than 'yes' no longer stops the PROG-004 reduction when the reps fell short or the sets were much harder than planned; the easier version is offered only when the library has one. CON-004: the osteoporosis bone-loading block starts with heel drops for its first 4 weeks; small hops follow only for someone who is not a beginner, is under 65 and has reported no hip, knee or ankle pain in the last 4 weeks; the block stays when another condition sets impact 'as tolerated' (controlled high blood pressure). The health-condition table's entries don't change.",
+  "approval": {
+    "by": "Product Owner",
+    "date": "2026-10-25",
+    "reference": "D-121"
+  },
+  "safety_review": "Phase 4 Part 4 independent safety review (19-25 Oct 2026), findings 3 (small hops from the first session for a 71-year-old beginner with osteoporosis), 8 (muscle pain 9/10 never stops anything), 10 (no bone-loading block with controlled high blood pressure) and 13 (form not solid with missed reps keeps the weight). Each option was put to the Product Owner with the reviewer's cautious-coach view as the recommendation; the implementation is re-checked by an independent reviewer before the Phase 4 gate.",
+  "changed_rules": [
+    {
+      "rule_id": "SAF-003",
+      "from_version": "1.0.0",
+      "to_version": "2.0.0",
+      "change": "MAJOR",
+      "reason": "A safety boundary is added: very strong muscle pain was always 'carry on' (Part 4 review finding 8). Chosen by the Product Owner on 25 Oct 2026 (D-121).",
+      "statement": "Pain is a separate gate from readiness. Joint/tendon pain <=3/10 not worsening: continue with load -10-20% or shorter range. 4-6/10 or worsening: stop the exercise, offer substitutes with joint stress <=1 for that joint, region to conservative mode. >=7/10 or sharp, swelling, instability, locking, numbness/tingling, or after a fall: stop loading the region, end session if whole-body movement affected, suggest a professional. Muscle pain (a burn or soreness) >=7/10: stop that exercise for today and offer other exercises; the region is not put in conservative mode.",
+      "uncertainty": "Thresholds are expert practice; rehab data (supervised) allow up to 5/10. The 7/10 stop for muscle pain is a cautious-coach choice (Expert Practice), not a studied threshold.",
+      "tests_add": [
+        "TC-SAF-003e"
+      ],
+      "parameters_replace": {
+        "continue_max_rating": 3,
+        "continue_load_reduction_pct": [
+          10,
+          20
+        ],
+        "stop_exercise_min_rating": 4,
+        "stop_region_min_rating": 7,
+        "substitute_max_joint_stress": 1,
+        "stop_region_descriptors": [
+          "sharp",
+          "stabbing",
+          "swelling",
+          "instability",
+          "locking",
+          "numbness",
+          "tingling",
+          "after_fall_or_impact"
+        ],
+        "muscle_stop_exercise_min_rating": 7
+      }
+    },
+    {
+      "rule_id": "PROG-008",
+      "from_version": "1.0.0",
+      "to_version": "2.0.0",
+      "change": "MAJOR",
+      "reason": "Training direction: a set that missed its reps keeps the same weight when form wasn't solid (Part 4 review finding 13). The Product Owner chose the PROG-004 reduction with the form tip on 25 Oct 2026 (D-121). The offer of an easier version is made only when one exists (review finding 7).",
+      "statement": "'Form felt solid?' yes/unsure/no after main lifts and new exercises; unsure -> hold; no -> hold + cue; when the reps fell short of the range on >=2 sets or the sets were much harder than planned, PROG-004's reduction applies instead of the hold (with the cue after 'no'); two no -> offer the easier version (regression) when the library has one, otherwise hold and point to Replace. Bodyweight and assisted ladders: unsure or no holds the rung and the assistance.",
+      "uncertainty": "Expert practice; the order of the technique and effort checks is a coaching choice.",
+      "tests_add": [
+        "TC-PROG-008c",
+        "TC-PROG-008d"
+      ]
+    },
+    {
+      "rule_id": "CON-004",
+      "from_version": "1.1.0",
+      "to_version": "2.0.0",
+      "change": "MAJOR",
+      "reason": "A safety boundary changes: the bone-loading block began with small hops from the first session for everyone with osteoporosis, a 71-year-old beginner included (Part 4 review finding 3), and disappeared when controlled high blood pressure was also selected (finding 10). Chosen by the Product Owner on 25 Oct 2026 (D-121).",
+      "statement": "Low-impact, concentric-dominant modalities first; impact work <=1/week and not the day before heavy legs. A short bone-loading block from the osteoporosis condition entry (≤5 min, ≥50 low-level landings) is not an impact session under this rule. It starts with heel drops for its first 4 weeks; small hops follow only for someone who is not a beginner, is under 65 and has reported no hip, knee or ankle pain in the last 4 weeks. The block stays when another condition sets impact 'as tolerated'; a lower impact level (such as osteoarthritis) still removes it.",
+      "uncertainty": "The UK consensus (ROS22) advises building impact up gradually; the 4 weeks and the age of 65 are expert practice for this app.",
+      "tests_add": [
+        "TC-CON-004d",
+        "TC-CON-004e"
+      ],
+      "parameters_replace": {
+        "impact_sessions_per_week_max": 1,
+        "bone_loading_block_exempt": true,
+        "bone_loading_block_max_minutes": 5,
+        "bone_loading_heel_drops_weeks": 4,
+        "bone_loading_hops_age_below": 65,
+        "bone_loading_pain_lookback_days": 28
+      }
+    }
+  ]
+}

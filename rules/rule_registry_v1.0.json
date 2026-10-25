@@ -1,7 +1,7 @@
 {
-  "registry_version": "3.0.1",
-  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 3.0.1 approved by Delegated: evidence verification only (no wording, parameter or confidence change), reported to the Product Owner at the Phase 4 gate on 2026-10-19",
-  "generated": "2026-10-19",
+  "registry_version": "4.1.0",
+  "status": "APPROVED — Product Owner Phase 1 sign-off on 2026-10-07; Research Update 1.1 sign-off on 2026-10-09; research update 4.1.0 approved by Product Owner on 2026-10-25",
+  "generated": "2026-10-25",
   "confidence_scale": [
     "High Evidence",
     "Moderate Evidence",
@@ -272,7 +272,7 @@
     },
     "LeSuer1997": {
       "citation": "LeSuer DA, McCormick JH, Mayhew JL, Wasserstein RL, Arnold MD. The accuracy of prediction equations for estimating 1-RM performance in the bench press, squat, and deadlift. J Strength Cond Res. 1997;11(4):211-213.",
-      "verification": "partly checked 2026-10-19 (part of the abstract, Semantic Scholar): 67 untrained college students (40 men, 27 women); all correlations between predicted and achieved 1RM high (r > 0.95); the lift-by-lift accuracy part could not be read",
+      "verification": "partly checked 2026-10-19 (part of the abstract) and 2026-10-25 (two secondary sources: Whisenant 2003, JSCR; an arXiv 2026 review): 67 untrained students; loads of 10 reps or fewer taken to failure; correlations r > 0.95, but only 2 of 7 formulas matched the bench press maximum and all underestimated the deadlift; the app's reps-in-reserve version was not tested",
       "url": "https://doi.org/10.1519/00124278-199711000-00001",
       "note": "The earlier URL opened a different paper (Mayhew et al. 2008, bench press in women)."
     },
@@ -641,7 +641,7 @@
       "citation": "WHO STEPwise approach (STEPS) waist-circumference protocol, as summarised by the MRC Epidemiology Unit / NIHR Cambridge BRC Measurement Toolkit.",
       "verification": "partly checked 2026-10-19 through Statistics Canada Health Reports 2012 (82-003-X 2012003, article 11707), which uses the WHO protocol: the midpoint between the lowest rib and the top of the iliac crest, at the end of a normal breath out, and notes the WHO and NIH sites give different readings; the WHO 2011 report's PDF (iris.who.int) could not be read",
       "url": "",
-      "note": "Primary source still to read: WHO. Waist circumference and waist-hip ratio: report of a WHO expert consultation, Geneva, 8-11 December 2008. WHO, 2011. ISBN 9789241501491."
+      "note": "The protocol is in the WHO STEPS surveillance manual; the WHO 2011 expert-consultation report (ISBN 9789241501491) is the primary source still to read. The app's instructions match the protocol as reported by Statistics Canada 2012."
     },
     "Greendale2019": {
       "citation": "Greendale GA, Sternfeld B, Huang M, et al. Changes in body composition and weight during the menopause transition. JCI Insight. 2019;4(5):e124865. doi:10.1172/jci.insight.124865",
@@ -765,7 +765,7 @@
     },
     "ACOG20": {
       "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 804. Obstet Gynecol. 2020;135(4):e178-e188. doi:10.1097/AOG.0000000000003772",
-      "verification": "located; citation checked 2026-10-12 in Crossref; the full text could not be opened on 2026-10-12 or 2026-10-19 (acog.org and the publisher refused the request). A secondary summary of ACOG's earlier (2015) opinion lists broadly the same contraindications and warning signs; the 2020 details the app uses (placenta praevia after 28 weeks, growth restriction, triplets or more) still rest on the unread 2020 text",
+      "verification": "located; citation checked 2026-10-12 in Crossref; full text not opened (acog.org and the publisher refused the request on 2026-10-12, 19 and 25). Correction (25 Oct 2026): the three details the app used (placenta praevia after 28 weeks, growth restriction, triplets or more) come from the Canadian 2019 guideline (CAN19, checked), not from ACOG; ACOG is stricter in places (see ACOG15). Since table 1.0.2 the stricter of the two applies. A 2021 correction (Obstet Gynecol 2021;138:683) is to be checked with the full text",
       "url": "https://doi.org/10.1097/AOG.0000000000003772"
     },
     "CAN25": {
@@ -795,7 +795,7 @@
     },
     "CAM19": {
       "citation": "Campbell KL, Winters-Stone KM, Wiskemann J, et al. Exercise Guidelines for Cancer Survivors: Consensus Statement from International Multidisciplinary Roundtable. Med Sci Sports Exerc. 2019;51(11):2375-2390. doi:10.1249/MSS.0000000000002116",
-      "verification": "checked (abstract); full text not opened on 2026-10-19 (PubMed/PMC refused the request). The International Bone Metastases Exercise Working Group's 2022 recommendations (Campbell et al.; UBC summary) agree with the app's caution for bone spread: risk assessment and medical consultation before exercise, qualified supervision, lesion location considered",
+      "verification": "checked (abstract and a Breastcancer.org summary); full text not opened (PubMed/PMC refused the request on 2026-10-19 and 25). Correction (25 Oct 2026): the earlier note said the 2022 bone-metastases recommendations agree with the app; they asked for more (supervision, lesion-specific limits). Since table 1.0.2 bone spread follows the care team (CAM22). Lymphoedema: supervised, slowly progressed resistance training is recommended; still to read in full",
       "url": "https://doi.org/10.1249/MSS.0000000000002116"
     },
     "PFCSim2026": {
@@ -804,19 +804,33 @@
     },
     "FDA26": {
       "citation": "U.S. Food and Drug Administration. General Wellness: Policy for Low Risk Devices. Guidance for Industry and FDA Staff, 6 January 2026 (supersedes 27 September 2019).",
-      "verification": "checked 2026-10-19 (primary text): general wellness = intended only for general wellness use and low risk; claims such as logging, tracking or trending exercise and 'may help reduce the risk of' / 'may help living well with' a chronic condition are in scope; products whose labelling, user interface or functionality references specific diseases, clinical conditions or diagnostic thresholds are not general wellness products; a prompt to see a health professional is acceptable without thresholds, diagnoses or treatment advice",
+      "verification": "checked 2026-10-19 and 2026-10-25 (primary text): general wellness = intended only for general wellness use and low risk; logging, tracking and 'may help living well with' a chronic condition are in scope; NOT general wellness when labelling, user interface or functionality includes references to specific diseases, clinical conditions or diagnostic thresholds, alerts or prompts that recommend or require specific clinical action or medical management, or treatment guidance; a prompt to see a professional is acceptable only if it does not name a specific disease or condition, has no thresholds and gives no ongoing alerts. The app's condition table names conditions and adapts training to them: a regulatory question for any public release (D-058)",
       "url": "https://www.fda.gov/media/90652/download"
     },
     "MDCG19-11": {
       "citation": "Medical Device Coordination Group. MDCG 2019-11 rev.1: Qualification and classification of software - Regulation (EU) 2017/745 and Regulation (EU) 2017/746. June 2025.",
-      "verification": "checked 2026-10-19 (primary text): software must have a medical purpose on its own to be a medical device; wellness or fitness apps do not qualify; the manufacturer's stated intended purpose decides qualification and class",
+      "verification": "checked 2026-10-19 and 2026-10-25 (primary text): software needs a medical purpose of its own to be a medical device; wellness or fitness apps do not qualify; the stated intended purpose decides; software 'intended to alleviate pain by recommending personalised rehabilitation exercises' is given as medical-device software, which the app's pain-adapted handling of arthritis and back pain comes close to: a regulatory question for any public release (D-058)",
       "url": "https://health.ec.europa.eu/document/download/b45335c5-1679-4c71-a91c-fc7a4d37f12b_en?filename=mdcg_2019_11_en.pdf"
+    },
+    "ADA26": {
+      "citation": "American Diabetes Association Professional Practice Committee. 5. Facilitating Positive Health Behaviors and Well-being to Improve Health Outcomes: Standards of Care in Diabetes-2026. Diabetes Care. 2026;49(Suppl 1):S89-S131.",
+      "verification": "checked 2026-10-25 (full section, hosted copy; independent evidence review): recommendations 5.34 and 5.36-5.38 agree with the t2d entry (break up sitting every 30 minutes; 150+ minutes over at least 3 days with no more than 2 days in a row off; resistance training 2-3 times a week on non-consecutive days; balance work for older adults); its pre-exercise list includes a history of foot ulcers or Charcot foot (now in diabetes_feet, table 1.0.2)",
+      "url": "https://doi.org/10.2337/dc26-S005"
+    },
+    "CAM22": {
+      "citation": "Campbell KL, Cormie P, Weller S, et al. Exercise Recommendation for People With Bone Metastases: Expert Consensus for Health Care Providers and Exercise Professionals. JCO Oncol Pract. 2022;18(5):e697-e709. doi:10.1200/OP.21.00454",
+      "verification": "checked 2026-10-25 (full text, university repository copy; independent evidence review): risk assessment and consultation with the medical team before exercise; prescription by a physiotherapist or clinical exercise physiologist with cancer training; supervised instruction before unsupervised exercise; avoid rapid or loaded end-range movement at the lesion and high loads on the spine and the hip end of the thigh bone; start low and progress slowly; watch for new or increasing pain, new weakness or numbness and bladder or bowel change. The app follows a supervised programme from the care team for bone spread (table 1.0.2)",
+      "url": "https://doi.org/10.1200/OP.21.00454"
+    },
+    "ACOG15": {
+      "citation": "American College of Obstetricians and Gynecologists. Physical Activity and Exercise During Pregnancy and the Postpartum Period. Committee Opinion No. 650 (2015, reaffirmed 2019; replaced by No. 804 in 2020).",
+      "verification": "checked 2026-10-25 (full text, hosted copy; independent evidence review): absolute contraindications include placenta praevia after 26 weeks, a multiple pregnancy at risk of premature labour, severe anaemia, pre-eclampsia or pregnancy-induced hypertension, an incompetent cervix or cerclage; relative ones include an unevaluated arrhythmia, chronic bronchitis, extreme under- or overweight, poorly controlled seizures or hyperthyroidism, heavy smoking, orthopaedic limits and an extremely sedentary lifestyle; warning signs add headache, muscle weakness affecting balance and calf pain or swelling. Two summaries of No. 804 report the same lists and add abdominal pain"
     }
   },
   "rules": [
     {
       "rule_id": "SAF-001",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "safety",
       "title": "Pre-participation screening and conservative mode",
       "statement": "Eight-question screen at onboarding (ACSM 2015 logic, PAR-Q+ domains, original wording). Symptoms, or known disease while inactive, recommend medical clearance and set conservative mode until the user confirms clearance.",
@@ -838,14 +852,14 @@
           "all_no": "standard"
         }
       },
-      "confidence": "High Evidence",
+      "confidence": "Moderate Evidence",
       "evidence": [
         "Riebe2015",
         "Warburton2011"
       ],
-      "uncertainty": "Screen wording is original and untested; licence check needed before using PAR-Q+ text verbatim.",
+      "uncertainty": "Screen wording is original and untested; licence check needed before using PAR-Q+ text verbatim. Moderate (consensus): the screening scheme is an expert consensus, not trial evidence (D-122).",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "onboarding",
         "workout_generation",
@@ -855,12 +869,12 @@
         "TC-SAF-001a",
         "TC-SAF-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "MINOR: Rated High on an abstract of ACSM's screening update and a located PAR-Q+ source; pre-exercise screening is expert consensus (the Phase 1 report itself says 'High (consensus)'). Rating matched to what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
       "status": "approved"
     },
     {
       "rule_id": "SAF-002",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "safety",
       "title": "Red-flag symptoms trigger SAFETY STOP",
       "statement": "Chest pain/pressure, fainting or near-fainting, dizziness, unusual breathlessness, palpitations, sudden severe pain, or stroke-like signs end the session immediately with calm guidance; emergency number shown; resume only after user confirms resolution or medical review; first session back LIGHT.",
@@ -880,13 +894,13 @@
         "first_session_after": "LIGHT",
         "convert_to_lighter_workout": false
       },
-      "confidence": "High Evidence",
+      "confidence": "Moderate Evidence",
       "evidence": [
         "Riebe2015"
       ],
-      "uncertainty": "Symptom list is conservative by design.",
+      "uncertainty": "Symptom list is conservative by design. Moderate (consensus): the screening scheme is an expert consensus, not trial evidence (D-122).",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "readiness",
         "guided_workout",
@@ -897,15 +911,15 @@
         "TC-SAF-002a",
         "TC-SAF-002b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "MINOR: Rated High on an abstract of ACSM's screening update and a located PAR-Q+ source; pre-exercise screening is expert consensus (the Phase 1 report itself says 'High (consensus)'). Rating matched to what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
       "status": "approved"
     },
     {
       "rule_id": "SAF-003",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "category": "safety",
       "title": "In-session pain protocol",
-      "statement": "Pain is a separate gate from readiness. Joint/tendon pain <=3/10 not worsening: continue with load -10-20% or shorter range. 4-6/10 or worsening: stop the exercise, offer substitutes with joint stress <=1 for that joint, region to conservative mode. >=7/10 or sharp, swelling, instability, locking, numbness/tingling, or after a fall: stop loading the region, end session if whole-body movement affected, suggest a professional.",
+      "statement": "Pain is a separate gate from readiness. Joint/tendon pain <=3/10 not worsening: continue with load -10-20% or shorter range. 4-6/10 or worsening: stop the exercise, offer substitutes with joint stress <=1 for that joint, region to conservative mode. >=7/10 or sharp, swelling, instability, locking, numbness/tingling, or after a fall: stop loading the region, end session if whole-body movement affected, suggest a professional. Muscle pain (a burn or soreness) >=7/10: stop that exercise for today and offer other exercises; the region is not put in conservative mode.",
       "parameters": {
         "continue_max_rating": 3,
         "continue_load_reduction_pct": [
@@ -924,15 +938,16 @@
           "numbness",
           "tingling",
           "after_fall_or_impact"
-        ]
+        ],
+        "muscle_stop_exercise_min_rating": 7
       },
       "confidence": "Expert Practice",
       "evidence": [
         "Silbernagel2007"
       ],
-      "uncertainty": "Thresholds are expert practice; rehab data (supervised) allow up to 5/10.",
+      "uncertainty": "Thresholds are expert practice; rehab data (supervised) allow up to 5/10. The 7/10 stop for muscle pain is a cautious-coach choice (Expert Practice), not a studied threshold.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "guided_workout",
         "substitution",
@@ -940,9 +955,10 @@
       ],
       "tests": [
         "TC-SAF-003a",
-        "TC-SAF-003b"
+        "TC-SAF-003b",
+        "TC-SAF-003e"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "MAJOR: A safety boundary is added: very strong muscle pain was always 'carry on' (Part 4 review finding 8). Chosen by the Product Owner on 25 Oct 2026 (D-121). — Safety audit decisions: strong muscle pain, form with missed reps, the bone-loading block (registry 4.0.0, D-121)",
       "status": "approved"
     },
     {
@@ -1852,7 +1868,7 @@
     },
     {
       "rule_id": "INT-004",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "intensity",
       "title": "Estimated 1RM (Epley, RIR-adjusted)",
       "statement": "e1RM = load x (1 + (reps + RIR)/30); update only from sets with reps+RIR <= 12 and RIR <= 3; session value = best valid set; smoothed E <- E + 0.4 (S - E); single update capped at +5%.",
@@ -1864,15 +1880,15 @@
         "smoothing_alpha": 0.4,
         "max_single_rise_pct": 5
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Limited Evidence",
       "evidence": [
         "LeSuer1997",
         "Brzycki1993",
         "Epley1985"
       ],
-      "uncertainty": "Formula accuracy falls above ~10 reps and varies by lift.",
+      "uncertainty": "Formula accuracy falls above ~10 reps and varies by lift. Estimates differ by formula and lift (LeSuer 1997 via secondary sources); the app's reps-in-reserve version is untested. The 90% start and the first-session confirmation limit the risk; a deadlift estimate tends to be low (the cautious direction).",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "e1rm",
         "load_selection"
@@ -1881,25 +1897,28 @@
         "TC-INT-004a",
         "TC-INT-004b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: LeSuer 1997 shows high correlation but formula- and lift-specific error (per two secondary sources: only 2 of 7 formulas matched the bench press maximum; all underestimated the deadlift), and it did not test this app's version (Epley adjusted for reps in reserve, valid to reps + RIR <= 12). Rated Limited until the full results are read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "LeSuer1997"
+      ]
     },
     {
       "rule_id": "INT-005",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "intensity",
       "title": "Load selection from e1RM",
       "statement": "load = e1RM / (1 + (target reps + target RIR)/30), then rounded per PROG-003; without e1RM use CAL-001.",
       "parameters": {
         "divisor": 30
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Limited Evidence",
       "evidence": [
         "LeSuer1997"
       ],
-      "uncertainty": "",
+      "uncertainty": "Estimates differ by formula and lift (LeSuer 1997 via secondary sources); the app's reps-in-reserve version is untested. The 90% start and the first-session confirmation limit the risk; a deadlift estimate tends to be low (the cautious direction).",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "load_selection"
       ],
@@ -1907,8 +1926,11 @@
         "TC-INT-005a",
         "TC-INT-005b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: LeSuer 1997 shows high correlation but formula- and lift-specific error (per two secondary sources: only 2 of 7 formulas matched the bench press maximum; all underestimated the deadlift), and it did not test this app's version (Epley adjusted for reps in reserve, valid to reps + RIR <= 12). Rated Limited until the full results are read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "LeSuer1997"
+      ]
     },
     {
       "rule_id": "INT-006",
@@ -2017,7 +2039,7 @@
     },
     {
       "rule_id": "REP-002",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "reps",
       "title": "Hypertrophy range",
       "statement": "Compounds 6-12, isolation 8-20 near target RIR.",
@@ -2035,14 +2057,14 @@
           80
         ]
       },
-      "confidence": "High Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Schoenfeld2017load",
         "Schoenfeld2021reps"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "workout_generation"
       ],
@@ -2050,12 +2072,16 @@
         "TC-REP-002a",
         "TC-REP-002b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence High Evidence rested on sources not yet opened (Schoenfeld2017load, Schoenfeld2021reps); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Schoenfeld2017load",
+        "Schoenfeld2021reps"
+      ]
     },
     {
       "rule_id": "REP-003",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "reps",
       "title": "Muscular endurance range",
       "statement": "15-30 reps or 30-60 s at <60% 1RM.",
@@ -2070,13 +2096,13 @@
         ],
         "pct_1rm_max": 60
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Schoenfeld2021reps"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "workout_generation"
       ],
@@ -2084,8 +2110,11 @@
         "TC-REP-003a",
         "TC-REP-003b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Schoenfeld2021reps); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Schoenfeld2021reps"
+      ]
     },
     {
       "rule_id": "REP-004",
@@ -2188,7 +2217,7 @@
     },
     {
       "rule_id": "REST-001",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "rest",
       "title": "Heavy compounds",
       "statement": ">=80% or <=6 reps: 120-300 s, default 180 s.",
@@ -2197,13 +2226,13 @@
         "max_s": 300,
         "default_s": 180
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Grgic2018rest"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "timers",
         "time_budget"
@@ -2212,8 +2241,11 @@
         "TC-REST-001a",
         "TC-REST-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Grgic2018rest); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Grgic2018rest"
+      ]
     },
     {
       "rule_id": "REST-002",
@@ -2486,19 +2518,19 @@
     },
     {
       "rule_id": "CON-001",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "concurrent",
       "title": "Strength first in shared sessions",
       "statement": "Resistance before conditioning except conditioning-priority days.",
       "parameters": {},
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Murlasits2018",
         "Schumann2022"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "workout_generation"
       ],
@@ -2506,8 +2538,12 @@
         "TC-CON-001a",
         "TC-CON-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Murlasits2018, Schumann2022); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Murlasits2018",
+        "Schumann2022"
+      ]
     },
     {
       "rule_id": "CON-002",
@@ -2566,46 +2602,54 @@
     },
     {
       "rule_id": "CON-004",
-      "version": "1.1.0",
+      "version": "2.1.0",
       "category": "concurrent",
       "title": "Low-impact modality preference",
-      "statement": "Low-impact, concentric-dominant modalities first; impact work <=1/week and not the day before heavy legs. A short bone-loading block from the osteoporosis condition entry (≤5 min, low-level landings such as heel drops or small hops, ≥50 landings) is not an impact session under this rule.",
+      "statement": "Low-impact, concentric-dominant modalities first; impact work <=1/week and not the day before heavy legs. A short bone-loading block from the osteoporosis condition entry (≤5 min, ≥50 low-level landings) is not an impact session under this rule. It starts with heel drops for its first 4 weeks; small hops follow only for someone who is not a beginner, is under 65 and has reported no hip, knee or ankle pain in the last 4 weeks. The block stays when another condition sets impact 'as tolerated'; a lower impact level (such as osteoarthritis) still removes it.",
       "parameters": {
         "impact_sessions_per_week_max": 1,
         "bone_loading_block_exempt": true,
-        "bone_loading_block_max_minutes": 5
+        "bone_loading_block_max_minutes": 5,
+        "bone_loading_heel_drops_weeks": 4,
+        "bone_loading_hops_age_below": 65,
+        "bone_loading_pain_lookback_days": 28
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Wilson2012"
       ],
-      "uncertainty": "",
+      "uncertainty": "The UK consensus (ROS22) advises building impact up gradually; the 4 weeks and the age of 65 are expert practice for this app. Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "conditioning_selection"
       ],
       "tests": [
         "TC-CON-004a",
-        "TC-CON-004b"
+        "TC-CON-004b",
+        "TC-CON-004d",
+        "TC-CON-004e"
       ],
-      "change_reason": "MINOR: SAF-010 osteoporosis entry: the UK consensus advises moderate impact most days; the weekly impact-session cap was written for jumping conditioning work. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Wilson2012); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Wilson2012"
+      ]
     },
     {
       "rule_id": "CON-005",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "concurrent",
       "title": "Power protection",
       "statement": "Power work at session start; never after HIIT the same day.",
       "parameters": {},
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Schumann2022"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "workout_generation"
       ],
@@ -2613,8 +2657,11 @@
         "TC-CON-005a",
         "TC-CON-005b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Schumann2022); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Schumann2022"
+      ]
     },
     {
       "rule_id": "CON-006",
@@ -2806,7 +2853,7 @@
     },
     {
       "rule_id": "HIIT-002",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "hiit",
       "title": "HIIT protocol menu",
       "statement": "Protocol chosen by block and purpose, not popularity.",
@@ -2906,15 +2953,15 @@
           ]
         }
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Buchheit2013",
         "Wen2019",
         "Milanovic2015"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "conditioning"
       ],
@@ -2922,8 +2969,13 @@
         "TC-HIIT-002a",
         "TC-HIIT-002b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Buchheit2013, Wen2019, Milanovic2015); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Buchheit2013",
+        "Wen2019",
+        "Milanovic2015"
+      ]
     },
     {
       "rule_id": "HIIT-003",
@@ -3522,7 +3574,7 @@
     },
     {
       "rule_id": "MOB-001",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "mobility",
       "title": "Pre-workout dynamic mobility",
       "statement": "3-5 min dynamic drills for the session's joints inside the warm-up.",
@@ -3532,14 +3584,14 @@
           5
         ]
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Behm2016",
         "Fradkin2010"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "warmup"
       ],
@@ -3547,12 +3599,16 @@
         "TC-MOB-001a",
         "TC-MOB-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Behm2016, Fradkin2010); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Behm2016",
+        "Fradkin2010"
+      ]
     },
     {
       "rule_id": "MOB-002",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "mobility",
       "title": "Static stretching timing",
       "statement": "Not in default warm-up; if preferred <=30 s per muscle then dynamic work. Post-session 30-60 s per chosen muscle plus 1-2 min slow breathing.",
@@ -3567,13 +3623,13 @@
           2
         ]
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Behm2016"
       ],
-      "uncertainty": "Wind-down breathing is expert practice.",
+      "uncertainty": "Wind-down breathing is expert practice. Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "warmup",
         "cooldown"
@@ -3582,8 +3638,11 @@
         "TC-MOB-002a",
         "TC-MOB-002b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Behm2016); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Behm2016"
+      ]
     },
     {
       "rule_id": "MOB-003",
@@ -3667,7 +3726,7 @@
     },
     {
       "rule_id": "WU-001",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "warmup",
       "title": "RAMP warm-up",
       "statement": "Raise 3-5 min (CR10 2-3), Activate & Mobilise 3-4 min, Potentiate with ramp sets; 8-12 min total; HIIT days 5 min easy + 3 x 30 s builds.",
@@ -3690,14 +3749,14 @@
           8
         ]
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Fradkin2010",
         "Jeffreys2019"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "warmup"
       ],
@@ -3705,8 +3764,12 @@
         "TC-WU-001a",
         "TC-WU-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Fradkin2010, Jeffreys2019); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Fradkin2010",
+        "Jeffreys2019"
+      ]
     },
     {
       "rule_id": "WU-002",
@@ -4065,20 +4128,20 @@
     },
     {
       "rule_id": "LOAD-001",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "workload",
       "title": "Session load",
       "statement": "Session load (AU) = session RPE (CR10) x session minutes (pauses >10 min removed).",
       "parameters": {
         "pause_exclusion_min": 10
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Foster2001"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "workload"
       ],
@@ -4086,8 +4149,11 @@
         "TC-LOAD-001a",
         "TC-LOAD-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Foster2001); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Foster2001"
+      ]
     },
     {
       "rule_id": "LOAD-002",
@@ -4120,7 +4186,7 @@
     },
     {
       "rule_id": "LOAD-003",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "workload",
       "title": "Weekly load, monotony, strain",
       "statement": "Weekly load = 7-day sum; monotony = mean/sample SD of daily loads (rest = 0); strain = weekly load x monotony; monotony > 2.0 soft flag.",
@@ -4128,13 +4194,13 @@
         "monotony_flag": 2.0,
         "sd": "sample"
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Foster1998"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "workload"
       ],
@@ -4142,8 +4208,11 @@
         "TC-LOAD-003a",
         "TC-LOAD-003b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Foster1998); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Foster1998"
+      ]
     },
     {
       "rule_id": "LOAD-004",
@@ -4757,10 +4826,10 @@
     },
     {
       "rule_id": "PROG-008",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "category": "progression",
       "title": "Technique gate",
-      "statement": "'Form felt solid?' yes/unsure/no after main lifts and new exercises; unsure -> hold; no -> hold + cue; two no -> offer regression.",
+      "statement": "'Form felt solid?' yes/unsure/no after main lifts and new exercises; unsure -> hold; no -> hold + cue; when the reps fell short of the range on >=2 sets or the sets were much harder than planned, PROG-004's reduction applies instead of the hold (with the cue after 'no'); two no -> offer the easier version (regression) when the library has one, otherwise hold and point to Replace. Bodyweight and assisted ladders: unsure or no holds the rung and the assistance.",
       "parameters": {
         "options": [
           "yes",
@@ -4771,18 +4840,20 @@
       },
       "confidence": "Expert Practice",
       "evidence": [],
-      "uncertainty": "",
+      "uncertainty": "Expert practice; the order of the technique and effort checks is a coaching choice.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "progressive_overload",
         "guided_workout"
       ],
       "tests": [
         "TC-PROG-008a",
-        "TC-PROG-008b"
+        "TC-PROG-008b",
+        "TC-PROG-008c",
+        "TC-PROG-008d"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
+      "change_reason": "MAJOR: Training direction: a set that missed its reps keeps the same weight when form wasn't solid (Part 4 review finding 13). The Product Owner chose the PROG-004 reduction with the form tip on 25 Oct 2026 (D-121). The offer of an easier version is made only when one exists (review finding 7). — Safety audit decisions: strong muscle pain, form with missed reps, the bone-loading block (registry 4.0.0, D-121)",
       "status": "approved"
     },
     {
@@ -4866,7 +4937,7 @@
     },
     {
       "rule_id": "REG-004",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "regression",
       "title": "Layoff >= 14 days",
       "statement": "14-27 d: wk1 90% load/70% sets, wk2 95%/85%; 28-55 d: wk1 80%/60% then +5% load and +15% sets weekly; >=56 d: recalibrate and restart block. Age >=60 or flagged screen: next longer band.",
@@ -4914,13 +4985,13 @@
         ],
         "older_or_flagged_shift": 1
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Bosquet2013"
       ],
-      "uncertainty": "Direction moderate; exact percentages expert practice.",
+      "uncertainty": "Direction moderate; exact percentages expert practice. Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "return_to_training"
       ],
@@ -4928,8 +4999,11 @@
         "TC-REG-004a",
         "TC-REG-004b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Bosquet2013); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Bosquet2013"
+      ]
     },
     {
       "rule_id": "REG-005",
@@ -5431,7 +5505,7 @@
     },
     {
       "rule_id": "AGE-001",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "category": "individual",
       "title": "Age adjustments",
       "statement": ">=50: longer warm-up, HIIT ceiling 2, deload at 2 signals, year-round power work; >=60: longer return band; >=65: balance >=3 days/week and progression caps x0.8. ≥60: weekly strength volume never drops to the VOL-003 maintenance level; weeks that would plan maintenance (Conditioning and Review blocks, PER-005 holiday or maintenance weeks) use the block-start level instead (beginner 6, intermediate 8, advanced 10 sets per muscle), still over ≥2 exposures (FREQ-002). Deload weeks (DEL-003) are unchanged.",
@@ -5450,15 +5524,15 @@
           "progression_cap_multiplier": 0.8
         }
       },
-      "confidence": "High Evidence",
+      "confidence": "Moderate Evidence",
       "evidence": [
         "Fragala2019",
         "Bull2020",
         "Bickel2011"
       ],
-      "uncertainty": "Direction high; numbers expert practice. Direction Limited Evidence (one RCT: reduced doses kept muscle gains in 20–35-year-olds but not in 60–75-year-olds); the block-start value is Expert Practice.",
+      "uncertainty": "Training older adults: supported (Fragala 2019, read in full). Keeping a higher minimum volume with age rests on one trial (Bickel 2011: reduced doses kept muscle gains in 20-35-year-olds but not in 60-75-year-olds): Limited Evidence. The numbers are expert practice.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-09",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "all"
       ],
@@ -5466,25 +5540,25 @@
         "TC-AGE-001a",
         "TC-AGE-001b"
       ],
-      "change_reason": "MINOR: Review C (P1). Protects the 'keep muscle' aim of FL-001; the fat-loss year has two Conditioning blocks. (Research Update 1.1, approved by the Product Owner on 2026-10-09)",
+      "change_reason": "MINOR: The rating (High) contradicted its own note (part of the direction rests on one trial). Fragala 2019 was read in full and supports training older adults; the age-specific dose numbers are expert practice (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
       "status": "approved"
     },
     {
       "rule_id": "IND-001",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "individual",
       "title": "Sex and prior injury",
       "statement": "Same algorithms for all; calibration start scales with bodyweight if given; prior injuries become limitation tags with conservative mode for 4 weeks.",
       "parameters": {
         "injury_conservative_weeks": 4
       },
-      "confidence": "Moderate Evidence",
+      "confidence": "Expert Practice",
       "evidence": [
         "Roberts2020"
       ],
-      "uncertainty": "",
+      "uncertainty": "Rating lowered on 25 Oct 2026 (D-122): its sources are located but not yet opened in this project; it goes back up when they are read.",
       "date_introduced": "2026-10-07",
-      "date_reviewed": "2026-10-07",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "onboarding",
         "substitution"
@@ -5493,8 +5567,11 @@
         "TC-IND-001a",
         "TC-IND-001b"
       ],
-      "change_reason": "Initial version; approved at Phase 1 sign-off",
-      "status": "approved"
+      "change_reason": "MINOR: Confidence Moderate Evidence rested on sources not yet opened (Roberts2020); the Product Owner chose ratings that match what was read (D-122). — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
+      "status": "approved",
+      "verification_pending": [
+        "Roberts2020"
+      ]
     },
     {
       "rule_id": "EQ-001",
@@ -6178,13 +6255,13 @@
     },
     {
       "rule_id": "SAF-010",
-      "version": "1.0.2",
+      "version": "1.1.0",
       "category": "safety",
       "title": "Health-condition profiles",
       "statement": "Users may select health conditions from a versioned table (health_conditions v1.0). Each entry sets conservative limits on general fitness training: doctor's OK advice, highest zone, intervals, minimum reps in reserve, no training to failure, impact, exercise tags to avoid, joint limits, extra warm-up and cool-down, positions, prompts and condition-specific stop signs. With several conditions each control takes its most restrictive value. Control status is self-reported (not sure = not under control); the app never reads or thresholds clinical values (blood pressure, glucose, ketones). A doctor's OK is the user's statement of scope (light–moderate, vigorous, intervals) and unlocks only that scope. Prompts never name a medicine, dose, value target or diagnosis, and never claim to treat a condition. A clinician and a regulatory adviser review the table before any public release.",
       "parameters": {
         "table": "health_conditions",
-        "table_version": "1.0.1",
+        "table_version": "1.0.2",
         "combine": "most_restrictive",
         "status_values": [
           "yes",
@@ -6242,7 +6319,7 @@
       ],
       "uncertainty": "Benefit of exercise is High Evidence for type 2 diabetes, knee/hip osteoarthritis, high blood pressure and pregnancy; nearly every numeric cap is an Expert Practice translation of guideline intensity into app controls. Stroke, COPD and cancer entries rest on less-verified sources. Not a medical device feature: no diagnosis, no clinical values, no treatment claims (D-058).",
       "date_introduced": "2026-10-09",
-      "date_reviewed": "2026-10-12",
+      "date_reviewed": "2026-10-25",
       "affected_algorithms": [
         "onboarding",
         "safety_validator",
@@ -6254,7 +6331,7 @@
         "TC-SAF-010a",
         "TC-SAF-010b"
       ],
-      "change_reason": "PATCH: Riebe 2015 checked (abstract): activity level, symptoms or known disease, and intended intensity decide the screening — Source verification before Phase 4 (Part 8) (registry 1.1.2, D-106)",
+      "change_reason": "MINOR: The health-condition table moves to 1.0.2 (D-122, after the Phase 4 Part 4 evidence review): cancer that has spread to the bones follows a supervised programme from the care team; pregnancy uses the stricter of the Canadian 2019 guideline and ACOG; a past foot ulcer or Charcot foot needs a doctor's OK; the internal stop-sign text is in words. — Evidence ratings that match what was read; source records corrected; health-condition table 1.0.2 (Phase 4 Part 4 evidence review) (registry 4.1.0, D-122)",
       "status": "approved"
     },
     {
@@ -6438,10 +6515,57 @@
     }
   ],
   "verification_pending": [
-    "ACOG20 (CO 804 full text)",
-    "Campbell 2019 (CAM19) full text for the cancer entry's cautions",
+    "ACOG20 (CO 804 full text and its 2021 correction)",
+    "Campbell 2019 (CAM19) full text for the lymphoedema caution",
     "GINA 2026 exercise section (not relied on by the asthma entry)",
     "WHOSTEPS (WHO 2011 expert-consultation report, primary text)",
-    "LeSuer1997 (lift-by-lift results)"
+    "LeSuer1997 (lift-by-lift results, primary text)",
+    "Afonso2021 (located, not yet opened)",
+    "AndroulakisKorakakis2020 (located, not yet opened)",
+    "Behm2016 (located, not yet opened)",
+    "Borg1982 (located, not yet opened)",
+    "Bosquet2013 (located, not yet opened)",
+    "Brzycki1993 (located, not yet opened)",
+    "Buchheit2013 (located, not yet opened)",
+    "Epley1985 (located, not yet opened)",
+    "Foster1998 (located, not yet opened)",
+    "Foster2001 (located, not yet opened)",
+    "Fradkin2010 (located, not yet opened)",
+    "Gabbett2016 (located, not yet opened)",
+    "Garber2011 (located, not yet opened)",
+    "Grgic2018freq (located, not yet opened)",
+    "Grgic2018rest (located, not yet opened)",
+    "Grgic2022fail (located, not yet opened)",
+    "Helms2016 (located, not yet opened)",
+    "Impellizzeri2021 (located, not yet opened)",
+    "Israetel2021 (located, not yet opened)",
+    "Iversen2021 (located, not yet opened)",
+    "Jeffreys2019 (located, not yet opened)",
+    "Kibler2006 (located, not yet opened)",
+    "Lally2010 (located, not yet opened)",
+    "Lolli2019 (located, not yet opened)",
+    "Mazeas2022 (located, not yet opened)",
+    "Meeusen2013 (located, not yet opened)",
+    "Milanovic2015 (located, not yet opened)",
+    "Moesgaard2022 (located, not yet opened)",
+    "Murlasits2018 (located, not yet opened)",
+    "Nunes2021 (located, not yet opened)",
+    "Refalo2023 (located, not yet opened)",
+    "Roberts2020 (located, not yet opened)",
+    "Robineau2016 (located, not yet opened)",
+    "Sabag2018 (located, not yet opened)",
+    "Schoenfeld2016freq (located, not yet opened)",
+    "Schoenfeld2017load (located, not yet opened)",
+    "Schoenfeld2019freq (located, not yet opened)",
+    "Schoenfeld2021reps (located, not yet opened)",
+    "Schumann2022 (located, not yet opened)",
+    "Silbernagel2007 (located, not yet opened)",
+    "UpperLimits2026 (located, not yet opened)",
+    "Warburton2011 (located, not yet opened)",
+    "Wen2019 (located, not yet opened)",
+    "Weston2014 (located, not yet opened)",
+    "Williams2017 (located, not yet opened)",
+    "Wilson2012 (located, not yet opened)",
+    "Zourdos2016 (located, not yet opened)"
   ]
 }

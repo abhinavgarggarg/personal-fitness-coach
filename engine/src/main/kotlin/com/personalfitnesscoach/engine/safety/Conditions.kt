@@ -201,7 +201,7 @@ object Conditions {
             fatLossOffered = !pregnant && !cancerTreatment && !(e.id == "postpartum" && (u.weeksSinceBirth ?: 0) < P.FL_001.not_default_with_postpartum_until_week),
             weightFeatures = !pregnant && !cancerTreatment, prompts = prompts, stopSigns = e.stopSigns,
             clearancePrompt = needsOk && (e.clearancePromptNow || clearance == "always" || clearance == "before_vigorous" || clearance == "suggest"),
-            blocked = u.blockIfYes && e.blockIf.isNotEmpty(), avoidModalities = avoidModalities,
+            blocked = (u.blockIfYes && e.blockIf.isNotEmpty()) || e.blockIfFlags.any { it in u.subFlags }, avoidModalities = avoidModalities,
         )
     }
 
@@ -293,8 +293,9 @@ object Conditions {
             effortByFeel = r.any { it.effortByFeel },
             strengthBeforeCardio = r.any { it.strengthFirst },
             obesity = "obesity" in all || "obesity_severe" in all,
-            // Bone loading only while impact stays "encouraged" (another entry such as osteoarthritis limits it; CON-004 1.1.0).
-            boneLoading = known.any { entries.getValue(it.id).boneLoading } && impact == ImpactLevel.ENCOURAGED,
+            // Bone loading while impact stays "encouraged" or "as tolerated" (controlled high blood pressure); a lower level such as
+            // osteoarthritis's removes it (CON-004 2.0.0, D-121).
+            boneLoading = known.any { entries.getValue(it.id).boneLoading } && impact >= ImpactLevel.AS_TOLERATED,
             balanceSessionsPerWeek = r.maxOf { it.balance },
             backExtensorSessionsPerWeek = r.maxOf { it.backExt },
             fatLossOffered = r.all { it.fatLossOffered },

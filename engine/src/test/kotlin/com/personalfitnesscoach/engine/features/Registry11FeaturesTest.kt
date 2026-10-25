@@ -208,4 +208,27 @@ class Registry11FeaturesTest {
         val both = Conditions.resolve(listOf(UserCondition("osteoporosis"), UserCondition("oa_knee"))).value
         assertNull(SessionGenerator.generate(GenerationRequest(day, Level.BEGINNER, 20, 60, FULL_GYM, Tier.FULL, conditions = both)).value.boneLoading)
     }
+
+    @Test fun `TC-CON-004d the bone-loading block is heel drops until small hops are allowed (CON-004 2_0_0)`() {
+        val ost = Conditions.resolve(listOf(UserCondition("osteoporosis"))).value
+        val day = gymDay()
+        fun gen(hops: Boolean) = SessionGenerator.generate(GenerationRequest(day, Level.BEGINNER, 20, 60, FULL_GYM, Tier.FULL, age = 71,
+            week = ValidationContext(Level.BEGINNER, hiitBaseReady = true), conditions = ost, boneHopsAllowed = hops)).value
+        assertEquals(com.personalfitnesscoach.engine.safety.BoneLoadingVariant.HEEL_DROPS, gen(false).boneLoading?.variant)
+        assertEquals(com.personalfitnesscoach.engine.safety.BoneLoadingVariant.SMALL_HOPS, gen(true).boneLoading?.variant)
+        // The validator holds the same line: small hops are not allowed when hops aren't.
+        assertFalse(com.personalfitnesscoach.engine.safety.BoneLoading.allowed(com.personalfitnesscoach.engine.safety.BoneLoadingVariant.SMALL_HOPS,
+            emptyMap(), emptySet(), emptyList(), hopsAllowed = false))
+        assertTrue(com.personalfitnesscoach.engine.safety.BoneLoading.allowed(com.personalfitnesscoach.engine.safety.BoneLoadingVariant.HEEL_DROPS,
+            emptyMap(), emptySet(), emptyList(), hopsAllowed = false))
+    }
+
+    @Test fun `TC-CON-004e the block stays with controlled high blood pressure, and osteoarthritis still removes it`() {
+        val withBp = Conditions.resolve(listOf(UserCondition("osteoporosis"), UserCondition("hbp_controlled"))).value
+        assertTrue(withBp.boneLoading)
+        val day = gymDay()
+        assertNotNull(SessionGenerator.generate(GenerationRequest(day, Level.BEGINNER, 20, 60, FULL_GYM, Tier.FULL, age = 60,
+            week = ValidationContext(Level.BEGINNER, hiitBaseReady = true), conditions = withBp)).value.boneLoading)
+        assertFalse(Conditions.resolve(listOf(UserCondition("osteoporosis"), UserCondition("oa_knee"))).value.boneLoading)
+    }
 }

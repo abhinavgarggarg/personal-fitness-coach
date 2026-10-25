@@ -1,9 +1,20 @@
 {
  "table": "health_conditions",
- "version": "1.0.1",
+ "version": "1.0.2",
  "status": "APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release",
  "rule": "SAF-010",
  "changes": [
+  {
+   "version": "1.0.2",
+   "date": "2026-10-25",
+   "kind": "safety change approved by the Product Owner (D-122), after the Phase 4 Part 4 evidence review",
+   "items": [
+    "cancer: cancer that has spread to the bones follows a supervised programme from the care team instead of a training plan (Campbell 2022)",
+    "pregnancy: the stricter of the Canadian 2019 guideline and ACOG where they differ (placenta praevia from 26 weeks, a multiple pregnancy at risk of premature labour, severe anaemia, high blood pressure caused by the pregnancy, a cervical stitch; ACOG's relative contraindications need the provider's OK; altitude note at 1,800 m), and the warning signs of both",
+    "diabetes_feet: a past foot ulcer or Charcot foot needs a doctor's OK (ADA Standards of Care 2026)",
+    "stop signs: the internal text 'Universal red flags (SAF-002) always apply.' is replaced by words"
+   ]
+  },
   {
    "version": "1.0.1",
    "date": "2026-10-09",
@@ -264,6 +275,9 @@
    "impact": "none",
    "min_rir": 2,
    "parent": "any_diabetes",
+   "clearance_always_if": [
+    "a past foot ulcer or Charcot foot"
+   ],
    "hiit_base_weeks": 4,
    "hiit_modalities": [
     "rower",
@@ -287,7 +301,8 @@
    ],
    "confidence": "Moderate Evidence / Expert Practice",
    "sources": [
-    "KAN22"
+    "KAN22",
+    "ADA26"
    ]
   },
   {
@@ -708,10 +723,10 @@
    "impact": "only_if_already_doing_it",
    "min_rir": 3,
    "block_if": [
-    "If your pregnancy care provider has told you any of these apply: waters broken; premature labour; unexplained ongoing vaginal bleeding; placenta praevia after 28 weeks; pre-eclampsia; weak cervix; baby not growing as expected; triplets or more; uncontrolled type 1 diabetes, high blood pressure or thyroid disease; another serious heart, lung or whole-body condition — follow your provider's advice instead of a training plan"
+    "If your pregnancy care provider has told you any of these apply: waters broken; premature labour; unexplained ongoing vaginal bleeding; placenta praevia after 26 weeks; pre-eclampsia or high blood pressure caused by the pregnancy; weak cervix or a cervical stitch; baby not growing as expected; triplets or more, or twins at risk of premature labour; severe anaemia; uncontrolled type 1 diabetes, high blood pressure or thyroid disease; another serious heart, lung or whole-body condition — follow your provider's advice instead of a training plan"
    ],
    "attest_if": [
-    "If your provider has told you any of these apply: repeated pregnancy loss; high blood pressure in this pregnancy; an earlier premature birth; mild or moderate heart or lung disease; anaemia with symptoms; under-nutrition or an eating disorder; twins after 28 weeks — 'my provider has OK'd exercise'"
+    "If your provider has told you any of these apply: repeated pregnancy loss; an earlier premature birth; mild or moderate heart or lung disease; an irregular heartbeat not yet checked; long-term bronchitis; anaemia with symptoms; under-nutrition, an eating disorder, or very low or very high body weight; seizures or an overactive thyroid that aren't well controlled; heavy smoking; joint or bone problems that limit movement; very little activity before this pregnancy; twins after 28 weeks — 'my provider has OK'd exercise'"
    ],
    "max_zone_if_previously_vigorous_and_ok": "Z2",
    "avoid_tags": [
@@ -731,7 +746,7 @@
    "extra_warmup_min": 5,
    "environment": [
     "No hot or humid rooms (including hot yoga); drink water",
-    "Altitude above 2,500 m and scuba diving: informational note"
+    "Altitude above 1,800 m (6,000 ft) and scuba diving: informational note"
    ],
    "prompts": [
     "Talk with your pregnancy care provider about your exercise plan.",
@@ -740,17 +755,22 @@
     "If you feel dizzy or unwell lying on your back, switch position."
    ],
    "stop_signs": [
-    "Breathlessness that doesn't settle with rest",
+    "Breathlessness that doesn't settle with rest, or breathless before you start",
     "Severe chest pain",
     "Regular painful contractions",
+    "Pain in the tummy",
     "Vaginal bleeding",
     "Ongoing fluid leakage",
+    "Headache",
+    "Muscle weakness that affects your balance",
+    "Pain or swelling in a calf",
     "Dizziness or faintness that doesn't settle with rest — stop and contact your provider or maternity unit"
    ],
    "confidence": "High Evidence (activity is safe) / Expert Practice (caps)",
    "sources": [
     "CAN19",
-    "ACOG20"
+    "ACOG20",
+    "ACOG15"
    ]
   },
   {
@@ -995,8 +1015,14 @@
     "cancer has spread to the bones",
     "lymphoedema"
    ],
+   "block_if_flags": [
+    "cancer has spread to the bones"
+   ],
+   "sub_flags": {
+    "cancer_has_spread_to_the_bones": "follow a supervised exercise programme from your care team (a physiotherapist or exercise physiologist with cancer training) instead of a training plan"
+   },
    "pending_verification": [
-    "bone-spread and lymphoedema cautions (Campbell 2019 full text not read)"
+    "lymphoedema cautions (Campbell 2019 full text not read)"
    ],
    "goal_effects_if": "in active treatment: fat-loss goal not the default; no weight-loss expectations or rate check-in (FL-001)",
    "impact_none_if": [
@@ -1007,11 +1033,12 @@
     "Exercise is generally safe and helpful during and after cancer care; your care team can tell you about any limits."
    ],
    "stop_signs": [
-    "Universal red flags (SAF-002) always apply."
+    "Any of the warning signs listed under the workout's Warning sign button: stop and get help."
    ],
    "confidence": "Moderate Evidence (benefit) / details unverified",
    "sources": [
-    "CAM19"
+    "CAM19",
+    "CAM22"
    ]
   }
  ]

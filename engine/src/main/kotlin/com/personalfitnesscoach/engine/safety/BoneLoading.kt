@@ -16,7 +16,9 @@ object BoneLoading {
     private val LOWER = setOf(Joint.HIP, Joint.KNEE, Joint.ANKLE, Joint.SPINE)
 
     fun allowed(v: BoneLoadingVariant, jointLimits: Map<Joint, Int>, blockedTags: Set<String>, regions: List<RegionConstraint>,
-                painCaution: Set<Joint> = emptySet()): Boolean {
+                painCaution: Set<Joint> = emptySet(), hopsAllowed: Boolean = true): Boolean {
+        // CON-004 2.0.0: heel drops for the block's first 4 weeks, and for beginners, people 65+ and after hip, knee or ankle pain.
+        if (v == BoneLoadingVariant.SMALL_HOPS && !hopsAllowed) return false
         if (v.jumping && ("jumping" in blockedTags || regions.any { it.noJumping && it.region in LOWER })) return false
         if (v.joints.any { (j, s) -> s > (jointLimits[j] ?: 4) }) return false
         if (regions.any { r -> r.maxStress != null && (v.joints[r.region] ?: 0) > r.maxStress }) return false
@@ -26,6 +28,7 @@ object BoneLoading {
     }
 
     /** The first allowed variant (small hops, then heel drops), or null. */
-    fun choose(jointLimits: Map<Joint, Int>, blockedTags: Set<String>, regions: List<RegionConstraint>, painCaution: Set<Joint> = emptySet()): BoneLoadingVariant? =
-        BoneLoadingVariant.entries.firstOrNull { allowed(it, jointLimits, blockedTags, regions, painCaution) }
+    fun choose(jointLimits: Map<Joint, Int>, blockedTags: Set<String>, regions: List<RegionConstraint>, painCaution: Set<Joint> = emptySet(),
+               hopsAllowed: Boolean = true): BoneLoadingVariant? =
+        BoneLoadingVariant.entries.firstOrNull { allowed(it, jointLimits, blockedTags, regions, painCaution, hopsAllowed) }
 }

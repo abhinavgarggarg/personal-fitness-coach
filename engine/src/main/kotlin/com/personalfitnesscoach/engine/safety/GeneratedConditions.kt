@@ -4,10 +4,10 @@ package com.personalfitnesscoach.engine.safety
 import com.personalfitnesscoach.engine.model.Joint
 import com.personalfitnesscoach.engine.model.Zone
 
-/** Health-condition table 1.0.1 (SAF-010). APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release. */
+/** Health-condition table 1.0.2 (SAF-010). APPROVED 2026-10-09 (Research Update 1.1) for personal use; clinician and regulatory review required before any public release. */
 object GeneratedConditions {
-    const val VERSION: String = "1.0.1"
-    const val SHA256: String = "9d0570a57d5ee803572dfe3692710ec64f4881b1cebb2f9cd7e6c784bfe94951"
+    const val VERSION: String = "1.0.2"
+    const val SHA256: String = "04fb9e8dc41f0865fe5e5df3308bb007406ba8c5b48a2448b9bc6a7c76b041a7"
     val statusQuestion: String = "Has a doctor or nurse told you this is currently under control / stable? (yes / no / not sure; not sure counts as no)"
     val never: List<String> = listOf("read or threshold clinical values (blood pressure, glucose, ketones, oxygen, ECG)", "name a medicine, dose, carbohydrate amount or value target", "diagnose or interpret symptoms", "claim to treat, manage, relieve or lower a condition")
     /** Parent groups: an add-on picked without any member brings every member (SAF-010 1.0.1). */
@@ -93,6 +93,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("PES19", "ESC20", "AAESS09", "AHA24RT", "EDW23"),
             confidence = "Moderate Evidence (exercise lowers BP: High; caps: Expert Practice)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "hbp_not_controlled",
@@ -173,6 +174,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("AAESS09", "ESC20", "AHA13", "EDW24"),
             confidence = "Moderate Evidence / Expert Practice",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "t2d",
@@ -253,6 +255,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("KAN22", "Riebe2015", "ESC20"),
             confidence = "High Evidence (training) / Moderate Evidence (safety prompts)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "diabetes_eye",
@@ -333,6 +336,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("KAN22"),
             confidence = "Moderate Evidence / Expert Practice",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "diabetes_feet",
@@ -343,7 +347,7 @@ object GeneratedConditions {
             clearance = "none",
             clearancePromptNow = false,
             clearanceText = null,
-            clearanceAlwaysIf = emptyList(),
+            clearanceAlwaysIf = listOf("a_past_foot_ulcer_or_charcot_foot"),
             maxZone = Zone.Z3,
             hiit = "after_base",
             hiitBaseWeeks = 4,
@@ -411,8 +415,9 @@ object GeneratedConditions {
             goalEffectsIf = null,
             notEncoded = emptyList(),
             pendingVerification = emptyList(),
-            sources = listOf("KAN22"),
+            sources = listOf("KAN22", "ADA26"),
             confidence = "Moderate Evidence / Expert Practice",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "diabetes_autonomic",
@@ -493,6 +498,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("KAN22"),
             confidence = "Moderate Evidence / Expert Practice",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "t1d",
@@ -573,6 +579,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("RID17", "Riebe2015"),
             confidence = "Moderate Evidence (consensus)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "heart",
@@ -653,6 +660,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("Riebe2015", "ESC20", "AHA24RT", "CCD23", "EDW24"),
             confidence = "Moderate Evidence (benefit of rehab: High) / Expert Practice (caps)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "asthma",
@@ -733,6 +741,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("ATS13", "AAAAI22"),
             confidence = "Moderate Evidence",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "oa_knee",
@@ -813,6 +822,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("OARSI19", "ACR20", "NG226", "GLAD12"),
             confidence = "High Evidence (exercise) / Expert Practice (limits and pain rule)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "oa_hip",
@@ -893,6 +903,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("OARSI19", "ACR20", "NG226", "GLAD12"),
             confidence = "High Evidence (exercise) / Expert Practice (limits and pain rule)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "low_back_pain",
@@ -973,6 +984,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("NG59", "WHO23", "NHSBP"),
             confidence = "Moderate Evidence (stay active) / Expert Practice (flare limits)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "osteoporosis",
@@ -1053,6 +1065,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("ROS22", "ESSA17", "IOF"),
             confidence = "Moderate Evidence",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "osteoporosis_spine_fracture",
@@ -1133,6 +1146,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("ROS22", "ESSA17", "IOF"),
             confidence = "Moderate Evidence / Expert Practice",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "pregnancy",
@@ -1199,20 +1213,21 @@ object GeneratedConditions {
             flareKeep = emptyList(),
             flareExitSessions = null,
             painRuleDuringMax = null,
-            blockIf = listOf("If your pregnancy care provider has told you any of these apply: waters broken; premature labour; unexplained ongoing vaginal bleeding; placenta praevia after 28 weeks; pre-eclampsia; weak cervix; baby not growing as expected; triplets or more; uncontrolled type 1 diabetes, high blood pressure or thyroid disease; another serious heart, lung or whole-body condition — follow your provider's advice instead of a training plan"),
-            attestIf = listOf("If your provider has told you any of these apply: repeated pregnancy loss; high blood pressure in this pregnancy; an earlier premature birth; mild or moderate heart or lung disease; anaemia with symptoms; under-nutrition or an eating disorder; twins after 28 weeks — 'my provider has OK'd exercise'"),
+            blockIf = listOf("If your pregnancy care provider has told you any of these apply: waters broken; premature labour; unexplained ongoing vaginal bleeding; placenta praevia after 26 weeks; pre-eclampsia or high blood pressure caused by the pregnancy; weak cervix or a cervical stitch; baby not growing as expected; triplets or more, or twins at risk of premature labour; severe anaemia; uncontrolled type 1 diabetes, high blood pressure or thyroid disease; another serious heart, lung or whole-body condition — follow your provider's advice instead of a training plan"),
+            attestIf = listOf("If your provider has told you any of these apply: repeated pregnancy loss; an earlier premature birth; mild or moderate heart or lung disease; an irregular heartbeat not yet checked; long-term bronchitis; anaemia with symptoms; under-nutrition, an eating disorder, or very low or very high body weight; seizures or an overactive thyroid that aren't well controlled; heavy smoking; joint or bone problems that limit movement; very little activity before this pregnancy; twins after 28 weeks — 'my provider has OK'd exercise'"),
             asks = emptyList(),
             prompts = listOf("Talk with your pregnancy care provider about your exercise plan.", "Aim for regular moderate activity most days.", "Pelvic floor exercises can be done daily; a pelvic health physio can teach the technique.", "If you feel dizzy or unwell lying on your back, switch position."),
-            stopSigns = listOf("Breathlessness that doesn't settle with rest", "Severe chest pain", "Regular painful contractions", "Vaginal bleeding", "Ongoing fluid leakage", "Dizziness or faintness that doesn't settle with rest — stop and contact your provider or maternity unit"),
-            environment = listOf("No hot or humid rooms (including hot yoga); drink water", "Altitude above 2,500 m and scuba diving: informational note"),
+            stopSigns = listOf("Breathlessness that doesn't settle with rest, or breathless before you start", "Severe chest pain", "Regular painful contractions", "Pain in the tummy", "Vaginal bleeding", "Ongoing fluid leakage", "Headache", "Muscle weakness that affects your balance", "Pain or swelling in a calf", "Dizziness or faintness that doesn't settle with rest — stop and contact your provider or maternity unit"),
+            environment = listOf("No hot or humid rooms (including hot yoga); drink water", "Altitude above 1,800 m (6,000 ft) and scuba diving: informational note"),
             positionsNote = null,
             neverRecommend = emptyList(),
             goalEffects = "fat-loss goal not offered; no weight-loss expectations, weight trend or rate check-in (FL-001)",
             goalEffectsIf = null,
             notEncoded = emptyList(),
             pendingVerification = emptyList(),
-            sources = listOf("CAN19", "ACOG20"),
+            sources = listOf("CAN19", "ACOG20", "ACOG15"),
             confidence = "High Evidence (activity is safe) / Expert Practice (caps)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "postpartum",
@@ -1293,6 +1308,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("CAN25", "GOOM19"),
             confidence = "Moderate Evidence (activity, pelvic floor) / Expert Practice (timeline)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "obesity",
@@ -1373,6 +1389,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("Donnelly2009", "Oppert2021", "WHO04", "Misra2025", "Riebe2015"),
             confidence = "Moderate Evidence / Expert Practice (caps)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "obesity_severe",
@@ -1453,6 +1470,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("Misra2025", "WHO04", "Oppert2021"),
             confidence = "Expert Practice",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "stroke",
@@ -1533,6 +1551,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("AHA14ST"),
             confidence = "Moderate Evidence (AHA statement) / Expert Practice (caps)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "copd",
@@ -1613,6 +1632,7 @@ object GeneratedConditions {
             pendingVerification = emptyList(),
             sources = listOf("GOLD26"),
             confidence = "Limited Evidence (not fully verified)",
+            blockIfFlags = emptyList(),
         ),
         ConditionEntry(
             id = "cancer",
@@ -1672,7 +1692,7 @@ object GeneratedConditions {
             effortBy = null,
             defaultOrder = null,
             warmupStyle = null,
-            subFlags = emptyMap(),
+            subFlags = mapOf("cancer_has_spread_to_the_bones" to "follow a supervised exercise programme from your care team (a physiotherapist or exercise physiologist with cancer training) instead of a training plan"),
             subFlagEffects = emptyMap(),
             flareJointLimits = emptyMap(),
             flareAvoidTags = emptySet(),
@@ -1683,16 +1703,17 @@ object GeneratedConditions {
             attestIf = emptyList(),
             asks = emptyList(),
             prompts = listOf("Exercise is generally safe and helpful during and after cancer care; your care team can tell you about any limits."),
-            stopSigns = listOf("Universal red flags (SAF-002) always apply."),
+            stopSigns = listOf("Any of the warning signs listed under the workout's Warning sign button: stop and get help."),
             environment = emptyList(),
             positionsNote = null,
             neverRecommend = emptyList(),
             goalEffects = null,
             goalEffectsIf = "in active treatment: fat-loss goal not the default; no weight-loss expectations or rate check-in (FL-001)",
             notEncoded = emptyList(),
-            pendingVerification = listOf("bone-spread and lymphoedema cautions (Campbell 2019 full text not read)"),
-            sources = listOf("CAM19"),
+            pendingVerification = listOf("lymphoedema cautions (Campbell 2019 full text not read)"),
+            sources = listOf("CAM19", "CAM22"),
             confidence = "Moderate Evidence (benefit) / details unverified",
+            blockIfFlags = listOf("cancer_has_spread_to_the_bones"),
         ),
     ) }
 }

@@ -24,6 +24,7 @@ import com.personalfitnesscoach.engine.planning.Priority
 import com.personalfitnesscoach.engine.program.SlotRole
 import com.personalfitnesscoach.engine.progression.Prescription
 import com.personalfitnesscoach.engine.progression.ProgressionAction
+import com.personalfitnesscoach.data.core.time.Days
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -49,11 +50,14 @@ class Part4AuditDataTest {
     private fun cal(load: Double, reps: Int, rir: Double?) = Triple(SetKind.CALIBRATION, load, reps to rir)
     private fun work(load: Double, reps: Int, rir: Double?) = Triple(SetKind.WORKING, load, reps to rir)
 
-    @Test fun `AUD-10 working sets at the empty bar short of the range mark it too heavy, and sets in the range do not`() {
-        val short = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(false), work(20.0, 4, 1.0), work(20.0, 4, 1.0)), day, ctx, null).value
+    @Test fun `AUD-10 working sets at the empty bar short of the range twice in a row mark it too heavy, and sets in the range do not`() {
+        val once = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(false), work(20.0, 4, 1.0), work(20.0, 4, 1.0)), day, ctx, null).value
+        assertEquals(20.0, once.state.prescription!!.load, 0.0)
+        assertFalse("one bad day is not enough (review finding 11)", once.state.prescription!!.lightestTooHeavy)
+        val short = ExerciseProgress.apply(once.state, bench, exposure(item(false), work(20.0, 4, 1.0), work(20.0, 4, 1.0)), day + 3, ctx, null).value
         val p = short.state.prescription!!
         assertEquals(20.0, p.load, 0.0)
-        assertTrue("4 reps at RIR 1 cannot become 8 at RIR 2", p.lightestTooHeavy)
+        assertTrue("4 reps at RIR 1, twice, cannot become 8 at RIR 2", p.lightestTooHeavy)
         val fine = ExerciseProgress.apply(ExerciseState(bench.id), bench, exposure(item(false), work(20.0, 8, 2.0), work(20.0, 8, 2.0)), day, ctx, null).value
         assertFalse(fine.state.prescription!!.lightestTooHeavy)
     }
@@ -115,5 +119,151 @@ class Part4AuditDataTest {
         assertEquals(Fixtures.MONDAY - 3, req.lastDone[bench.id])
         assertEquals(d.docs.get(ProgramRecord)!!.blockStartDay, req.blockStartDay)
         assertNotNull(req.blockStartDay)
+    }
+
+    @Test fun `AUD-16 a red-flag stop confirmed the same day still makes the first session back LIGHT (review finding 1)`() = runBlocking {
+        for (lag in listOf(0, 1)) {
+            val (d, clock) = Fixtures.data()
+            Fixtures.onboard(d)
+            for (ex in Library.all) d.docs.put(ExerciseState, ExerciseState(ex.id, e1rm = 100.0, e1rmDay = Fixtures.MONDAY - 3, lastDoneDay = Fixtures.MONDAY - 3, exposures = 6))
+            val t = d.planToday()!!
+            d.checkIns.record(t.user, com.personalfitnesscoach.engine.calc.CheckIn(3, 3, 3, 3))
+            d.startSession(d.generateSession(t, t.next!!, Tier.FULL))
+            val p = com.personalfitnesscoach.data.core.player.SessionPlayer(d)
+            p.completeStage(com.personalfitnesscoach.data.core.session.Stage.WARMUP)
+            val l = p.view()!!.lifts.first()
+            p.skipRamp(l.rowId)
+            val tg = p.view()!!.lifts.first { it.rowId == l.rowId }.next!!
+            clock.ms += 60_000
+            p.log(l.rowId, com.personalfitnesscoach.data.core.player.LiftEntry(tg.load, if (tg.unit == DoseUnit.SECONDS) null else tg.reps.first,
+                seconds = if (tg.unit == DoseUnit.SECONDS) tg.reps.last else null, rir = 2.0))
+            assertNotNull(p.redFlag(setOf("chest_pain_pressure_tightness")))
+            clock.setDay(Fixtures.MONDAY + lag)
+            d.confirmStopResolved()
+            for (after in listOf(lag, lag + 2)) {
+                clock.setDay(Fixtures.MONDAY + after)
+                val t2 = d.planToday()!!
+                assertEquals("lag $lag, day +$after", Tier.LIGHT, d.bridge.gate(t2.user, t2.program).cap(Tier.FULL))
+            }
+        }
+    }
+
+    @Test fun `AUD-17 after a break at the lightest weights, no lift is planned at the unreduced weight (review finding 5)`() = runBlocking {
+        val start = Fixtures.MONDAY - 28
+        val (d, clock) = Fixtures.data(start)
+        Fixtures.onboard(d, level = Level.BEGINNER, birthYear = 1990)
+        val inv = d.bridge.user()!!.equipment.inventory
+        fun seed() = runBlocking {
+            for (ex in Library.all) {
+                if (ex.assisted || ex.loadType !in setOf(com.personalfitnesscoach.engine.model.LoadType.BARBELL, com.personalfitnesscoach.engine.model.LoadType.DUMBBELL,
+                        com.personalfitnesscoach.engine.model.LoadType.KETTLEBELL, com.personalfitnesscoach.engine.model.LoadType.STACK)) continue
+                val avail = com.personalfitnesscoach.engine.calc.PlateMath.loadsFor(ex, inv)
+                if (avail.isEmpty()) continue
+                d.docs.put(ExerciseState, ExerciseState(ex.id, prescription = Prescription(avail.min(), ex.defaultRepRange, ex.defaultRepRange.first, ProgressionAction.HOLD),
+                    prescriptionDay = start, lastDoneDay = start, exposures = 4, knownApplied = true))
+            }
+        }
+        seed()
+        d.store.insertWorkout(WorkoutRow(day = start, status = Status.DONE, template = "FB_A", tier = "FULL", startedAtMs = 1, endedAtMs = 2, sessionRpe = 5.0,
+            actualMinutes = 40.0, registryVersion = "3.0.1", json = WorkoutDoc(0, 60.0, 5.0).encode()))
+        clock.setDay(start + 21)
+        val t = d.planToday()!!
+        d.checkIns.record(t.user, com.personalfitnesscoach.engine.calc.CheckIn(3, 3, 3, 3))
+        val g = d.generateSession(t, t.next!!, Tier.FULL)
+        val ret = d.bridge.returnPlan(t.user, t.program).value
+        assertTrue("the return reduction is there: $ret", ret.loadFactor < 1.0)
+        assertTrue("easier versions stand in", g.decisions.any { it.reason == com.personalfitnesscoach.engine.core.ReasonKey.LIGHTEST_TOO_HEAVY ||
+            it.reason == com.personalfitnesscoach.engine.core.ReasonKey.LIGHTEST_TOO_HEAVY_LEFT_OUT })
+        for (it in g.workout.items) if (it.load != null && !it.calibrating) {
+            val stored = d.docs.get(ExerciseState, it.exercise.id)?.prescription
+            if (stored != null && stored.repRange.first == it.reps.first)
+                assertTrue("${it.exercise.id} at ${it.load}, stored ${stored.load}", it.load!! < stored.load - 1e-9 || it.loadFactor < 1.0 - 1e-9)
+        }
+    }
+
+    @Test fun `TC-PROG-008d AUD-18 PROG-008 on bodyweight ladders - form not solid holds the rung, twice offers the easier version (review finding 7)`() = runBlocking {
+        val pu = Library.require("push-up")
+        val ctx = ProgressContext(Inventory(), Level.INTERMEDIATE, 40, flaggedScreen = false, recoveryOk = true)
+        fun bw(form: String, reps: Int = 15) = StoredExercise(ExerciseRow(1, 1, 0, pu.id, "main", "DONE", item(false, load = 0.0).copy(load = null, reps = 8..15).encode()),
+            item(false).copy(load = null, reps = 8..15), List(3) { i -> SetRow(i + 1L, 1, i, SetKind.WORKING, null, reps, rir = 3.0, loggedAtMs = i.toLong(), formCheck = form) })
+        val good = List(3) { bw("YES") }
+        val up = ExerciseProgress.apply(ExerciseState(pu.id), pu, good.last(), day, ctx, null, good).value
+        val held = ExerciseProgress.apply(ExerciseState(pu.id), pu, bw("NO"), day, ctx, null, good.dropLast(1) + bw("NO"))
+        assertEquals(1, held.value.state.formNoStreak)
+        if (up.ladder != null) assertNull("a step up is held when form wasn't solid", held.value.ladder)
+        assertTrue(held.decisions.any { it.reason == com.personalfitnesscoach.engine.core.ReasonKey.TECHNIQUE_CUE })
+        val twice = ExerciseProgress.apply(held.value.state, pu, bw("NO"), day + 2, ctx, null, listOf(bw("NO"), bw("NO")))
+        assertEquals(2, twice.value.state.formNoStreak)
+        assertTrue(twice.decisions.any { it.reason == com.personalfitnesscoach.engine.core.ReasonKey.REGRESSION_OFFERED })
+    }
+
+    @Test fun `AUD-19 SAF-004 - only sessions that load the sore area count as pain-free (review finding 15)`() = runBlocking {
+        val (d, _) = Fixtures.data()
+        Fixtures.onboard(d)
+        val m = Fixtures.MONDAY
+        d.docs.put(com.personalfitnesscoach.data.core.model.PainRecord, com.personalfitnesscoach.data.core.model.PainRecord(Days.startMs(m - 10, java.time.ZoneId.of("UTC")), m - 10,
+            null, null, com.personalfitnesscoach.engine.safety.PainReport(com.personalfitnesscoach.engine.model.Joint.KNEE, com.personalfitnesscoach.engine.safety.PainKind.JOINT_OR_TENDON, 8),
+            action = com.personalfitnesscoach.engine.safety.PainAction.STOP_REGION))
+        suspend fun session(day: Int, id: String) {
+            val w = d.store.insertWorkout(WorkoutRow(day = day, status = Status.DONE, template = "FB_A", tier = "FULL", startedAtMs = Days.startMs(day, java.time.ZoneId.of("UTC")) + 3_600_000,
+                endedAtMs = Days.startMs(day, java.time.ZoneId.of("UTC")) + 7_200_000, sessionRpe = 6.0, actualMinutes = 50.0, registryVersion = "3.0.1", json = WorkoutDoc(0, 60.0, 10.0).encode()))
+            val e = d.store.insertExercise(ExerciseRow(workoutId = w, position = 0, exerciseId = id, slotKey = "main0", status = Status.DONE, json = item(false, load = 40.0).encode()))
+            repeat(3) { s -> d.store.insertSet(SetRow(workoutExerciseId = e, setIndex = s, kind = SetKind.WORKING, loadKg = 40.0, reps = 10, rir = 2.0, loggedAtMs = 1)) }
+        }
+        val upper = Library.all.first { it.stress(com.personalfitnesscoach.engine.model.Joint.KNEE) == 0 && it.loadType == com.personalfitnesscoach.engine.model.LoadType.BARBELL }
+        session(m - 8, upper.id); session(m - 6, upper.id)
+        val still = d.bridge.regions(m).value.first { it.region == com.personalfitnesscoach.engine.model.Joint.KNEE }
+        assertEquals("two upper-body days leave the knee conservative", 3, still.minRir)
+        val legs = Library.all.first { it.stress(com.personalfitnesscoach.engine.model.Joint.KNEE) in 1..1 && it.loadType == com.personalfitnesscoach.engine.model.LoadType.DUMBBELL }
+        session(m - 4, legs.id); session(m - 2, legs.id)
+        val after = d.bridge.regions(m).value.firstOrNull { it.region == com.personalfitnesscoach.engine.model.Joint.KNEE }
+        assertTrue("two pain-free knee sessions end the conservative phase: $after", after == null || after.minRir == null)
+    }
+
+    @Test fun `AUD-20 CON-004 2_0_0 - small hops only after 4 weeks of blocks, not for beginners, people 65+ or after lower-body pain`() = runBlocking {
+        val m = Fixtures.MONDAY
+        suspend fun hops(level: Level, birth: Int, blockDaysAgo: Int?, kneePainDaysAgo: Int? = null): Boolean {
+            val (d, _) = Fixtures.data()
+            Fixtures.onboard(d, level = level, birthYear = birth,
+                conditions = listOf(com.personalfitnesscoach.data.core.model.StoredCondition("osteoporosis", m - 60, com.personalfitnesscoach.engine.safety.ControlStatus.YES)))
+            if (blockDaysAgo != null) d.store.insertWorkout(WorkoutRow(day = m - blockDaysAgo, status = Status.DONE, template = "FB_A", tier = "FULL", startedAtMs = 1,
+                endedAtMs = 2, sessionRpe = 5.0, actualMinutes = 40.0, registryVersion = "4.0.0", json = WorkoutDoc(0, 60.0, 5.0,
+                    boneLoading = com.personalfitnesscoach.data.core.session.BoneRef(5.0, 50, com.personalfitnesscoach.engine.safety.BoneLoadingVariant.HEEL_DROPS)).encode()))
+            if (kneePainDaysAgo != null) d.docs.put(com.personalfitnesscoach.data.core.model.PainRecord, com.personalfitnesscoach.data.core.model.PainRecord(1L, m - kneePainDaysAgo,
+                null, null, com.personalfitnesscoach.engine.safety.PainReport(com.personalfitnesscoach.engine.model.Joint.KNEE, com.personalfitnesscoach.engine.safety.PainKind.JOINT_OR_TENDON, 2),
+                action = com.personalfitnesscoach.engine.safety.PainAction.CONTINUE_CAUTION))
+            val u = d.bridge.user()!!
+            assertTrue(u.conditions.boneLoading)
+            return d.bridge.boneHopsAllowed(u, m)
+        }
+        assertTrue("a 46-year-old after 5 weeks of blocks", hops(Level.INTERMEDIATE, 1980, 35))
+        assertFalse("the first 4 weeks", hops(Level.INTERMEDIATE, 1980, 20))
+        assertFalse("no block yet", hops(Level.INTERMEDIATE, 1980, null))
+        assertFalse("a beginner", hops(Level.BEGINNER, 1980, 35))
+        assertFalse("65 or over", hops(Level.INTERMEDIATE, 1955, 35))
+        assertFalse("knee pain in the last 4 weeks", hops(Level.INTERMEDIATE, 1980, 35, kneePainDaysAgo = 10))
+        assertTrue("knee pain longer ago", hops(Level.INTERMEDIATE, 1980, 35, kneePainDaysAgo = 40))
+    }
+
+    @Test fun `AUD-21 SAF-003 2_0_0 - a stop for strong muscle pain ends that exercise only, and no area becomes conservative`() = runBlocking {
+        val (d, clock) = Fixtures.data()
+        Fixtures.onboard(d)
+        val t = d.planToday()!!
+        d.checkIns.record(t.user, com.personalfitnesscoach.engine.calc.CheckIn(3, 3, 3, 3))
+        d.startSession(d.generateSession(t, t.next!!, Tier.FULL))
+        val p = com.personalfitnesscoach.data.core.player.SessionPlayer(d)
+        p.completeStage(com.personalfitnesscoach.data.core.session.Stage.WARMUP)
+        val v = p.view()!!
+        val first = v.lifts.first()
+        val region = com.personalfitnesscoach.engine.model.Joint.entries.maxByOrNull { j -> first.exercise.stress(j) }!!
+        val others = v.lifts.filter { it.rowId != first.rowId }.map { it.rowId to it.exercise.id }
+        clock.ms += 60_000
+        val r = p.reportPain(first.rowId, com.personalfitnesscoach.engine.safety.PainReport(region, com.personalfitnesscoach.engine.safety.PainKind.MUSCLE_BURN, 8))
+        assertEquals(com.personalfitnesscoach.engine.safety.PainAction.STOP_EXERCISE, r.outcome.action)
+        assertFalse(r.endSession)
+        val after = p.view()!!
+        for ((row, id) in others) assertEquals("unchanged: $id", id, after.lifts.first { it.rowId == row }.exercise.id)
+        assertTrue(after.lifts.filter { it.rowId != first.rowId }.none { it.status == Status.SKIPPED })
+        assertTrue(d.bridge.regions(clock.today()).value.none { it.region == region })
     }
 }

@@ -230,7 +230,7 @@ fun <T> ChipGroup(options: List<T>, selected: (T) -> Boolean, label: @Composable
 
 /** A choice chip: glass, or warm-tinted with a warm edge when chosen (the chosen state is also read out by TalkBack). */
 @Composable
-fun GlowChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun GlowChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, spoken: String? = null) {
     val g = Glass
     FilterChip(selected = selected, onClick = onClick, enabled = !LocalBusy.current, label = { Text(text, style = MaterialTheme.typography.labelLarge) },
         shape = ChipShape,
@@ -239,17 +239,19 @@ fun GlowChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Mod
             selectedLeadingIconColor = g.text),
         border = androidx.compose.material3.FilterChipDefaults.filterChipBorder(enabled = true, selected = selected, borderColor = g.glassBorder,
             selectedBorderColor = g.warm, borderWidth = 1.dp, selectedBorderWidth = 1.5.dp),
-        modifier = modifier.heightIn(min = SecondaryHeight).widthIn(min = SecondaryHeight))
+        modifier = modifier.heightIn(min = SecondaryHeight).widthIn(min = SecondaryHeight).then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier))
 }
 
-/** A yes / no (/ not sure) question. */
+/** A yes / no (/ not sure) question. Each answer says which question it answers ("No: …"), so a screen reader never hears eight identical "No" buttons. */
 @Composable
 fun AnswerRow(question: String, answer: Boolean?, onAnswer: (Boolean) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(question, style = MaterialTheme.typography.bodyLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            GlowChip(stringResource(R.string.action_yes), answer == true, { onAnswer(true) })
-            GlowChip(stringResource(R.string.action_no), answer == false, { onAnswer(false) })
+            val yes = stringResource(R.string.action_yes)
+            val no = stringResource(R.string.action_no)
+            GlowChip(yes, answer == true, { onAnswer(true) }, spoken = stringResource(R.string.answer_spoken, yes, question))
+            GlowChip(no, answer == false, { onAnswer(false) }, spoken = stringResource(R.string.answer_spoken, no, question))
         }
     }
 }

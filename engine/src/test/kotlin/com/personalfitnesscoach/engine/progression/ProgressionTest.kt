@@ -126,9 +126,27 @@ class ProgressionTest {
     }
 
     @Test fun `TC-PROG-008b two no answers in a row offer an easier variation`() {
-        val r = Progression.next(ExposureInput(SQUAT, 5..5, 2.0, 100.0, sets(100.0, 5, 5, 5, form = FormCheck.NO), BAR, true, consecutiveFormNo = 2))
+        // The offer needs an easier version in the library (Phase 4 Part 4): the test squat gets the goblet squat as its regression.
+        val r = Progression.next(ExposureInput(SQUAT.copy(regressionId = "goblet-squat"), 5..5, 2.0, 100.0, sets(100.0, 5, 5, 5, form = FormCheck.NO), BAR, true, consecutiveFormNo = 2))
         assertTrue(r.value.offerRegression)
         assertTrue(r.decisions.any { it.reason == ReasonKey.REGRESSION_OFFERED })
+        // Without one, the weight holds and the text says Replace is there instead of promising an offer.
+        val none = Progression.next(ExposureInput(SQUAT, 5..5, 2.0, 100.0, sets(100.0, 5, 5, 5, form = FormCheck.NO), BAR, true, consecutiveFormNo = 2))
+        assertFalse(none.value.offerRegression)
+        assertTrue(none.decisions.any { it.reason == ReasonKey.FORM_HOLD_NO_EASIER })
+    }
+
+    @Test fun `TC-PROG-008c form not solid with missed reps reduces the weight, with the form tip (PROG-008 2_0_0)`() {
+        val r = Progression.next(ExposureInput(SQUAT, 5..5, 2.0, 100.0, sets(100.0, 3, 3, 5, form = FormCheck.NO), BAR, true, consecutiveFormNo = 1))
+        assertEquals(ProgressionAction.REDUCE, r.value.action)
+        assertTrue(r.value.load < 100.0)
+        assertTrue(r.decisions.any { it.reason == ReasonKey.TECHNIQUE_CUE })
+        assertTrue(r.decisions.first().ruleIds.contains("PROG-008"))
+        // "Unsure" with sets much harder than planned reduces too; "unsure" on target still holds.
+        val hard = Progression.next(ExposureInput(SQUAT, 5..5, 2.0, 100.0, sets(100.0, 5, 5, 5, rir = 0.0, form = FormCheck.UNSURE), BAR, true))
+        assertEquals(ProgressionAction.REDUCE, hard.value.action)
+        val fine = Progression.next(ExposureInput(SQUAT, 5..5, 2.0, 100.0, sets(100.0, 5, 5, 5, rir = 2.0, form = FormCheck.UNSURE), BAR, true))
+        assertEquals(ProgressionAction.HOLD, fine.value.action)
     }
 
     @Test fun `TC-PROG-003c lowerLoad always really lowers when a lighter load exists`() {

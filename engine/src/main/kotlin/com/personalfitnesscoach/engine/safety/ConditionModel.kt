@@ -116,4 +116,6 @@ data class ConditionEntry(
     val pendingVerification: List<String>,
     val sources: List<String>,
     val confidence: String,
+    /** Table 1.0.2: sub-answers that mean following the care team instead of a training plan (cancer spread to the bones, D-122). */
+    val blockIfFlags: List<String> = emptyList(),
 )

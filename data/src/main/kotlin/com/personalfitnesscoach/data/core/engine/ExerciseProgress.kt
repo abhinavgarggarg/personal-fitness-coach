@@ -8,6 +8,9 @@ import com.personalfitnesscoach.engine.calc.E1rm
 import com.personalfitnesscoach.engine.calc.Inventory
 import com.personalfitnesscoach.engine.calc.PlateMath
 import com.personalfitnesscoach.engine.core.Decision
+import com.personalfitnesscoach.engine.core.DecisionKind
+import com.personalfitnesscoach.engine.core.ReasonKey
+import com.personalfitnesscoach.engine.registry.RuleIds
 import com.personalfitnesscoach.engine.core.EngineResult
 import com.personalfitnesscoach.engine.library.Library
 import com.personalfitnesscoach.engine.model.DoseUnit
@@ -183,9 +186,11 @@ object ExerciseProgress {
                     s.loadBeforeReductions, formNo, ctx.level, ctx.age))
                 d += next.decisions
                 val reduced = next.value.action == ProgressionAction.REDUCE || next.value.action == ProgressionAction.REDUCE_AND_REVIEW
-                // At the lightest load, sets that show it is too heavy for the bottom of the range at the target effort (Phase 4 Part 4).
+                // At the lightest load, sets that show it is too heavy for the bottom of the range at the target effort (Phase 4 Part 4) —
+                // twice in a row, so one bad day doesn't send the exercise to its easier version for the rest of the block (review).
                 val heavy = next.value.load <= avail.min() + 1e-9 && PlateMath.belowLightest(E1rm.loadFor(work.maxOf { w ->
-                    w.load * (1.0 + (w.reps + (w.rir ?: item.targetRir)) / P.INT_004.divisor) }, next.value.repRange.first, item.targetRir), avail)
+                    w.load * (1.0 + (w.reps + (w.rir ?: item.targetRir)) / P.INT_004.divisor) }, next.value.repRange.first, item.targetRir), avail) &&
+                    (state.previousWasReduction || state.prescription?.lightestTooHeavy == true)
                 s = s.copy(prescription = next.value.copy(lightestTooHeavy = heavy), prescriptionDay = day, formNoStreak = formNo, previousWasReduction = reduced,
                     loadBeforeReductions = if (!reduced) null else if (s.previousWasReduction) s.loadBeforeReductions ?: load else load,
                     calibration = null)
@@ -214,8 +219,25 @@ object ExerciseProgress {
         val step = if (ex.assisted) ex.allEquipment.sorted().firstNotNullOfOrNull { ctx.inventory.stacks[it] }?.stepKg ?: ctx.inventory.stack.stepKg else 5.0
         val r = Bodyweight.next(ex, history, Library.progressionOf(ex), Library.regressionOf(ex), step)
         d += r.decisions
-        val dec = r.value
-        var s = s0
+        var dec = r.value
+        // PROG-008 for ladders too (Part 4 review: the form answer was ignored here): "not solid" or "unsure" holds the rung and the
+        // assistance; two "not solid" in a row offer the easier version when the library has one.
+        val forms = recent.last().working.map { runCatching { FormCheck.valueOf(it.formCheck) }.getOrDefault(FormCheck.YES) }
+        val worst = forms.maxByOrNull { it.ordinal } ?: FormCheck.YES
+        val formNo = if (forms.any { it == FormCheck.NO }) s0.formNoStreak + 1 else 0
+        if (worst != FormCheck.YES) {
+            if (dec.action == BwAction.STEP_UP || dec.action == BwAction.ADD_LOAD || dec.action == BwAction.LESS_ASSISTANCE) {
+                dec = dec.copy(action = BwAction.HOLD, exerciseId = ex.id, assistanceKg = if (ex.assisted) history.last().assistanceKg else dec.assistanceKg)
+                d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_008), ReasonKey.LOAD_HOLD_TECHNIQUE, inputs = mapOf("exercise" to ex.id))
+            }
+            if (worst == FormCheck.NO) d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.PROG_008), ReasonKey.TECHNIQUE_CUE, inputs = mapOf("exercise" to ex.id))
+            if (worst == FormCheck.NO && formNo >= P.PROG_008.regress_after_no) {
+                val easier = Library.regressionOf(ex)
+                d += Decision(DecisionKind.SUBSTITUTION, listOf(RuleIds.PROG_008), if (easier != null) ReasonKey.REGRESSION_OFFERED else ReasonKey.FORM_HOLD_NO_EASIER,
+                    inputs = mapOf("exercise" to ex.id, "consecutiveNo" to formNo), outputs = mapOf("easier" to easier?.id))
+            }
+        }
+        var s = s0.copy(formNoStreak = formNo)
         val assistance = dec.assistanceKg
         if (ex.assisted && assistance != null) {
             s = s.copy(prescription = Prescription(assistance, ex.defaultRepRange, dec.targetReps,

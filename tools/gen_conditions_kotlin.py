@@ -29,12 +29,12 @@ KNOWN = {"id", "name", "group", "parent", "optional", "clearance", "clearance_pr
          "joint_limits", "joint_limit_unlock", "extra_warmup_min", "extra_cooldown_min", "max_zone_after_weeks",
          "max_zone_after_clearance", "max_zone_if_previously_vigorous_and_ok", "after_clearance", "ask_control_status",
          "if_not_controlled", "scheduling", "phases", "impact_checks", "impact_dose", "required_work", "effort_by", "default_order",
-         "warmup_style", "sub_flags", "sub_flag_effects", "flare_mode", "pain_rule", "block_if", "attest_if", "asks", "prompts", "stop_signs",
+         "warmup_style", "sub_flags", "sub_flag_effects", "flare_mode", "pain_rule", "block_if", "block_if_flags", "attest_if", "asks", "prompts", "stop_signs",
          "environment", "positions_note", "never_recommend", "goal_effects", "goal_effects_if", "not_encoded",
          "pending_verification", "sources", "confidence"}
 
 # ConditionEntry constructor parameters, in order (ConditionModel.kt); the generator emits named arguments.
-FIELDS = ['id', 'name', 'group', 'parent', 'optional', 'clearance', 'clearancePromptNow', 'clearanceText', 'clearanceAlwaysIf', 'maxZone', 'hiit', 'hiitBaseWeeks', 'hiitNeedsScope', 'hiitLowImpactOnly', 'hiitModalities', 'failureAllowed', 'impact', 'impactMax', 'impactNoneIf', 'impactUnlockAfterWeeks', 'impactUnlockOptIn', 'impactUnlockNeedsPainRule', 'minRir', 'minRirTags', 'avoidTags', 'avoidTagsAtStart', 'avoidTagsEarly', 'avoidTagsFromWeek', 'avoidSupineAnyTimeIf', 'rangeLimitedTags', 'jointLimits', 'jointLimitUnlock', 'jointLimitUnlockAfterWeeks', 'jointLimitUnlockNeedsPainRule', 'extraWarmupMin', 'extraCooldownMin', 'maxZoneAfterWeeks', 'maxZoneAfterWeeksZone', 'maxZoneAfterClearance', 'maxZoneIfPreviouslyVigorousAndOk', 'afterClearance', 'askControlStatus', 'ifNotControlledMaxZone', 'ifNotControlledHiit', 'ifNotControlledPrompt', 'maxConsecutiveInactiveDays', 'strengthOnConsecutiveDays', 'phases', 'impactChecks', 'boneLoading', 'boneLoadingText', 'boneLoadingImpactsMin', 'balancePerWeek', 'backExtensorPerWeek', 'effortBy', 'defaultOrder', 'warmupStyle', 'subFlags', 'subFlagEffects', 'flareJointLimits', 'flareAvoidTags', 'flareKeep', 'flareExitSessions', 'painRuleDuringMax', 'blockIf', 'attestIf', 'asks', 'prompts', 'stopSigns', 'environment', 'positionsNote', 'neverRecommend', 'goalEffects', 'goalEffectsIf', 'notEncoded', 'pendingVerification', 'sources', 'confidence']
+FIELDS = ['id', 'name', 'group', 'parent', 'optional', 'clearance', 'clearancePromptNow', 'clearanceText', 'clearanceAlwaysIf', 'maxZone', 'hiit', 'hiitBaseWeeks', 'hiitNeedsScope', 'hiitLowImpactOnly', 'hiitModalities', 'failureAllowed', 'impact', 'impactMax', 'impactNoneIf', 'impactUnlockAfterWeeks', 'impactUnlockOptIn', 'impactUnlockNeedsPainRule', 'minRir', 'minRirTags', 'avoidTags', 'avoidTagsAtStart', 'avoidTagsEarly', 'avoidTagsFromWeek', 'avoidSupineAnyTimeIf', 'rangeLimitedTags', 'jointLimits', 'jointLimitUnlock', 'jointLimitUnlockAfterWeeks', 'jointLimitUnlockNeedsPainRule', 'extraWarmupMin', 'extraCooldownMin', 'maxZoneAfterWeeks', 'maxZoneAfterWeeksZone', 'maxZoneAfterClearance', 'maxZoneIfPreviouslyVigorousAndOk', 'afterClearance', 'askControlStatus', 'ifNotControlledMaxZone', 'ifNotControlledHiit', 'ifNotControlledPrompt', 'maxConsecutiveInactiveDays', 'strengthOnConsecutiveDays', 'phases', 'impactChecks', 'boneLoading', 'boneLoadingText', 'boneLoadingImpactsMin', 'balancePerWeek', 'backExtensorPerWeek', 'effortBy', 'defaultOrder', 'warmupStyle', 'subFlags', 'subFlagEffects', 'flareJointLimits', 'flareAvoidTags', 'flareKeep', 'flareExitSessions', 'painRuleDuringMax', 'blockIf', 'attestIf', 'asks', 'prompts', 'stopSigns', 'environment', 'positionsNote', 'neverRecommend', 'goalEffects', 'goalEffectsIf', 'notEncoded', 'pendingVerification', 'sources', 'confidence', 'blockIfFlags']
 
 errors = []
 
@@ -229,6 +229,7 @@ def main():
             klist(e.get("block_if")), klist(e.get("attest_if")), klist(e.get("asks")), klist(e["prompts"]), klist(e["stop_signs"]),
             klist(e.get("environment")), kstr(e.get("positions_note")), klist(e.get("never_recommend")), kstr(e.get("goal_effects")),
             kstr(e.get("goal_effects_if")), klist(e.get("not_encoded")), klist(e.get("pending_verification")), klist(e["sources"]), kstr(e["confidence"]),
+            klist([snake(x) for x in e.get("block_if_flags") or []]),
         ]
         if len(args) != len(FIELDS):
             err(f"{o}: generator emits {len(args)} values for {len(FIELDS)} ConditionEntry fields")

@@ -706,12 +706,15 @@ class SessionPlayer(private val d: PfcData) {
             it.sets.none { s -> s.kind != SetKind.WARMUP } }
         if (occupied) {
             val r = Substitution.occupied(original, pool, sub, stillToCome)
-            SwapChoice(rowId, original, r.value.swaps.ranked, r.value.canDoLater, r.decisions)
+            SwapChoice(rowId, original, r.value.swaps.ranked.filter { c -> doseable(w, e, c.exercise) }, r.value.canDoLater, r.decisions)
         } else {
             val r = Substitution.options(original, pool, sub)
-            SwapChoice(rowId, original, r.value.ranked, false, r.decisions)
+            SwapChoice(rowId, original, r.value.ranked.filter { c -> doseable(w, e, c.exercise) }, false, r.decisions)
         }
     }
+
+    /** A swap the generator would really dose (not one whose lightest weight is too heavy for the slot), so a pick is never refused. */
+    private suspend fun doseable(w: StoredWorkout, e: StoredExercise, ex: Exercise): Boolean = itemFor(w, e, ex) != null
 
     private fun unitFits(c: Exercise, item: ItemDoc): Boolean = c.unit == item.unit || item.unit == DoseUnit.REPS && c.unit == DoseUnit.REPS
 
@@ -805,8 +808,9 @@ class SessionPlayer(private val d: PfcData) {
                 }
                 val limit = o.regionMaxStress ?: 0
                 val joint = report.region
-                val rest = d.sessions.load(w.id)!!.exercises.filter { x -> x.row.id != e?.row?.id && x.row.status != Status.SKIPPED && x.row.status != Status.DONE &&
-                    (Library[x.exerciseId]?.stress(joint) ?: 0) > limit }
+                // SAF-003 2.0.0: a stop for very strong muscle pain ends only this exercise; the region isn't limited (D-121).
+                val rest = if (!o.regionConservative) emptyList() else d.sessions.load(w.id)!!.exercises.filter { x -> x.row.id != e?.row?.id &&
+                    x.row.status != Status.SKIPPED && x.row.status != Status.DONE && (Library[x.exerciseId]?.stress(joint) ?: 0) > limit }
                 for (x in rest) {
                     val logged = x.sets.any { it.kind != SetKind.WARMUP }
                     if (!logged && o.action == PainAction.STOP_EXERCISE) {
@@ -829,11 +833,11 @@ class SessionPlayer(private val d: PfcData) {
                     changes += Change.Skipped(x.row.id, x.exerciseId)
                 }
                 // Conditioning still to do that loads the joint is changed to a machine within the limit, or dropped (R5-02).
-                state = conditioningWithinLimits(w.id, state, changes)
+                if (o.regionConservative) state = conditioningWithinLimits(w.id, state, changes)
             }
         }
         val alternatives = if (o.action == PainAction.STOP_EXERCISE && e != null)
-            swapOptionsFor(w, e, mapOf(report.region to (o.regionMaxStress ?: P.SAF_003.substitute_max_joint_stress))) else emptyList()
+            swapOptionsFor(w, e, if (o.regionConservative) mapOf(report.region to (o.regionMaxStress ?: P.SAF_003.substitute_max_joint_stress)) else emptyMap()) else emptyList()
         d.decisions.append(dec.drop(gate.decisions.size), w.day, w.id)
         if (o.endSession) {
             // SAF-003: whole-body movement affected → the session ends (PARTIAL); what was logged stays.

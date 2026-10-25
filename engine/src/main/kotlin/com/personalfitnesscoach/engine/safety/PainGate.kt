@@ -68,6 +68,8 @@ object PainGate {
             // region whatever the user tapped as the pain type (SAF-003).
             severeDescriptor -> PainOutcome(PainAction.STOP_REGION, regionMaxStress = 0, regionConservative = true,
                 endSession = r.affectsWholeBodyMovement, suggestProfessional = true)
+            // SAF-003 2.0.0 (D-121): very strong muscle pain stops that exercise for today; the region is not made conservative.
+            r.kind != PainKind.JOINT_OR_TENDON && r.rating >= P.SAF_003.muscle_stop_exercise_min_rating -> PainOutcome(PainAction.STOP_EXERCISE)
             r.kind != PainKind.JOINT_OR_TENDON -> PainOutcome(PainAction.CONTINUE)
             r.rating >= P.SAF_003.stop_region_min_rating ->
                 PainOutcome(PainAction.STOP_REGION, regionMaxStress = 0, regionConservative = true,

@@ -5,14 +5,14 @@
 package com.personalfitnesscoach.engine.registry
 
 object Registry {
-    const val VERSION: String = "3.0.1"
-    const val SHA256: String = "181508d811be120258878cf7f5d8aa529efe7b3854a6527ad0fe3747e87868ac"
+    const val VERSION: String = "4.1.0"
+    const val SHA256: String = "0cd89107f8dee9a2367b6cb265a6a1c0545404dddd3a45bdcdec4399569b7d8d"
     const val RULE_COUNT: Int = 152
 
     /** Every rule ID with its confidence label, for the coach's "Why?" detail. */
     val confidence: Map<String, String> = mapOf(
-        "SAF-001" to "High Evidence",
-        "SAF-002" to "High Evidence",
+        "SAF-001" to "Moderate Evidence",
+        "SAF-002" to "Moderate Evidence",
         "SAF-003" to "Expert Practice",
         "SAF-004" to "Expert Practice",
         "SAF-005" to "Expert Practice",
@@ -38,17 +38,17 @@ object Registry {
         "INT-001" to "Moderate Evidence",
         "INT-002" to "Moderate Evidence",
         "INT-003" to "Moderate Evidence",
-        "INT-004" to "Moderate Evidence",
-        "INT-005" to "Moderate Evidence",
+        "INT-004" to "Limited Evidence",
+        "INT-005" to "Limited Evidence",
         "INT-006" to "Moderate Evidence",
         "INT-007" to "Expert Practice",
         "REP-001" to "High Evidence",
-        "REP-002" to "High Evidence",
-        "REP-003" to "Moderate Evidence",
+        "REP-002" to "Expert Practice",
+        "REP-003" to "Expert Practice",
         "REP-004" to "Moderate Evidence",
         "REP-005" to "Expert Practice",
         "REP-006" to "Expert Practice",
-        "REST-001" to "Moderate Evidence",
+        "REST-001" to "Expert Practice",
         "REST-002" to "Moderate Evidence",
         "REST-003" to "Moderate Evidence",
         "REST-004" to "Expert Practice",
@@ -58,17 +58,17 @@ object Registry {
         "ORD-001" to "Moderate Evidence",
         "ORD-002" to "Expert Practice",
         "ORD-003" to "Expert Practice",
-        "CON-001" to "Moderate Evidence",
+        "CON-001" to "Expert Practice",
         "CON-002" to "Limited Evidence",
         "CON-003" to "Expert Practice",
-        "CON-004" to "Moderate Evidence",
-        "CON-005" to "Moderate Evidence",
+        "CON-004" to "Expert Practice",
+        "CON-005" to "Expert Practice",
         "CON-006" to "Limited Evidence",
         "AER-001" to "Moderate Evidence",
         "AER-002" to "Limited Evidence",
         "AER-003" to "Expert Practice",
         "HIIT-001" to "Expert Practice",
-        "HIIT-002" to "Moderate Evidence",
+        "HIIT-002" to "Expert Practice",
         "HIIT-003" to "Expert Practice",
         "HIIT-004" to "Expert Practice",
         "HIIT-005" to "Expert Practice",
@@ -83,12 +83,12 @@ object Registry {
         "CORE-001" to "Expert Practice",
         "CORE-002" to "Expert Practice",
         "CORE-003" to "Expert Practice",
-        "MOB-001" to "Moderate Evidence",
-        "MOB-002" to "Moderate Evidence",
+        "MOB-001" to "Expert Practice",
+        "MOB-002" to "Expert Practice",
         "MOB-003" to "Expert Practice",
         "MOB-004" to "Moderate Evidence",
         "MOB-005" to "Expert Practice",
-        "WU-001" to "Moderate Evidence",
+        "WU-001" to "Expert Practice",
         "WU-002" to "Expert Practice",
         "WU-003" to "Expert Practice",
         "WU-004" to "Expert Practice",
@@ -99,9 +99,9 @@ object Registry {
         "RDY-005" to "Moderate Evidence",
         "RDY-006" to "Expert Practice",
         "RDY-007" to "Product Rule (not an evidence claim)",
-        "LOAD-001" to "Moderate Evidence",
+        "LOAD-001" to "Expert Practice",
         "LOAD-002" to "Moderate Evidence",
-        "LOAD-003" to "Moderate Evidence",
+        "LOAD-003" to "Expert Practice",
         "LOAD-004" to "Limited Evidence",
         "LOAD-005" to "Expert Practice",
         "LOAD-006" to "Expert Practice",
@@ -126,7 +126,7 @@ object Registry {
         "REG-001" to "Expert Practice",
         "REG-002" to "Expert Practice",
         "REG-003" to "Expert Practice",
-        "REG-004" to "Moderate Evidence",
+        "REG-004" to "Expert Practice",
         "REG-005" to "Expert Practice",
         "CAL-001" to "Expert Practice",
         "SUB-001" to "Product Rule (not an evidence claim)",
@@ -142,8 +142,8 @@ object Registry {
         "SCH-003" to "Product Rule (not an evidence claim)",
         "EXP-001" to "Expert Practice",
         "EXP-002" to "Expert Practice",
-        "AGE-001" to "High Evidence",
-        "IND-001" to "Moderate Evidence",
+        "AGE-001" to "Moderate Evidence",
+        "IND-001" to "Expert Practice",
         "EQ-001" to "Moderate Evidence",
         "EQ-002" to "Product Rule (not an evidence claim)",
         "ADH-001" to "Expert Practice",
@@ -510,6 +510,7 @@ object P {
         const val stop_region_min_rating: Int = 7
         const val substitute_max_joint_stress: Int = 1
         val stop_region_descriptors: List<String> = listOf("sharp", "stabbing", "swelling", "instability", "locking", "numbness", "tingling", "after_fall_or_impact")
+        const val muscle_stop_exercise_min_rating: Int = 7
     }
     object SAF_004 {
         const val sessions_threshold: Int = 2
@@ -854,6 +855,9 @@ object P {
         const val impact_sessions_per_week_max: Int = 1
         const val bone_loading_block_exempt: Boolean = true
         const val bone_loading_block_max_minutes: Int = 5
+        const val bone_loading_heel_drops_weeks: Int = 4
+        const val bone_loading_hops_age_below: Int = 65
+        const val bone_loading_pain_lookback_days: Int = 28
     }
     object CON_005 {
     }
@@ -1569,7 +1573,7 @@ object P {
     }
     object SAF_010 {
         const val table: String = "health_conditions"
-        const val table_version: String = "1.0.1"
+        const val table_version: String = "1.0.2"
         const val combine: String = "most_restrictive"
         val status_values: List<String> = listOf("yes", "no", "not_sure")
         const val not_sure_counts_as: String = "no"
