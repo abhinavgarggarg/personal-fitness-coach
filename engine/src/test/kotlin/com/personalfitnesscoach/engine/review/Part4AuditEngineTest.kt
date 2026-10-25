@@ -109,12 +109,13 @@ class Part4AuditEngineTest {
     @Test fun `AUD-05 the easier version follows the regression chain, never a harder same-pattern lift (review finding 2)`() {
         val day = benchDay()
         val slot = day.slots.first { it.exercise.id == "bench-press" }
-        // A barbell-only gym: no dumbbells for the dumbbell bench, so the next step down, the push-up; never the close-grip bench.
+        // A barbell-only gym: no dumbbells for the dumbbell bench, so the easiest bodyweight version, the incline push-up (re-check
+        // finding 6); never the close-grip bench.
         val barOnly = setOf("barbell", "bench", "rack")
         val r = SessionGenerator.generate(req(day, gym = barOnly, e1rm = mapOf("bench-press" to weakE1rm(day))))
         val instead = r.value.items.firstOrNull { it.slotKey == slot.spec.key }
         assertNotNull(instead)
-        assertEquals("push-up", instead!!.exercise.id)
+        assertEquals("push-up-incline", instead!!.exercise.id)
         assertTrue(r.value.items.none { it.exercise.id in setOf("bench-press", "close-grip-bench-press", "incline-bench-press") && it.slotKey == slot.spec.key })
         // With dumbbells, the dumbbell bench, its weight-finding starting at the lightest pair (not from body weight).
         val withDb = SessionGenerator.generate(req(day, e1rm = mapOf("bench-press" to weakE1rm(day))).copy(bodyweightKg = 85.0)).value.items.first { it.slotKey == slot.spec.key }
@@ -209,7 +210,10 @@ class Part4AuditEngineTest {
             com.personalfitnesscoach.engine.safety.PainGate.assess(com.personalfitnesscoach.engine.safety.PainReport(com.personalfitnesscoach.engine.model.Joint.KNEE, kind, rating)).value
         val burn7 = a(com.personalfitnesscoach.engine.safety.PainKind.MUSCLE_BURN, 7)
         assertEquals(com.personalfitnesscoach.engine.safety.PainAction.STOP_EXERCISE, burn7.action)
-        assertFalse(burn7.regionConservative); assertNull(burn7.regionMaxStress); assertFalse(burn7.endSession)
+        // The rest of today goes easy on that area (stress ≤ 1, D-123), but it is not kept conservative beyond today.
+        assertFalse(burn7.regionConservative); assertEquals(1, burn7.regionMaxStress); assertFalse(burn7.endSession)
+        assertEquals(ReasonKey.PAIN_MUSCLE_STOP, com.personalfitnesscoach.engine.safety.PainGate.assess(com.personalfitnesscoach.engine.safety.PainReport(
+            com.personalfitnesscoach.engine.model.Joint.KNEE, com.personalfitnesscoach.engine.safety.PainKind.MUSCLE_BURN, 8)).decisions.single().reason)
         assertEquals(com.personalfitnesscoach.engine.safety.PainAction.STOP_EXERCISE, a(com.personalfitnesscoach.engine.safety.PainKind.DOMS, 9).action)
         assertEquals(com.personalfitnesscoach.engine.safety.PainAction.CONTINUE, a(com.personalfitnesscoach.engine.safety.PainKind.MUSCLE_BURN, 6).action)
         // Joint pain is unchanged: 7 stops the region.
@@ -238,5 +242,20 @@ class Part4AuditEngineTest {
         val feet = C.resolve(listOf(U("t2d"), U("diabetes_feet", subFlags = setOf("a_past_foot_ulcer_or_charcot_foot")))).value
         val plain = C.resolve(listOf(U("t2d"), U("diabetes_feet"))).value
         assertTrue("a past ulcer needs the doctor's OK first: ${feet.conservative}", feet.conservative && !plain.conservative || feet.clearancePrompts.size > plain.clearancePrompts.size)
+    }
+
+    @Test fun `AUD-23 a lighter day's replacement takes the same protected path - never heavier, same pattern (re-check findings 5 and 7)`() {
+        val plan = WeekPlanner.plan(weekInput(4, weekOf(BlockType.BUILD), program = program), program).value
+        val day = plan.days.first { d -> d.slots.any { it.exercise.id == "back-squat" } }
+        // A LIGHT day caps main lifts at 85%; with the bar the lightest load and an e1RM that needs less, the goblet squat stands in,
+        // its weight found from the lightest dumbbell, not from body weight.
+        val r = SessionGenerator.generate(GenerationRequest(day, Level.INTERMEDIATE, 40, 90, FULL_GYM, Tier.LIGHT, 35, e1rm = mapOf("back-squat" to 26.0),
+            bodyweightKg = 90.0, week = vctx)).value
+        val slot = day.slots.first { it.exercise.id == "back-squat" }.spec.key
+        val instead = r.items.firstOrNull { it.slotKey == slot }
+        if (instead != null && instead.exercise.id != "back-squat") {
+            assertEquals(Library.require("back-squat").pattern, instead.exercise.pattern)
+            if (instead.calibrating && instead.load != null) assertEquals(com.personalfitnesscoach.engine.calc.PlateMath.loadsFor(instead.exercise, com.personalfitnesscoach.engine.calc.Inventory()).min(), instead.load!!, 0.0)
+        }
     }
 }

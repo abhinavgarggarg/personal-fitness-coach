@@ -921,7 +921,7 @@
       "version": "2.0.0",
       "category": "safety",
       "title": "In-session pain protocol",
-      "statement": "Pain is a separate gate from readiness. Joint/tendon pain <=3/10 not worsening: continue with load -10-20% or shorter range. 4-6/10 or worsening: stop the exercise, offer substitutes with joint stress <=1 for that joint, region to conservative mode. >=7/10 or sharp, swelling, instability, locking, numbness/tingling, or after a fall: stop loading the region, end session if whole-body movement affected, suggest a professional. Muscle pain (a burn or soreness) >=7/10: stop that exercise for today and offer other exercises; the region is not put in conservative mode.",
+      "statement": "Pain is a separate gate from readiness. Joint/tendon pain <=3/10 not worsening: continue with load -10-20% or shorter range. 4-6/10 or worsening: stop the exercise, offer substitutes with joint stress <=1 for that joint, region to conservative mode. >=7/10 or sharp, swelling, instability, locking, numbness/tingling, or after a fall: stop loading the region, end session if whole-body movement affected, suggest a professional. Muscle pain (a burn or soreness) >=7/10: stop that exercise for today, and for the rest of the day nothing loads that area above joint stress 1 (also when reported at the check-in); other exercises that don't work the same main muscles are offered; the area is not kept conservative beyond today.",
       "parameters": {
         "continue_max_rating": 3,
         "continue_load_reduction_pct": [
@@ -960,7 +960,7 @@
         "TC-SAF-003b",
         "TC-SAF-003e"
       ],
-      "change_reason": "MAJOR: A safety boundary is added: very strong muscle pain was always 'carry on' (Part 4 review finding 8). Chosen by the Product Owner on 25 Oct 2026 (D-121). — Safety audit decisions: strong muscle pain, form with missed reps, the bone-loading block (registry 4.0.0, D-121)",
+      "change_reason": "MAJOR: A safety boundary is added: very strong muscle pain was always 'carry on' (Part 4 review finding 8). Chosen by the Product Owner on 25 Oct 2026 (D-121). The day limit, also at the check-in, was left to Claude by the Product Owner, which took the cautious option (D-123). — Safety audit decisions: strong muscle pain, form with missed reps, the bone-loading block (registry 4.0.0, D-121)",
       "status": "approved"
     },
     {
@@ -2607,7 +2607,7 @@
       "version": "2.1.0",
       "category": "concurrent",
       "title": "Low-impact modality preference",
-      "statement": "Low-impact, concentric-dominant modalities first; impact work <=1/week and not the day before heavy legs. A short bone-loading block from the osteoporosis condition entry (≤5 min, ≥50 low-level landings) is not an impact session under this rule. It starts with heel drops for its first 4 weeks; small hops follow only for someone who is not a beginner, is under 65 and has reported no hip, knee or ankle pain in the last 4 weeks. The block stays when another condition sets impact 'as tolerated'; a lower impact level (such as osteoarthritis) still removes it.",
+      "statement": "Low-impact, concentric-dominant modalities first; impact work <=1/week and not the day before heavy legs. A short bone-loading block from the osteoporosis condition entry (≤5 min, ≥50 low-level landings) is not an impact session under this rule. It starts with heel drops for its first 4 weeks; small hops follow only for someone who is not a beginner, is under 65, doesn't have low back pain and has reported no hip, knee or ankle pain in the last 4 weeks. The block stays when another condition sets impact 'as tolerated'; a lower impact level (such as osteoarthritis) still removes it.",
       "parameters": {
         "impact_sessions_per_week_max": 1,
         "bone_loading_block_exempt": true,

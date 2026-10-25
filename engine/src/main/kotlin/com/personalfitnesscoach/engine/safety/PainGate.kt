@@ -68,8 +68,10 @@ object PainGate {
             // region whatever the user tapped as the pain type (SAF-003).
             severeDescriptor -> PainOutcome(PainAction.STOP_REGION, regionMaxStress = 0, regionConservative = true,
                 endSession = r.affectsWholeBodyMovement, suggestProfessional = true)
-            // SAF-003 2.0.0 (D-121): very strong muscle pain stops that exercise for today; the region is not made conservative.
-            r.kind != PainKind.JOINT_OR_TENDON && r.rating >= P.SAF_003.muscle_stop_exercise_min_rating -> PainOutcome(PainAction.STOP_EXERCISE)
+            // SAF-003 2.0.0 (D-121, D-123): very strong muscle pain stops that exercise for today, and for the rest of the day nothing loads
+            // that area strongly (the same day limit as joint pain of 4-6); the region is not made conservative beyond today.
+            r.kind != PainKind.JOINT_OR_TENDON && r.rating >= P.SAF_003.muscle_stop_exercise_min_rating ->
+                PainOutcome(PainAction.STOP_EXERCISE, regionMaxStress = P.SAF_003.substitute_max_joint_stress)
             r.kind != PainKind.JOINT_OR_TENDON -> PainOutcome(PainAction.CONTINUE)
             r.rating >= P.SAF_003.stop_region_min_rating ->
                 PainOutcome(PainAction.STOP_REGION, regionMaxStress = 0, regionConservative = true,
@@ -85,7 +87,7 @@ object PainGate {
         val reason = when (outcome.action) {
             PainAction.CONTINUE -> null
             PainAction.CONTINUE_CAUTION -> ReasonKey.PAIN_CONTINUE_CAUTION
-            PainAction.STOP_EXERCISE -> ReasonKey.PAIN_STOP_EXERCISE
+            PainAction.STOP_EXERCISE -> if (r.kind != PainKind.JOINT_OR_TENDON && !severeDescriptor) ReasonKey.PAIN_MUSCLE_STOP else ReasonKey.PAIN_STOP_EXERCISE
             PainAction.STOP_REGION -> ReasonKey.PAIN_STOP_REGION
         }
         val d = if (reason == null) emptyList() else listOf(Decision(DecisionKind.SAFETY, listOf(RuleIds.SAF_003), reason,

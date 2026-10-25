@@ -171,12 +171,15 @@ data class StepCounterRecord(val atMs: Long, val elapsedMs: Long, val counter: L
  * A SAF-002 red-flag stop. Training stays stopped until the user confirms the symptoms have resolved or were reviewed by a
  * clinician; the first session back is then LIGHT at most (RedFlags.tierAfterStop).
  */
-data class SafetyStopRecord(val day: Int, val symptoms: Set<String>, val confirmedDay: Int? = null) {
+data class SafetyStopRecord(val day: Int, val symptoms: Set<String>, val confirmedDay: Int? = null,
+                            /** When the stop was reported (Part 4 re-check: a session finished earlier that day is not the first session back). */
+                            val atMs: Long? = null) {
     companion object Codec : DocCodec<SafetyStopRecord>("safety_stop", 1, RecordKind.COLLECTED, setOf(DataItem.READINESS, DataItem.SCREENING),
         "A red-flag stop and when it was cleared") {
         override fun key(v: SafetyStopRecord) = SINGLE
-        override fun write(v: SafetyStopRecord, o: Obj) = with(o) { put("day", v.day); strings("symptoms", v.symptoms); put("confirmedDay", v.confirmedDay) }
-        override fun read(o: JsonObject, version: Int) = SafetyStopRecord(o.int("day"), o.strings("symptoms").toSet(), o.intOrNull("confirmedDay"))
+        override fun write(v: SafetyStopRecord, o: Obj) = with(o) { put("day", v.day); strings("symptoms", v.symptoms); put("confirmedDay", v.confirmedDay)
+            if (v.atMs != null) put("atMs", v.atMs) }
+        override fun read(o: JsonObject, version: Int) = SafetyStopRecord(o.int("day"), o.strings("symptoms").toSet(), o.intOrNull("confirmedDay"), o.longOrNull("atMs"))
     }
 }
 

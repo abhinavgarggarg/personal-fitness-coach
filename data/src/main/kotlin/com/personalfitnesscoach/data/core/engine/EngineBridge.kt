@@ -751,8 +751,14 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
             else {
                 // The first session back is the first finished session after the stop: the stopped session itself (saved as done, so it
                 // counts towards caps) is not one, nor is anything that day before it (Part 4 review: a same-day confirmation skipped LIGHT).
+                // With the stop's time (recorded since Part 4's re-check), a session counts only when it started after the stop — one finished
+                // earlier that day doesn't (a warning sign reported from Today in the evening). Older records go by the stopped session.
                 val stoppedId = log.done(s.day, s.day).filter { it.doc.stoppedBySafety }.maxOfOrNull { it.id }
-                val back = log.done(s.confirmedDay, today).any { w -> !w.doc.stoppedBySafety && (w.row.day > s.day || stoppedId == null || w.id > stoppedId) }
+                val back = log.done(s.confirmedDay, today).any { w -> !w.doc.stoppedBySafety && when {
+                    w.row.day > s.day -> true
+                    s.atMs != null -> (w.row.startedAtMs ?: Long.MIN_VALUE) > s.atMs
+                    else -> stoppedId == null || w.id > stoppedId
+                } }
                 if (!back) RedFlags.tierAfterStop(true)?.let { capAt(it) }
             }
         }
@@ -845,6 +851,8 @@ class EngineBridge(private val docs: Docs, private val log: SessionLog, private 
      */
     suspend fun boneHopsAllowed(u: UserState, today: Int): Boolean {
         if (u.profile.level == com.personalfitnesscoach.engine.model.Level.BEGINNER) return false
+        // With low back pain the block is always heel drops: hops jolt the spine (D-123).
+        if ("low_back_pain" in u.conditions.entries) return false
         if ((u.age ?: Int.MAX_VALUE) >= P.CON_004.bone_loading_hops_age_below) return false
         val weeks = P.CON_004.bone_loading_heel_drops_weeks * 7
         if (log.done(today - 365, today - weeks).none { it.doc.boneLoading != null }) return false

@@ -245,7 +245,7 @@ class Part4AuditDataTest {
         assertTrue("knee pain longer ago", hops(Level.INTERMEDIATE, 1980, 35, kneePainDaysAgo = 40))
     }
 
-    @Test fun `AUD-21 SAF-003 2_0_0 - a stop for strong muscle pain ends that exercise only, and no area becomes conservative`() = runBlocking {
+    @Test fun `AUD-21 SAF-003 2_0_0 - strong muscle pain stops the exercise, the rest of today goes easy on that area, nothing persists`() = runBlocking {
         val (d, clock) = Fixtures.data()
         Fixtures.onboard(d)
         val t = d.planToday()!!
@@ -256,14 +256,60 @@ class Part4AuditDataTest {
         val v = p.view()!!
         val first = v.lifts.first()
         val region = com.personalfitnesscoach.engine.model.Joint.entries.maxByOrNull { j -> first.exercise.stress(j) }!!
-        val others = v.lifts.filter { it.rowId != first.rowId }.map { it.rowId to it.exercise.id }
         clock.ms += 60_000
         val r = p.reportPain(first.rowId, com.personalfitnesscoach.engine.safety.PainReport(region, com.personalfitnesscoach.engine.safety.PainKind.MUSCLE_BURN, 8))
         assertEquals(com.personalfitnesscoach.engine.safety.PainAction.STOP_EXERCISE, r.outcome.action)
         assertFalse(r.endSession)
+        // The rest of the session keeps that area at joint stress ≤ 1 (swapped or skipped), as a joint-pain stop does (D-123).
         val after = p.view()!!
-        for ((row, id) in others) assertEquals("unchanged: $id", id, after.lifts.first { it.rowId == row }.exercise.id)
-        assertTrue(after.lifts.filter { it.rowId != first.rowId }.none { it.status == Status.SKIPPED })
+        for (l in after.lifts) if (l.rowId != first.rowId && l.status != Status.SKIPPED && !l.hasLoggedWork) assertTrue("${l.exercise.id}", l.exercise.stress(region) <= 1)
+        // The alternatives offered can all be added, and none works the same main muscles as the exercise that hurt.
+        for (c in r.alternatives) assertTrue((c.exercise.primary intersect first.exercise.primary).isEmpty())
+        r.alternatives.firstOrNull()?.let { c -> assertFalse(p.addAlternative(first.rowId, c.exercise.id, region, 1).refused) }
+        // Nothing beyond today: no SAF-004 region.
         assertTrue(d.bridge.regions(clock.today()).value.none { it.region == region })
+    }
+
+    @Test fun `AUD-24 a warning sign reported after a finished session still makes the first session back LIGHT (re-check finding 1)`() = runBlocking {
+        val (d, clock) = Fixtures.data()
+        Fixtures.onboard(d)
+        val m = Fixtures.MONDAY
+        clock.setDay(m, hour = 8)
+        // A normal session finished in the morning…
+        d.store.insertWorkout(WorkoutRow(day = m, status = Status.DONE, template = "FB_A", tier = "FULL", startedAtMs = clock.nowMs(), endedAtMs = clock.nowMs() + 3_600_000,
+            sessionRpe = 5.0, actualMinutes = 50.0, registryVersion = "5.0.0", json = WorkoutDoc(0, 60.0, 5.0).encode()))
+        // …then palpitations reported from Today in the evening, confirmed resolved the same evening.
+        clock.setDay(m, hour = 19)
+        d.checkIns.record(d.bridge.user()!!, com.personalfitnesscoach.engine.calc.CheckIn(3, 3, 3, 3), redFlags = setOf(com.personalfitnesscoach.engine.safety.RedFlags.SYMPTOMS.first()))
+        d.confirmStopResolved()
+        clock.setDay(m + 2, hour = 9)
+        val t2 = d.planToday()!!
+        assertEquals(Tier.LIGHT, d.bridge.gate(t2.user, t2.program).cap(Tier.FULL))
+    }
+
+    @Test fun `AUD-25 strong muscle pain at the check-in keeps today's plan easy on that area (D-123)`() = runBlocking {
+        val (d, clock) = Fixtures.data()
+        Fixtures.onboard(d)
+        clock.setDay(Fixtures.MONDAY, hour = 8)
+        val knee = com.personalfitnesscoach.engine.model.Joint.KNEE
+        d.reportPain(com.personalfitnesscoach.engine.safety.PainReport(knee, com.personalfitnesscoach.engine.safety.PainKind.DOMS, 9), null, null, null)
+        val t = d.planToday()!!
+        d.checkIns.record(t.user, com.personalfitnesscoach.engine.calc.CheckIn(3, 3, 3, 3))
+        val g = d.generateSession(t, t.next!!, Tier.FULL)
+        for (it in g.workout.items) assertTrue("${it.exercise.id} knee ${it.exercise.stress(knee)}", it.exercise.stress(knee) <= 1)
+    }
+
+    @Test fun `AUD-26 with low back pain the bone-loading block is always heel drops (D-123)`() = runBlocking {
+        val m = Fixtures.MONDAY
+        val (d, _) = Fixtures.data()
+        Fixtures.onboard(d, level = Level.INTERMEDIATE, birthYear = 1980, conditions = listOf(
+            com.personalfitnesscoach.data.core.model.StoredCondition("osteoporosis", m - 60, com.personalfitnesscoach.engine.safety.ControlStatus.YES),
+            com.personalfitnesscoach.data.core.model.StoredCondition("low_back_pain", m - 60)))
+        d.store.insertWorkout(WorkoutRow(day = m - 35, status = Status.DONE, template = "FB_A", tier = "FULL", startedAtMs = 1, endedAtMs = 2, sessionRpe = 5.0,
+            actualMinutes = 40.0, registryVersion = "5.0.0", json = WorkoutDoc(0, 60.0, 5.0,
+                boneLoading = com.personalfitnesscoach.data.core.session.BoneRef(5.0, 50, com.personalfitnesscoach.engine.safety.BoneLoadingVariant.HEEL_DROPS)).encode()))
+        val u = d.bridge.user()!!
+        assertTrue(u.conditions.boneLoading)
+        assertFalse(d.bridge.boneHopsAllowed(u, m))
     }
 }

@@ -32,6 +32,7 @@
     <string name="reason_insession_at_lightest">That set was hard, and this is already the lightest weight here: stop the next one when you have the planned reps left, even if that means fewer reps.</string>
     <string name="reason_insession_limit_reached">The weight has changed as much as it should in one session; it stays here.</string>
     <string name="reason_regression_offered">Next time you can switch to an easier version while your form settles.</string>
+    <string name="reason_pain_muscle_stop">Strong muscle pain: whatever brings it on stops for today, and the rest of today goes easy on that area.</string>
     <string name="reason_form_hold_no_easier">Your form wasn\'t solid twice in a row, so the weight stays the same. If it still doesn\'t feel right, Replace offers other exercises.</string>
     <string name="reason_failed_targets_review">This lift has missed its targets a few times: a lighter restart or a variation is suggested.</string>
     <string name="reason_accessories_cut_fatigue">Fewer extra exercises today because tiredness has built up.</string>

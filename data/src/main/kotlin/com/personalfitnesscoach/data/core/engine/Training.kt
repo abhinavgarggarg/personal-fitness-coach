@@ -177,7 +177,8 @@ class CheckIns(private val docs: Docs, private val bridge: EngineBridge, private
     suspend fun startStop(stop: SafetyStop, today: Int) {
         val cur = docs.get(SafetyStopRecord)
         val open = cur != null && cur.confirmedDay == null
-        docs.put(SafetyStopRecord, SafetyStopRecord(if (open) minOf(cur!!.day, today) else today, if (open) cur!!.symptoms + stop.symptoms else stop.symptoms))
+        docs.put(SafetyStopRecord, SafetyStopRecord(if (open) minOf(cur!!.day, today) else today, if (open) cur!!.symptoms + stop.symptoms else stop.symptoms,
+            atMs = if (open) cur!!.atMs ?: clock.nowMs() else clock.nowMs()))
     }
 
     /** The user confirms the red-flag symptoms have resolved or were reviewed; the next session is LIGHT at most (SAF-002). */

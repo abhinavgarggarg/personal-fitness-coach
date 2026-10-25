@@ -1,6 +1,6 @@
 # Phase 4, Part 4 report: safety and evidence audit
 
-Date: 25 October 2026 · Decisions D-119 to D-122 · Change sets `rules/changes/registry_3.0.1.json`, `registry_4.0.0.json`, `registry_5.0.0.json` · Health-condition table 1.0.2 · Tests `Part4AuditEngineTest`, `Part4AuditDataTest`, `AccessibilityOnDeviceTest`, `SpeedOnDeviceTest`
+Date: 25 October 2026 · Decisions D-119 to D-123 · Change sets `rules/changes/registry_3.0.1.json`, `registry_4.0.0.json`, `registry_5.0.0.json` · Health-condition table 1.0.2 · Tests `Part4AuditEngineTest`, `Part4AuditDataTest`, `AccessibilityOnDeviceTest`, `SpeedOnDeviceTest`
 
 ## Summary
 Part 4 checked three things: that the app does what its rules say and tells you only what is true; that each rule's evidence is what we claim; and that the app works for people using a screen reader, large text or a slow phone.
@@ -15,8 +15,8 @@ Two independent reviewers looked at the app. One thought like a cautious strengt
 ## 1. What the safety review found, and what happens now
 | What was wrong | What happens now |
 |---|---|
-| **High.** Someone for whom even the empty 20 kg bar is too heavy was given 20 kg × 8–12, which they couldn't do. My first fix picked "an easier version" from all similar exercises, which could be a *harder* lift (a conventional deadlift instead of a Romanian deadlift) or start heavier | The app goes down the exercise's own ladder of easier versions (bench press → dumbbell bench → push-up → incline push-up), each graded easier and never starting heavier than the weight that was too heavy. It finds its weight from the lightest dumbbell. If nothing fits, the exercise is left out and the app says so. At the next training block it checks the original again with a few weight-finding sets |
-| **High.** Confirming a warning-sign stop the same day skipped the gentle (LIGHT) first session back | The stopped session no longer counts as the first session back |
+| **High.** Someone for whom even the empty 20 kg bar is too heavy was given 20 kg × 8–12, which they couldn't do. My first fix picked "an easier version" from all similar exercises, which could be a *harder* lift (a conventional deadlift instead of a Romanian deadlift) or start heavier | The app goes down the exercise's own ladder of easier versions (bench press → dumbbell bench → incline push-up), each graded easier, the same kind of movement, and never starting heavier than the weight that was too heavy. A dumbbell version finds its weight from the lightest dumbbell; among bodyweight versions the easiest comes first and steps up when it gets easy. If nothing fits, the exercise is left out and the app says so. At the next training block it checks the original again with a few weight-finding sets. Lighter days use the same path |
+| **High.** Confirming a warning-sign stop the same day skipped the gentle (LIGHT) first session back; so did reporting one in the evening after a morning session | The stop now records its time, and only a session started after it counts as the first session back |
 | **High.** Osteoporosis: small hops from the very first session, even for a 71-year-old beginner | Your decision (below): heel drops first |
 | Bodyweight and timed exercises were left out on every lighter day and in deload weeks, with a message about weights being too heavy | They stay, made easier with more reps in reserve and fewer sets |
 | After a break, the planned 10–20% lighter weights weren't applied when you were already at the lightest weight | The easier version is used for the return weeks |
@@ -33,14 +33,15 @@ Each fix has a test that reproduces the reviewer's case.
 ## 2. Your decisions (25 October)
 | Question | You chose | Now in |
 |---|---|---|
-| Osteoporosis bone block | Heel drops for the first 4 weeks; then small hops, except for beginners, people 65 or over, or after hip, knee or ankle pain in the last 4 weeks | CON-004 2.0.0 (Registry 4.0.0) |
+| Osteoporosis bone block | Heel drops for the first 4 weeks; then small hops, except for beginners, people 65 or over, people with low back pain (you left this to me, D-123), or after hip, knee or ankle pain in the last 4 weeks | CON-004 2.0.0 (Registry 4.0.0) |
 | Osteoporosis with controlled high blood pressure | Keep the bone block | CON-004 2.0.0 |
-| Very strong muscle pain | 7/10 or more stops that exercise for today (joint pain rules unchanged) | SAF-003 2.0.0 |
+| Very strong muscle pain | 7/10 or more stops that exercise; the rest of today goes easy on that area, also when it is reported at the check-in (you left this last part to me, D-123) | SAF-003 2.0.0 |
 | Form not solid and reps missed | 5% lighter next time, with the form tip | PROG-008 2.0.0 |
 | Cancer that has spread to the bones | No training plan: follow a supervised programme from the care team | Condition table 1.0.2 |
 | Pregnancy | The stricter of the Canadian and US (ACOG) guidelines wherever they differ, with the warning signs of both | Condition table 1.0.2 |
 | Evidence ratings | Match what was actually read | Registry 5.0.0 |
 | Diabetes with foot numbness | A past foot ulcer or Charcot foot needs a doctor's OK first | Condition table 1.0.2 |
+| Back after a break, already at the lightest weight | The easier version until the return ends (as built) | D-123 |
 
 For pregnancy this means: placenta praevia from 26 weeks (not 28); twins at risk of early labour; severe anaemia; high blood pressure caused by the pregnancy; ongoing bleeding in the second or third trimester; and restrictive lung disease all now mean "follow your provider instead of a training plan". ACOG's other cautions, such as an unchecked irregular heartbeat, heavy smoking or very little activity before pregnancy, need your provider's OK. So do any anaemia and any other significant medical condition. The warning signs now include any chest pain or dizziness, headache, calf pain or swelling, muscle weakness that affects balance, and tummy pain. The tips say to avoid scuba diving and to check with your provider before exercising above 1,800 m.
 
@@ -107,7 +108,10 @@ The app's health-condition list names conditions and adapts training to them. It
 
 **For your own use this changes nothing.** Before any public release, the condition table already needs a clinician's and a regulatory review (D-058). These two points are the questions to put to them.
 
-## 7. Kept for the clinician review before any public release
+## 7. Kept for later
+**Before any public release (software):** people who answered the health questions before table 1.0.2 aren't asked the new ones until they edit their conditions. Nobody is affected today; a release would ask again on upgrade.
+
+**For the clinician review before any public release:**
 These were found, but changing them would loosen a limit or needs a clinician's judgement, so they stay as they are:
 - cancer spread to the bones: a way back to the app's plan once the care team's supervised start is done;
 - lymphoedema: slow upper-body progression and a supervised start;

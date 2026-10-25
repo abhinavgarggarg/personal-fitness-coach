@@ -6,7 +6,7 @@ package com.personalfitnesscoach.engine.registry
 
 object Registry {
     const val VERSION: String = "5.0.0"
-    const val SHA256: String = "f13a429b811f7a79ddab36fec220e7c1787d3b6b0ef32f2122ecc4c6c1fe76cc"
+    const val SHA256: String = "786770a5491042e82a9047315447ebda2588957f5838802c8d1064819d2636b7"
     const val RULE_COUNT: Int = 152
 
     /** Every rule ID with its confidence label, for the coach's "Why?" detail. */

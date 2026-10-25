@@ -603,23 +603,28 @@ object SessionGenerator {
         val sub = subContext(r)
         val taken = r.day.slots.map { it.exercise.id }.toSet()
         val tooHeavy = PlateMath.loadsFor(e, r.inventory).minOrNull() ?: return null
+        fun usable(c: Exercise): Boolean {
+            val lightest = PlateMath.loadsFor(c, r.inventory).minOrNull()
+            // Easier by the library's own grading too: below the original's difficulty (the direct regression may equal it); the same
+            // movement pattern (a pull stays a pull); an assisted move is skipped (its "lightest" load is the least assistance).
+            val easierGrade = c.difficulty < e.difficulty || (c.difficulty <= e.difficulty && c.id == e.regressionId)
+            return easierGrade && c.pattern == e.pattern && !c.assisted && c.id !in taken && allowedToday(c, r, sub) &&
+                (s.spec.role != SlotRole.POWER || c.powerCapable) && (lightest == null || lightest <= tooHeavy + 1e-9)
+        }
+        val chain = ArrayList<Exercise>()
         var c = Library.regressionOf(e)
         val seen = HashSet<String>(setOf(e.id))
-        while (c != null && seen.add(c.id)) {
-            val lightest = PlateMath.loadsFor(c, r.inventory).minOrNull()
-            // An assisted move is skipped: its "lightest" load is the least assistance, the hardest version.
-            // Easier by the library's own grading too: below the original's difficulty (the direct regression may equal it).
-            val easierGrade = c.difficulty < e.difficulty || (c.difficulty <= e.difficulty && c.id == e.regressionId)
-            val usable = easierGrade && !c.assisted && c.id !in taken && allowedToday(c, r, sub) && (s.spec.role != SlotRole.POWER || c.powerCapable) &&
-                (lightest == null || lightest <= tooHeavy + 1e-9)
-            if (usable) {
-                val trial = ArrayList<Decision>()
-                val slot = s.copy(exercise = c, unit = c.unit, perSide = c.unilateral, rest = Rest.forSets(c, s.reps.last),
-                    reps = if (c.unit == s.unit) s.reps else c.defaultRepRange)
-                val it = item(slot, r, tier, rir, lastToFailure, trial, allowRegression = false, startLightest = true)
-                if (it != null) { d += trial; return it }
-            }
-            c = Library.regressionOf(c)
+        while (c != null && seen.add(c.id)) { chain += c; c = Library.regressionOf(c) }
+        // Bodyweight versions at the end of the chain: the easiest one usable (an incline push-up before a full push-up for someone too
+        // weak for the lightest dumbbells; the bodyweight ladder steps up from there when it gets easy; Part 4 re-check).
+        val ordered = chain.takeWhile { it.loadType != LoadType.BODYWEIGHT } + chain.dropWhile { it.loadType != LoadType.BODYWEIGHT }.asReversed()
+        for (cand in ordered) {
+            if (!usable(cand)) continue
+            val trial = ArrayList<Decision>()
+            val slot = s.copy(exercise = cand, unit = cand.unit, perSide = cand.unilateral, rest = Rest.forSets(cand, s.reps.last),
+                reps = if (cand.unit == s.unit) s.reps else cand.defaultRepRange)
+            val it = item(slot, r, tier, rir, lastToFailure, trial, allowRegression = false, startLightest = true)
+            if (it != null) { d += trial; return it }
         }
         return null
     }
@@ -662,8 +667,9 @@ object SessionGenerator {
             }
         }
         if (lf > factor + 1e-9) {
-            val reg = if (allowRegression) Library.regressionOf(e)?.takeIf { allowedToday(it, r, SubContext(r.equipmentToday, r.level, mergedLimits(r), r.blockedTags, r.excludedIds)) } else null
-            val alt = reg?.let { item(s.copy(exercise = it, unit = it.unit, perSide = it.unilateral, rest = Rest.forSets(it, s.reps.last)), r, tier, rir, lastToFailure, d, allowRegression = false) }
+            // The same easier-version path as a lift too heavy for its reps: down the regression chain, never harder or heavier, its ramp
+            // from its lightest load (Part 4 re-check: the direct regression could start heavier, from body weight).
+            val alt = if (allowRegression) easier(s, r, tier, rir, lastToFailure, d) else null
             d += Decision(DecisionKind.LOAD_CHANGE, listOf(RuleIds.RDY_004, RuleIds.PROG_003),
                 if (alt != null) ReasonKey.LOAD_CANNOT_REDUCE else ReasonKey.LOAD_CANNOT_REDUCE_LEFT_OUT, inputs = mapOf("exercise" to e.id, "normal" to normal, "lightest" to load, "cap" to factor), outputs = mapOf("regression" to alt?.exercise?.id))
             return alt

@@ -62,6 +62,7 @@ import com.personalfitnesscoach.engine.registry.RuleIds
 import com.personalfitnesscoach.engine.safety.AdditionVerdict
 import com.personalfitnesscoach.engine.safety.ConditioningBlock
 import com.personalfitnesscoach.engine.safety.PainAction
+import com.personalfitnesscoach.engine.safety.PainKind
 import com.personalfitnesscoach.engine.safety.PainOutcome
 import com.personalfitnesscoach.engine.safety.PainReport
 import com.personalfitnesscoach.engine.safety.SafetyStop
@@ -808,8 +809,9 @@ class SessionPlayer(private val d: PfcData) {
                 }
                 val limit = o.regionMaxStress ?: 0
                 val joint = report.region
-                // SAF-003 2.0.0: a stop for very strong muscle pain ends only this exercise; the region isn't limited (D-121).
-                val rest = if (!o.regionConservative) emptyList() else d.sessions.load(w.id)!!.exercises.filter { x -> x.row.id != e?.row?.id &&
+                // SAF-003 2.0.0: a stop for very strong muscle pain ends this exercise, and the rest of today goes easy on that area like a
+                // stop for joint pain (D-121, D-123); only joint pain keeps the area conservative beyond today (SAF-004).
+                val rest = if (o.regionMaxStress == null) emptyList() else d.sessions.load(w.id)!!.exercises.filter { x -> x.row.id != e?.row?.id &&
                     x.row.status != Status.SKIPPED && x.row.status != Status.DONE && (Library[x.exerciseId]?.stress(joint) ?: 0) > limit }
                 for (x in rest) {
                     val logged = x.sets.any { it.kind != SetKind.WARMUP }
@@ -833,11 +835,16 @@ class SessionPlayer(private val d: PfcData) {
                     changes += Change.Skipped(x.row.id, x.exerciseId)
                 }
                 // Conditioning still to do that loads the joint is changed to a machine within the limit, or dropped (R5-02).
-                if (o.regionConservative) state = conditioningWithinLimits(w.id, state, changes)
+                if (o.regionMaxStress != null) state = conditioningWithinLimits(w.id, state, changes)
             }
         }
+        // Alternatives within today's limit for that area (what addAlternative accepts), only ones that can really be planned, and after a
+        // muscle-pain stop none that works the same main muscles (Part 4 re-check).
+        val stoppedEx = e?.let { Library[it.exerciseId] }
         val alternatives = if (o.action == PainAction.STOP_EXERCISE && e != null)
-            swapOptionsFor(w, e, if (o.regionConservative) mapOf(report.region to (o.regionMaxStress ?: P.SAF_003.substitute_max_joint_stress)) else emptyMap()) else emptyList()
+            swapOptionsFor(w, e, mapOf(report.region to (o.regionMaxStress ?: P.SAF_003.substitute_max_joint_stress)))
+                .filter { c -> report.kind == PainKind.JOINT_OR_TENDON || stoppedEx == null || (c.exercise.primary intersect stoppedEx.primary).isEmpty() }
+                .filter { c -> itemFor(w, e, c.exercise) != null } else emptyList()
         d.decisions.append(dec.drop(gate.decisions.size), w.day, w.id)
         if (o.endSession) {
             // SAF-003: whole-body movement affected → the session ends (PARTIAL); what was logged stays.
