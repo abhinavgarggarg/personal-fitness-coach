@@ -232,6 +232,20 @@ class AppControllerTest {
         assertEquals(Status.DONE, sum.summary.workout.row.status)
     }
 
+    @Test fun `the plan view opens over the workout and changes nothing`() = runBlocking {
+        val (_, c) = world()
+        c.openCheckIn(); c.submitCheckIn(); c.startWorkout()
+        val before = (c.s() as Screen.Workout).view
+        c.openPlan()
+        val open = c.s() as Screen.Workout
+        assertEquals(WorkoutSheet.Plan, open.sheet)
+        assertEquals(before.step, open.view.step)
+        assertEquals(before.lifts.map { it.sets.size }, open.view.lifts.map { it.sets.size })
+        c.closeSheet()
+        assertEquals(null, (c.s() as Screen.Workout).sheet)
+        assertEquals(before.step, (c.s() as Screen.Workout).view.step)
+    }
+
     @Test fun `A4 something hurts mid-set - a stop-level pain ends that exercise and the result is shown`() = runBlocking {
         val (_, c) = world()
         c.openCheckIn(); c.submitCheckIn(); c.startWorkout(); c.completeStage(Stage.WARMUP)

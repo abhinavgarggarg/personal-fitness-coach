@@ -421,6 +421,15 @@
     <string name="wk_cooldown_body">About %1$s minutes, easy pace, then:</string>
     <string name="wk_mobility">Plus %1$s min of mobility.</string>
     <string name="wk_exercises">Exercises</string>
+    <string name="wk_plan">Plan</string>
+    <string name="today_planned_names">Planned: %1$s. Your check-in can still make it lighter or shorter; the final plan is shown before you start.</string>
+    <string name="plan_title">Today’s plan</string>
+    <string name="plan_done">done</string>
+    <string name="plan_now">now</string>
+    <string name="plan_sets_line">Sets done: %1$d of %2$d · %3$s</string>
+    <string name="plan_tap_hint">Tap an exercise to do it next. Nothing is lost: your sets stay saved.</string>
+    <string name="onb_required_legend">Questions marked with a star (*) must be answered.</string>
+    <string name="onb_required_mark">%1$s *</string>
     <string name="wk_ex_done">done</string>
     <string name="wk_ex_skipped">skipped</string>
     <string name="wk_ex_sets_done">sets done: %1$d of %2$d</string>

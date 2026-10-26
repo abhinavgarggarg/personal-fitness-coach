@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-10-26 — CR-009: first feedback from the PO's phone (Phase 4 Part 5)
+- Setup: every required question carries a star (health questions, year of birth, experience, health conditions, goals), with a one-line legend.
+- Workout: a "Plan" button at the top opens the whole session in order (warm-up, each exercise with sets, reps and weight, cardio, balance, cool-down) with done / now marks; tapping an exercise does it next. Looking changes nothing. Today's card lists the planned exercise names, with a note that the check-in can still lighten the session.
+- UI only; no rule, engine or stored-data change.
+
 ## 2026-10-25 — Phase 4 Part 4: safety and evidence audit (Registry 4.0.0 and 5.0.0, condition table 1.0.2)
 - Two independent reviews: safety (15 findings: 3 high, 7 medium, 5 low) and evidence (10 findings: 2 high, 5 medium, 3 low). Fixes without a rule change (D-120): an easier version when even the lightest weight is too heavy for the reps (down the regression chain, never harder or heavier), re-checked each block and during returns; the PROG-008 easier-version offer on the workout screen; bodyweight and timed work kept on lighter days and in deloads; a same-day red-flag confirmation still gives a LIGHT first session; honest texts at the lightest weight and after a pain report; SAF-004 pain-free sessions must load the area; Replace lists only swaps that can be dosed.
 - Registry 4.0.0 (MAJOR, PO 25 Oct, D-121): strong muscle pain (7/10+) stops the exercise (SAF-003 2.0.0); missed reps reduce the weight even when form wasn't solid (PROG-008 2.0.0); the bone-loading block starts with heel drops and keeps going with controlled high blood pressure (CON-004 2.0.0).

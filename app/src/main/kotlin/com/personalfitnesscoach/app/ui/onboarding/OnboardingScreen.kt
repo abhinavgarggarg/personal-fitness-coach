@@ -108,6 +108,13 @@ private fun canContinue(s: Screen.Onboarding): Boolean = when (s.step) {
     else -> true
 }
 
+/** A star on every answer that must be given before Continue (PO feedback, UAT 26 Oct 2026). */
+@Composable
+private fun required(text: String): String = stringResource(R.string.onb_required_mark, text)
+
+@Composable
+private fun RequiredLegend() = Note(stringResource(R.string.onb_required_legend))
+
 // ================================================================================================ O1
 @Composable
 private fun ColumnScope.Welcome() {
@@ -125,8 +132,9 @@ private fun ColumnScope.Welcome() {
 private fun ScreeningStep(f: OnboardingForm, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
     Heading(stringResource(R.string.onb_screen_title))
     Body(stringResource(R.string.onb_screen_intro))
+    RequiredLegend()
     ScreeningQuestion.entries.forEach { q ->
-        AnswerRow(stringResource(Labels.screening(q)), f.screening[q], { yes -> edit { it.copy(screening = it.screening + (q to yes)) } })
+        AnswerRow(required(stringResource(Labels.screening(q))), f.screening[q], { yes -> edit { it.copy(screening = it.screening + (q to yes)) } })
     }
     if (f.screening.size < ScreeningQuestion.entries.size) Note(stringResource(R.string.screen_unanswered))
 }
@@ -136,8 +144,9 @@ private fun ScreeningStep(f: OnboardingForm, edit: ((OnboardingForm) -> Onboardi
 private fun AboutYou(f: OnboardingForm, screening: ScreeningResult?, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
     screening?.let { ScreeningOutcome(it) }
     Heading(stringResource(R.string.onb_about_title))
-    NumberField(stringResource(R.string.onb_birth_year), f.birthYear?.toDouble(), { v -> edit { it.copy(birthYear = v?.toInt()) } }, decimals = false)
-    SectionTitle(stringResource(R.string.onb_experience_q))
+    RequiredLegend()
+    NumberField(required(stringResource(R.string.onb_birth_year)), f.birthYear?.toDouble(), { v -> edit { it.copy(birthYear = v?.toInt()) } }, decimals = false)
+    SectionTitle(required(stringResource(R.string.onb_experience_q)))
     ExperienceBand.entries.forEach { b ->
         RadioRow(stringResource(Labels.experience(b)), f.months == b, { edit { it.copy(months = b) } })
     }
@@ -178,8 +187,9 @@ private val HBP_IDS = setOf("hbp_controlled", "hbp_not_controlled")
 /** The conditions page; also used by Settings → health conditions (R5-12). */
 @Composable
 internal fun ConditionsStep(f: OnboardingForm, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
-    Heading(stringResource(R.string.onb_cond_title))
+    Heading(required(stringResource(R.string.onb_cond_title)))
     Body(stringResource(R.string.onb_cond_intro))
+    RequiredLegend()
     CheckRow(stringResource(R.string.onb_cond_none), f.noneOfThese, { on -> edit { it.copy(noneOfThese = on, conditions = if (on) emptyMap() else it.conditions) } })
     val groups = GeneratedConditions.entries.filter { it.id !in HBP_IDS }.groupBy { it.group }
     val order = listOf("heart_and_circulation") + groups.keys.filter { it != "heart_and_circulation" }
@@ -289,8 +299,9 @@ private fun ColumnScope.ConditionFollowUps(key: String, e: ConditionEntry?, c: C
 // ================================================================================================ O6 goal (FL-001)
 @Composable
 internal fun GoalStep(f: OnboardingForm, options: com.personalfitnesscoach.engine.program.GoalOptions?, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
-    Heading(stringResource(R.string.onb_goal_title))
+    Heading(required(stringResource(R.string.onb_goal_title)))
     Body(stringResource(R.string.onb_goal_intro))
+    RequiredLegend()
     val offered = options?.offered ?: emptyList()
     offered.forEach { g ->
         val rank = f.goals.indexOf(g)

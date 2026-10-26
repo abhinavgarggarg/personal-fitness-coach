@@ -120,6 +120,9 @@ class ScreensTest {
         shown(s(R.string.onb_welcome_title))
         assertTouchTargets()
         tap(s(R.string.onb_welcome_accept))
+        // PO feedback (UAT): required questions carry a star, with a legend.
+        shown(s(R.string.onb_required_legend))
+        shown(s(R.string.onb_required_mark, s(com.personalfitnesscoach.app.ui.text.Labels.screening(ScreeningQuestion.entries.first()))), substring = true)
         // SAF-001: Continue stays off until all eight are answered.
         val yes = s(R.string.action_yes)
         val no = s(R.string.action_no)
@@ -129,7 +132,7 @@ class ScreensTest {
         tap(s(R.string.action_continue))
         assertEquals(OnboardingStep.ABOUT_YOU, (c.screen.value as Screen.Onboarding).step)
         shown(s(R.string.screen_result_standard))
-        compose.onNodeWithText(s(R.string.onb_birth_year)).performScrollTo().performTextInput("1985")
+        compose.onNodeWithText(s(R.string.onb_required_mark, s(R.string.onb_birth_year))).performScrollTo().performTextInput("1985")
         compose.waitForIdle()
         tap(s(R.string.exp_1_3))
         listOf(R.string.lift_squat, R.string.lift_hinge, R.string.lift_press, R.string.lift_row).forEach { tap(s(it)) }
@@ -357,5 +360,19 @@ class ScreensTest {
         val after = (c.screen.value as Screen.Workout).view.lifts.first { it.rowId == lift.rowId }
         assertEquals(easier, after.exercise.id)
         assertEquals(null, after.item.easierOffer)
+    }
+
+    @Test fun `PO feedback - the workout has a Plan view with every part of the session, and Close returns to the workout`() {
+        val c = launch { onboardQuickly(it); it.openCheckIn(); it.submitCheckIn(); it.startWorkout() }
+        tap(s(R.string.wk_plan))
+        shown(s(R.string.plan_title))
+        shown(s(R.string.wk_warmup_title))
+        shown(s(R.string.wk_cooldown_title))
+        val v = (c.screen.value as Screen.Workout).view
+        v.lifts.forEach { shown(it.exercise.name, substring = true) }
+        assertTouchTargets()
+        tap(s(R.string.action_close))
+        assertTrue(c.screen.value is Screen.Workout)
+        assertEquals(null, (c.screen.value as Screen.Workout).sheet)
     }
 }

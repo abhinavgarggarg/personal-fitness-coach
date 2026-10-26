@@ -659,6 +659,9 @@ class AppController(private val open: () -> PfcData, private val platform: Platf
 
     suspend fun openEnd() = workout { v -> Screen.Workout(v, WorkoutSheet.End) }
 
+    /** The day's plan: every part of the session in order. Nothing is changed or saved by looking at it. */
+    suspend fun openPlan() = workout { v -> Screen.Workout(v, WorkoutSheet.Plan) }
+
     /** Ends the workout: finished, or early (PARTIAL); the summary follows (A8). */
     suspend fun finishWorkout(early: Boolean = false) = act {
         val sum = player.finish(null, endedEarly = early)

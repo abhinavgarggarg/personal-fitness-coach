@@ -118,6 +118,8 @@ fun TodayScreen(m: TodayModel) {
                 SectionTitle(stringResource(R.string.today_workout))
                 if (!m.nextIsToday) Note(stringResource(R.string.today_next_planned, name, stringResource(Labels.weekday(next.weekday))))
                 WorkoutCard(name, next, m.plan.user.profile.sessionMinutes)
+                // So you can prepare: the planned exercises by name. Today's check-in can still make the session lighter or shorter (SAF-008).
+                if (next.slots.isNotEmpty()) Note(stringResource(R.string.today_planned_names, next.slots.joinToString(", ") { it.exercise.name }))
                 PrimaryButton(stringResource(R.string.today_start), { a.run { openCheckIn() } })
             }
         }

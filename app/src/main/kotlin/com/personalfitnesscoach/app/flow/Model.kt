@@ -324,6 +324,8 @@ sealed interface WorkoutSheet {
     data object End : WorkoutSheet
     /** A7: the interval or steady timer for a conditioning block. */
     data class Timer(val index: Int) : WorkoutSheet
+    /** The whole session in order, with what is done and what is next (PO feedback, UAT 26 Oct 2026). */
+    data object Plan : WorkoutSheet
 }
 
 /** One-line messages after a change (the decision behind it is in the "Why?" log). */

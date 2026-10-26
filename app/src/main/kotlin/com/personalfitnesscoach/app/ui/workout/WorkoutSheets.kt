@@ -4,6 +4,13 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import com.personalfitnesscoach.app.ui.GlassCard
+import com.personalfitnesscoach.app.ui.SmallAction
+import com.personalfitnesscoach.data.core.session.Stage
+import com.personalfitnesscoach.data.core.session.Status
+import com.personalfitnesscoach.data.core.player.Step
+import com.personalfitnesscoach.app.ui.minutes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -115,6 +122,7 @@ fun WorkoutSheetPanel(v: PlayerView, sheet: WorkoutSheet) {
                 if (!logged) SecondaryButton(stringResource(R.string.sheet_end_discard), { a.run { discardWorkout() } })
             }
             is WorkoutSheet.Timer -> v.conditioning.getOrNull(sheet.index)?.let { IntervalTimer(sheet.index, it) }
+            WorkoutSheet.Plan -> PlanSheet(v)
         }
         if (sheet !is WorkoutSheet.End && sheet !is WorkoutSheet.ConfirmAddSet && sheet !is WorkoutSheet.ConfirmEntry) {
             SecondaryButton(stringResource(R.string.action_close), { a.run { closeSheet() } })
@@ -223,4 +231,59 @@ private fun phasesOf(c: ConditioningItem): List<Phase> {
         }
         else -> listOf(Phase(true, Math.round(c.workMinutes * 60).toInt().coerceAtLeast(1), 1, 1, null))
     }
+}
+
+/** Today's plan: the whole validated session in order, what is done, what is now and what is next. Looking changes nothing. */
+@Composable
+private fun PlanSheet(v: PlayerView) {
+    val a = LocalActions.current
+    val w = v.workout.doc
+    val stage = v.stage ?: Stage.END
+    val current = (v.step as? Step.Lift)?.lift?.rowId
+    val choosing = stage == Stage.LIFTS
+    Heading(stringResource(R.string.plan_title))
+    Note(stringResource(R.string.wk_progress, Math.round(v.elapsedMinutes).toInt(), Math.round(v.remainingMinutes).toInt()))
+    @Composable
+    fun mark(part: Stage): String = when {
+        stage.ordinal > part.ordinal -> stringResource(R.string.plan_done)
+        stage == part -> stringResource(R.string.plan_now)
+        else -> ""
+    }
+    @Composable
+    fun PlanRow(title: String, detail: String?, state: String, now: Boolean) {
+        val line = if (state.isEmpty()) title else stringResource(R.string.list_item, title, state)
+        androidx.compose.foundation.layout.Column(Modifier.padding(vertical = 6.dp)) {
+            Text(line, style = MaterialTheme.typography.titleMedium, fontWeight = if (now) FontWeight.SemiBold else FontWeight.Normal)
+            if (detail != null) Note(detail)
+        }
+    }
+    GlassCard(padding = 12.dp) {
+        PlanRow(stringResource(R.string.wk_warmup_title), stringResource(R.string.preview_warmup, minutes(w.warmupMinutes)), mark(Stage.WARMUP), stage == Stage.WARMUP)
+        w.boneLoading?.let { PlanRow(stringResource(R.string.wk_bone_title), stringResource(R.string.preview_bone, minutes(it.minutes)), mark(Stage.BONE_LOADING), stage == Stage.BONE_LOADING) }
+        if (w.conditioningFirst) w.conditioning.forEachIndexed { i, c ->
+            PlanRow(conditioningLine(c), null, if (i in v.state.conditioningDone) stringResource(R.string.plan_done) else mark(Stage.CONDITIONING_FIRST), stage == Stage.CONDITIONING_FIRST)
+        }
+        v.lifts.forEach { l ->
+            val item = l.item
+            val dose = doseText(item.reps, item.unit, item.perSide)
+            val what = if (item.calibrating && item.load != null) stringResource(R.string.preview_finding_weight)
+                else item.load?.let { x -> stringResource(R.string.at_load, dose, kg(x)) } ?: dose
+            val state = when {
+                l.status == Status.SKIPPED -> stringResource(R.string.wk_ex_skipped)
+                l.finished -> stringResource(R.string.wk_ex_done)
+                l.rowId == current -> stringResource(R.string.plan_now)
+                else -> ""
+            }
+            val detail = stringResource(R.string.plan_sets_line, l.workingDone, item.sets, what)
+            if (choosing && l.rowId != current && !l.finished) {
+                SmallAction(stringResource(R.string.list_item, l.exercise.name, detail), { a.run { select(l.rowId) } })
+            } else PlanRow(l.exercise.name, detail, state, l.rowId == current)
+        }
+        if (!w.conditioningFirst) w.conditioning.forEachIndexed { i, c ->
+            PlanRow(conditioningLine(c), null, if (i in v.state.conditioningDone) stringResource(R.string.plan_done) else mark(Stage.CONDITIONING), stage == Stage.CONDITIONING)
+        }
+        if (w.balanceDrills.isNotEmpty()) PlanRow(stringResource(R.string.wk_balance_title), stringResource(R.string.preview_balance, minutes(w.balanceDrills.sumOf { d -> d.seconds } / 60.0)), mark(Stage.BALANCE), stage == Stage.BALANCE)
+        PlanRow(stringResource(R.string.wk_cooldown_title), stringResource(R.string.preview_cooldown, minutes(w.cooldownDrills.sumOf { d -> d.seconds } / 60.0)), mark(Stage.COOLDOWN), stage == Stage.COOLDOWN)
+    }
+    if (choosing) Note(stringResource(R.string.plan_tap_hint))
 }

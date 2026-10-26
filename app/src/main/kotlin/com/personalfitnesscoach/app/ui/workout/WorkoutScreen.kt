@@ -153,6 +153,7 @@ private fun TopRow(v: PlayerView) {
     val a = LocalActions.current
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Note(stringResource(R.string.wk_progress, Math.round(v.elapsedMinutes).toInt(), Math.round(v.remainingMinutes).toInt()), Modifier.weight(1f))
+        SmallAction(stringResource(R.string.wk_plan), { a.run { openPlan() } })
         if (v.paused) SmallAction(stringResource(R.string.wk_resume), { a.run { resume() } })
         else SmallAction(stringResource(R.string.wk_pause), { a.run { pause() } })
         SmallAction(stringResource(R.string.wk_end), { a.run { openEnd() } })
