@@ -282,8 +282,8 @@ private fun PlanSheet(v: PlayerView) {
         if (!w.conditioningFirst) w.conditioning.forEachIndexed { i, c ->
             PlanRow(conditioningLine(c), null, if (i in v.state.conditioningDone) stringResource(R.string.plan_done) else mark(Stage.CONDITIONING), stage == Stage.CONDITIONING)
         }
-        if (w.balanceDrills.isNotEmpty()) PlanRow(stringResource(R.string.wk_balance_title), stringResource(R.string.preview_balance, minutes(w.balanceDrills.sumOf { d -> d.seconds } / 60.0)), mark(Stage.BALANCE), stage == Stage.BALANCE)
-        PlanRow(stringResource(R.string.wk_cooldown_title), stringResource(R.string.preview_cooldown, minutes(w.cooldownDrills.sumOf { d -> d.seconds } / 60.0)), mark(Stage.COOLDOWN), stage == Stage.COOLDOWN)
+        if (w.balanceDrills.isNotEmpty()) PlanRow(stringResource(R.string.wk_balance_title), stringResource(R.string.preview_balance, minutes(w.balanceMinutes)), mark(Stage.BALANCE), stage == Stage.BALANCE)
+        PlanRow(stringResource(R.string.wk_cooldown_title), stringResource(R.string.preview_cooldown, minutes((w.cooldownMinutes ?: 0.0) + w.mobilityMinutes)), mark(Stage.COOLDOWN), stage == Stage.COOLDOWN)
     }
     if (choosing) Note(stringResource(R.string.plan_tap_hint))
 }
