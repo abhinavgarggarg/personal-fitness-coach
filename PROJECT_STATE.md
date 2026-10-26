@@ -1,9 +1,9 @@
 # PROJECT STATE — Personal Fitness Coach
 
-Last updated: 2026-10-19 (Phase 4 Parts 1–3 done: Part 3 interruption, data, backup and upgrade tests pass on Android 10, 14 and 16 (D-118); next Part 4, safety and evidence audit) · Master prompt: v3.0 (7 Oct 2026)
+Last updated: 2026-10-26 (Phase 4 Parts 1–4 done: Part 4 safety and evidence audit complete, Registry 5.0.0 and condition table 1.0.2 (D-119 to D-123); next Part 5, UAT on the PO's phone) · Master prompt: v3.0 (7 Oct 2026)
 
 ## Current phase
-**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Parts 1–2 of 5 done: weekly-limit tuning (Registry 2.0.0, D-112, D-113; report `docs/phase4/part1_report.md`) and the 30-scenario suite with its fixes (D-114, D-115; report `docs/phase4/part2_report.md`). The PO's choice on the dumbbell ramp (option C, D-116) became Registry 3.0.0 (CAL-001 2.0.0, MAJOR), approved 19 Oct 2026 (D-117) and applied; report `docs/phase4/registry_3_0_0_report.md`. Part 3 done: interruption, data-integrity, backup and upgrade tests on emulators (D-118; report `docs/phase4/part3_report.md`). Next: Part 4, the safety and evidence audit. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
+**Phase 4 — Testing, Validation & UAT: IN PROGRESS (D-110, D-111). Parts 1–4 of 5 done (Part 4 below): weekly-limit tuning (Registry 2.0.0, D-112, D-113; report `docs/phase4/part1_report.md`) and the 30-scenario suite with its fixes (D-114, D-115; report `docs/phase4/part2_report.md`). The PO's choice on the dumbbell ramp (option C, D-116) became Registry 3.0.0 (CAL-001 2.0.0, MAJOR), approved 19 Oct 2026 (D-117) and applied; report `docs/phase4/registry_3_0_0_report.md`. Part 3 done: interruption, data-integrity, backup and upgrade tests on emulators (D-118; report `docs/phase4/part3_report.md`). Part 4 done: independent safety and evidence audit, with the PO's decisions applied as Registry 4.0.0 and 5.0.0 and condition table 1.0.2 (D-119 to D-123; report `docs/phase4/part4_report.md`). Next: Part 5, UAT on the PO's Motorola Edge 50, then the Phase 4 gate. Phase 3 approved 13 Oct 2026 (gate report `docs/phase3/part8_report.md`).**
 
 | Phase | Status | Date |
 |---|---|---|

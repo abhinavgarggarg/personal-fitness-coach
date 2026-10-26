@@ -137,7 +137,12 @@ All are fixed (D-123), except two. During a return at the lightest weight the ea
 
 All are fixed: pregnancy now takes the stricter guideline everywhere, the notes say exactly what was read, and the three ratings are lowered.
 
-**Final safety check of the last fixes:** (TO FILL)
+**Final safety check of the last fixes:** a third independent check found three small gaps in the new rules. All are fixed:
+- strong muscle pain "all over" now ends the session, as joint pain already did;
+- after a muscle-pain stop the app looks further for a replacement exercise, so you are not left with an empty list;
+- the bone-loading block is skipped on a flare day.
+
+Where you said "no preference" I took the cautious option and logged it as D-123 (check-in muscle pain day limit, heel drops with low back pain, the stop time on a red-flag stop, the protected easier version on lighter days). You can confirm or reverse these at the gate. Final local result: engine 448, data 195, app 99 tests all pass.
 
 ## Next
 Part 5: you try the app on your Motorola Edge 50, including Android's own backup. Then the Phase 4 gate.
