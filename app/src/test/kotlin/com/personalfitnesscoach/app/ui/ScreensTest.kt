@@ -272,7 +272,7 @@ class ScreensTest {
         shown(s(R.string.theme_dark))
         tap(s(R.string.set_goals))
         assertTrue(c.screen.value is Screen.EditProfile)
-        shown(s(R.string.onb_goal_title))
+        shown(s(R.string.onb_goal_title), substring = true)
         assertTouchTargets()
         tap(s(R.string.action_cancel))
         assertTrue(c.screen.value is Screen.Settings)
@@ -366,10 +366,12 @@ class ScreensTest {
         val c = launch { onboardQuickly(it); it.openCheckIn(); it.submitCheckIn(); it.startWorkout() }
         tap(s(R.string.wk_plan))
         shown(s(R.string.plan_title))
-        shown(s(R.string.wk_warmup_title))
-        shown(s(R.string.wk_cooldown_title))
+        // Every part of the session is listed (some rows sit below the first screen of a small phone).
+        fun listed(text: String) = assertTrue("$text is in the plan", compose.onAllNodes(named(text, substring = true)).fetchSemanticsNodes().isNotEmpty())
+        listed(s(R.string.wk_warmup_title))
+        listed(s(R.string.wk_cooldown_title))
         val v = (c.screen.value as Screen.Workout).view
-        v.lifts.forEach { shown(it.exercise.name, substring = true) }
+        v.lifts.forEach { listed(it.exercise.name) }
         assertTouchTargets()
         tap(s(R.string.action_close))
         assertTrue(c.screen.value is Screen.Workout)
