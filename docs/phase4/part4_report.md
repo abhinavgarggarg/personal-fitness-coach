@@ -1,16 +1,16 @@
 # Phase 4, Part 4 report: safety and evidence audit
 
-Date: 25 October 2026 · Decisions D-119 to D-123 · Change sets `rules/changes/registry_3.0.1.json`, `registry_4.0.0.json`, `registry_5.0.0.json` · Health-condition table 1.0.2 · Tests `Part4AuditEngineTest`, `Part4AuditDataTest`, `AccessibilityOnDeviceTest`, `SpeedOnDeviceTest`
+Date: 26 October 2026 · Decisions D-119 to D-123 · Change sets `rules/changes/registry_3.0.1.json`, `registry_4.0.0.json`, `registry_5.0.0.json` · Health-condition table 1.0.2 · Tests `Part4AuditEngineTest`, `Part4AuditDataTest`, `AccessibilityOnDeviceTest`, `SpeedOnDeviceTest`
 
 ## Summary
 Part 4 checked three things: that the app does what its rules say and tells you only what is true; that each rule's evidence is what we claim; and that the app works for people using a screen reader, large text or a slow phone.
 
-Two independent reviewers looked at the app. One thought like a cautious strength coach and tester, the other like an exercise scientist who checks sources. Between them they found **25 problems: 5 high, 12 medium and 8 low**.
+Two independent reviewers looked at the app. One thought like a cautious strength coach and tester, the other like an exercise scientist who checks sources. Between them they found **25 problems: 5 high, 12 medium and 8 low**. Their re-checks of my fixes found **18 more**, all addressed (section 8).
 
 - **Fixed in the app without changing any rule (D-120).** The most important: a person too weak for the empty bar was given a weight they couldn't lift; bodyweight exercises disappeared on every lighter day; confirming a warning sign the same day skipped the gentle first session back; and several on-screen messages promised things that didn't happen.
-- **You decided eight things on 25 October**, each time choosing the cautious option I recommended. Four became **Registry 4.0.0** (D-121) and four became **Registry 5.0.0 and health-condition table 1.0.2** (D-122).
-- **On the test phones:** Android's own accessibility checks found **no errors** on any of the 5 phones. (RESULTS FROM THE LAST RUN: see section 5.)
-- **Re-checks:** (TO FILL)
+- **You decided eight things on 25 October**, each time choosing the cautious option I recommended. Four became **Registry 4.0.0** (D-121) and four became **Registry 5.0.0 and health-condition table 1.0.2** (D-122). On three follow-up questions you kept one as built and left two to me; I took the cautious option (D-123).
+- **On the test phones:** Android's own accessibility checks found **no errors** on any of the 5 phones. Planning a session takes 0.07–0.47 s and saving a set 0.01–0.07 s, within the targets. The app starts in 0.64 s.
+- **All tests pass:** 741 locally (engine 447, data 195, app 99), GitHub CI, and the phone tests on 5 emulators, including the interruption, backup and upgrade tests from Part 3 (Devices run 40196311542).
 
 ## 1. What the safety review found, and what happens now
 | What was wrong | What happens now |
@@ -81,8 +81,8 @@ A new device test runs Android's Accessibility Test Framework on every main scre
 
 This is the same framework Google Play's pre-launch report uses. It checks four things: that every control has a name a screen reader can read, the size of touch targets, text contrast measured on the real screen, and duplicate labels.
 
-**Results (Devices run 39315171051): 0 errors on all 5 phones.** The warnings:
-- **The eight Yes/No answers in health screening all read "Yes" and "No".** Fixed: each answer now names its question.
+**Results: 0 errors on all 5 phones** (Devices runs 39315171051 and 40196311542). The warnings:
+- **The eight Yes/No answers in health screening all read "Yes" and "No".** Fixed: each answer now names its question, and the warning is gone in the latest run.
 - **White text on the orange main button measures about 3.7:1.** The button's words are large and bold, so the standard is 3:1, which they pass. The check can't tell the text size, so it warns.
 - **A few readings of about 1:1** on glass cards, where the check couldn't find the text on the blurred background. On the screen the text is clear, as the contrast check on our colours confirms (`tools/check_contrast.py`).
 
@@ -93,11 +93,11 @@ Listening with TalkBack yourself is part of UAT, if you want to try it.
 ## 5. Speed on the phones
 | | Target | Measured |
 |---|---|---|
-| Cold start to Today (release build) | under 1.5 s | 1,099 ms median on the Android 14 emulator (software graphics) |
-| Plan today's session, with the safety check | under 0.5 s | (TO FILL from the Devices run) |
-| Save a logged set | under 0.1 s | (TO FILL) |
+| Cold start to Today (release build) | under 1.5 s | 638 ms median (Android 14 emulator, software graphics) |
+| Plan today's session, with the safety check | under 0.5 s | 66–125 ms on Android 12 and 16; 344 ms on Android 14 at 200% text; 467 ms on the small Android 10 phone |
+| Save a logged set | under 0.1 s | median 12–41 ms; 69 ms on the small Android 10 phone (its slowest set 180 ms) |
 
-Your own phone is faster than these emulators; UAT confirms it there.
+These run on the app's real database file through the same controller the screens use (`SpeedOnDeviceTest`). The small Android 10 emulator is the slowest of the five, and it is close to the planning target. Your phone is much faster than these emulators; UAT confirms it there.
 
 ## 6. Your app and medical-device rules (a note, not legal advice)
 The US guidance (FDA, January 2026) and the EU guidance (MDCG 2019-11) both treat fitness and wellness apps as outside medical-device rules. Both also say something that matters here:
@@ -121,7 +121,23 @@ These were found, but changing them would loosen a limit or needs a clinician's 
 - power exercises at 50+: 30–70% of the maximum, where the source says 40–60%.
 
 ## 8. Re-checks
-(TO FILL)
+Both reviewers re-checked my fixes.
+
+**Safety re-check.** It confirmed 14 of the 15 findings fixed and found 10 more:
+- one high: a warning sign reported in the evening, after a morning session, still skipped the gentle first session back;
+- four medium: the alternatives after a muscle-pain stop couldn't be added; the check-in message after strong muscle pain promised something that didn't happen; small hops with low back pain; and a lighter day's replacement still found its weight from body weight;
+- five low.
+
+All are fixed (D-123), except two. During a return at the lightest weight the easier version stays (your choice). Asking existing users the new health questions waits for a public release.
+
+**Evidence re-check.** It confirmed that the bone-spread, diabetic-foot and rating changes are encoded correctly. It found 8 more points:
+- the pregnancy lists took the stricter guideline only in part;
+- three source notes still overstated what was read;
+- three more ratings rested on unread sources.
+
+All are fixed: pregnancy now takes the stricter guideline everywhere, the notes say exactly what was read, and the three ratings are lowered.
+
+**Final safety check of the last fixes:** (TO FILL)
 
 ## Next
 Part 5: you try the app on your Motorola Edge 50, including Android's own backup. Then the Phase 4 gate.
