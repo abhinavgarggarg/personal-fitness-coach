@@ -105,6 +105,8 @@ private fun canContinue(s: Screen.Onboarding): Boolean = when (s.step) {
     OnboardingStep.ABOUT_YOU -> s.form.birthYear != null && s.form.months != null
     OnboardingStep.CONDITIONS -> s.form.noneOfThese || s.form.conditions.isNotEmpty()
     OnboardingStep.GOAL -> s.form.goals.isNotEmpty()
+    // Nothing ticked used to mean a bodyweight-only plan without saying so (UAT 26 Oct): choose a preset or tick at least one item.
+    OnboardingStep.EQUIPMENT -> s.form.gymPreset != null || s.form.gym.isNotEmpty()
     else -> true
 }
 
@@ -347,9 +349,11 @@ private fun WeekdayChips(selected: Set<Int>, enabledDays: Set<Int> = (0..6).toSe
 // ================================================================================================ O5 equipment (PROG-003, MOD-001)
 @Composable
 internal fun EquipmentStep(f: OnboardingForm, c: AppController, edit: ((OnboardingForm) -> OnboardingForm) -> Unit) {
-    Heading(stringResource(R.string.onb_equip_title))
+    Heading(required(stringResource(R.string.onb_equip_title)))
     Body(stringResource(R.string.onb_equip_intro))
+    RequiredLegend()
     ChipGroup(GymPreset.entries, { it == f.gymPreset }, { stringResource(Labels.preset(it)) }, { p -> edit { it.copy(gymPreset = p, gym = c.preset(p)) } })
+    if (f.gymPreset == null && f.gym.isEmpty()) InfoCard(stringResource(R.string.onb_equip_none), Tone.WARN)
     SectionTitle(stringResource(R.string.onb_equip_items))
     GeneratedLibrary.equipment.values.sortedWith(compareBy<com.personalfitnesscoach.engine.library.EquipmentInfo>({ it.equipmentClass.ordinal }, { it.name })).forEach { item ->
         CheckRow(item.name, item.id in f.gym, { on -> edit { it.copy(gym = if (on) it.gym + item.id else it.gym - item.id, gymPreset = null) } })

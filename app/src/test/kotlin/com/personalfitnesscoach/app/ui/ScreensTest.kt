@@ -3,6 +3,7 @@ package com.personalfitnesscoach.app.ui
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -145,6 +146,9 @@ class ScreensTest {
         shown(s(R.string.onb_goal_suggested), substring = true)
         tap(s(R.string.action_continue))
         tap(s(R.string.action_continue)) // schedule
+        // UAT 26 Oct: with nothing chosen, Continue stays off and the screen says why.
+        shown(s(R.string.onb_equip_none))
+        compose.onAllNodes(named(s(R.string.action_continue)))[0].assertIsNotEnabled()
         tap(s(R.string.preset_full_gym))
         tap(s(R.string.action_continue))
         tap(s(R.string.action_continue)) // limitations
