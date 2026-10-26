@@ -377,4 +377,15 @@ class ScreensTest {
         assertTrue(c.screen.value is Screen.Workout)
         assertEquals(null, (c.screen.value as Screen.Workout).sheet)
     }
+
+    @Test fun `PO feedback - Today offers the day's plan before the check-in`() {
+        val c = launch { onboardQuickly(it) }
+        tap(s(R.string.today_plan_show))
+        shown(s(R.string.today_plan_title))
+        val day = (c.screen.value as Screen.Today).model.next!!
+        assertTrue(day.slots.isNotEmpty())
+        assertTrue(compose.onAllNodes(named(day.slots.first().exercise.name, substring = true)).fetchSemanticsNodes().isNotEmpty())
+        tap(s(R.string.today_plan_hide))
+        assertTrue(compose.onAllNodes(named(s(R.string.today_plan_title))).fetchSemanticsNodes().isEmpty())
+    }
 }

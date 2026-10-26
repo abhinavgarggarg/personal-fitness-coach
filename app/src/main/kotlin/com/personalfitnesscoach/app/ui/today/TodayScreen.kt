@@ -21,6 +21,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -118,8 +122,8 @@ fun TodayScreen(m: TodayModel) {
                 SectionTitle(stringResource(R.string.today_workout))
                 if (!m.nextIsToday) Note(stringResource(R.string.today_next_planned, name, stringResource(Labels.weekday(next.weekday))))
                 WorkoutCard(name, next, m.plan.user.profile.sessionMinutes)
-                // So you can prepare: the planned exercises by name. Today's check-in can still make the session lighter or shorter (SAF-008).
-                if (next.slots.isNotEmpty()) Note(stringResource(R.string.today_planned_names, next.slots.joinToString(", ") { it.exercise.name }))
+                // So you can prepare: the planned exercises, a tap away. Today's check-in can still make the session lighter or shorter (SAF-008).
+                if (next.slots.isNotEmpty()) PlannedList(next)
                 PrimaryButton(stringResource(R.string.today_start), { a.run { openCheckIn() } })
             }
         }
@@ -300,6 +304,22 @@ fun RpePicker(onPick: (Int) -> Unit) {
                 modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).semantics { contentDescription = desc }) {
                 Text(i.toString())
             }
+        }
+    }
+}
+
+/** "See the plan": the day's exercises with their sets and reps, before the check-in. Weights are found once the session starts. */
+@Composable
+private fun PlannedList(day: PlannedDay) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    SmallAction(stringResource(if (open) R.string.today_plan_hide else R.string.today_plan_show), { open = !open })
+    if (open) {
+        InfoCard(stringResource(R.string.today_plan_title)) {
+            day.slots.forEach { sl ->
+                Text(stringResource(R.string.list_item, sl.exercise.name, stringResource(R.string.preview_sets_line, sl.sets,
+                    com.personalfitnesscoach.app.ui.workout.doseText(sl.reps, sl.unit, sl.perSide))))
+            }
+            Note(stringResource(R.string.today_plan_note))
         }
     }
 }

@@ -422,7 +422,10 @@
     <string name="wk_mobility">Plus %1$s min of mobility.</string>
     <string name="wk_exercises">Exercises</string>
     <string name="wk_plan">Plan</string>
-    <string name="today_planned_names">Planned: %1$s. Your check-in can still make it lighter or shorter; the final plan is shown before you start.</string>
+    <string name="today_plan_show">See today’s plan</string>
+    <string name="today_plan_hide">Hide the plan</string>
+    <string name="today_plan_title">Planned for today</string>
+    <string name="today_plan_note">Your check-in can still make it lighter or shorter, and the weights are found as you go. The final plan is shown before you start, and the Plan button in the workout shows it any time.</string>
     <string name="plan_title">Today’s plan</string>
     <string name="plan_done">done</string>
     <string name="plan_now">now</string>
