@@ -121,7 +121,7 @@ fun TodayScreen(m: TodayModel) {
                 val name = stringResource(Labels.template(next.template))
                 SectionTitle(stringResource(R.string.today_workout))
                 if (!m.nextIsToday) Note(stringResource(R.string.today_next_planned, name, stringResource(Labels.weekday(next.weekday))))
-                WorkoutCard(name, next, m.plan.user.profile.sessionMinutes)
+                WorkoutCard(name, next, Math.round(m.plan.nextMinutes ?: m.plan.user.profile.sessionMinutes.toDouble()).toInt())
                 // So you can prepare: the planned exercises, a tap away. Today's check-in can still make the session lighter or shorter (SAF-008).
                 if (next.slots.isNotEmpty()) PlannedList(next)
                 PrimaryButton(stringResource(R.string.today_start), { a.run { openCheckIn() } })
@@ -318,6 +318,9 @@ private fun PlannedList(day: PlannedDay) {
             day.slots.forEach { sl ->
                 Text(stringResource(R.string.list_item, sl.exercise.name, stringResource(R.string.preview_sets_line, sl.sets,
                     com.personalfitnesscoach.app.ui.workout.doseText(sl.reps, sl.unit, sl.perSide))))
+            }
+            day.conditioning.forEach { c ->
+                Text(com.personalfitnesscoach.app.ui.workout.conditioningLine(c.modality, c.zone, c.workMinutes, c.interval, null))
             }
             Note(stringResource(R.string.today_plan_note))
         }

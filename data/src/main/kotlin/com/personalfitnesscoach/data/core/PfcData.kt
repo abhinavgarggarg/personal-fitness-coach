@@ -39,7 +39,9 @@ import com.personalfitnesscoach.engine.program.WeekPlanner
 /** Today as the app shows it: the user, the programme position, this week's plan and the next planned session. */
 data class TodayPlan(val user: UserState, val program: ProgramRecord, val week: WeekPlan, val next: PlannedDay?, val decisions: List<Decision>,
                      /** Planned weekdays already done (or skipped) this week, whichever day they were done on (SCH-002). */
-                     val doneWeekdays: Set<Int> = emptySet())
+                     val doneWeekdays: Set<Int> = emptySet(),
+                     /** The next planned session's length in minutes as planned (warm-up, work and cool-down), not the time the user has set aside. */
+                     val nextMinutes: Double? = null)
 
 /**
  * A generated session with what it was generated from: the planned day, the GEN-001 request (mid-session re-plans re-validate against
@@ -97,7 +99,8 @@ class PfcData(val store: RowStore, val clock: AppClock = SystemClock(), appVersi
         val strengthYesterday = bridge.strengthDoneOn(today - 1)
         val doneToday = week.any { it.day == today && it.row.status == Status.DONE }
         val next = if (doneToday) null else WeekPlanner.nextSession(plan.value, doneWeekdays, strengthYesterday, u.conditions)
-        TodayPlan(u, program2, plan.value, next, u.decisions + plan.decisions, doneWeekdays)
+        TodayPlan(u, program2, plan.value, next, u.decisions + plan.decisions, doneWeekdays,
+            nextMinutes = next?.let { WeekPlanner.minutes(it, bridge.weekInput(u, program2)) })
     }
 
     /**
