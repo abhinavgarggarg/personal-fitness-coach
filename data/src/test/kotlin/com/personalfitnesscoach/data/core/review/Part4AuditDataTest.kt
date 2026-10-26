@@ -264,6 +264,7 @@ class Part4AuditDataTest {
         val after = p.view()!!
         for (l in after.lifts) if (l.rowId != first.rowId && l.status != Status.SKIPPED && !l.hasLoggedWork) assertTrue("${l.exercise.id}", l.exercise.stress(region) <= 1)
         // The alternatives offered can all be added, and none works the same main muscles as the exercise that hurt.
+        assertTrue("other exercises are offered (final re-check)", r.alternatives.isNotEmpty())
         for (c in r.alternatives) assertTrue((c.exercise.primary intersect first.exercise.primary).isEmpty())
         r.alternatives.firstOrNull()?.let { c -> assertFalse(p.addAlternative(first.rowId, c.exercise.id, region, 1).refused) }
         // Nothing beyond today: no SAF-004 region.

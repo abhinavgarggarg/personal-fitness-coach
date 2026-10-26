@@ -842,9 +842,10 @@ class SessionPlayer(private val d: PfcData) {
         // muscle-pain stop none that works the same main muscles (Part 4 re-check).
         val stoppedEx = e?.let { Library[it.exerciseId] }
         val alternatives = if (o.action == PainAction.STOP_EXERCISE && e != null)
-            swapOptionsFor(w, e, mapOf(report.region to (o.regionMaxStress ?: P.SAF_003.substitute_max_joint_stress)))
+            // A muscle-pain stop looks further down the list, since the closest matches work the same muscles (final re-check).
+            swapOptionsFor(w, e, mapOf(report.region to (o.regionMaxStress ?: P.SAF_003.substitute_max_joint_stress)), top = if (report.kind == PainKind.JOINT_OR_TENDON) 3 else 40)
                 .filter { c -> report.kind == PainKind.JOINT_OR_TENDON || stoppedEx == null || (c.exercise.primary intersect stoppedEx.primary).isEmpty() }
-                .filter { c -> itemFor(w, e, c.exercise) != null } else emptyList()
+                .filter { c -> itemFor(w, e, c.exercise) != null }.take(3) else emptyList()
         d.decisions.append(dec.drop(gate.decisions.size), w.day, w.id)
         if (o.endSession) {
             // SAF-003: whole-body movement affected → the session ends (PARTIAL); what was logged stays.
@@ -884,13 +885,13 @@ class SessionPlayer(private val d: PfcData) {
         return state
     }
 
-    private suspend fun swapOptionsFor(w: StoredWorkout, e: StoredExercise, limits: Map<Joint, Int>): List<Candidate> {
+    private suspend fun swapOptionsFor(w: StoredWorkout, e: StoredExercise, limits: Map<Joint, Int>, top: Int = 3): List<Candidate> {
         val (req0, _) = request(w) ?: return emptyList()
         val req = req0.copy(jointLimits = (req0.jointLimits.keys + limits.keys).associateWith { minOf(req0.jointLimits[it] ?: 4, limits[it] ?: 4) })
         val taken = w.exercises.filter { it.row.status != Status.SKIPPED }.map { it.exerciseId }.toSet()
         val power = e.doc.role == SlotRole.POWER
         val pool = Library.all.filter { !it.userAddOnly && it.id !in taken && (if (power) it.powerCapable else !it.powerOnly) && unitFits(it, e.doc) }
-        return Substitution.options(Library.require(e.exerciseId), pool, SessionGenerator.subContext(req)).value.ranked
+        return Substitution.options(Library.require(e.exerciseId), pool, SessionGenerator.subContext(req), top).value.ranked
     }
 
     /**

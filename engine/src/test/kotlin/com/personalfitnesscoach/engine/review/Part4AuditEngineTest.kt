@@ -258,4 +258,14 @@ class Part4AuditEngineTest {
             if (instead.calibrating && instead.load != null) assertEquals(com.personalfitnesscoach.engine.calc.PlateMath.loadsFor(instead.exercise, com.personalfitnesscoach.engine.calc.Inventory()).min(), instead.load!!, 0.0)
         }
     }
+
+    @Test fun `AUD-27 strong aches all over end the session, and a flare day has no bone block (final re-check)`() {
+        val all = com.personalfitnesscoach.engine.safety.PainGate.assess(com.personalfitnesscoach.engine.safety.PainReport(com.personalfitnesscoach.engine.model.Joint.KNEE,
+            com.personalfitnesscoach.engine.safety.PainKind.DOMS, 9, affectsWholeBodyMovement = true)).value
+        assertTrue(all.endSession); assertTrue(all.suggestProfessional)
+        val C = com.personalfitnesscoach.engine.safety.Conditions
+        val calm = C.resolve(listOf(com.personalfitnesscoach.engine.safety.UserCondition("osteoporosis"), com.personalfitnesscoach.engine.safety.UserCondition("low_back_pain"))).value
+        val flare = C.resolve(listOf(com.personalfitnesscoach.engine.safety.UserCondition("osteoporosis"), com.personalfitnesscoach.engine.safety.UserCondition("low_back_pain", flare = true))).value
+        assertTrue(calm.boneLoading); assertFalse(flare.boneLoading)
+    }
 }

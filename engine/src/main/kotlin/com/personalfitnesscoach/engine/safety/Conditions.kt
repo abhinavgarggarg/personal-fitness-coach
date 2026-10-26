@@ -296,7 +296,8 @@ object Conditions {
             obesity = "obesity" in all || "obesity_severe" in all,
             // Bone loading while impact stays "encouraged" or "as tolerated" (controlled high blood pressure); a lower level such as
             // osteoarthritis's removes it (CON-004 2.0.0, D-121).
-            boneLoading = known.any { entries.getValue(it.id).boneLoading } && impact >= ImpactLevel.AS_TOLERATED,
+            // No block on a flare day (low back pain: heel drops land through the spine too; final re-check, D-123).
+            boneLoading = known.any { entries.getValue(it.id).boneLoading } && impact >= ImpactLevel.AS_TOLERATED && known.none { it.flare },
             balanceSessionsPerWeek = r.maxOf { it.balance },
             backExtensorSessionsPerWeek = r.maxOf { it.backExt },
             fatLossOffered = r.all { it.fatLossOffered },
