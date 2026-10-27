@@ -23,6 +23,9 @@ fun doseText(reps: IntRange, unit: DoseUnit, perSide: Boolean): String {
     val base = when {
         unit == DoseUnit.SECONDS && reps.first == reps.last -> stringResource(R.string.secs_exact, reps.first)
         unit == DoseUnit.SECONDS -> stringResource(R.string.secs_range, reps.first, reps.last)
+        // Carries are counted in metres, not reps (UAT 27 Oct: "Goblet carry, 20 to 40 reps").
+        unit == DoseUnit.METRES && reps.first == reps.last -> stringResource(R.string.metres_exact, reps.first)
+        unit == DoseUnit.METRES -> stringResource(R.string.metres_range, reps.first, reps.last)
         reps.first == reps.last -> if (reps.first == 1) stringResource(R.string.reps_one) else stringResource(R.string.reps_exact, reps.first)
         else -> stringResource(R.string.reps_range, reps.first, reps.last)
     }

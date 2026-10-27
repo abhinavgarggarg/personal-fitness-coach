@@ -466,6 +466,9 @@
     <string name="wk_weight">Weight (kg)</string>
     <string name="wk_reps">Reps</string>
     <string name="wk_seconds">Seconds</string>
+    <string name="wk_metres">Metres</string>
+    <string name="metres_range">%1$d to %2$d m</string>
+    <string name="metres_exact">%1$d m</string>
     <string name="wk_replace">Replace</string>
     <string name="wk_try_easier">Try the easier version: %1$s</string>
     <string name="wk_busy">Busy</string>

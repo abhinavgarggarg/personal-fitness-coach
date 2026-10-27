@@ -382,7 +382,7 @@ private fun LiftPanel(l: LiftView, v: PlayerView) {
         NumberField(stringResource(R.string.wk_weight), load, { x -> load = x?.takeIf { it in 0.0..SetLimits.MAX_LOAD_KG } })
     }
     if (repsShown) {
-        NumberField(stringResource(if (t.unit == DoseUnit.SECONDS) R.string.wk_seconds else if (t.kind == SetKind.CALIBRATION) R.string.wk_reps_done else R.string.wk_reps),
+        NumberField(stringResource(if (t.unit == DoseUnit.SECONDS) R.string.wk_seconds else if (t.unit == DoseUnit.METRES) R.string.wk_metres else if (t.kind == SetKind.CALIBRATION) R.string.wk_reps_done else R.string.wk_reps),
             amount.toDouble(), { x -> amount = (x?.toInt() ?: 0).coerceIn(0, if (t.unit == DoseUnit.SECONDS) 1000 else SetLimits.MAX_REPS) }, decimals = false)
     }
     if (adjusting && !canLog) Note(stringResource(R.string.wk_enter_weight))
